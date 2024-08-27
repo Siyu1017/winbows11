@@ -1,10 +1,8 @@
 const express = require("express");
 const app = express();
 
-app.use(express.static(__dirname + '/'), (req, res, next) => {
-    if (res.status(404)) {
-        res.sendFile(__dirname + '/index.html');
-    }
+app.use(express.static(__dirname), (req, res, next) => {
+    
 })
 
 app.listen(3000, function () {
