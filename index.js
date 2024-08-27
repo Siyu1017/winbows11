@@ -28,6 +28,7 @@
     }
     const maxZIndex = 999999999;
     const debuggerMode = false;
+    const needUpdate = getJsonFromURL().update || false;
 
     // Loading
     var loadingContainer = document.createElement('div');
@@ -151,7 +152,19 @@
         return { x: offset(element).left, y: offset(element).top };
     }
 
+    function getJsonFromURL(url) {
+        if (!url) url = location.search;
+        var query = url.substr(1);
+        var result = {};
+        query.split("&").forEach(function (part) {
+            var item = part.split("=");
+            result[item[0]] = decodeURIComponent(item[1]);
+        });
+        return result;
+    }
+
     window.utils.getPosition = getPosition;
+    window.utils.getJsonFromURL = getJsonFromURL;
 
     window.appRegistry = {
         apps: {
@@ -1061,7 +1074,7 @@
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
         }
-        if (navigator.onLine != true) {
+        if (navigator.onLine != true || needUpdate != true && (await fs.exists(path)).exists == true) {
             return await fs.readFile(path);
         }
         var extension = path.split('.').pop();
