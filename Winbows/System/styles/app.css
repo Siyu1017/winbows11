@@ -1,0 +1,85 @@
+.window * {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.window {
+    width: 800px;
+    height: 600px;
+    /* background: #fff; */
+    border-radius: .5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.window-toolbar,
+.window-toolbar * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    transition: all .1s ease-in-out;
+}
+
+.window-toolbar {
+    width: -webkit-fill-available;
+    background: rgb(235 235 235);
+    min-height: fit-content;
+    display: flex;
+}
+
+.window-toolbar-info {
+    display: flex;
+    align-items: center;
+    padding: 0 .5rem 0;
+    gap: .5rem;
+}
+
+.window-toolbar-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.window-content {
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    background: #fff;
+}
+
+.window-toolbar-title {
+    font-weight: 100;
+    font-size: 0.875rem;
+}
+
+.window-toolbar-buttons {
+    display: flex;
+    margin-left: auto;
+    height: 2rem;
+}
+
+.window-toolbar-button {
+    width: 3rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.window-toolbar-button:hover {
+    background: rgba(136,136,136,.2);
+}
+
+.window-toolbar-button.close:hover {
+    background: rgb(255 0 0);
+}
+
+.window-toolbar-button.close:hover .window-toolbar-button-icon {
+    filter: invert(1);
+}
+
+.window-toolbar-button-icon {
+    width: .875rem;
+    height: .875rem;
+    min-width: .875rem;
+    min-height: .875rem;
+}

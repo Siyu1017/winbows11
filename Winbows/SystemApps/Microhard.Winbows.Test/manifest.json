@@ -1,0 +1,5 @@
+{
+    "name": "test",
+    "scripts": ["./app.js"],
+    "modules": ["System", "BrowserWindow"]
+}

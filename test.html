@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winbows11</title>
+    <link rel="stylesheet" href="./index.css">
+</head>
+
+<body>
+    <div class="screen">
+        <div class="background">
+            <div class="background-image" style="background-image: url(./Winbows/bg/img0.jpg);"></div>
+        </div>
+        <div class="taskbar">
+            <div class="taskbar-group">
+                <div class="taskbar-default">
+                    <div class="taskbar-item">
+                        <img class="taskbar-icon" src="./Winbows/icons/applications/tools/start.ico">
+                    </div>
+                    <div class="taskbar-item">
+                        <img class="taskbar-icon" src="./Winbows/icons/applications/tools/search.ico">
+                    </div>
+                    <div class="taskbar-item">
+                        <img class="taskbar-icon" src="./Winbows/icons/applications/tools/taskview.ico">
+                    </div>
+                </div>
+                <div class="taskbar-apps">
+                    <div class="taskbar-app taskbar-item" data-openable="true">
+                        <img class="taskbar-icon" src="./Winbows/icons/applications/office/code.ico">
+                    </div>
+                </div>
+            </div>
+            <div class="taskbar-status"></div>
+            <div class="taskbar-notify"></div>
+        </div>
+        <div class="winbows-app-window-container" winbows-token="_1xd00bd2">
+            <div class="winbows-background">
+
+            </div>
+        </div>
+        <div class="winbows-app-window-container" winbows-token="_1xa26bb4">
+            <div class="winbows-app-window">
+                <div class="winbows-app-toolbar"></div>
+                <div class="winbows-app-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.taskbar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.getAttribute('data-openable') == 'true') {
+                    item.setAttribute('data-opened', true);
+                    item.setAttribute('data-active', item.getAttribute('data-active') ? item.getAttribute('data-active') == 'false' ? true : false : true)
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>

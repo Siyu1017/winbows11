@@ -1,0 +1,8 @@
+{
+    "name": "explorer",
+    "version": "1.0.0",
+    "scripts": {
+        "worker": ["./app.js", "./explorer.js"],
+        "window": ["./window.js"]
+    }
+}
