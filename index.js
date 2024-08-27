@@ -28,7 +28,6 @@
     }
     const maxZIndex = 999999999;
     const debuggerMode = false;
-    const needUpdate = getJsonFromURL().update || false;
 
     // Loading
     var loadingContainer = document.createElement('div');
@@ -1074,7 +1073,7 @@
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
         }
-        if (navigator.onLine != true || needUpdate != true && (await fs.exists(path)).exists == true) {
+        if (navigator.onLine != true) {
             return await fs.readFile(path);
         }
         var extension = path.split('.').pop();
