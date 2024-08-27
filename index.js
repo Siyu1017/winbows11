@@ -748,7 +748,7 @@
             var files = {
                 kernel: ['Winbows/System/process.js'],
                 module: ['Winbows/System/modules/main/toolbarComponents.js', 'Winbows/System/modules/main/browserWindow.js'],
-                component: ['Winbows/System/components/Controls/Tabview/tabview.js'],
+                component: ['Winbows/System/components/Controls/TabView/tabview.js'],
                 compiler: ['Winbows/System/compilers/worker/compiler.js', 'Winbows/System/compilers/window/compiler.js'],
                 taskbar: ['Winbows/SystemApps/Microhard.Winbows.Taskbar/app.js']
             }
