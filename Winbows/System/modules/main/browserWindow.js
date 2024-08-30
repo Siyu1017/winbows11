@@ -13,6 +13,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             }
         })
 
+        const appWrapper = window.Winbows.AppWrapper;
+
         var resizerConfig = {
             'browser-window-resizer-top': 'vertical',
             'browser-window-resizer-bottom': 'vertical',
@@ -41,7 +43,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         toolbarElement.className = 'window-toolbar';
         contentElement.className = 'window-content';
 
-        window.Winbows.AppWrapper.appendChild(hostElement);
+        appWrapper.appendChild(hostElement);
         hostElement.appendChild(resizers);
         hostElement.appendChild(content);
         shadowRoot.appendChild(windowElement);
@@ -67,7 +69,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                     width: hostElement.offsetWidth,
                     height: hostElement.offsetHeight
                 }
-                hostElement.classList.add('moving');
+                appWrapper.classList.add('moving');
                 pointerDown = true;
             })
             window.addEventListener('pointermove', (e) => {
@@ -104,11 +106,11 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             })
             window.addEventListener('pointerup', (e) => {
                 pointerDown = false;
-                hostElement.classList.remove('moving');
+                appWrapper.classList.remove('moving');
             })
             window.addEventListener('blur', (e) => {
                 pointerDown = false;
-                hostElement.classList.remove('moving');
+                appWrapper.classList.remove('moving');
             })
             resizers.appendChild(resizer);
         })
@@ -153,7 +155,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         maximizeButton.className = 'window-toolbar-button';
         closeButton.className = 'window-toolbar-button close';
 
-        closeButton.addEventListener('click', close)
+        minimizeButton.addEventListener('click', minimize);
+        closeButton.addEventListener('click', close);
 
         var icons = ['C:/Winbows/icons/controls/minimize.png', 'C:/Winbows/icons/controls/maxmin.png', 'C:/Winbows/icons/controls/maximize.png', 'C:/Winbows/icons/controls/close.png'];
 
@@ -186,10 +189,13 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         toolbarElement.appendChild(toolbarInfo);
         toolbarElement.appendChild(toolbarButtons);
 
-        ICON.open();
-        const windowID = ICON.register({
+        const windowID = ICON.open({
             browserWindow: hostElement
-        })
+        });
+
+        function minimize() {
+            ICON.hide();
+        }
 
         function close() {
             ICON.close(windowID);
@@ -200,6 +206,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var originalPosition = {};
 
         toolbarElement.addEventListener('pointerdown', (e) => {
+            if (toolbarButtons.contains(e.target)) return;
             pointerDown = true;
             var position = utils.getPosition(hostElement);
             pointerPosition = [e.pageX, e.pageY];
@@ -211,6 +218,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         window.addEventListener('pointermove', (e) => {
             if (pointerDown) {
+                appWrapper.classList.add('moving');
                 hostElement.style.left = originalPosition.x + e.pageX - pointerPosition[0] + 'px';
                 hostElement.style.top = originalPosition.y + e.pageY - pointerPosition[1] + 'px';
             }
@@ -218,10 +226,16 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         window.addEventListener('pointerup', (e) => {
             pointerDown = false;
+            appWrapper.classList.remove('moving');
         })
 
         window.addEventListener('blur', (e) => {
             pointerDown = false;
+            appWrapper.classList.remove('moving');
+        })
+
+        hostElement.addEventListener('pointerdown', (e) => {
+            ICON.focus();
         })
 
         return { shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement, close };

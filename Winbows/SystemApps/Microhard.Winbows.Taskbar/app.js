@@ -106,7 +106,7 @@
     footerProfile.appendChild(footerProfileUsername);
     footerPower.appendChild(footerPowerButton);
 
-    document.addEventListener('click', e => {
+    document.addEventListener('pointerdown', e => {
         if (!iconRepository.start) return;
         if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || iconRepository.start.item.contains(e.target)) return;
         iconRepository.start.hide();
@@ -117,6 +117,7 @@
     var lastClicked = null;
     var activeWindows = [];
     var iconRepository = {};
+    var maxIndex = 0;
 
     function updateStatus() {
         Object.values(iconRepository).forEach(icon => {
@@ -202,7 +203,6 @@
                 var type = icon.category == 'item' ? 'item' : 'app';
                 var owner = icon.name;
                 var registry = {};
-                var registered = null;
 
                 icon.status = icon.status || {};
 
@@ -223,20 +223,46 @@
                 itemImage.src = icon.icon;
                 item.appendChild(itemImage);
 
-                function open() {
+                var properties = {
+                    status, type, owner, icon, item, itemImage,
+                    open, close, show, hide, addEventListener, focus, blur, updateWindowStatus,
+                    _show, _hide
+                }
+
+                function open(obj) {
+                    var id = '';
                     if (type != 'item') {
-                        status.opened = true;
-                        item.setAttribute('data-opened', status.opened);
-                        show();
-                        activeWindows = activeWindows.filter(item => item !== owner);
-                        if (type != 'item') {
-                            activeWindows.push(owner);
-                        }
+                        try {
+                            var exist = false;
+                            id = generateID();
+                            Object.values(registry).forEach((item, i) => {
+                                if (item == obj) {
+                                    exist = true;
+                                    id = Object.keys(registry)[i];
+                                }
+                            })
+                            if (exist == false) {
+                                registry[id] = obj;
+                            }
+                            maxIndex++;
+                            obj.browserWindow.style.zIndex = maxIndex;
+                            status.opened = true;
+                            lastClicked = owner;
+                            item.setAttribute('data-opened', status.opened);
+                            show();
+                            activeWindows = activeWindows.filter(item => item !== owner);
+                            if (type != 'item') {
+                                activeWindows.push(owner);
+                            }
+                        } catch (e) { 
+                            console.log(e);
+                        };
                     }
                     triggerEvent('open', {
                         type: 'open'
                     });
                     updateStatus();
+                    return id;
                 }
 
                 function close(id) {
@@ -255,7 +281,6 @@
                             item.classList.add('hide');
                         }
                         lastClicked = null;
-                        registered = null;
                         delete registry[id];
                         setTimeout(() => {
                             // remove window element
@@ -289,14 +314,22 @@
                 }
 
                 function focus() {
+                    Object.values(iconRepository).filter(icon => icon != properties).forEach(icon => {
+                        icon.blur();
+                    })
+                    activeWindows = activeWindows.filter(item => item !== owner);
+                    activeWindows.push(owner);
                     focused = owner;
                     status.focused = true;
+                    lastClicked = owner;
                     item.setAttribute('data-focused', true);
+                    updateWindowStatus(Object.values(registry)[0], 'focus');
                 }
 
                 function blur() {
                     focused = activeWindows[activeWindows.length - 1];
                     status.focused = false;
+                    lastClicked = null;
                     item.setAttribute('data-focused', false);
                 }
 
@@ -308,21 +341,6 @@
                     }
                     if (registry.hasOwnProperty(id)) {
                         return generateID();
-                    }
-                    return id;
-                }
-
-                function register(obj) {
-                    var exist = false;
-                    var id = generateID();
-                    Object.values(registry).forEach((item, i) => {
-                        if (item == obj) {
-                            exist = true;
-                            id = Object.keys(registry)[i];
-                        }
-                    })
-                    if (exist == false) {
-                        registry[id] = obj;
                     }
                     return id;
                 }
@@ -350,12 +368,11 @@
                     activeWindows = activeWindows.filter(item => item !== owner);
                     if (type != 'item') {
                         activeWindows.push(owner);
+                        focused = owner;
                     }
                     item.setAttribute('data-show', status.show);
+                    updateWindowStatus(Object.values(registry)[0], 'show');
                     focus();
-                    if (registered != null) {
-                        registered.browserWindow.classList.add('active');
-                    }
                 }
 
                 function _hide() {
@@ -366,15 +383,26 @@
                     activeWindows = activeWindows.filter(item => item !== owner);
                     focused = activeWindows[activeWindows.length - 1];
                     item.setAttribute('data-show', status.show);
-                    if (registered != null) {
-                        registered.browserWindow.classList.remove('active');
-                    }
+                    updateWindowStatus(Object.values(registry)[0], 'hide');
                     blur();
                 }
 
-                var properties = {
-                    status, type, owner, icon, item, itemImage, open, close, show, hide, register, addEventListener, focus, blur,
-                    _show, _hide
+                function updateWindowStatus(obj, type) {
+                    try {
+                        if (!obj) return;
+                        if (type == 'focus') {
+                            if (obj.browserWindow.style.zIndex != maxIndex) {
+                                maxIndex++;
+                                obj.browserWindow.style.zIndex = maxIndex;
+                            }
+                        } else if (type == 'show') {
+                            obj.browserWindow.classList.add('active');
+                        } else if (type == 'hide') {
+                            obj.browserWindow.classList.remove('active');
+                        } else if (type == 'toggle') {
+                            obj.browserWindow.classList.toggle('active');
+                        }
+                    } catch (e) { console.log(e); }
                 }
 
                 if (type == 'item') {

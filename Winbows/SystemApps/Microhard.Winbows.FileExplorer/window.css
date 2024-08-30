@@ -14,6 +14,11 @@
     -webkit-user-drag: none;
 }
 
+.window {
+    --border-color: rgb(0, 0, 0, .1);
+    --label-color: rgb(132, 132, 132);
+}
+
 .explorer-viewer-container {
     overflow: auto;
     max-height: -webkit-fill-available;
@@ -238,7 +243,7 @@
     height: 3rem;
     min-height: 3rem;
     width: 100%;
-    border-bottom: 1.5px solid rgb(216 216 216);
+    border-bottom: 1.5px solid var(--border-color);
     padding: .5rem;
     display: flex;
     flex-direction: row;
@@ -276,6 +281,7 @@
     background-repeat: no-repeat;
     background-size: cover;
 }
+
 .explorer-pathstrip-action:hover {
     background: rgb(236 236 236);
 }
@@ -299,7 +305,7 @@
 }
 
 .explorer-pathstrip-path {
-    background: rgb(233,233,233);
+    background: rgb(233, 233, 233);
     width: -webkit-fill-available;
     height: 2rem;
     border-radius: .375rem;
@@ -317,7 +323,7 @@
 }
 
 .explorer-pathstrip-search {
-    background: rgb(233,233,233);
+    background: rgb(233, 233, 233);
     min-width: 12rem;
     border-radius: .375rem;
     border: 0;
@@ -329,7 +335,43 @@
     height: 3rem;
     min-height: 3rem;
     width: 100%;
-    border-bottom: 1.5px solid rgb(216 216 216);
+    border-bottom: 1.5px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: .375rem;
+    gap: .375rem;
+}
+
+.explorer-actionbar-button {
+    background: none;
+    border: none;
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    border-radius: .375rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.explorer-actionbar-button:hover {
+    background: rgb(244 244 244);
+}
+
+.explorer-actionbar-button-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    fill: var(--secondary-color);
+}
+
+svg {
+    --primary-color: #1885d8;
+    --secondary-color: #555555;
+    --bg-color: #fff;
+    fill: var(--secondary-color);
 }
 
 .explorer-content {
@@ -341,7 +383,7 @@
 .explorer-sidebar {
     width: 14rem;
     min-width: 14rem;
-    border-right: 1.5px solid rgb(216 216 216);
+    border-right: 1.5px solid var(--border-color);
     padding: .5rem .5rem;
     overflow: auto;
 }
@@ -355,7 +397,7 @@
     display: block;
     transform: translate(-50%, -50%);
     height: 1.5px;
-    background: rgb(0, 0, 0, .1);
+    background: var(--border-color);
     left: 50%;
     position: relative;
 }

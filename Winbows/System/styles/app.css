@@ -11,6 +11,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1);
 }
 
 .window-toolbar,
@@ -36,8 +37,8 @@
 }
 
 .window-toolbar-icon {
-    width: 1.5rem;
-    height: 1.5rem;
+    width: 1.25rem;
+    height: 1.25rem;
 }
 
 .window-content {

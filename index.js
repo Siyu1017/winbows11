@@ -786,103 +786,6 @@
 
     window.Taskbar.pinApp('cmd');
 
-    // Taskbar main items
-    window.taskbarItems = {
-        start: {
-            display: true,
-            icon: 'C:/Winbows/icons/applications/tools/start.ico'
-        },
-        search: {
-            display: true,
-            icon: 'C:/Winbows/icons/applications/tools/search.ico'
-        },
-        taskview: {
-            display: true,
-            icon: 'C:/Winbows/icons/applications/tools/taskview.ico'
-        },
-        widgets: {
-            display: false,
-            icon: 'C:/Winbows/icons/applications/tools/widgets.ico'
-        }
-    }
-
-    window.taskbarPinnedApps = ['explorer', 'edge', 'store'];
-
-    var defaultIcons = document.createElement('div');
-    var appIcons = document.createElement('div');
-    defaultIcons.className = 'taskbar-default';
-    appIcons.className = 'taskbar-apps';
-    mainGroup.appendChild(defaultIcons);
-    mainGroup.appendChild(appIcons);
-
-    var mainGroupAppIconLength = Object.values(taskbarItems).filter(item => item.display == true).concat(Object.values(taskbarPinnedApps)).length;
-    mainGroup.style.width = mainGroupAppIconLength * 40 + (mainGroupAppIconLength - 1) * 4 + 'px';
-
-    var lastClicked = '';
-    var currentZIndex = 1;
-
-    window.createIconInTaskbar = async (icon, callback = () => { }) => {
-        var opened = false;
-        var itemElement = document.createElement('div');
-        var iconElement = document.createElement('img');
-        itemElement.className = 'taskbar-item';
-        iconElement.className = 'taskbar-icon';
-        iconElement.src = icon.url;
-        itemElement.appendChild(iconElement);
-        itemElement.setAttribute('data-openable', icon.openable);
-        itemElement.addEventListener('click', () => {
-            if (icon.openable == true) {
-                if (opened == false) {
-                    opened = true;
-                    callback({
-                        type: 'open',
-                        id: id
-                    });
-                    itemElement.setAttribute('data-opened', true);
-                    itemElement.setAttribute('data-active', true);
-                }
-                var active = itemElement.getAttribute('data-active');
-                taskbar.querySelectorAll('.taskbar-item[data-active="true"]').forEach(item => {
-                    item.setAttribute('data-active', false);
-                })
-                var bindedWindow = document.createElement('div');
-                if (lastClicked == icon) {
-                    itemElement.setAttribute('data-toggle', 'self');
-                    itemElement.setAttribute('data-active', active == 'true' ? false : true);
-                    if (active == 'true') {
-                        bindedWindow.classList.remove('active');
-                    } else {
-                        bindedWindow.classList.add('active');
-                    }
-                } else {
-                    itemElement.removeAttribute('data-toggle');
-                    itemElement.setAttribute('data-active', true);
-                    currentZIndex++;
-                    bindedWindow.classList.add('active');
-                    bindedWindow.style.zIndex = currentZIndex;
-                }
-                lastClicked = icon;
-            } else if (icon.category == 'system') {
-                taskbar.querySelectorAll('.taskbar-item[data-active="true"]').forEach(item => {
-                    item.setAttribute('data-active', false);
-                })
-                itemElement.setAttribute('data-active', true);
-                callback({
-                    type: 'open',
-                    id: id
-                });
-            }
-        })
-        if (icon.category == 'system') {
-            defaultIcons.appendChild(itemElement);
-        } else {
-            appIcons.appendChild(itemElement);
-        }
-        // console.log(parseInt(window.Winbows.Screen.style.getPropertyValue('--taskbar-item-translateX')))
-        // window.Winbows.Screen.style.setProperty('--taskbar-item-translateX',  + itemElement.offsetWidth + 'px');
-        return;
-    }
-
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
@@ -903,28 +806,6 @@
     }
 
     await window.Taskbar.preloadImage();
-
-    // Download taskbar item icons
-    await (async () => {
-        await (async () => {
-            for (let i in Object.values(taskbarItems)) {
-                var url = await getFileURL(Object.values(taskbarItems)[i].icon);
-                await loadImage(url);
-                Object.values(taskbarItems)[i].icon = url;
-            }
-            return;
-        })();
-
-        await (async () => {
-            for (let i in taskbarPinnedApps) {
-                var url = await getFileURL(window.appRegistry.apps[taskbarPinnedApps[i]].icon);
-                await loadImage(url);
-            }
-            return;
-        })();
-
-        return;
-    })();
 
     window.System.addEventListener('load', async (e) => {
         // Initialize screen lock 
@@ -985,45 +866,8 @@
         async function initTaskbar() {
             await delay(200);
 
+            // Initialize Taskbar
             window.Taskbar.init();
-
-            // Create taskbar items
-            for (let i in Object.keys(taskbarItems)) {
-                await (async (i) => {
-                    var key = Object.keys(taskbarItems)[i]
-                    if (taskbarItems[key].display == true || key == 'start') {
-                        await window.createIconInTaskbar({
-                            name: key,
-                            url: taskbarItems[key].icon,
-                            openable: false,
-                            category: 'system'
-                        }, (e) => {
-                            window.Taskbar.run(key, e);
-                        })
-                    }
-                    await delay(25);
-                    return;
-                })(i)
-            }
-
-            for (let i in taskbarPinnedApps) {
-                await (async (i) => {
-                    var app = window.appRegistry.apps[taskbarPinnedApps[i]];
-                    var script = app.script;
-                    await window.createIconInTaskbar({
-                        name: taskbarPinnedApps[i],
-                        url: await getFileURL(app.icon),
-                        openable: true,
-                        category: 'app'
-                    }, (e) => {
-                        new Process(script, 'user', e.id).start();
-                    })
-                    await delay(25);
-                    return;
-                })(i)
-            }
-
-            mainGroup.style.width = 'revert-layer';
         }
     })
 

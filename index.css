@@ -678,7 +678,7 @@ body {
     flex-direction: row;
     gap: .25rem;
     height: 1.5rem;
-    cursor: pointer;
+    cursor: default;
 }
 
 .start-menu-pinned-expand:hover {
@@ -712,11 +712,24 @@ body {
 .browser-window-container.active {
     transform: scale(1);
     opacity: 1;
-    box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1);
+    /* box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1); */
 }
 
-.browser-window-container.moving {
+.app-wrapper.moving {
     cursor: default !important;
+}
+
+.app-wrapper.moving * {
+    user-select: none;
+    -ms-user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    touch-action: none;
+    pointer-events: none;
+}
+
+.app-wrapper.moving .browser-window-container {
+    pointer-events: none;
 }
 
 @keyframes browser-window-open {
