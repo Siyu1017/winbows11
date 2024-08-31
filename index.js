@@ -19,7 +19,7 @@
         themes: 'Winbows/themes',
         ui: 'Winbows/System/ui'
     }
-    const debuggerMode = true;
+    const debuggerMode = false;
 
     var needsUpdate = true;
 
@@ -146,7 +146,7 @@
             window.System.build = res[0].sha;
             localStorage.setItem('WINBOWS_BUILD_ID', window.System.build);
         })
-    } catch (e) {}
+    } catch (e) { }
 
     function getPosition(element) {
         function offset(el) {
@@ -747,18 +747,23 @@
         backgroundImage.style.backgroundImage = `url(${url})`;
     }
     window.WinbowsUpdate = () => {
-        if (needsUpdate == false || navigator.onLine == false) return;
-        fetch('./tree.json').then(res => {
-            return res.json();
-        }).then(async files => {
-            for (let i in files) {
-                await fs.downloadFile(files[i]);
-            }
-            needsUpdate = false;
+        return new Promise((resolve, reject) => {
+            if (needsUpdate == false || navigator.onLine == false) return;
+            try {
+                fetch('./tree.json').then(res => {
+                    return res.json();
+                }).then(async files => {
+                    for (let i in files) {
+                        await fs.downloadFile(files[i]);
+                    }
+                    needsUpdate = false;
+                    resolve();
+                })
+            } catch (e) { resolve(); }
         })
     }
 
-    window.WinbowsUpdate();
+    await window.WinbowsUpdate();
 
     await window.setBackgroundImage('C:/Winbows/bg/img0.jpg');
 
