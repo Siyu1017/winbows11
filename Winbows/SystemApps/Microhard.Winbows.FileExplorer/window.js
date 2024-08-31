@@ -1,9 +1,7 @@
-var currentPage = 'C:/';
-
 var groups = {
     0: ['home', 'gallery'],
     1: ['desktop', 'donwloads', 'documents', 'pictures', 'music', 'videos'],
-    2: ['this_pc', '[disk]', 'network'],
+    2: ['this_pc', 'network'],
 }
 
 var pages = ['home', 'gallery', 'desktop', 'donwloads', 'documents', 'pictures', 'music', 'videos', 'this_pc', 'network'];
@@ -17,66 +15,28 @@ var actionbarButtonIcons = {
     share: '<svg class="explorer-actionbar-button-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M31.605 6.83811C31.2415 6.49733 30.7103 6.40497 30.2531 6.60304C29.7959 6.80111 29.5 7.25178 29.5 7.75003V13.2223C29.1425 13.2305 28.7251 13.2514 28.26 13.2944C26.725 13.4362 24.6437 13.8204 22.4841 14.799C18.0824 16.7935 13.5579 21.1728 12.5081 30.3581C12.4493 30.8729 12.7141 31.3706 13.174 31.6094C13.6338 31.8482 14.1932 31.7785 14.5805 31.4343C18.9164 27.5801 22.9778 25.9209 25.9168 25.2155C27.3897 24.862 28.5872 24.7466 29.4032 24.718C29.4361 24.7169 29.4684 24.7158 29.5 24.715V30.25C29.5 30.7483 29.7959 31.1989 30.2531 31.397C30.7103 31.5951 31.2415 31.5027 31.605 31.162L43.605 19.9119C43.857 19.6756 44 19.3455 44 19C44 18.6545 43.857 18.3244 43.605 18.0881L31.605 6.83811ZM30.606 15.7422L30.6257 15.7438L30.6285 15.7441L30.6269 15.7439C30.9779 15.7787 31.3272 15.6635 31.5888 15.4268C31.8506 15.1899 32 14.8532 32 14.5V10.6353L40.9224 19L32 27.3647V23.5C32 22.8696 31.5462 22.34 30.9051 22.2597L30.9036 22.2595L30.902 22.2593L30.8982 22.2588L30.8883 22.2577L30.8597 22.2545C30.8368 22.252 30.8062 22.249 30.768 22.2456C30.6917 22.2389 30.5853 22.2309 30.4506 22.2242C30.1812 22.2109 29.7982 22.2026 29.3156 22.2195C28.3503 22.2534 26.9854 22.3881 25.3333 22.7845C22.6531 23.4278 19.2341 24.7565 15.5547 27.4384C17.0405 21.3588 20.4181 18.4798 23.5159 17.0761C25.3563 16.2422 27.15 15.9076 28.49 15.7838C29.1577 15.7221 29.7057 15.7134 30.081 15.7196C30.2684 15.7227 30.412 15.7295 30.5052 15.7351C30.5517 15.738 30.5856 15.7405 30.606 15.7422ZM12.25 8.00003C8.79822 8.00003 6 10.7983 6 14.25V35.75C6 39.2018 8.79822 42 12.25 42H33.75C37.2018 42 40 39.2018 40 35.75V33.5C40 32.8097 39.4404 32.25 38.75 32.25C38.0596 32.25 37.5 32.8097 37.5 33.5V35.75C37.5 37.8211 35.8211 39.5 33.75 39.5H12.25C10.1789 39.5 8.5 37.8211 8.5 35.75V14.25C8.5 12.179 10.1789 10.5 12.25 10.5H20.5C21.1904 10.5 21.75 9.94039 21.75 9.25003C21.75 8.55967 21.1904 8.00003 20.5 8.00003H12.25Z"/></svg>'
 }
 
+var tabView = document.createElement('div');
+tabView.className = 'tabview';
+document.body.appendChild(tabView);
+document.body.classList.add('winui');
+
 var tabStrip = document.createElement('div');
-
-// Path
-var pathStrip = document.createElement('div');
-var pathStripActions = document.createElement('div');
-var pathStripActionBack = document.createElement('button');
-var pathStripActionNext = document.createElement('button');
-var pathStripActionUp = document.createElement('button');
-var pathStripActionRefresh = document.createElement('button');
-var pathStripPath = document.createElement('div');
-var pathStripPathText = document.createElement('div');
-var pathStripSearch = document.createElement('input');
-
-pathStrip.className = 'explorer-pathstrip';
-pathStripActions.className = 'explorer-pathstrip-actions';
-pathStripActionBack.className = 'explorer-pathstrip-action back';
-pathStripActionNext.className = 'explorer-pathstrip-action next';
-pathStripActionUp.className = 'explorer-pathstrip-action up';
-pathStripActionRefresh.className = 'explorer-pathstrip-action refresh';
-pathStripPath.className = 'explorer-pathstrip-path';
-pathStripPathText.className = 'explorer-pathstrip-path-text';
-pathStripSearch.className = 'explorer-pathstrip-search';
-
-pathStripSearch.placeholder = 'Search...'
-
-pathStrip.appendChild(pathStripActions);
-pathStrip.appendChild(pathStripPath);
-pathStrip.appendChild(pathStripSearch);
-pathStripActions.appendChild(pathStripActionBack);
-pathStripActions.appendChild(pathStripActionNext);
-pathStripActions.appendChild(pathStripActionUp);
-pathStripActions.appendChild(pathStripActionRefresh);
-pathStripPath.appendChild(pathStripPathText);
-
-var actionbar = document.createElement('div');
-var content = document.createElement('div');
-var sidebar = document.createElement('div');
-var viewerContainer = document.createElement('div');
-var viewer = document.createElement('div');
+var tabStripTabs = document.createElement('div');
+var tabStripCreate = document.createElement('div');
+var tabStripCreateButton = document.createElement('button');
 
 tabStrip.className = 'explorer-tabstrip';
-actionbar.className = 'explorer-actionbar';
-content.className = 'explorer-content';
-sidebar.className = 'explorer-sidebar';
-viewerContainer.className = 'explorer-viewer-container';
-viewer.className = 'explorer-viewer';
+tabStripTabs.className = 'explorer-tabstrip-tabs';
+tabStripCreate.className = 'explorer-tabstrip-create';
+tabStripCreateButton.className = 'explorer-tabstrip-create-button';
 
 browserWindow.toolbar.replaceChild(tabStrip, browserWindow.toolbar.querySelector('.window-toolbar-info'));
-document.body.appendChild(pathStrip);
-document.body.appendChild(actionbar);
-document.body.appendChild(content);
-content.appendChild(sidebar);
-content.appendChild(viewerContainer);
-viewerContainer.appendChild(viewer);
+tabStrip.appendChild(tabStripTabs);
+tabStrip.appendChild(tabStripCreate);
+tabStripCreate.appendChild(tabStripCreateButton);
 
-Object.values(actionbarButtonIcons).forEach(icon => {
-    var button = document.createElement('button');
-    button.className = 'explorer-actionbar-button';
-    button.innerHTML = icon;
-    actionbar.appendChild(button);
+tabStripCreateButton.addEventListener('click', async () => {
+    createTab();
 })
 
 var style = document.createElement('link');
@@ -183,54 +143,8 @@ async function getPageStatus(page) {
     return status.exists == true ? 'dir' : false;
 }
 
-async function createFolderItem(details, path) {
-    var item = document.createElement('div');
-    var itemIcon = document.createElement('div');
-    var itemName = document.createElement('div');
-
-    item.className = 'explorer-viewer-item';
-    itemIcon.className = 'explorer-viewer-item-icon';
-    itemName.className = 'explorer-viewer-item-name';
-
-    itemIcon.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/folders/folder.ico')})`;
-    itemName.innerHTML = details.name;
-
-    item.addEventListener('dblclick', async () => {
-        currentPage = path;
-        addToHistory(currentPage);
-        getPage(currentPage);
-    })
-
-    item.appendChild(itemIcon);
-    item.appendChild(itemName);
-    return item;
-}
-
-async function createFileItem(details, path) {
-    var item = document.createElement('div');
-    var itemIcon = document.createElement('div');
-    var itemName = document.createElement('div');
-
-    item.className = 'explorer-viewer-item';
-    itemIcon.className = 'explorer-viewer-item-icon';
-    itemName.className = 'explorer-viewer-item-name';
-
-    itemIcon.style.backgroundImage = `url(${await fs.getFileURL(details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico')})`;
-    itemName.innerHTML = details.name;
-
-    item.appendChild(itemIcon);
-    item.appendChild(itemName);
-
-    if (details.type.startsWith('image/')) {
-        try {
-            fs.getFileURL(path).then(url => {
-                itemIcon.style.backgroundImage = `url(${url})`;
-            })
-        } catch (e) {
-            console.log('Failed to load image.');
-        }
-    }
-    return item;
+function pageToPath(page) {
+    return pages.includes(page) ? getPath(page) : page;
 }
 
 /*
@@ -246,6 +160,7 @@ backgroundImage.style.backgroundImage = `url(${await fs.getFileURL(window.getBac
 document.documentElement.appendChild(backgroundImage)
 */
 
+var order = [];
 var tabs = {};
 
 function randomID() {
@@ -260,132 +175,26 @@ function randomID() {
     return id;
 }
 
-function pageToPath(page) {
-    return pages.includes(page) ? getPath(page) : page;
-}
+var tab = createTab();
 
-var tab = createTab(await getIcon(currentPage), getHeader(currentPage));
-var viewHistory = [];
-var currentHistory = -1;
-
-async function getPage(page) {
-    var pageStatus = await getPageStatus(page);
-    if (pageStatus == false) return;
-
-    tab.changeIcon(await getIcon(currentPage));
-    tab.changeHeader(getHeader(page));
-
-    viewer.innerHTML = '';
-    viewer.classList.remove('animation');
-
-    // TODO : Add path select and input
-    pathStripPathText.innerHTML = pageToPath(page);
-    update();
-
-    if (pageStatus == null) return;
-
-    await fs.readdir(page).then(async items => {
-        var dirs = [];
-        var files = [];
-
-        items.forEach(item => {
-            if (item.type == 'directory') {
-                dirs.push(item);
-            } else {
-                files.push(item);
-            }
-        })
-        var items = dirs.sort((a, b) => {
-            try {
-                return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
-            } catch (e) { };
-        }).concat(files.sort((a, b) => {
-            try {
-                return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
-            } catch (e) { };
-        }))
-        for (let i in items) {
-            var item = items[i];
-            if (item.type == 'directory') {
-                viewer.appendChild(await createFolderItem({
-                    name: item.path.split('/').slice(-1)
-                }, item.path));
-            } else {
-                console.log(item.mimeType)
-                viewer.appendChild(await createFileItem({
-                    name: item.path.split('/').slice(-1),
-                    type: item.mimeType
-                }, item.path));
-            }
-        }
-        viewer.style.animation = "revert-layer";
-        viewer.classList.add('animation');
-        if (items.length == 0) {
-            viewer.innerHTML = '<span style="width:100%;text-align:center;color:var(--label-color);">This folder is empty.</span>';
-        }
-    });
-    return
-}
-
-function setSidebar(initialize = false) {
-    if (initialize) {
-        Object.values(groups).forEach(items => {
-            var group = document.createElement('div');
-            group.className = 'explorer-sidebar-group';
-            sidebar.appendChild(group);
-            items.forEach(async item => {
-                var itemElement = document.createElement('div');
-                var itemIcon = document.createElement('div');
-                var itemHeader = document.createElement('div');
-                itemElement.className = 'explorer-sidebar-item';
-                itemIcon.className = 'explorer-sidebar-item-icon';
-                itemHeader.className = 'explorer-sidebar-item-header';
-                itemElement.addEventListener('click', () => {
-                    sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
-                        active.classList.remove('active');
-                    })
-                    // TODO : Set the page of item
-                    currentPage = item || getPath(item);
-                    addToHistory(currentPage);
-                    getPage(currentPage);
-                    itemElement.classList.add('active');
-                })
-                group.appendChild(itemElement);
-                itemElement.appendChild(itemIcon);
-                itemElement.appendChild(itemHeader);
-                itemIcon.style.backgroundImage = `url(${await getIcon(item)})`;
-                itemHeader.innerHTML = getHeader(item);
-            })
-        })
-    }
-}
-
-setSidebar(true);
-getPage(currentPage);
-addToHistory(currentPage);
-
-function addToHistory(page) {
-    if (page != viewHistory[viewHistory.length - 1]) {
-        viewHistory.splice(currentHistory + 1);
-        viewHistory.push(page);
-        currentHistory = viewHistory.length - 1;
-    }
-}
-
-function createTab(icon, header, active = true) {
+async function createTab(icon, header, active = true) {
+    // Initialize tab
     var tab = document.createElement('div');
     var tabInfo = document.createElement('div');
     var tabIcon = document.createElement('div');
     var tabHeader = document.createElement('div');
     var tabClose = document.createElement('div');
+    var tabViewItem = document.createElement('div');
 
     var id = randomID();
+    order.push(id);
 
     tab.className = 'explorer-tabstrip-tab';
     tabInfo.className = 'explorer-tabstrip-tab-info';
     tabIcon.className = 'explorer-tabstrip-tab-icon';
     tabHeader.className = 'explorer-tabstrip-tab-header';
     tabClose.className = 'explorer-tabstrip-tab-close';
+    tabViewItem.className = 'tabview-item';
 
     tabIcon.style.backgroundImage = `url(${icon})`;
     tabHeader.innerHTML = header;
@@ -397,6 +206,11 @@ function createTab(icon, header, active = true) {
         tab.classList.add('active');
     }
 
+    tab.addEventListener('click', (e) => {
+        if (tabClose.contains(e.target)) return;
+        focus();
+    })
+
     tabClose.addEventListener('click', () => {
         close();
     })
@@ -405,90 +219,338 @@ function createTab(icon, header, active = true) {
     tab.appendChild(tabClose);
     tabInfo.appendChild(tabIcon);
     tabInfo.appendChild(tabHeader);
-    tabStrip.appendChild(tab);
+    tabStripTabs.appendChild(tab);
+    tabView.appendChild(tabViewItem);
 
+    function focus() {
+        Object.values(tabs).forEach(tab => {
+            tab.blur();
+        })
+        tab.classList.add('active');
+        tabViewItem.classList.add('active');
+    }
+    function blur() {
+        tab.classList.remove('active');
+        tabViewItem.classList.remove('active');
+    }
     function close() {
         tab.remove();
+        tabViewItem.remove();
+        var index = order.indexOf(id);
         delete tabs[id];
+        order.splice(index, 1);
         if (Object.keys(tabs).length == 0) {
-            process.exit();
+            return process.exit();
+        } else if (order[index]) {
+            console.log(tabs[order[index]], '=')
+            return tabs[order[index]].focus();
+        } else if (order[index - 1]) {
+            console.log(tabs[order[index - 1]], '+')
+            return tabs[order[index - 1]].focus();
+        } else {
+            console.log(tabs[order[0]], '0')
+            return tabs[order[0]].focus();
         }
     }
-
     function changeIcon(icon) {
         tabIcon.style.backgroundImage = `url(${icon})`;
     }
-
     function changeHeader(header) {
         tabHeader.innerHTML = header;
     }
 
-    tabs[id] = { changeHeader, changeIcon, close, tab };
+    // Path
+    var pathStrip = document.createElement('div');
+    var pathStripActions = document.createElement('div');
+    var pathStripActionBack = document.createElement('button');
+    var pathStripActionNext = document.createElement('button');
+    var pathStripActionUp = document.createElement('button');
+    var pathStripActionRefresh = document.createElement('button');
+    var pathStripPath = document.createElement('div');
+    var pathStripPathText = document.createElement('div');
+    var pathStripSearch = document.createElement('input');
 
-    return { changeHeader, changeIcon, close, tab };
-}
+    pathStrip.className = 'explorer-pathstrip';
+    pathStripActions.className = 'explorer-pathstrip-actions';
+    pathStripActionBack.className = 'explorer-pathstrip-action back';
+    pathStripActionNext.className = 'explorer-pathstrip-action next';
+    pathStripActionUp.className = 'explorer-pathstrip-action up';
+    pathStripActionRefresh.className = 'explorer-pathstrip-action refresh';
+    pathStripPath.className = 'explorer-pathstrip-path';
+    pathStripPathText.className = 'explorer-pathstrip-path-text';
+    pathStripSearch.className = 'explorer-pathstrip-search';
 
-pathStripActionBack.disabled = true;
-pathStripActionNext.disabled = true;
-pathStripActionUp.disabled = true;
+    pathStripSearch.placeholder = 'Search...'
 
-pathStripActionBack.addEventListener('click', () => {
-    if (currentHistory > 0) {
-        currentHistory--;
-        currentPage = viewHistory[currentHistory];
-        getPage(currentPage);
-        pathStripActionNext.disabled = false;
-        if (currentHistory == 0) {
-            pathStripActionBack.disabled = true;
+    pathStrip.appendChild(pathStripActions);
+    pathStrip.appendChild(pathStripPath);
+    pathStrip.appendChild(pathStripSearch);
+    pathStripActions.appendChild(pathStripActionBack);
+    pathStripActions.appendChild(pathStripActionNext);
+    pathStripActions.appendChild(pathStripActionUp);
+    pathStripActions.appendChild(pathStripActionRefresh);
+    pathStripPath.appendChild(pathStripPathText);
+
+    var actionbar = document.createElement('div');
+    var content = document.createElement('div');
+    var sidebar = document.createElement('div');
+    var viewerContainer = document.createElement('div');
+    var viewer = document.createElement('div');
+
+    actionbar.className = 'explorer-actionbar';
+    content.className = 'explorer-content';
+    sidebar.className = 'explorer-sidebar';
+    viewerContainer.className = 'explorer-viewer-container';
+    viewer.className = 'explorer-viewer';
+
+    tabViewItem.appendChild(pathStrip);
+    tabViewItem.appendChild(actionbar);
+    tabViewItem.appendChild(content);
+    content.appendChild(sidebar);
+    content.appendChild(viewerContainer);
+    viewerContainer.appendChild(viewer);
+
+    var actionButtons = {};
+    var viewHistory = [];
+    var currentHistory = -1;
+    var currentPage = 'C:/';
+
+    Object.values(actionbarButtonIcons).forEach(icon => {
+        var button = document.createElement('button');
+        button.className = 'explorer-actionbar-button';
+        button.innerHTML = icon;
+        button.disabled = true;
+        actionbar.appendChild(button);
+        actionButtons[icon] = button;
+    })
+
+    async function createFolderItem(details, path) {
+        var item = document.createElement('div');
+        var itemIcon = document.createElement('div');
+        var itemName = document.createElement('div');
+
+        item.className = 'explorer-viewer-item';
+        itemIcon.className = 'explorer-viewer-item-icon';
+        itemName.className = 'explorer-viewer-item-name';
+
+        itemIcon.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/folders/folder.ico')})`;
+        itemName.innerHTML = details.name;
+
+        // var hasMouse = matchMedia('(pointer:fine)').matches;
+
+        item.addEventListener('click', async () => {
+            currentPage = path;
+            addToHistory(currentPage);
+            getPage(currentPage);
+        })
+
+        item.appendChild(itemIcon);
+        item.appendChild(itemName);
+        return item;
+    }
+
+    async function createFileItem(details, path) {
+        var item = document.createElement('div');
+        var itemIcon = document.createElement('div');
+        var itemName = document.createElement('div');
+
+        item.className = 'explorer-viewer-item';
+        itemIcon.className = 'explorer-viewer-item-icon';
+        itemName.className = 'explorer-viewer-item-name';
+
+        itemIcon.style.backgroundImage = `url(${await fs.getFileURL(details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico')})`;
+        itemName.innerHTML = details.name;
+
+        item.appendChild(itemIcon);
+        item.appendChild(itemName);
+
+        if (details.type.startsWith('image/')) {
+            try {
+                fs.getFileURL(path).then(url => {
+                    itemIcon.style.backgroundImage = `url(${url})`;
+                })
+            } catch (e) {
+                console.log('Failed to load image.');
+            }
         }
-    } else {
-        return;
+        return item;
     }
-})
 
-pathStripActionNext.addEventListener('click', () => {
-    if (currentHistory < viewHistory.length - 1) {
-        currentHistory++;
-        currentPage = viewHistory[currentHistory];
-        getPage(currentPage);
-        pathStripActionBack.disabled = false;
-        if (currentHistory == viewHistory.length - 1) {
-            pathStripActionNext.disabled = true;
+    async function getPage(page) {
+        var pageStatus = await getPageStatus(page);
+        if (pageStatus == false) return;
+
+        changeIcon(await getIcon(currentPage));
+        changeHeader(getHeader(page));
+
+        viewer.innerHTML = '';
+        viewer.classList.remove('animation');
+
+        // TODO : Add path select and input
+        pathStripPathText.innerHTML = pageToPath(page);
+        update();
+
+        if (pageStatus == null) return;
+
+        await fs.readdir(page).then(async items => {
+            var dirs = [];
+            var files = [];
+
+            items.forEach(item => {
+                if (item.type == 'directory') {
+                    dirs.push(item);
+                } else {
+                    files.push(item);
+                }
+            })
+            var items = dirs.sort((a, b) => {
+                try {
+                    return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
+                } catch (e) { };
+            }).concat(files.sort((a, b) => {
+                try {
+                    return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
+                } catch (e) { };
+            }))
+            for (let i in items) {
+                var item = items[i];
+                if (item.type == 'directory') {
+                    viewer.appendChild(await createFolderItem({
+                        name: item.path.split('/').slice(-1)
+                    }, item.path));
+                } else {
+                    console.log(item.mimeType)
+                    viewer.appendChild(await createFileItem({
+                        name: item.path.split('/').slice(-1),
+                        type: item.mimeType
+                    }, item.path));
+                }
+            }
+            viewer.style.animation = "revert-layer";
+            viewer.classList.add('animation');
+            if (items.length == 0) {
+                viewer.innerHTML = '<span style="width:100%;text-align:center;color:var(--label-color);">This folder is empty.</span>';
+            }
+        });
+        return
+    }
+
+    function setSidebar(initialize = false) {
+        if (initialize) {
+            Object.values(groups).forEach(items => {
+                var group = document.createElement('div');
+                group.className = 'explorer-sidebar-group';
+                sidebar.appendChild(group);
+                items.forEach(async item => {
+                    var itemElement = document.createElement('div');
+                    var itemIcon = document.createElement('div');
+                    var itemHeader = document.createElement('div');
+                    itemElement.className = 'explorer-sidebar-item';
+                    itemIcon.className = 'explorer-sidebar-item-icon';
+                    itemHeader.className = 'explorer-sidebar-item-header';
+                    itemElement.addEventListener('click', () => {
+                        sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
+                            active.classList.remove('active');
+                        })
+                        // TODO : Set the page of item
+                        currentPage = item || getPath(item);
+                        addToHistory(currentPage);
+                        getPage(currentPage);
+                        itemElement.classList.add('active');
+                    })
+                    group.appendChild(itemElement);
+                    itemElement.appendChild(itemIcon);
+                    itemElement.appendChild(itemHeader);
+                    itemIcon.style.backgroundImage = `url(${await getIcon(item)})`;
+                    itemHeader.innerHTML = getHeader(item);
+                })
+            })
         }
-    } else {
-        return;
     }
-})
 
-pathStripActionUp.addEventListener('click', () => {
-    var folders = pageToPath(currentPage).split('/');
-    if (folders.length > 2) {
-        currentPage = folders.slice(0, folders.length - 1).join('/');
-    } else {
-        currentPage = folders[0] + '/';
+    function addToHistory(page) {
+        if (page != viewHistory[viewHistory.length - 1]) {
+            viewHistory.splice(currentHistory + 1);
+            viewHistory.push(page);
+            currentHistory = viewHistory.length - 1;
+        }
     }
+
+    pathStripActionBack.disabled = true;
+    pathStripActionNext.disabled = true;
+    pathStripActionUp.disabled = true;
+
+    pathStripActionBack.addEventListener('click', () => {
+        if (currentHistory > 0) {
+            currentHistory--;
+            currentPage = viewHistory[currentHistory];
+            getPage(currentPage);
+            pathStripActionNext.disabled = false;
+            if (currentHistory == 0) {
+                pathStripActionBack.disabled = true;
+            }
+        } else {
+            return;
+        }
+    })
+
+    pathStripActionNext.addEventListener('click', () => {
+        if (currentHistory < viewHistory.length - 1) {
+            currentHistory++;
+            currentPage = viewHistory[currentHistory];
+            getPage(currentPage);
+            pathStripActionBack.disabled = false;
+            if (currentHistory == viewHistory.length - 1) {
+                pathStripActionNext.disabled = true;
+            }
+        } else {
+            return;
+        }
+    })
+
+    pathStripActionUp.addEventListener('click', () => {
+        var folders = pageToPath(currentPage).split('/');
+        if (folders.length > 2) {
+            currentPage = folders.slice(0, folders.length - 1).join('/');
+        } else {
+            currentPage = folders[0] + '/';
+        }
+        addToHistory(currentPage);
+        getPage(currentPage);
+    })
+
+    pathStripActionRefresh.addEventListener('click', () => {
+        getPage(currentPage);
+    })
+
+    function update() {
+        try {
+            if (currentHistory < viewHistory.length - 1) {
+                pathStripActionNext.disabled = false;
+            } else {
+                pathStripActionNext.disabled = true;
+            }
+            if (currentHistory > 0) {
+                pathStripActionBack.disabled = false;
+            } else {
+                pathStripActionBack.disabled = true;
+            }
+            if (pageToPath(currentPage).split('/').slice(-1) != '' && pageToPath(currentPage) != '') {
+                pathStripActionUp.disabled = false;
+            } else {
+                pathStripActionUp.disabled = true;
+            }
+        } catch (e) { };
+    }
+
+    changeIcon(await getIcon(currentPage));
+    changeHeader(getHeader(currentPage));
+    setSidebar(true);
+    getPage(currentPage);
     addToHistory(currentPage);
-    getPage(currentPage);
-})
+    focus();
 
-pathStripActionRefresh.addEventListener('click', () => {
-    getPage(currentPage);
-})
-
-function update() {
-    if (currentHistory < viewHistory.length - 1) {
-        pathStripActionNext.disabled = false;
-    } else {
-        pathStripActionNext.disabled = true;
-    }
-    if (currentHistory > 0) {
-        pathStripActionBack.disabled = false;
-    } else {
-        pathStripActionBack.disabled = true;
-    }
-    if (currentPage.split('/').slice(-1) != '') {
-        pathStripActionUp.disabled = false;
-    } else {
-        pathStripActionUp.disabled = true;
-    }
+    var properties = { changeHeader, changeIcon, close, focus, blur, tab, id };
+    tabs[id] = properties;
+    return properties;
 }

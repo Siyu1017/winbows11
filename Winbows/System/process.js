@@ -91,6 +91,19 @@
             })
             delete window.System.processes[this.id];
         }
+        _exit_Window() {
+            if (!this.worker) {
+                window.Winbows.Screen.style.cursor = 'auto';
+                throw new Error('Can not exit process before running.');
+            }
+            this.worker.terminate();
+            Object.values(this.temp).forEach(temp => {
+                try {
+                    temp.remove()
+                } catch (e) { }
+            })
+            delete window.System.processes[this.id];
+        }
         listenWorker() {
             var worker = this.worker;
             function getID() {

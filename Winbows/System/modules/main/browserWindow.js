@@ -1,5 +1,5 @@
 Object.defineProperty(window.workerModules, 'browserWindow', {
-    value: async (path = {}, config = {}) => {
+    value: async (path = {}, config = {}, pid) => {
         console.log(path)
 
         const ICON = await window.Taskbar.createIcon({
@@ -14,6 +14,11 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         })
 
         const appWrapper = window.Winbows.AppWrapper;
+        const events = {
+            "start": ["mousedown", "touchstart", "pointerdown"],
+            "move": ["mousemove", "touchmove", "pointermove"],
+            "end": ["mouseup", "touchend", "pointerup", "blur"]
+        }
 
         var resizerConfig = {
             'browser-window-resizer-top': 'vertical',
@@ -58,7 +63,13 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             var originalPosition = {};
             var originalSize = {};
             resizer.className = key;
-            resizer.addEventListener('pointerdown', (e) => {
+
+            function handleStartResizing(e) {
+                if (e.type.startsWith('touch')) {
+                    var touch = e.touches[0] || e.changedTouches[0];
+                    e.pageX = touch.pageX;
+                    e.pageY = touch.pageY;
+                }
                 var position = utils.getPosition(hostElement);
                 pointerPosition = [e.pageX, e.pageY];
                 originalPosition = {
@@ -71,9 +82,15 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 }
                 appWrapper.classList.add('moving');
                 pointerDown = true;
-            })
-            window.addEventListener('pointermove', (e) => {
+            }
+
+            function handleMoveResizing(e) {
                 if (pointerDown == true) {
+                    if (e.type.startsWith('touch')) {
+                        var touch = e.touches[0] || e.changedTouches[0];
+                        e.pageX = touch.pageX;
+                        e.pageY = touch.pageY;
+                    }
                     var diffX = e.pageX - pointerPosition[0];
                     var diffY = e.pageY - pointerPosition[1];
                     var width = originalSize.width;
@@ -103,15 +120,23 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                         windowElement.style.width = width + diffX + 'px';
                     }
                 }
-            })
-            window.addEventListener('pointerup', (e) => {
+            }
+
+            function handleEndResizing(e) {
                 pointerDown = false;
                 appWrapper.classList.remove('moving');
+            }
+
+            events.start.forEach(event => {
+                resizer.addEventListener(event, e => handleStartResizing(e));
             })
-            window.addEventListener('blur', (e) => {
-                pointerDown = false;
-                appWrapper.classList.remove('moving');
+            events.move.forEach(event => {
+                window.addEventListener(event, e => handleMoveResizing(e));
             })
+            events.end.forEach(event => {
+                window.addEventListener(event, e => handleEndResizing(e));
+            })
+
             resizers.appendChild(resizer);
         })
 
@@ -192,21 +217,29 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         const windowID = ICON.open({
             browserWindow: hostElement
         });
+        console.log('opened', windowID)
 
         function minimize() {
             ICON.hide();
         }
 
         function close() {
+            console.log('close', windowID)
             ICON.close(windowID);
+            window.System.processes[pid]._exit_Window();
         }
 
         var pointerDown = false;
         var pointerPosition = [];
         var originalPosition = {};
 
-        toolbarElement.addEventListener('pointerdown', (e) => {
+        function handleStartMoving(e) {
             if (toolbarButtons.contains(e.target)) return;
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
             pointerDown = true;
             var position = utils.getPosition(hostElement);
             pointerPosition = [e.pageX, e.pageY];
@@ -214,24 +247,34 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 x: position.x,
                 y: position.y
             }
-        })
+        }
 
-        window.addEventListener('pointermove', (e) => {
+        function handleMoveMoving(e) {
             if (pointerDown) {
+                if (e.type.startsWith('touch')) {
+                    var touch = e.touches[0] || e.changedTouches[0];
+                    e.pageX = touch.pageX;
+                    e.pageY = touch.pageY;
+                }
                 appWrapper.classList.add('moving');
                 hostElement.style.left = originalPosition.x + e.pageX - pointerPosition[0] + 'px';
                 hostElement.style.top = originalPosition.y + e.pageY - pointerPosition[1] + 'px';
             }
-        })
+        }
 
-        window.addEventListener('pointerup', (e) => {
+        function handleEndMoving(e) {
             pointerDown = false;
             appWrapper.classList.remove('moving');
-        })
+        }
 
-        window.addEventListener('blur', (e) => {
-            pointerDown = false;
-            appWrapper.classList.remove('moving');
+        events.start.forEach(event => {
+            toolbarElement.addEventListener(event, e => handleStartMoving(e));
+        })
+        events.move.forEach(event => {
+            window.addEventListener(event, e => handleMoveMoving(e));
+        })
+        events.end.forEach(event => {
+            window.addEventListener(event, e => handleEndMoving(e));
         })
 
         hostElement.addEventListener('pointerdown', (e) => {

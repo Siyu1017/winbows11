@@ -93,22 +93,16 @@
     var background = document.createElement('div');
     var backgroundImage = document.createElement('div');
     var appWrapper = document.createElement('div');
-    var taskbar = document.createElement('div');
-    var mainGroup = document.createElement('div');
 
     screen.className = 'screen';
     background.className = 'background';
     backgroundImage.className = 'background-image';
     appWrapper.className = 'app-wrapper';
-    taskbar.className = 'taskbar';
-    mainGroup.className = 'taskbar-group';
 
     document.body.appendChild(screen);
     screen.appendChild(background);
     screen.appendChild(appWrapper);
-    screen.appendChild(taskbar);
     background.appendChild(backgroundImage);
-    taskbar.appendChild(mainGroup);
 
     // Functions
     window.mainDisk = 'C';
@@ -785,6 +779,33 @@
     })();
 
     window.Taskbar.pinApp('cmd');
+    await window.Taskbar.preloadImage();
+
+    window.System.CommandParsers = {
+        run: (file, ...options) => {
+            var script = file;
+            if (window.appRegistry.exists(file)) {
+                script = window.appRegistry.getInfo(file).script;
+            }
+            new Process(script).start();
+            return {
+                status: 'ok',
+                message: `Successfully run ${file}.`
+            }
+        }
+    };
+
+    window.System.Shell = function (command) {
+        var parsed = command.split(' ').filter(cmd => cmd.length != 0);
+        var parser = parsed[0];
+        if (!window.System.CommandParsers[parser]) {
+            return {
+                status: 'error',
+                message: `[ERROR] Parser ( ${parser} ) can not be founded.`
+            }
+        } 
+        return window.System.CommandParsers[parser](parsed.slice(1));
+    }
 
     function delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
@@ -804,8 +825,6 @@
             img.src = url;
         })
     }
-
-    await window.Taskbar.preloadImage();
 
     window.System.addEventListener('load', async (e) => {
         // Initialize screen lock 

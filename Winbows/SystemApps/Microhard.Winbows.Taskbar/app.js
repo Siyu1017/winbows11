@@ -238,7 +238,6 @@
                             Object.values(registry).forEach((item, i) => {
                                 if (item == obj) {
                                     exist = true;
-                                    id = Object.keys(registry)[i];
                                 }
                             })
                             if (exist == false) {

@@ -45,6 +45,7 @@
     width: -webkit-fill-available;
     height: -webkit-fill-available;
     background: #fff;
+    overflow: hidden;
 }
 
 .window-toolbar-title {
