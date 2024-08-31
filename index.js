@@ -19,15 +19,9 @@
         themes: 'Winbows/themes',
         ui: 'Winbows/System/ui'
     }
-    const prefixes = {
-        app: 'winbows-app-',
-        taskbar: 'winbows-taskbar-',
-        contextmenu: 'winbows-contextmenu-',
-        notification: 'winbows-notification-',
-        desktop: 'winbows-desktop-'
-    }
-    const maxZIndex = 999999999;
-    const debuggerMode = false;
+    const debuggerMode = true;
+
+    var needsUpdate = true;
 
     // Loading
     var loadingContainer = document.createElement('div');
@@ -107,6 +101,7 @@
     // Functions
     window.mainDisk = 'C';
     window.System = {};
+    window.System.build = localStorage.getItem('WINBOWS_BUILD_ID') || 'UNKNOWN';
     window.System.listeners = {};
     window.System.processes = {};
     window.System.addEventListener = (event, listener) => {
@@ -134,6 +129,24 @@
     }
     window.workerModules = {};
     window.utils = {};
+
+    // Check updates
+    try {
+        fetch('https://api.github.com/repos/Siyu1017/winbows11/commits', {
+            method: 'HEAD'
+        }).then(json => {
+            return json.json();
+        }).then((res) => {
+            var latest = res[0].sha;
+            if (latest != window.System.build) {
+                console.log('New version available: ', latest);
+            } else {
+                needsUpdate = false;
+            }
+            window.System.build = res[0].sha;
+            localStorage.setItem('WINBOWS_BUILD_ID', window.System.build);
+        })
+    } catch (e) {}
 
     function getPosition(element) {
         function offset(el) {
@@ -733,6 +746,19 @@
         await loadImage(url)
         backgroundImage.style.backgroundImage = `url(${url})`;
     }
+    window.WinbowsUpdate = () => {
+        if (needsUpdate == false || navigator.onLine == false) return;
+        fetch('./tree.json').then(res => {
+            return res.json();
+        }).then(async files => {
+            for (let i in files) {
+                await fs.downloadFile(files[i]);
+            }
+            needsUpdate = false;
+        })
+    }
+
+    window.WinbowsUpdate();
 
     await window.setBackgroundImage('C:/Winbows/bg/img0.jpg');
 
@@ -803,7 +829,7 @@
                 status: 'error',
                 message: `[ERROR] Parser ( ${parser} ) can not be founded.`
             }
-        } 
+        }
         return window.System.CommandParsers[parser](parsed.slice(1));
     }
 
@@ -936,7 +962,7 @@
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
         }
-        if (navigator.onLine != true) {
+        if (navigator.onLine != true && needsUpdate == false) {
             return await fs.readFile(path);
         }
         var extension = path.split('.').pop();
