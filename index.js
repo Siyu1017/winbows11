@@ -21,8 +21,6 @@
     }
     const debuggerMode = false;
 
-    var needsUpdate = true;
-
     // Loading
     var loadingContainer = document.createElement('div');
     var loadingImage = document.createElement('div');
@@ -131,22 +129,24 @@
     window.utils = {};
 
     // Check updates
+    /*
     try {
-        fetch('https://api.github.com/repos/Siyu1017/winbows11/commits', {
-            method: 'HEAD'
-        }).then(json => {
+        await fetch('https://api.github.com/repos/Siyu1017/winbows11/commits').then(json => {
             return json.json();
         }).then((res) => {
             var latest = res[0].sha;
-            if (latest != window.System.build) {
-                console.log('New version available: ', latest);
+            if (latest == window.System.build) {
+                // Not to update
             } else {
-                needsUpdate = false;
+                console.log('New version available: ', latest);
             }
             window.System.build = res[0].sha;
             localStorage.setItem('WINBOWS_BUILD_ID', window.System.build);
         })
-    } catch (e) { }
+    } catch (e) {
+        // Not to update
+    }
+    */
 
     function getPosition(element) {
         function offset(el) {
@@ -747,23 +747,8 @@
         backgroundImage.style.backgroundImage = `url(${url})`;
     }
     window.WinbowsUpdate = () => {
-        return new Promise((resolve, reject) => {
-            if (needsUpdate == false || navigator.onLine == false) return;
-            try {
-                fetch('./tree.json').then(res => {
-                    return res.json();
-                }).then(async files => {
-                    for (let i in files) {
-                        await fs.downloadFile(files[i]);
-                    }
-                    needsUpdate = false;
-                    resolve();
-                })
-            } catch (e) { resolve(); }
-        })
+        location.href = './install.html';
     }
-
-    await window.WinbowsUpdate();
 
     await window.setBackgroundImage('C:/Winbows/bg/img0.jpg');
 
@@ -967,7 +952,7 @@
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
         }
-        if (navigator.onLine != true && needsUpdate == false) {
+        if (navigator.onLine != true || window.needsUpdate == false) {
             return await fs.readFile(path);
         }
         var extension = path.split('.').pop();

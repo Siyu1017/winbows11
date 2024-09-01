@@ -333,7 +333,9 @@ async function createTab(icon, header, active = true) {
         itemIcon.className = 'explorer-viewer-item-icon';
         itemName.className = 'explorer-viewer-item-name';
 
-        itemIcon.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/folders/folder.ico')})`;
+        fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
+            itemIcon.style.backgroundImage = `url(${url})`;
+        })
         itemName.innerHTML = details.name;
 
         // var hasMouse = matchMedia('(pointer:fine)').matches;
@@ -358,27 +360,42 @@ async function createTab(icon, header, active = true) {
         itemIcon.className = 'explorer-viewer-item-icon';
         itemName.className = 'explorer-viewer-item-name';
 
-        itemIcon.style.backgroundImage = `url(${await fs.getFileURL(details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico')})`;
+        fs.getFileURL(details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
+            itemIcon.style.backgroundImage = `url(${url})`;
+            if (details.type.startsWith('image/')) {
+                try {
+                    fs.getFileURL(path).then(url => {
+                        itemIcon.style.backgroundImage = `url(${url})`;
+                    })
+                } catch (e) {
+                    console.log('Failed to load image.');
+                }
+            }
+        })
         itemName.innerHTML = details.name;
 
         item.appendChild(itemIcon);
         item.appendChild(itemName);
-
-        if (details.type.startsWith('image/')) {
-            try {
-                fs.getFileURL(path).then(url => {
-                    itemIcon.style.backgroundImage = `url(${url})`;
-                })
-            } catch (e) {
-                console.log('Failed to load image.');
-            }
-        }
         return item;
     }
+
+    function randomID() {
+        var patterns = '0123456789abcdef';
+        var id = '_0x';
+        for (var i = 0; i < 12; i++) {
+            id += patterns.charAt(Math.floor(Math.random() * patterns.length));
+        }
+        return id;
+    }
+
+    var currentID = null;
 
     async function getPage(page) {
         var pageStatus = await getPageStatus(page);
         if (pageStatus == false) return;
+
+        var targetID = randomID();
+        currentID = targetID;
 
         changeIcon(await getIcon(currentPage));
         changeHeader(getHeader(page));
@@ -393,6 +410,8 @@ async function createTab(icon, header, active = true) {
         if (pageStatus == null) return;
 
         await fs.readdir(page).then(async items => {
+            if (targetID != currentID) return;
+            viewer.innerHTML = '';
             var dirs = [];
             var files = [];
 

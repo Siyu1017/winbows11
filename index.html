@@ -7,10 +7,221 @@
     <title>Winbows11</title>
     <link rel="icon" href="./favicon.ico">
     <link rel="stylesheet" href="./index.css">
+    <style>
+        .confirm {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: #d5e3edc7;
+            backdrop-filter: blur(32px);
+            padding: 4rem;
+        }
+
+        .confirm * {
+            cursor: default;
+        }
+
+        .confirm-window {
+            background-color: rgba(255, 255, 255, .7);
+            backdrop-filter: blur(24px) saturate(1.25);
+            padding: 3rem;
+            border-radius: .5rem;
+            width: -webkit-fill-available;
+            height: -webkit-fill-available;
+            display: flex;
+        }
+
+        .confirm-symbol {
+            width: -webkit-fill-available;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-content {
+            width: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem 1rem;
+        }
+
+        .confirm-symbol-bg {
+            background: linear-gradient(135deg, #0f82f4, #5A3CDA);
+            border-radius: 50%;
+            position: relative;
+            aspect-ratio: 1 / 1;
+            max-width: 18rem;
+            max-height: 18rem;
+            width: 60%;
+        }
+
+        .confirm-symbol-arrow {
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -55%);
+            position: absolute;
+            width: 45%;
+            height: 45%;
+            color: #fff;
+        }
+
+        .confirm-title {
+            font-weight: 600;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .confirm-buttons {
+            position: sticky;
+            bottom: 0;
+            display: flex;
+            gap: .5rem;
+            padding-top: 1.5rem;
+            color: rgb(132, 132, 132);
+            justify-content: flex-end;
+        }
+
+        .confirm-button {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background: #0067c0;
+            border: 0;
+            border-radius: .375rem;
+            padding: .75rem 1.25rem;
+            color: #fff;
+            flex: 1;
+            display: block;
+            font-size: .875rem;
+            transition: all .1s ease-in-out;
+            max-width: 180px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+        }
+
+        .confirm-button.outline {
+            background: #fff;
+            color: #0067c0;
+            border: 1.25px solid #0067c0;
+        }
+
+        .confirm-button.outline:hover {
+            background: #efefef;
+        }
+
+        .confirm-button:hover {
+            background: #025ba8;
+        }
+
+        .confirm-description {
+            font-size: 1.075rem;
+            overflow: auto;
+        }
+
+        .confirm-tip {
+            margin-top: auto;
+            position: sticky;
+            bottom: 0;
+            padding-top: 2rem;
+            color: rgb(110 110 110);
+            font-size: .875rem;
+        }
+
+        .confirm-learn-link {
+            color: unset;
+            text-decoration: underline;
+            cursor: help;
+        }
+    </style>
 </head>
 
 <body>
-    <script src="./index.js"></script>
+    <script>
+        ; (async () => {
+            var DIRECTORIES = localStorage.getItem('WINBOWS_DIRECTORIES') || true;
+            var script = document.createElement('script');
+            script.src = './index.js';
+
+            try {
+                await fetch('./tree.json').then(res => {
+                    return res.json();
+                }).then(async files => {
+                    if (JSON.stringify(files) != DIRECTORIES) {
+                        DIRECTORIES = true;
+                    }
+                }).catch(err => {
+                    DIRECTORIES = false;
+                })
+            } catch (e) { }
+
+            window.needsUpdate = DIRECTORIES;
+
+            if (window.needsUpdate == true) {
+                document.body.style.backgroundImage = 'linear-gradient(transparent, transparent)'
+                document.body.style.transition = 'background-image .2s ease-in-out';
+
+                var confirm = document.createElement('div');
+                var confirmWindow = document.createElement('div');
+                var confirmSymbol = document.createElement('div');
+                var confirmContent = document.createElement('div');
+                var confirmTitle = document.createElement('div');
+                var confirmDescription = document.createElement('div');
+                var confirmTip = document.createElement('div');
+                var confirmButtons = document.createElement('div');
+                var confirmCancel = document.createElement('button');
+                var confirmInstall = document.createElement('button');
+
+                confirm.className = 'confirm';
+                confirmWindow.className = 'confirm-window';
+                confirmSymbol.className = 'confirm-symbol';
+                confirmContent.className = 'confirm-content';
+                confirmTitle.className = 'confirm-title';
+                confirmDescription.className = 'confirm-description';
+                confirmTip.className = 'confirm-tip';
+                confirmButtons.className = 'confirm-buttons';
+                confirmCancel.className = 'confirm-button outline';
+                confirmInstall.className = 'confirm-button';
+
+                document.body.appendChild(confirm);
+                confirm.appendChild(confirmWindow);
+                confirmWindow.appendChild(confirmSymbol);
+                confirmWindow.appendChild(confirmContent);
+                confirmContent.appendChild(confirmTitle);
+                confirmContent.appendChild(confirmDescription);
+                confirmContent.appendChild(confirmTip);
+                confirmContent.appendChild(confirmButtons);
+                confirmButtons.appendChild(confirmCancel);
+                confirmButtons.appendChild(confirmInstall);
+
+                confirmTitle.innerHTML = '確認安裝 Winbows11？';
+                confirmDescription.innerHTML = "<div>在您的裝置上安裝 Winbows11 可以使其執行的比使用網路更加流暢。Winbows11 的大小約 150MB，安裝過程約 2 分鐘即可完成。</div><br><div>如果您不想安裝，也可以只使用網路來體驗 Winbows11！</div>";
+                confirmTip.innerHTML = "<div>若您選擇安裝，我們將會把 Winbows11 必要檔案儲存至瀏覽器中的 <a href='https://developer.mozilla.org/zh-TW/docs/Web/API/IndexedDB_API/Using_IndexedDB' target='_blank' class='confirm-learn-link'>Indexed DB</a>。</div>";
+                confirmCancel.innerHTML = '忍痛拒絕';
+                confirmInstall.innerHTML = '安裝';
+                confirmSymbol.innerHTML = '<div class="confirm-symbol-bg"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-symbol-arrow"><path d="M15 6v10h4l-7 7-7-7h4V6h6z"/></svg></div>';
+
+                var bg = new Image();
+                bg.src = './Winbows/bg/img0.jpg';
+                bg.onload = () => {
+                    document.body.style.backgroundPosition = 'center';
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundRepeat = 'no-repeat';
+                    document.body.style.backgroundImage = 'url(./Winbows/bg/img0.jpg)';
+                }
+
+                confirmCancel.addEventListener('click', () => {
+                    document.body.appendChild(script);
+                })
+                confirmInstall.addEventListener('click', () => {
+                    location.href = './install.html';
+                })
+            } else {
+                document.body.appendChild(script);
+            }
+        })();
+    </script>
 </body>
 
 </html>
