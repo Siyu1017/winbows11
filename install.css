@@ -58,7 +58,7 @@ body {
     background-color: transparent !important;
     background: linear-gradient(to right, #fff0 0%, #fffa 50%, #fff0 100%);
     position: absolute;
-    left: 0;
+    left: -100%;
     top: 0;
     animation: peg 5s linear infinite forwards;
     animation-delay: 3s;
