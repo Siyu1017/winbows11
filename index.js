@@ -177,7 +177,8 @@
             'explorer': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/',
                 icon: 'C:/Winbows/icons/folders/explorer.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js',
+                autoExecute: true
             },
             'edge': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/',
@@ -210,9 +211,10 @@
                 script: 'C:/Program Files/Paint/app.js'
             },
             'code': {
-                path: 'C:/Program Files/Code/',
+                path: 'C:/Program Files/VSCode/',
                 icon: 'C:/Winbows/icons/applications/office/code.ico',
-                script: 'C:/Program Files/Code/app.js'
+                script: 'C:/Program Files/VSCode/app.js',
+                viewer: 'C:/Program Files/VSCode/viewer.js'
             }
         },
         install: () => { },
@@ -295,7 +297,7 @@
         'mp4': 'video/mp4',
         'webm': 'video/webm',
         'avi': 'video/x-msvideo',
-        'mov': 'video/quicktime',
+        'mov': 'video/quicktime'
     };
 
     function getMimeType(extension) {
@@ -821,6 +823,40 @@
             }
         }
         return window.System.CommandParsers[parser](parsed.slice(1));
+    }
+
+    window.System.FileViewers = {
+        viewers: {
+            'css': ['code'],
+            'js': ['code'],
+            'html': ['code'],
+            'txt': ['code']
+        },
+        register: (extension, app) => {
+            if (!window.System.FileViewers.viewers[extension]) {
+                window.System.FileViewers.viewers[extension] = [];
+            }
+            window.System.FileViewers.viewers[extension].push(app);
+        },
+        unregister: (extension, app) => {
+            var index = window.System.FileViewers.viewers[extension].indexOf(app);
+            if (index != -1) {
+                window.System.FileViewers.viewers[extension].splice(index, 1);
+            }
+        },
+        getViewer: (file) => {
+            var extension = file.split('.').pop().toLowerCase();
+            var viewers = window.System.FileViewers.viewers[extension];
+            var result = [];
+            console.log(file, extension, viewers)
+            viewers.forEach((viewer, i) => {
+                var app = window.appRegistry.getInfo(viewer);
+                if (app.viewer) {
+                    result.push(app.viewer);
+                }
+            })
+            return result;
+        }
     }
 
     function delay(ms) {

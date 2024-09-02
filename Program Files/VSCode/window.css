@@ -1,0 +1,9 @@
+.window-toolbar,
+.window-content {
+    background: #1e1e1e;
+    color: #fff;
+}
+
+.window-toolbar-button-icon {
+    filter: invert(1);
+}

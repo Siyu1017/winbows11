@@ -126,15 +126,17 @@ Object.defineProperty(window.Compilers, 'Window', {
             'System', 
             'utils', 
             'browserWindow', 
+            'datas',
         content).bind({})(
             proxyDocument,      // document
-            proxyWindow,        // window
+            window,             // window
             proxyWindow,        // self
             proxyWindow,        // globalThis
             currentProcess,     // process
             {},                 // System
             utils,              // utils
-            windowObject        // browserWindow
+            windowObject,       // browserWindow
+            config.datas || {}  // datas
         );
     },
     configurable: false,

@@ -596,6 +596,12 @@
                     })(i)
                 }
 
+                Object.values(window.appRegistry.apps).forEach(app => {
+                    if (app.autoExecute == true) {
+                        new Process(app.script, 'user').start();
+                    }
+                })
+
                 taskbarIcons.style.width = 'revert-layer';
             },
             writable: false,

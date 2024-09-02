@@ -49,10 +49,10 @@
             this.temp = {};
             this.windows = [];
         }
-        async start() {
+        async start(extra) {
             window.Winbows.Screen.style.cursor = 'progress';
             try {
-                this.url = URL.createObjectURL(await window.Compilers.Worker(this.path, this.token));
+                this.url = URL.createObjectURL(await window.Compilers.Worker(this.path, this.token, extra));
             } catch (e) {
                 window.Winbows.Screen.style.cursor = 'auto';
                 throw new Error('Can not run file.\n' + e.message);
