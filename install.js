@@ -477,9 +477,9 @@ try {
             } else if (seconds < 60) {
                 return `${seconds} 秒`;
             } else if (seconds < 60 * 60) {
-                return `${~~(seconds / 60)} 分 ${seconds % 60} 秒`;
+                return `${~~(seconds / 60)} 分鐘 ${seconds % 60} 秒`;
             } else if (seconds < 60 * 60 * 24) {
-                return `${~~(seconds / (60 * 60))} 小時 ${~~((seconds % (60 * 60)) / 60)} 分 ${seconds % 60} 秒`;
+                return `${~~(seconds / (60 * 60))} 小時 ${~~((seconds % (60 * 60)) / 60)} 分鐘 ${seconds % 60} 秒`;
             } else {
                 return '超過一天';
             }
