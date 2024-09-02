@@ -422,6 +422,7 @@ window.fs.downloadFile = downloadFile;
 
 var index = 0;
 var name = '';
+var totalSize = 0;
 
 async function downloadFile(path) {
     function removeStringInRange(str, start, end) {
@@ -438,6 +439,7 @@ async function downloadFile(path) {
         }).then(async content => {
             var blob = content;
             await fs.writeFile(path, blob);
+            totalSize += blob.size;
             return resolve();
         }).catch(async err => {
             console.log(`Failed to fetch file: ${path}`, err);
@@ -520,6 +522,9 @@ try {
                 startTime = Date.now();
                 installed.push(files[i]);
                 localStorage.setItem('WINBOWS_DIRECTORIES', JSON.stringify(installed));
+
+                console.log(totalSize / 1024 / 1024 + ' MB');
+                
                 if (installed.length == files.length) {
                     update();
                     location.href = './';
