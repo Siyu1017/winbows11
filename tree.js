@@ -26,19 +26,18 @@ var walk = function (dir, done) {
 
 var res = [];
 
-walk(__dirname + '/Program Files', function (err, results) {
+walk(__dirname + '/Program Files', function (err, results1) {
     if (err) throw err;
-    results.forEach(function (file, i) {
-        results[i] = file.replaceAll('\\', '/');
+    results1.forEach(function (file, i) {
+        results1[i] = file.replaceAll('\\', '/');
     });
-    res.concat(results);
-    walk(__dirname + '/Winbows', function (err, results) {
+    res = results1;
+    walk(__dirname + '/Winbows', async function (err, results2) {
         if (err) throw err;
-        results.forEach(function (file, i) {
-            results[i] = file.replaceAll('\\', '/');
+        results2.forEach(function (file, i) {
+            results2[i] = file.replaceAll('\\', '/');
         });
-        res.concat(results);
-        fs.writeFile(__dirname + '/tree.json', JSON.stringify(results), function (err) {
+        fs.writeFile(__dirname + '/tree.json', JSON.stringify(res.concat(results2)), function (err) {
             if (err) return console.log(err);
             return ''
         });
