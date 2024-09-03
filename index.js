@@ -459,6 +459,7 @@
             // OK
             async writeFile(url, content) {
                 const parsed = this.parseURL(url);
+                if (!parsed.path) return;
                 if (!await this.exists(url).exists) {
                     var splitted = parsed.path.split('/');
                     for (let i = 0; i < splitted.length; i++) {

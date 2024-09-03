@@ -25,26 +25,30 @@ document.head.appendChild(style);
 
     console.log(datas)
 
-    window.addEventListener('message', async (event) => {
-        if (event.origin !== window.location.origin) {
-            return;
-        }
-        console.log('Received message from iframe:', event.data);
-        var message = event.data;
-        if (message.type == 'action') {
-            if (message.action == 'save') {
-                await fs.writeFile(event.data.filePath, new Blob([event.data.fileContent], fileType ? {
-                    type: fileType
-                } : {}));
-            }
-        }
-    });
-
     iframe.onload = async () => {
-        iframe.contentWindow.postMessage({
-            filePath: filePath,
-            fileContent: await (fileBlob).text(),
-            type: 'init'
-        }, editor)
+        let event = new CustomEvent('init', {
+            detail: {
+                filePath: filePath,
+                fileContent: await (fileBlob).text(),
+                type: 'init'
+            }
+        });
+        iframe.contentWindow.document.dispatchEvent(event);
+
+        document.addEventListener('action', async (e) => {
+            var data = e.detail;
+            console.log(data)
+            if (data.action == 'save') {
+                await fs.writeFile(data.filePath, new Blob([data.fileContent], fileType ? {
+                    type: fileType
+                } : {})).then(() => {
+                    console.log('File saved');
+                });
+            }
+        });
+    
+        document.addEventListener('check', (e) => {
+            console.log(e)
+        })
     }
 })();

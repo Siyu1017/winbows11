@@ -27,21 +27,25 @@
             editor = monaco.editor.create(document.getElementById('container'), {
                 value: '',
                 language: '',
-                theme: 'vs-dark'
+                theme: 'vs-dark',
+                automaticLayout: true,
+                "semanticHighlighting.enabled": true
             });
 
             document.addEventListener('keydown', function (e) {
                 if (e.ctrlKey && e.key.toLocaleLowerCase() == 's') {
                     console.log('Save file')
-                    e.preventDefault();
-                    if (origin) {
-                        source.postMessage({
-                            type: 'action',
+
+                    let event = new CustomEvent('action', {
+                        detail: {
                             action: 'save',
                             content: editor.getValue(),
                             file: filePath
-                        }, origin);
-                    }
+                        }
+                    });
+                    window.parent.document.dispatchEvent(event);
+
+                    e.preventDefault();
                 }
             });
 
@@ -65,11 +69,33 @@
             }
         }
 
+        document.addEventListener('init', (e) => {
+            var data = e.detail;
+
+            try {
+                filePath = data.filePath;
+                fileContent = data.fileContent;
+                editor.setValue(data.fileContent);
+                monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filePath.split('.').pop().toLowerCase()));
+            } catch (error) {
+                console.error('Error loading file:', error);
+                status = 'error';
+            }
+
+            let event = new CustomEvent('check', {
+                detail: {
+                    status: status
+                }
+            });
+            window.parent.document.dispatchEvent(event);
+        })
+
+        /*
         window.addEventListener('message', (event) => {
             origin = event.origin;
             source = event.source;
 
-            var message = event.data;
+            var message = JSON.parse(event.data);
             if (message.type == 'init') {
                 var status = 'ok';
                 try {
@@ -82,12 +108,13 @@
                     status = 'error';
                 }
 
-                source.postMessage({
+                source.postMessage(JSON.stringify({
                     type: 'check',
                     status: status
-                }, origin);
+                }), origin);
             }
         });
+        */
     </script>
 </body>
 
