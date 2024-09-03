@@ -39,10 +39,28 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var toolbarElement = document.createElement('div');
         var contentElement = document.createElement('div');
 
-        hostElement.className = 'browser-window-container active';
+        const windowID = ICON.open({
+            browserWindow: hostElement
+        });
+        console.log('opened', windowID)
 
-        // Resizers
+        hostElement.className = 'browser-window-container active';
+        hostElement.addEventListener('pointerdown', (e) => {
+            ICON.focus();
+        })
+
+        ICON.addEventListener('blur', (e) => {
+            content.style.pointerEvents = '';
+        })
+
+        ICON.addEventListener('focus', (e) => {
+            content.style.pointerEvents = 'unset';
+        })
+
+        // Outside
         resizers.className = 'browser-window-resizers';
+        content.className = 'browser-window-content';
+
         // In shadow root
         windowElement.className = 'window';
         toolbarElement.className = 'window-toolbar';
@@ -213,11 +231,6 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         toolbarElement.appendChild(toolbarInfo);
         toolbarElement.appendChild(toolbarButtons);
-
-        const windowID = ICON.open({
-            browserWindow: hostElement
-        });
-        console.log('opened', windowID)
 
         function minimize() {
             ICON.hide();

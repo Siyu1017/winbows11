@@ -323,6 +323,9 @@
                     lastClicked = owner;
                     item.setAttribute('data-focused', true);
                     updateWindowStatus(Object.values(registry)[0], 'focus');
+                    triggerEvent('focus', {
+                        type: 'focus'
+                    });
                 }
 
                 function blur() {
@@ -330,6 +333,9 @@
                     status.focused = false;
                     lastClicked = null;
                     item.setAttribute('data-focused', false);
+                    triggerEvent('blur', {
+                        type: 'blur'
+                    });
                 }
 
                 function generateID() {

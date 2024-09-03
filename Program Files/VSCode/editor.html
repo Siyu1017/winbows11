@@ -20,7 +20,7 @@
     <div id="container" style="width: 100%; height: 100%"></div>
     <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
     <script>
-        var editor, origin, filePath, fileContent, source;
+        var editor, origin, filePath, fileContent, fileType, source;
 
         require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' } });
         require(['vs/editor/editor.main'], function () {
@@ -32,20 +32,17 @@
                 "semanticHighlighting.enabled": true
             });
 
-            document.addEventListener('keydown', function (e) {
+            document.addEventListener('keydown', async function (e) {
                 if (e.ctrlKey && e.key.toLocaleLowerCase() == 's') {
-                    console.log('Save file')
-
-                    let event = new CustomEvent('action', {
-                        detail: {
-                            action: 'save',
-                            content: editor.getValue(),
-                            file: filePath
-                        }
-                    });
-                    window.parent.document.dispatchEvent(event);
-
                     e.preventDefault();
+                    
+                    console.log('Save file');
+
+                    await window.parent.fs.writeFile(filePath, new Blob([editor.getValue()], fileType ? {
+                        type: fileType
+                    } : {})).then(() => {
+                        console.log('File saved');
+                    });
                 }
             });
 
@@ -75,6 +72,7 @@
             try {
                 filePath = data.filePath;
                 fileContent = data.fileContent;
+                fileType = data.fileType;
                 editor.setValue(data.fileContent);
                 monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filePath.split('.').pop().toLowerCase()));
             } catch (error) {

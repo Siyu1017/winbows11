@@ -715,6 +715,10 @@ body {
     /* box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1); */
 }
 
+.browser-window-content {
+    pointer-events: none;
+}
+
 .app-wrapper.moving {
     cursor: default !important;
 }

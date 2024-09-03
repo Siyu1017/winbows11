@@ -30,6 +30,7 @@ document.head.appendChild(style);
             detail: {
                 filePath: filePath,
                 fileContent: await (fileBlob).text(),
+                fileType: fileType,
                 type: 'init'
             }
         });

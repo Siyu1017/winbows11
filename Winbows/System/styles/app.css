@@ -27,6 +27,7 @@
     background: rgb(235 235 235);
     min-height: fit-content;
     display: flex;
+    pointer-events: auto;
 }
 
 .window-toolbar-info {
