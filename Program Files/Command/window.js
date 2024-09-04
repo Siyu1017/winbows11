@@ -356,51 +356,36 @@ setTimeout(async () => {
         run: (content, id) => {
             var command = content.split(" ")[0].split(".");
             var api = generateResponse(id);
-            if (command[0] == "webos") {
-                command = command.slice(1);
-                console.log(command)
-                if (!window.webos[command[0]]) {
-                    console.log(1)
-                    return api.createLine(`Missing script: "${content}"`, "red", true);
-                }
-                if (typeof window.webos[command[0]][command[1]] != "function") {
-                    console.log(2, typeof window.webos[command[0]][command[1]], command[1])
-                    return api.createLine(`Missing script: "${content}"`, "red", true);
-                }
-                return window.webos[command[0]][command[1]](content.replace(content.split(" ")[0], "").trim());
-            } else {
-                return api.createLine(window.System.Shell(`run ${content}`).message);
-            }
+            return api.createLine(window.System.Shell(`run ${content}`).message);
         },
         kill: (content, id) => {
-            return generateResponse(id).createLine(`Unavailable command.`, "red");
             var api = generateResponse(id);
             if (content.trim().length == 0) {
                 var table = api.createCustomTable();
                 var name_col = table.createCol();
-                var hash_col = table.createCol();
+                var pid_col = table.createCol();
 
                 name_col.createRow("Name");
-                hash_col.createRow("Hash");
+                pid_col.createRow("Pid");
 
-                Object.values(running_apps).forEach(app => {
-                    name_col.createRow(app.name ? app.name : " ");
-                    hash_col.createRow(app.hash ? app.hash : " ");
+                Object.values(window.System.processes).forEach(process => {
+                    name_col.createRow(window.appRegistry.getApp(process.path).name);
+                    pid_col.createRow(process.id);
                 })
 
                 return;
             }
             if (content.trim() == "all") {
-                Object.values(running_apps).forEach(app => {
-                    app.close();
-                    api.createLine(`App [ ${app.name} ] has been killed.`, "green");
+                Object.values(window.System.processes).forEach(process => {
+                    process.exit();
                 })
             }
-            if (!running_apps[content.trim()]) {
-                return api.createLine(`App [ ${content.trim()} ] doesn't exist.`, "red");
+            Object.values
+            if (!window.System.processes[content.trim()]) {
+                return api.createLine(`Process [ ${content.trim()} ] doesn't exist.`, "red");
             }
-            running_apps[content.trim()].close();
-            return api.createLine(`App [ ${content.trim()} ] has been killed.`, "green");
+            window.System.processes[content.trim()].exit();
+            return api.createLine(`Process [ ${content.trim()} ] has been killed.`, "green");
         }
     }
 

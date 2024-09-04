@@ -20,6 +20,7 @@
         ui: 'Winbows/System/ui'
     }
     const debuggerMode = false;
+    const devMode = true;
 
     // Loading
     var loadingContainer = document.createElement('div');
@@ -773,9 +774,9 @@
             var files = {
                 kernel: ['Winbows/System/process.js'],
                 module: ['Winbows/System/modules/main/toolbarComponents.js', 'Winbows/System/modules/main/browserWindow.js'],
-                component: ['Winbows/System/components/Controls/TabView/tabview.js'],
-                compiler: ['Winbows/System/compilers/worker/compiler.js', 'Winbows/System/compilers/window/compiler.js'],
-                taskbar: ['Winbows/SystemApps/Microhard.Winbows.Taskbar/app.js']
+                component: [],
+                taskbar: ['Winbows/SystemApps/Microhard.Winbows.Taskbar/app.js'],
+                compiler: ['Winbows/System/compilers/worker/compiler.js', 'Winbows/System/compilers/window/compiler.js']
             }
             return new Promise(async (resolve, reject) => {
                 var kernelFiles = [];
@@ -786,8 +787,10 @@
                     for (let i in kernelFiles) {
                         var file = await downloadFile(mainDisk + ':/' + kernelFiles[i]);
                         Function(await file.text())();
+                        if (i == kernelFiles.length - 1) {
+                            resolve();
+                        }
                     }
-                    resolve();
                 } catch (e) {
                     window.Crash(e);
                 }
@@ -975,7 +978,6 @@
 
     // Cache the url
     async function getFileURL(url) {
-        if (window.fs.Cache[url]) return window.fs.Cache[url];
         var blob = await downloadFile(url);
         return URL.createObjectURL(blob);
     }
@@ -989,7 +991,7 @@
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
         }
-        if (navigator.onLine != true || window.needsUpdate == false) {
+        if (navigator.onLine != true || window.needsUpdate == false && devMode == false) {
             return await fs.readFile(path);
         }
         var extension = path.split('.').pop();
@@ -1010,7 +1012,6 @@
             var blob = content;
             // blob = new Blob([content], { type: mimeType });
             fs.writeFile(path, blob);
-            window.fs.Cache[path] = URL.createObjectURL(blob);
             // console.log(getSizeString(blob.size));
             if (responseType == 'text') {
                 return content;
