@@ -20,7 +20,7 @@
         ui: 'Winbows/System/ui'
     }
     const debuggerMode = false;
-    const devMode = true;
+    const devMode = false;
 
     // Loading
     var loadingContainer = document.createElement('div');
