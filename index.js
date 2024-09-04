@@ -20,7 +20,7 @@
         ui: 'Winbows/System/ui'
     }
     const debuggerMode = false;
-    const devMode = false;
+    const devMode = true;
 
     // Loading
     var loadingContainer = document.createElement('div');
@@ -786,7 +786,8 @@
                 try {
                     for (let i in kernelFiles) {
                         var file = await downloadFile(mainDisk + ':/' + kernelFiles[i]);
-                        Function(await file.text())();
+                        const kernel = new Function(`return (() => { ${await file.text()} })()`);
+                        await kernel();
                         if (i == kernelFiles.length - 1) {
                             resolve();
                         }
