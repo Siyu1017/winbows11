@@ -46,7 +46,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         hostElement.className = 'browser-window-container active';
         hostElement.addEventListener('pointerdown', (e) => {
-            ICON.focus();
+            ICON.focus(windowID);
         })
 
         ICON.addEventListener('blur', (e) => {
@@ -233,7 +233,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         toolbarElement.appendChild(toolbarButtons);
 
         function minimize() {
-            ICON.hide();
+            ICON.hide(windowID);
         }
 
         function close() {
@@ -291,7 +291,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         })
 
         hostElement.addEventListener('pointerdown', (e) => {
-            ICON.focus();
+            ICON.focus(windowID);
         })
 
         return { shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement, close };
