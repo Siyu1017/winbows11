@@ -128,6 +128,9 @@
     }
     window.workerModules = {};
     window.utils = {};
+    window.debuggers = {
+        getStackTrace
+    }
 
     // Check updates
     /*

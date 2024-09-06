@@ -113,9 +113,9 @@
     })
 
     // Status
-    var focused = null;
-    var lastClicked = null;
-    var activeWindows = [];
+    var focused = null;         // For all
+    var lastClicked = null;     // For all
+    var activeWindows = [];     // Only for apps, not for items
     var iconRepository = {};
     var maxIndex = 0;
 
@@ -162,6 +162,126 @@
         } else {
             return false;
         }
+    }
+
+    function getThumbnailWindowRatio(parent, pt = false) {
+        return {
+            x: pt == true ? parent.offsetWidth / thumbnailSetting.maxWidth : thumbnailSetting.maxWidth / parent.offsetWidth,
+            y: pt == true ? parent.offsetHeight / thumbnailSetting.maxHeight : thumbnailSetting.maxHeight / parent.offsetHeight
+        }
+    }
+
+    var thumbnailWindow = document.createElement("div");
+    var thumbnailBar = document.createElement("div");
+    var thumbnailIcon = document.createElement("img");
+    var thumbnailTitle = document.createElement("div");
+    var thumbnailView = document.createElement("div");
+    var thumbnailCloseButton = document.createElement("div");
+    var thumbnailSetting = {
+        maxWidth: 210,
+        maxHeight: 120,
+        padding: {
+            top: 8,
+            bottom: 8,
+            left: 8,
+            right: 8
+        }
+    }
+    var currentThumbnail = {};
+    var overThumbnailWindow = false;
+
+    thumbnailWindow.className = "thumbnail-window";
+    thumbnailView.className = "thumbnail-window-view";
+    thumbnailBar.className = "thumbnail-window-bar";
+    thumbnailIcon.className = "thumbnail-window-icon";
+    thumbnailTitle.className = "thumbnail-window-title";
+    thumbnailCloseButton.className = "thumbnail-window-close-button";
+    thumbnailCloseButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+
+    window.Winbows.Screen.appendChild(thumbnailWindow);
+    thumbnailWindow.appendChild(thumbnailBar);
+    thumbnailWindow.appendChild(thumbnailView);
+    thumbnailBar.appendChild(thumbnailIcon);
+    thumbnailBar.appendChild(thumbnailTitle);
+    thumbnailBar.appendChild(thumbnailCloseButton);
+
+    thumbnailWindow.addEventListener("pointerover", () => {
+        overThumbnailWindow = true;
+        showThumbnailWindow(currentThumbnail);
+    })
+
+    thumbnailWindow.addEventListener("pointerleave", () => {
+        overThumbnailWindow = false;
+        setTimeout(() => {
+            hideThumbnailWindow();
+        }, 200);
+    })
+
+    thumbnailCloseButton.addEventListener("click", () => {
+        currentThumbnail.close(id);
+    });
+
+    thumbnailWindow.addEventListener("click", (e) => {
+        if (e.target == thumbnailCloseButton || thumbnailCloseButton.contains(e.target)) return;
+        currentThumbnail.show(id);
+        setTimeout(() => {
+            thumbnailWindow.classList.remove("active");
+        }, 200);
+    })
+
+    function showThumbnailWindow(app) {
+        /*
+        var ratio = getThumbnailWindowRatio(app.elements.window, true);
+        var scale = getThumbnailWindowRatio(app.elements.window).x;
+        if (ratio.x < ratio.y) {
+            scale = getThumbnailWindowRatio(app.elements.window).y;
+        }
+        var cloneNode = app.elements.window.cloneNode(true);
+        cloneNode.style.position = "static";
+        cloneNode.style.transform = `scale(${scale})`;
+        cloneNode.style.opacity = "1";
+        thumbnailView.appendChild(cloneNode);
+
+        thumbnailView.style.maxWidth = thumbnailSetting.maxWidth + "px";
+        thumbnailView.style.maxHeight = thumbnailSetting.maxHeight + "px";
+        thumbnailView.style.width = cloneNode.offsetWidth * scale + "px";
+        thumbnailView.style.height = cloneNode.offsetHeight * scale + "px";
+        thumbnailWindow.style.maxWidth = cloneNode.offsetWidth * scale + thumbnailSetting.padding.left + thumbnailSetting.padding.right + "px";
+        */
+        if (!app) return;
+
+        currentThumbnail = app;
+
+        var owner = app.owner;
+        var icon = app.icon.icon;
+        var title = app.icon.title;
+        var item = app.item;
+
+        // Thumbnail info
+        thumbnailIcon.src = icon;
+        thumbnailTitle.innerHTML = title;
+
+        // Thumbnail styles
+        thumbnailWindow.style.padding = `${thumbnailSetting.padding.top}px ${thumbnailSetting.padding.right}px ${thumbnailSetting.padding.bottom}px ${thumbnailSetting.padding.left}px`;
+        thumbnailView.style.maxWidth = thumbnailSetting.maxWidth + "px";
+        thumbnailView.style.maxHeight = thumbnailSetting.maxHeight + "px";
+        thumbnailView.style.width = '999px';
+        thumbnailView.style.height = '999px';
+
+        var left = utils.getPosition(item).x + item.offsetWidth / 2 - thumbnailWindow.offsetWidth / 2;
+        if (left < 12) {
+            left = 12;
+        } else if (left + thumbnailWindow.offsetWidth > window.innerWidth - 12) {
+            left = window.innerWidth - thumbnailWindow.offsetWidth - 12;
+        }
+        thumbnailWindow.style.left = left + "px";
+
+        thumbnailWindow.classList.add('active');
+    }
+
+    function hideThumbnailWindow() {
+        if (overThumbnailWindow == true) return;
+        thumbnailWindow.classList.remove('active');
     }
 
     Object.defineProperty(window, 'Taskbar', {
@@ -243,7 +363,7 @@
                             if (exist == false) {
                                 registry[id] = {
                                     browserWindow: obj.browserWindow,
-                                    opened: true, 
+                                    opened: true,
                                     show: true,
                                     focused: true
                                 };
@@ -433,6 +553,19 @@
                     })
                     taskbarItems.appendChild(item);
                 } else {
+                    item.addEventListener("pointerover", () => {
+                        if (Object.values(registry).length == 0) return;
+                        overThumbnailWindow = true;
+                        showThumbnailWindow(properties);
+                    })
+
+                    item.addEventListener("pointerout", () => {
+                        overThumbnailWindow = false;
+                        setTimeout(() => {
+                            hideThumbnailWindow();
+                        }, 200)
+                    })
+
                     item.setAttribute('data-openable', icon.openable);
                     item.addEventListener('click', (e) => {
                         if (status.opened == false) {
@@ -458,79 +591,6 @@
                 iconRepository[owner] = properties;
 
                 return properties;
-
-                var opened = false;
-                var itemElement = document.createElement('div');
-                var iconElement = document.createElement('img');
-                itemElement.className = 'taskbar-item';
-                iconElement.className = 'taskbar-icon';
-                console.log(item)
-                iconElement.src = item.icon;
-                itemElement.appendChild(iconElement);
-                itemElement.setAttribute('data-openable', item.openable);
-                itemElement.addEventListener('click', () => {
-                    if (item.openable == true) {
-                        if (opened == false) {
-                            opened = true;
-                            callback({
-                                type: 'open'
-                            });
-                            itemElement.setAttribute('data-opened', true);
-                            itemElement.setAttribute('data-show', true);
-                        }
-                        var active = itemElement.getAttribute('data-show');
-                        taskbar.querySelectorAll('.taskbar-item[data-show="true"]').forEach(item => {
-                            item.setAttribute('data-show', false);
-                        })
-                        var bindedWindow = document.createElement('div');
-                        if (lastClicked == icon) {
-                            itemElement.setAttribute('data-toggle', 'self');
-                            itemElement.setAttribute('data-show', active == 'true' ? false : true);
-                            if (active == 'true') {
-                                bindedWindow.classList.remove('active');
-                            } else {
-                                bindedWindow.classList.add('active');
-                            }
-                        } else {
-                            itemElement.removeAttribute('data-toggle');
-                            itemElement.setAttribute('data-show', true);
-                            currentZIndex++;
-                            bindedWindow.classList.add('active');
-                            bindedWindow.style.zIndex = currentZIndex;
-                        }
-                        lastClicked = item;
-                    } else if (item.category == 'item') {
-                        taskbar.querySelectorAll('.taskbar-item[data-show="true"]').forEach(item => {
-                            item.setAttribute('data-show', false);
-                        })
-                        itemElement.setAttribute('data-show', true);
-                        callback({
-                            type: 'open'
-                        });
-                    }
-                })
-                if (item.category == 'item') {
-                    taskbarItems.appendChild(itemElement);
-                } else {
-                    taskbarApps.appendChild(itemElement);
-                }
-                var d = {
-                    icon: itemElement,
-                    close: () => {
-                        if (Object.keys(taskbarItems).includes(icon.name) || taskbarPinnedApps.includes(icon.name)) {
-                            itemElement.removeAttribute('data-opened');
-                            itemElement.removeAttribute('data-toggle');
-                            itemElement.removeAttribute('data-show');
-                            lastClicked = '';
-                            opened = false;
-                        } else {
-                            itemElement.classList.add('hide');
-                        }
-                    }
-                }
-                // console.log(parseInt(window.Winbows.Screen.style.getPropertyValue('--taskbar-item-translateX')))
-                // window.Winbows.Screen.style.setProperty('--taskbar-item-translateX',  + itemElement.offsetWidth + 'px');
-                return;
             },
             writable: false,
             configurable: false
@@ -598,6 +658,7 @@
                         var name = window.Taskbar.pinnedApps[i];
                         var script = app.script;
                         await window.Taskbar.createIcon({
+                            title: name[0].toUpperCase() + name.slice(1),
                             name: app.script,
                             icon: await fs.getFileURL(app.icon),
                             openable: true,

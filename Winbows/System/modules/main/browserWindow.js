@@ -3,6 +3,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         console.log(path)
 
         const ICON = await window.Taskbar.createIcon({
+            title: config.title || 'App',
             name: path.caller,
             icon: await fs.getFileURL(window.appRegistry.getIcon(path.callee)),
             openable: true,
@@ -38,6 +39,12 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var windowElement = document.createElement('div');
         var toolbarElement = document.createElement('div');
         var contentElement = document.createElement('div');
+
+        var isMaximized = false;
+        var originalWidth = hostElement.offsetWidth;
+        var originalHeight = hostElement.offsetHeight;
+        var originalLeft = utils.getPosition(hostElement).y;
+        var originalTop = utils.getPosition(hostElement).x;
 
         const windowID = ICON.open({
             browserWindow: hostElement
@@ -232,6 +239,70 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         toolbarElement.appendChild(toolbarInfo);
         toolbarElement.appendChild(toolbarButtons);
 
+        async function unmaximizeWindow(animation = true) {
+            isMaximized = false;
+            hostElement.removeAttribute('data-maximized');
+            hostElement.style.left = originalLeft + 'px';
+            hostElement.style.top = originalTop + 'px';
+            hostElement.style.width = originalWidth + 'px';
+            hostElement.style.height = originalHeight + 'px';
+
+            if (animation == true) {
+                hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                setTimeout(() => {
+                    hostElement.style.transition = 'none';
+                }, 200)
+            } else {
+                hostElement.style.transition = 'none';
+                windowElement.style.transition = 'none';
+            }
+
+            windowElement.style.width = 'revert-layer';
+            windowElement.style.height = 'revert-layer';
+            windowElement.style.borderRadius = 'revert-layer';
+            maximizeImage.src = await window.fs.getFileURL(icons[1]);
+        }
+
+        async function maximizeWindow(animation = true) {
+            originalWidth = hostElement.offsetWidth;
+            originalHeight = hostElement.offsetHeight;
+            originalLeft = utils.getPosition(hostElement).y;
+            originalTop = utils.getPosition(hostElement).x;
+
+            isMaximized = true;
+            hostElement.setAttribute('data-maximized', 'true');
+            hostElement.style.left = '0';
+            hostElement.style.top = '0';
+            hostElement.style.width = '100vw';
+            hostElement.style.height = 'calc(100vh - var(--taskbar-height))';
+
+            if (animation == true) {
+                hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                setTimeout(() => {
+                    hostElement.style.transition = 'none';
+                }, 200)
+            } else {
+                hostElement.style.transition = 'none';
+                windowElement.style.transition = 'none';
+            }
+
+            windowElement.style.width = '100vw';
+            windowElement.style.height = 'calc(100vh - var(--taskbar-height))';
+            windowElement.style.borderRadius = '0';
+            maximizeImage.src = await window.fs.getFileURL(icons[2]);
+        }
+
+
+        maximizeButton.addEventListener('click', () => {
+            if (isMaximized == false) {
+                maximizeWindow();
+            } else {
+                unmaximizeWindow();
+            }
+        });
+
         function minimize() {
             ICON.hide(windowID);
         }
@@ -252,6 +323,9 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 var touch = e.touches[0] || e.changedTouches[0];
                 e.pageX = touch.pageX;
                 e.pageY = touch.pageY;
+            }
+            if (isMaximized == true) {
+                unmaximizeWindow(false);
             }
             pointerDown = true;
             var position = utils.getPosition(hostElement);
