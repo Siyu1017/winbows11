@@ -1,3 +1,5 @@
 ;(async () => {
-    await System.requestAccessWindow('./window.js')
+    await System.requestAccessWindow('./window.js', {
+        title: 'Info'
+    })
 })()

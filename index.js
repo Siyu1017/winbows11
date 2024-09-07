@@ -174,8 +174,7 @@
             'explorer': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/',
                 icon: 'C:/Winbows/icons/folders/explorer.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js',
-                autoExecute: true
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js'
             },
             'edge': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/',
@@ -206,6 +205,12 @@
                 path: 'C:/Program Files/Paint/',
                 icon: 'C:/Winbows/icons/applications/novelty/paint.ico',
                 script: 'C:/Program Files/Paint/app.js'
+            },
+            'info': {
+                path: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/',
+                icon: 'C:/Winbows/icons/emblems/info.ico',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/app.js',
+                autoExecute: true
             },
             'code': {
                 path: 'C:/Program Files/VSCode/',
