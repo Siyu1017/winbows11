@@ -139,12 +139,34 @@
 
 <body>
     <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', scope: './' }).then((register) => {
+                register.update();
+                console.log('register success')
+            }, (err) => console.log('register fail:', err));
+        }
+        
         ; (async () => {
             var DIRECTORIES = localStorage.getItem('WINBOWS_DIRECTORIES') || true;
-            var script = document.createElement('script');
-            script.src = './index.js';
-
             window.needsUpdate = false;
+
+            var runWinbows = function () { };
+
+            try {
+                await fetch('./index.js').then(res => {
+                    return res.text();
+                }).then(file => {
+                    runWinbows = function () {
+                        new Function(file)();
+                    }
+                }).catch(err => {
+                    runWinbows = function () {
+                        var script = document.createElement('script');
+                        script.src = './index.js';
+                        document.body.appendChild(script);
+                    }
+                })
+            } catch (e) { }
 
             try {
                 await fetch('./tree.json').then(res => {
@@ -212,13 +234,13 @@
                 }
 
                 confirmCancel.addEventListener('click', () => {
-                    document.body.appendChild(script);
+                    runWinbows();
                 })
                 confirmInstall.addEventListener('click', () => {
                     location.href = './install.html';
                 })
             } else {
-                document.body.appendChild(script);
+                runWinbows();
             }
         })();
     </script>
