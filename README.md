@@ -1,35 +1,34 @@
 # Winbows11
 
-就像 Windows11 一樣，**Winbows11** 讓您在網頁瀏覽器上體驗 Windows11 UI 和動畫！
+Just like Windows11, **Winbows11** lets you experience Windows11 UI and animations on your web browser!
 
-## 注意
+## Notice
 
 > [!IMPORTANT]
-> 該項目**與 Microsoft 沒有任何關聯**，且**不應與 Microsoft 的作業系統**或產品混淆。 <br>
-> 這不是 **Windows 365** 雲端電腦，這是 **Winbows11**。
+> This project is **not in anyway affiliated with Microsoft** and **should not be confused with Microsoft’s Operating System** or Products. <br>
+> This is **not** a Windows 365 cloud PC, this is **Winbows11**.
 
-## 正在開發中
+## Now under development
 
-Windows11目前正在開發中，因此某些功能尚不可用，但不用擔心，很快就會被完成！
+Windows11 is currently in development, so some features are not available yet, but don’t worry, they will be there soon!
 
-## Star 這個項目！
+## Star this project!!!
 
-如果您覺得這個項目不錯，請 star 這個項目，謝謝！
+If you think this project is good, please star this project, thanks!
 
-## 特徵
+## Features
 
-- [x] 工作列
-- [x] 開始選單
-- [x] 檔案總管
-- [x] 拖曳並調整視窗大小
-- [x] 鎖定螢幕
-- [x] 命令提示字元
-- [x] VSCode
-- [ ] 右鍵選單
-- [ ] 搜尋選單與任務視圖
-- [ ] 最大化、最小化、全螢幕視窗
-- [ ] Snap Windows
+- [x] Command App
+- [x] Taskbar
+- [x] Start Menu
+- [x] File Explorer
+- [x] Drag and Resize windows
+- [x] Lock screen
+- [x] Maximize, minimize, full screen window
+- [ ] Right click menu
+- [ ] Search Menu and Task View
+- [ ] Snap windows
 - [ ] Microhard Store
-- [ ] 設定
-- [ ] 媒體播放器
+- [ ] Settings
+- [ ] Media player
 - [ ] i18n
