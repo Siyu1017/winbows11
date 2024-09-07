@@ -5,3 +5,5 @@ Object.defineProperty(window.workerModules, 'toolbarComponents', {
     writable: false,
     configurable: false
 })
+
+window.loadedKernel();

@@ -196,9 +196,6 @@ async function createTab(icon, header, active = true) {
     tabClose.className = 'explorer-tabstrip-tab-close';
     tabViewItem.className = 'tabview-item';
 
-    tabIcon.style.backgroundImage = `url(${icon})`;
-    tabHeader.innerHTML = header;
-
     if (active == true) {
         tabStrip.querySelectorAll('.active').forEach(tab => {
             tab.classList.remove('active');
@@ -403,8 +400,10 @@ async function createTab(icon, header, active = true) {
         var targetID = randomID();
         currentID = targetID;
 
-        changeIcon(await getIcon(currentPage));
-        changeHeader(getHeader(page));
+        changeHeader(getHeader(currentPage));
+        getIcon(currentPage).then(icon => {
+            changeIcon(icon);
+        })
 
         viewer.innerHTML = '';
         viewer.classList.remove('animation');
@@ -568,8 +567,10 @@ async function createTab(icon, header, active = true) {
         } catch (e) { };
     }
 
-    changeIcon(await getIcon(currentPage));
     changeHeader(getHeader(currentPage));
+    getIcon(currentPage).then(icon => {
+        changeIcon(icon);
+    })
     setSidebar(true);
     getPage(currentPage);
     addToHistory(currentPage);

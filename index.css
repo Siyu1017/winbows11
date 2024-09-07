@@ -694,6 +694,11 @@ body {
     height: .75rem;
 }
 
+.app-wrapper {
+    z-index: 1;
+    position: absolute;
+}
+
 .browser-window-container {
     position: fixed;
     z-index: 1;
@@ -856,7 +861,11 @@ body {
 }
 
 [data-theme="dark"] .thumbnail-window {
-    background: rgb(50 50 50 / 90%);
+    background: rgba(50, 50, 50, .9);
+}
+
+[data-theme="dark"] .thumbnail-window:hover {
+    background: rgba(54, 54, 54, .9);
 }
 
 [data-theme="dark"] .thumbnail-window-title {
@@ -867,36 +876,54 @@ body {
     color: #fff !important;
 }
 
-.thumbnail-window {
-    /* width: fit-content; */
-    height: fit-content;
-    position: absolute;
-    bottom: calc(var(--taskbar-height) + 6px);
-    padding: 6px;
+.thumbnail-container,
+.thumbnail-container * {
     box-sizing: border-box;
-    backdrop-filter: blur(16px) saturate(1.8);
-    background: rgb(241 241 241 / 90%);
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.thumbnail-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 6px;
-    box-shadow: rgba(99, 99, 99, 0.2) 0px 4px 8px 4px;
-    /* max-height: 90px; */
-    /* min-height: 60px; */
-    opacity: 0;
-    transition: all .12s ease-in-out;
     overflow: hidden;
     z-index: 9;
     pointer-events: none;
+    height: fit-content;
+    width: fit-content;
+    position: fixed;
+    bottom: calc(var(--taskbar-height) + .5rem);
+    opacity: 0;
+}
+
+.thumbnail-container.active {
+    opacity: 1;
+    z-index: 9;
+    pointer-events: auto;
+    backdrop-filter: blur(16px) saturate(1.8);
+    box-shadow: rgba(99, 99, 99, 0.2) 0px 4px 8px 4px;
+}
+
+.thumbnail-window {
+    /* width: fit-content; */
+    height: fit-content;
+    padding: 6px;
+    background: rgb(241, 241, 241, .9);
+    transition: all .12s ease-in-out;
+    /* max-height: 90px; */
+    /* min-height: 60px; */
+}
+
+.thumbnail-window:hover {
+    background: rgb(246, 246, 246, .9);
 }
 
 .thumbnail-window-view {
     max-width: 180px;
     max-height: 120px;
     pointer-events: none;
-}
-
-.thumbnail-window.active {
-    opacity: 1;
-    z-index: 9;
-    pointer-events: auto;
 }
 
 .thumbnail-window-icon {
@@ -953,11 +980,6 @@ body {
 .thumbnail-window:hover .thumbnail-window-close-button {
     color: unset;
     display: flex;
-}
-
-.thumbnail-window * {
-    -webkit-user-drag: none;
-    user-select: none;
 }
 
 .thumbnail-window-close-button svg {

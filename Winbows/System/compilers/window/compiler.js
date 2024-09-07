@@ -142,3 +142,5 @@ Object.defineProperty(window.Compilers, 'Window', {
     configurable: false,
     writable: false
 })
+
+window.loadedKernel();

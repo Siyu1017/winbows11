@@ -170,4 +170,6 @@
     })()
 
     window.Process = Process;
+
+    window.loadedKernel();
 })();

@@ -43,11 +43,12 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var isMaximized = false;
         var originalWidth = hostElement.offsetWidth;
         var originalHeight = hostElement.offsetHeight;
-        var originalLeft = utils.getPosition(hostElement).y;
-        var originalTop = utils.getPosition(hostElement).x;
+        var originalLeft = utils.getPosition(hostElement).x;
+        var originalTop = utils.getPosition(hostElement).y;
 
         const windowID = ICON.open({
-            browserWindow: hostElement
+            browserWindow: hostElement,
+            pid: pid
         });
         console.log('opened', windowID)
 
@@ -267,8 +268,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         async function maximizeWindow(animation = true) {
             originalWidth = hostElement.offsetWidth;
             originalHeight = hostElement.offsetHeight;
-            originalLeft = utils.getPosition(hostElement).y;
-            originalTop = utils.getPosition(hostElement).x;
+            originalLeft = utils.getPosition(hostElement).x;
+            originalTop = utils.getPosition(hostElement).y;
 
             isMaximized = true;
             hostElement.setAttribute('data-maximized', 'true');
@@ -373,3 +374,5 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
     writable: false,
     configurable: false
 })
+
+window.loadedKernel();

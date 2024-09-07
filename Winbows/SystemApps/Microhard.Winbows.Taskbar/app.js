@@ -171,15 +171,10 @@
         }
     }
 
-    var thumbnailWindow = document.createElement("div");
-    var thumbnailBar = document.createElement("div");
-    var thumbnailIcon = document.createElement("img");
-    var thumbnailTitle = document.createElement("div");
-    var thumbnailView = document.createElement("div");
-    var thumbnailCloseButton = document.createElement("div");
+    var thumbnailContainer = document.createElement("div");
     var thumbnailSetting = {
-        maxWidth: 210,
-        maxHeight: 120,
+        maxWidth: 192,
+        maxHeight: 108,
         padding: {
             top: 8,
             bottom: 8,
@@ -190,44 +185,82 @@
     var currentThumbnail = {};
     var overThumbnailWindow = false;
 
-    thumbnailWindow.className = "thumbnail-window";
-    thumbnailView.className = "thumbnail-window-view";
-    thumbnailBar.className = "thumbnail-window-bar";
-    thumbnailIcon.className = "thumbnail-window-icon";
-    thumbnailTitle.className = "thumbnail-window-title";
-    thumbnailCloseButton.className = "thumbnail-window-close-button";
-    thumbnailCloseButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>`;
+    thumbnailContainer.className = "thumbnail-container";
+    window.Winbows.Screen.appendChild(thumbnailContainer);
 
-    window.Winbows.Screen.appendChild(thumbnailWindow);
-    thumbnailWindow.appendChild(thumbnailBar);
-    thumbnailWindow.appendChild(thumbnailView);
-    thumbnailBar.appendChild(thumbnailIcon);
-    thumbnailBar.appendChild(thumbnailTitle);
-    thumbnailBar.appendChild(thumbnailCloseButton);
+    function createThumbnailWindow(app, id) {
+        var thumbnailWindow = document.createElement("div");
+        var thumbnailBar = document.createElement("div");
+        var thumbnailIcon = document.createElement("img");
+        var thumbnailTitle = document.createElement("div");
+        var thumbnailView = document.createElement("div");
+        var thumbnailCloseButton = document.createElement("div");
 
-    thumbnailWindow.addEventListener("pointerover", () => {
-        overThumbnailWindow = true;
-        showThumbnailWindow(currentThumbnail);
-    })
+        thumbnailWindow.className = "thumbnail-window";
+        thumbnailView.className = "thumbnail-window-view";
+        thumbnailBar.className = "thumbnail-window-bar";
+        thumbnailIcon.className = "thumbnail-window-icon";
+        thumbnailTitle.className = "thumbnail-window-title";
+        thumbnailCloseButton.className = "thumbnail-window-close-button";
+        thumbnailCloseButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>`;
 
-    thumbnailWindow.addEventListener("pointerleave", () => {
-        overThumbnailWindow = false;
-        setTimeout(() => {
-            hideThumbnailWindow();
-        }, 200);
-    })
+        thumbnailContainer.appendChild(thumbnailWindow);
+        thumbnailWindow.appendChild(thumbnailBar);
+        thumbnailWindow.appendChild(thumbnailView);
+        thumbnailBar.appendChild(thumbnailIcon);
+        thumbnailBar.appendChild(thumbnailTitle);
+        thumbnailBar.appendChild(thumbnailCloseButton);
 
-    thumbnailCloseButton.addEventListener("click", () => {
-        currentThumbnail.close(id);
-    });
+        // Thumbnail info
+        thumbnailIcon.src = app.icon;
+        thumbnailTitle.innerHTML = app.title;
 
-    thumbnailWindow.addEventListener("click", (e) => {
-        if (e.target == thumbnailCloseButton || thumbnailCloseButton.contains(e.target)) return;
-        currentThumbnail.show(id);
-        setTimeout(() => {
-            thumbnailWindow.classList.remove("active");
-        }, 200);
-    })
+        // Thumbnail styles
+        thumbnailWindow.style.padding = `${thumbnailSetting.padding.top}px ${thumbnailSetting.padding.right}px ${thumbnailSetting.padding.bottom}px ${thumbnailSetting.padding.left}px`;
+        thumbnailView.style.maxWidth = thumbnailSetting.maxWidth + "px";
+        thumbnailView.style.maxHeight = thumbnailSetting.maxHeight + "px";
+        thumbnailView.style.width = '999px';
+        thumbnailView.style.height = '999px';
+
+        thumbnailWindow.addEventListener("pointerover", () => {
+            overThumbnailWindow = true;
+        })
+
+        thumbnailWindow.addEventListener("pointerleave", () => {
+            overThumbnailWindow = false;
+            setTimeout(() => {
+                hideThumbnailWindow();
+            }, 200);
+        })
+
+        thumbnailCloseButton.addEventListener("click", () => {
+            currentThumbnail.close(id);
+            thumbnailWindow.remove();
+            updateThumbnailPosition();
+            if (Object.values(currentThumbnail.getRegistry()).length == 0) {
+                overThumbnailWindow = false;
+                hideThumbnailWindow();
+            }
+        });
+
+        thumbnailWindow.addEventListener("click", (e) => {
+            if (e.target == thumbnailCloseButton || thumbnailCloseButton.contains(e.target)) return;
+            currentThumbnail.show(id);
+            hideThumbnailWindow(true);
+        })
+    }
+
+    function updateThumbnailPosition() {
+        if (!currentThumbnail) return;
+        var item = currentThumbnail.item;
+        var left = utils.getPosition(item).x + item.offsetWidth / 2 - thumbnailContainer.offsetWidth / 2;
+        if (left < 8) {
+            left = 8;
+        } else if (left + thumbnailContainer.offsetWidth > window.innerWidth - 8) {
+            left = window.innerWidth - thumbnailContainer.offsetWidth - 8;
+        }
+        thumbnailContainer.style.left = left + "px";
+    }
 
     function showThumbnailWindow(app) {
         /*
@@ -251,37 +284,24 @@
         if (!app) return;
 
         currentThumbnail = app;
+        thumbnailContainer.innerHTML = '';
 
-        var owner = app.owner;
-        var icon = app.icon.icon;
-        var title = app.icon.title;
-        var item = app.item;
+        var registry = app.getRegistry();
 
-        // Thumbnail info
-        thumbnailIcon.src = icon;
-        thumbnailTitle.innerHTML = title;
+        Object.keys(registry).forEach(id => {
+            createThumbnailWindow(registry[id], id)
+        })
 
-        // Thumbnail styles
-        thumbnailWindow.style.padding = `${thumbnailSetting.padding.top}px ${thumbnailSetting.padding.right}px ${thumbnailSetting.padding.bottom}px ${thumbnailSetting.padding.left}px`;
-        thumbnailView.style.maxWidth = thumbnailSetting.maxWidth + "px";
-        thumbnailView.style.maxHeight = thumbnailSetting.maxHeight + "px";
-        thumbnailView.style.width = '999px';
-        thumbnailView.style.height = '999px';
+        updateThumbnailPosition();
 
-        var left = utils.getPosition(item).x + item.offsetWidth / 2 - thumbnailWindow.offsetWidth / 2;
-        if (left < 12) {
-            left = 12;
-        } else if (left + thumbnailWindow.offsetWidth > window.innerWidth - 12) {
-            left = window.innerWidth - thumbnailWindow.offsetWidth - 12;
-        }
-        thumbnailWindow.style.left = left + "px";
-
-        thumbnailWindow.classList.add('active');
+        thumbnailContainer.classList.add('active');
     }
 
-    function hideThumbnailWindow() {
-        if (overThumbnailWindow == true) return;
-        thumbnailWindow.classList.remove('active');
+    function hideThumbnailWindow(force = false) {
+        if (overThumbnailWindow == true && force == false) return;
+        overThumbnailWindow = false;
+        thumbnailContainer.classList.remove('active');
+        thumbnailContainer.innerHTML = '';
     }
 
     Object.defineProperty(window, 'Taskbar', {
@@ -346,7 +366,12 @@
                 var properties = {
                     status, type, owner, icon, item, itemImage,
                     open, close, show, hide, addEventListener, focus, blur, updateWindowStatus,
+                    getRegistry,
                     _show, _hide
+                }
+
+                function getRegistry() {
+                    return registry;
                 }
 
                 function open(obj) {
@@ -362,10 +387,14 @@
                             })
                             if (exist == false) {
                                 registry[id] = {
+                                    pid: obj.pid,
                                     browserWindow: obj.browserWindow,
                                     opened: true,
                                     show: true,
-                                    focused: true
+                                    focused: true,
+                                    icon: icon.icon,
+                                    owner: owner,
+                                    title: icon.title || 'App'
                                 };
                             }
                             maxIndex++;
@@ -394,6 +423,7 @@
                     item.removeAttribute('data-toggle');
                     if (type != 'item') {
                         const browserWindow = registry[id].browserWindow;
+                        const pid = registry[id].pid;
                         const isLast = Object.values(registry).length == 1;
                         if (isLast == true) {
                             status.opened = false;
@@ -416,6 +446,7 @@
                                 item.remove();
                                 delete iconRepository[owner];
                             }
+                            window.System.processes[pid]._exit_Window();
                         }, 300);
                     }
                     triggerEvent('close', {
@@ -684,4 +715,6 @@
         }
     })
     Object.freeze(window.Taskbar);
+
+    window.loadedKernel();
 })();

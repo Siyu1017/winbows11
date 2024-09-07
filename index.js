@@ -786,14 +786,19 @@
                 Object.values(files).forEach(category => {
                     kernelFiles = kernelFiles.concat(category);
                 })
+                var loadedKernels = 0;
+                window.loadedKernel = () => {
+                    loadedKernels++;
+                    console.log(loadedKernels)
+                    if (loadedKernels == kernelFiles.length) {
+                        resolve();
+                    }
+                }
                 try {
                     for (let i in kernelFiles) {
                         var file = await downloadFile(mainDisk + ':/' + kernelFiles[i]);
-                        const kernel = new Function(`return (() => { ${await file.text()} })()`);
+                        const kernel = new Function(await file.text());
                         await kernel();
-                        if (i == kernelFiles.length - 1) {
-                            resolve();
-                        }
                     }
                 } catch (e) {
                     window.Crash(e);

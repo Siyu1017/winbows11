@@ -24,3 +24,5 @@ Object.defineProperty(window.Compilers, 'Worker', {
     configurable: false,
     writable: false
 })
+
+window.loadedKernel();
