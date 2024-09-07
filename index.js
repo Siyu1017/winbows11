@@ -815,6 +815,15 @@
     window.System.CommandParsers = {
         run: (file, ...options) => {
             var script = file;
+            if (file == 'all') {
+                Object.values(window.appRegistry.apps).forEach(app => {
+                    new Process(app.script).start();
+                })
+                return {
+                    status: 'ok',
+                    message: `Successfully run all apps.`
+                }
+            }
             if (window.appRegistry.exists(file)) {
                 script = window.appRegistry.getInfo(file).script;
             }

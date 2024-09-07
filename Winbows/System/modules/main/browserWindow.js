@@ -31,6 +31,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             'browser-window-resizer-left-bottom': 'both',
             'browser-window-resizer-left-top': 'both'
         }
+        var listeners = {};
 
         var hostElement = document.createElement('div');
         var resizers = document.createElement('div');
@@ -253,6 +254,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 setTimeout(() => {
                     hostElement.style.transition = 'none';
+                    windowElement.style.transition = 'none';
                 }, 200)
             } else {
                 hostElement.style.transition = 'none';
@@ -283,6 +285,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 setTimeout(() => {
                     hostElement.style.transition = 'none';
+                    windowElement.style.transition = 'none';
                 }, 200)
             } else {
                 hostElement.style.transition = 'none';
@@ -325,9 +328,6 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 e.pageX = touch.pageX;
                 e.pageY = touch.pageY;
             }
-            if (isMaximized == true) {
-                unmaximizeWindow(false);
-            }
             pointerDown = true;
             var position = utils.getPosition(hostElement);
             pointerPosition = [e.pageX, e.pageY];
@@ -335,10 +335,31 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 x: position.x,
                 y: position.y
             }
+            triggerEvent('dragstart', {
+                preventDefault: () => {
+                    pointerDown = false;
+                },
+                type: e.type,
+                target: e.target
+            })
         }
 
         function handleMoveMoving(e) {
             if (pointerDown) {
+                if (isMaximized == true) {
+                    isMaximized = false;
+                    hostElement.style.transition = 'none';
+                    windowElement.style.transition = 'none';
+                    hostElement.removeAttribute('data-maximized');
+                    hostElement.style.width = originalWidth + 'px';
+                    hostElement.style.height = originalHeight + 'px';
+                    windowElement.style.width = 'revert-layer';
+                    windowElement.style.height = 'revert-layer';
+                    windowElement.style.borderRadius = 'revert-layer';
+                    window.fs.getFileURL(icons[1]).then(url => {
+                        maximizeImage.src = url;
+                    })
+                }
                 if (e.type.startsWith('touch')) {
                     var touch = e.touches[0] || e.changedTouches[0];
                     e.pageX = touch.pageX;
@@ -347,12 +368,39 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 appWrapper.classList.add('moving');
                 hostElement.style.left = originalPosition.x + e.pageX - pointerPosition[0] + 'px';
                 hostElement.style.top = originalPosition.y + e.pageY - pointerPosition[1] + 'px';
+                triggerEvent('dragging', {
+                    preventDefault: () => {
+                        pointerDown = false;
+                    },
+                    type: e.type,
+                    target: e.target
+                })
             }
         }
 
         function handleEndMoving(e) {
             pointerDown = false;
             appWrapper.classList.remove('moving');
+            triggerEvent('dragend', {
+                preventDefault: () => {
+
+                },
+                type: e.type,
+                target: e.target
+            })
+        }
+
+        function triggerEvent(event, details) {
+            if (listeners.hasOwnProperty(event)) {
+                listeners[event].forEach(listener => listener(details));
+            }
+        }
+
+        function addEventListener(event, listener) {
+            if (!listeners.hasOwnProperty(event)) {
+                listeners[event] = [];
+            }
+            listeners[event].push(listener);
         }
 
         events.start.forEach(event => {
@@ -369,7 +417,12 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             ICON.focus(windowID);
         })
 
-        return { shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement, close };
+        ICON.focus(windowID);
+
+        return {
+            shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
+            close, addEventListener
+        };
     },
     writable: false,
     configurable: false

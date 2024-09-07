@@ -5,7 +5,7 @@ Object.defineProperty(window.Compilers, 'Worker', {
      * @param {String} token 
      * @returns {Blob} 
      */
-    value: async function (path, token, extra) {
+    value: async function (path, token, extra = '') {
         var file = await window.fs.downloadFile(path);
         var content = await file.text();
         var directories = path.trim().split('/').filter(dir => dir.length > 0);

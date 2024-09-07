@@ -603,6 +603,11 @@
                             callback({});
                             return;
                         }
+                        if (Object.keys(registry).length > 1) {
+                            overThumbnailWindow = true;
+                            showThumbnailWindow(properties);
+                            return;
+                        }
                         if (isSelf(owner) == true) {
                             item.setAttribute('data-toggle', 'self');
                             if (status.show == true) {

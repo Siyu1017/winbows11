@@ -246,6 +246,7 @@
     height: fit-content;
     min-height: fit-content;
     padding: .375rem;
+    padding-right: 2.5rem;
     padding-bottom: 0;
     opacity: 0;
     transform: translateY(1rem);
@@ -283,6 +284,7 @@
 
 .explorer-tabstrip-tab.active {
     --bg: rgb(249 249 249);
+    z-index: 9;
 }
 
 .explorer-tabstrip-tab:not(.active):hover {

@@ -39,6 +39,12 @@ tabStripCreateButton.addEventListener('click', async () => {
     createTab();
 })
 
+browserWindow.addEventListener('dragstart', (e) => {
+    if (e.target == tabStripCreateButton || tabStripTabs.contains(e.target)) {
+        e.preventDefault();
+    }
+})
+
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
@@ -203,9 +209,154 @@ async function createTab(icon, header, active = true) {
         tab.classList.add('active');
     }
 
-    tab.addEventListener('click', (e) => {
+    var originalPosition = order.indexOf(id);
+    var currentPosition = order.indexOf(id);
+    var startX = 0;
+    var dragging = false;
+    var events = {
+        "start": ["mousedown", "touchstart", "pointerdown"],
+        "move": ["mousemove", "touchmove", "pointermove"],
+        "end": ["mouseup", "touchend", "pointerup", "blur"]
+    }
+    var properties = { changeHeader, changeIcon, close, focus, blur, tab, id };
+    tabs[id] = properties;
+
+    function moveNodeToIndex(nodeIndex, targetIndex, container) {
+        const children = Array.from(container.children);
+
+        if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
+            console.error('索引超出範圍');
+            return;
+        }
+
+        const nodeToMove = children[nodeIndex];
+        if (targetIndex === children.length - 1) {
+            container.appendChild(nodeToMove);
+        } else if (targetIndex < nodeIndex) {
+            container.insertBefore(nodeToMove, children[targetIndex]);
+        } else {
+            container.insertBefore(nodeToMove, children[targetIndex + 1]);
+        }
+    }
+
+    function moveArrayItem(arr, fromIndex, toIndex) {
+        if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
+            console.error('索引超出範圍');
+            return;
+        }
+
+        const item = arr.splice(fromIndex, 1)[0];
+        arr.splice(toIndex, 0, item);
+
+        console.log(arr, item)
+
+        return arr;
+    }
+
+    function dragStart(e) {
         if (tabClose.contains(e.target)) return;
         focus();
+        if (e.type.startsWith('touch')) {
+            var touch = e.touches[0] || e.changedTouches[0];
+            e.pageX = touch.pageX;
+        }
+        originalPosition = order.indexOf(id);
+        currentPosition = order.indexOf(id);
+        tab.style.transition = 'none';
+        dragging = true;
+        startX = e.pageX;
+    }
+
+    function dragMove(e) {
+        if (!dragging) return;
+        if (e.type.startsWith('touch')) {
+            var touch = e.touches[0] || e.changedTouches[0];
+            e.pageX = touch.pageX;
+        }
+        var x = e.pageX - startX;
+        var unit = tab.offsetWidth + 8;
+        var count = Math.round(x / unit);
+
+        tab.style.transform = `translateX(${x}px)`;
+
+        currentPosition = originalPosition + count;
+        if (currentPosition > order.length - 1) {
+            currentPosition = order.length - 1;
+        } else if (currentPosition < 0) {
+            currentPosition = 0;
+        }
+        count = currentPosition - originalPosition;
+
+        if (x > 0) {
+            Object.values(tabs).filter(tab => tab.id != id).forEach(tab => {
+                tab.tab.style.transition = 'revert-layer';
+                var index = order.indexOf(tab.id);
+                if (index <= originalPosition + count && index > originalPosition) {
+                    tab.tab.style.transform = 'translateX(calc(-100% - 8px))';
+                } else {
+                    tab.tab.style.transform = '';
+                }
+            })
+        } else if (x < 0) {
+            Object.values(tabs).filter(tab => tab.id != id).forEach(tab => {
+                tab.tab.style.transition = 'revert-layer';
+                var index = order.indexOf(tab.id);
+                if (index >= originalPosition + count && index < originalPosition) {
+                    tab.tab.style.transform = 'translateX(calc(100% + 8px))';
+                } else {
+                    tab.tab.style.transform = '';
+                }
+            })
+        }
+
+        /*
+        if (x < 0) {
+            if (!tabs[order[currentPosition - 1]]) return;
+            if (Math.abs(x) > tabs[order[currentPosition - 1]].tab.offsetWidth / 2) {
+                tabs[order[currentPosition - 1]].tab.style.transform = 'translateX(100%)';
+                currentPosition--;
+            } else if () {
+
+            }
+        }
+        if (x < -tabs[order[currentPosition - 1]].tab.offsetWidth / 2) {
+            tabs[order[currentPosition - 1]].tab.style.transform = 'translateX(100%)';
+            currentPosition--;
+        } else if (x > tabs[order[currentPosition + 1]].tab.offsetWidth / 2) {
+            tabs[order[currentPosition + 1]].tab.style.transform = 'translateX(-100%)';
+            currentPosition++;
+        }
+            */
+    }
+
+    function dragEnd() {
+        if (dragging == false) return;
+        dragging = false;
+        if (currentPosition != originalPosition) {
+            moveNodeToIndex(originalPosition, currentPosition, tabStripTabs);
+            moveArrayItem(order, originalPosition, currentPosition);
+            originalPosition = currentPosition;
+            Object.values(tabs).forEach(tab => {
+                tab.tab.style.transition = 'none';
+                tab.tab.style.transform = 'translateX(0)';
+                setTimeout(() => {
+                    tab.tab.style.transition = 'revert-layer';
+                }, 200)
+            })
+        } else {
+            tab.style.transition = 'revert-layer';
+            tab.style.transform = '';
+        }
+    }
+
+    events.start.forEach(event => {
+        tab.addEventListener(event, dragStart);
+    })
+    events.move.forEach(event => {
+        window.addEventListener(event, dragMove);
+    })
+    events.end.forEach(event => {
+        window.addEventListener(event, dragEnd);
     })
 
     tabClose.addEventListener('click', () => {
@@ -239,13 +390,10 @@ async function createTab(icon, header, active = true) {
         if (Object.keys(tabs).length == 0) {
             return process.exit();
         } else if (order[index]) {
-            console.log(tabs[order[index]], '=')
             return tabs[order[index]].focus();
         } else if (order[index - 1]) {
-            console.log(tabs[order[index - 1]], '+')
             return tabs[order[index - 1]].focus();
         } else {
-            console.log(tabs[order[0]], '0')
             return tabs[order[0]].focus();
         }
     }
@@ -576,7 +724,5 @@ async function createTab(icon, header, active = true) {
     addToHistory(currentPage);
     focus();
 
-    var properties = { changeHeader, changeIcon, close, focus, blur, tab, id };
-    tabs[id] = properties;
     return properties;
 }
