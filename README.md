@@ -25,6 +25,7 @@ If you think this project is good, please star this project, thanks!
 - [x] Drag and Resize windows
 - [x] Lock screen
 - [x] Maximize, minimize, full screen window
+- [x] Microhard Edge
 - [ ] Right click menu
 - [ ] Search Menu and Task View
 - [ ] Snap windows
