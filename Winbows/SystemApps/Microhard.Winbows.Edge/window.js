@@ -482,21 +482,22 @@ async function createTab(icon, header, active = true) {
             handleLocalURL(currentPage);
         } else {
             var status = isWebDomain(currentPage);
+            var url = currentPage;
             if (status.valid == true) {
-                if (!currentPage.startsWith('https://') || !currentPage.startsWith('http://')) {
-                    currentPage = status.protocol + '//' + currentPage;
+                if (!currentPage.startsWith('https://') && !currentPage.startsWith('http://')) {
+                    url = status.protocol + '//' + currentPage;
                 } else if (currentPage.startsWith('//')) {
-                    currentPage = status.protocol + currentPage;
+                    url = status.protocol + currentPage;
                 }
             }
             try {
-                getHeader(currentPage).then(header => {
+                getHeader(url).then(header => {
                     changeHeader(header);
                 })
             } catch (e) {
-                changeHeader(currentPage);
+                changeHeader(url);
             }
-            iframe.src = currentPage;
+            iframe.src = url;
             showIframe();
         }
         return;
