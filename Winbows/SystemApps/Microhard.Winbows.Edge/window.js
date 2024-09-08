@@ -359,23 +359,26 @@ async function createTab(icon, header, active = true) {
     var viewerTitle = document.createElement('div');
     var viewerList = document.createElement('div');
     var iframe = document.createElement('iframe');
+    var edgePages = document.createElement('div');
 
     content.className = 'explorer-content';
     viewer.className = 'explorer-content-viewer';
     viewerTitle.className = 'explorer-content-viewer-title';
     viewerList.className = 'explorer-content-viewer-list';
     iframe.className = 'explorer-content-iframe';
+    edgePages.className = 'explorer-content-edgepages';
 
     tabViewItem.appendChild(pathStrip);
     tabViewItem.appendChild(content);
     content.appendChild(iframe);
     content.appendChild(viewer);
+    content.appendChild(edgePages);
     viewer.appendChild(viewerTitle);
     viewer.appendChild(viewerList);
 
     var viewHistory = [];
     var currentHistory = -1;
-    var currentPage = 'C:/';
+    var currentPage = '';
 
     function randomID() {
         var patterns = '0123456789abcdef';
@@ -391,12 +394,80 @@ async function createTab(icon, header, active = true) {
     function showIframe() {
         iframe.style.display = 'block';
         viewer.style.display = 'none';
+        edgePages.style.display = 'none';
     }
 
     function showViewer() {
         iframe.style.display = 'none';
         viewer.style.display = 'flex';
+        edgePages.style.display = 'none';
     }
+
+    function showEdgePages() {
+        iframe.style.display = 'none';
+        viewer.style.display = 'none';
+        edgePages.style.display = 'flex';
+    }
+
+    edgePages.innerHTML = `<div style="
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    padding: 2rem;
+">
+    <div style="
+    display: flex;
+    flex-direction: column;
+    padding: 0 2rem;
+">
+    <div style="
+    font-weight: 600;
+    font-size: 1.5rem;
+    text-align: center;
+    margin-bottom: .5rem;
+">Microhard Edge</div>
+    <div style="
+    font-size: .875rem;
+    text-align: center;
+    font-style: italic;
+">Where do you want to go?</div>
+<hr style="
+    /* height: 1px; */
+    /* background: #000; */
+    width: -webkit-fill-available;
+    margin-top: 1.5rem;
+">
+    <div style="
+    padding: 1rem 0;
+">
+        <li data-href="C:/"style="
+    text-decoration: underline;
+    cursor: pointer;
+">View files under C:/</li>
+        <li data-href="siyu1017.github.io"style="
+    text-decoration: underline;
+    cursor: pointer;
+">Visit the Winbows11 author's website</li>
+    </div>
+    <div style="
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin-bottom: .5rem;
+">Note</div>
+    <div style="
+    padding-left: 1rem;
+    padding-top: .25rem;
+">A great number of sites will refuse to render due to their X-Frame-Options policy, or they may be using a framekiller. This policy is applied to most significant sites such as Google, so do not expect those to work.</div>
+    </div>
+    </div>`;
+
+    edgePages.querySelectorAll('[data-href]').forEach(link => {
+        link.addEventListener('click', async () => {
+            var url = link.getAttribute('data-href');
+            currentPage = url;
+            addToHistory(currentPage);
+            getPage();
+        })
+    })
 
     async function handleLocalURL() {
         viewerTitle.innerHTML = '';
@@ -478,7 +549,10 @@ async function createTab(icon, header, active = true) {
         pathStripSearch.value = pageToPath(currentPage);
         update();
 
-        if (isLocalFileURL == true) {
+        if (currentPage.trim() == '') {
+            showEdgePages();
+            changeHeader('New Tab');
+        } else if (isLocalFileURL == true) {
             handleLocalURL(currentPage);
         } else {
             var status = isWebDomain(currentPage);

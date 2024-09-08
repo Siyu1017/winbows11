@@ -145,15 +145,16 @@
                 console.log('register success')
             }, (err) => console.log('register fail:', err));
         }
-        
+
         ; (async () => {
             var DIRECTORIES = localStorage.getItem('WINBOWS_DIRECTORIES') || true;
             window.needsUpdate = false;
 
             var runWinbows = function () { };
+            var scriptURL = `./index.js?timestamp=${new Date().getTime()}`;
 
             try {
-                await fetch('./index.js').then(res => {
+                await fetch(scriptURL).then(res => {
                     return res.text();
                 }).then(file => {
                     runWinbows = function () {
@@ -162,7 +163,7 @@
                 }).catch(err => {
                     runWinbows = function () {
                         var script = document.createElement('script');
-                        script.src = './index.js';
+                        script.src = scriptURL;
                         document.body.appendChild(script);
                     }
                 })

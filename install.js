@@ -430,7 +430,7 @@ async function downloadFile(path) {
     }
 
     return new Promise((resolve, reject) => {
-        fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}`).then(response => {
+        fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}?timestamp=${new Date().getTime()}`).then(response => {
             if (response.ok) {
                 return response.blob();
             } else {
@@ -452,7 +452,7 @@ async function downloadFile(path) {
 }
 
 try {
-    fetch('./tree.json').then(res => {
+    fetch(`./tree.json?timestamp=${new Date().getTime()}`).then(res => {
         return res.json();
     }).then(async files => {
         var lastTime = Date.now();

@@ -24,7 +24,11 @@
             </div>
         </div>
     </div>
-    <script src="./install.js"></script>
+    <script>
+        var script = document.createElement('script');
+        script.src = `./install.js?timestamp=${new Date().getTime()}`;
+        document.body.appendChild(script);
+    </script>
 </body>
 
 </html>
