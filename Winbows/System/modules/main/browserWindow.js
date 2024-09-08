@@ -49,6 +49,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         const windowID = ICON.open({
             browserWindow: hostElement,
+            shadowRoot: shadowRoot,
             pid: pid
         });
         console.log('opened', windowID)
@@ -92,6 +93,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             resizer.className = key;
 
             function handleStartResizing(e) {
+                if (isMaximized == true) return;
                 if (e.type.startsWith('touch')) {
                     var touch = e.touches[0] || e.changedTouches[0];
                     e.pageX = touch.pageX;
@@ -181,7 +183,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var icon = config.icon || window.appRegistry.getIcon(path.callee);
         var title = config.title || 'App';
 
-        toolbarTitle.innerHTML = window.replaceHTMLTags(title);
+        toolbarTitle.innerHTML = window.utils.replaceHTMLTags(title);
 
         await (async () => {
             var url = URL.createObjectURL(await window.fs.downloadFile('C:/Winbows/System/styles/app.css'));
@@ -253,11 +255,11 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 setTimeout(() => {
-                    hostElement.style.transition = 'none';
+                    hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
                 }, 200)
             } else {
-                hostElement.style.transition = 'none';
+                hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                 windowElement.style.transition = 'none';
             }
 
@@ -284,11 +286,11 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 setTimeout(() => {
-                    hostElement.style.transition = 'none';
+                    hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
                 }, 200)
             } else {
-                hostElement.style.transition = 'none';
+                hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                 windowElement.style.transition = 'none';
             }
 
@@ -348,7 +350,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             if (pointerDown) {
                 if (isMaximized == true) {
                     isMaximized = false;
-                    hostElement.style.transition = 'none';
+                    hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
                     hostElement.removeAttribute('data-maximized');
                     hostElement.style.width = originalWidth + 'px';

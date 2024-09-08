@@ -270,7 +270,7 @@
         throw new Error('Winbows has been crashed...');
     }
 
-    window.replaceHTMLTags = (content) => {
+    window.utils.replaceHTMLTags = (content) => {
         return content.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
     }
 
@@ -766,8 +766,8 @@
     await fs.mkdir('C:/Users/Admin/Pictures');
     await fs.mkdir('C:/Users/Admin/Videos');
 
-    screenLockSigninUsername.innerHTML = window.replaceHTMLTags('Admin');
-    screenLockSigninButton.innerHTML = window.replaceHTMLTags('Sign In');
+    screenLockSigninUsername.innerHTML = window.utils.replaceHTMLTags('Admin');
+    screenLockSigninButton.innerHTML = window.utils.replaceHTMLTags('Sign In');
 
     // Init kernel files 
     await (async () => {

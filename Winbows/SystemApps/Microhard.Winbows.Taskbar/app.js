@@ -98,7 +98,7 @@
     footerPowerButton.className = 'start-menu-footer-power-button';
 
     footerProfileAvatar.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/user.png')})`;
-    footerProfileUsername.innerHTML = window.replaceHTMLTags('Admin');
+    footerProfileUsername.innerHTML = window.utils.replaceHTMLTags('Admin');
 
     startMenuFooter.appendChild(footerProfile);
     startMenuFooter.appendChild(footerPower);
@@ -111,6 +111,61 @@
         if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || iconRepository.start.item.contains(e.target)) return;
         iconRepository.start.hide();
     })
+
+    !(async () => {
+        // Start Menu
+        var pinnedList = [
+            [{
+                name: 'File Explorer',
+                app: 'explorer'
+            }, {
+                name: 'Edge',
+                app: 'edge'
+            }, {
+                name: 'VSCode',
+                app: 'code'
+            }, {
+                name: 'Command',
+                app: 'cmd'
+            }, {
+                name: 'Paint',
+                app: 'paint'
+            }, {
+                name: 'Info',
+                app: 'info'
+            }],
+            [],
+            []
+        ];
+        pinnedList.forEach(pinneds => {
+            var row = document.createElement('div');
+            row.className = 'start-menu-pinned-row';
+            pinneds.forEach(pinned => {
+                var info = window.appRegistry.getInfo(pinned.app);
+                var item = document.createElement('div');
+                var itemIcon = document.createElement('div');
+                var itemName = document.createElement('div');
+                item.className = 'start-menu-pinned-app';
+                itemIcon.className = 'start-menu-pinned-app-icon';
+                itemName.className = 'start-menu-pinned-app-name';
+
+                itemName.innerHTML = window.utils.replaceHTMLTags(pinned.name);
+                fs.getFileURL(info.icon).then(url => {
+                    itemIcon.style.backgroundImage = `url(${url})`;
+                })
+
+                item.addEventListener('click', (e) => {
+                    new Process(info.script, 'user').start();
+                    iconRepository.start.hide();
+                })
+
+                row.appendChild(item);
+                item.appendChild(itemIcon);
+                item.appendChild(itemName);
+            });
+            pinnedApps.appendChild(row);
+        })
+    })();
 
     // Status
     var focused = null;         // For all
@@ -389,6 +444,7 @@
                                 registry[id] = {
                                     pid: obj.pid,
                                     browserWindow: obj.browserWindow,
+                                    shadowRoot: obj.shadowRoot,
                                     opened: true,
                                     show: true,
                                     focused: true,
@@ -611,13 +667,13 @@
                         if (isSelf(owner) == true) {
                             item.setAttribute('data-toggle', 'self');
                             if (status.show == true) {
-                                hide();
+                                hide(Object.keys(registry)[0]);
                             } else {
-                                show();
+                                show(Object.keys(registry)[0]);
                             }
                         } else {
                             item.removeAttribute('data-toggle');
-                            show();
+                            show(Object.keys(registry)[0]);
                         }
                         lastClicked = owner;
                     })
