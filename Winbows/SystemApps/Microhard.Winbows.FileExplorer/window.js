@@ -520,7 +520,7 @@ async function createTab(icon, header, active = true) {
         itemName.innerHTML = details.name;
 
         item.addEventListener('click', () => {
-            var viewers = window.System.FileViewers.getViewer(path)
+            var viewers = window.System.FileViewers.getViewer(path);
             console.log(viewers[0])
             new Process(viewers[0]).start(`const FILE_PATH="${path}";`);
         })

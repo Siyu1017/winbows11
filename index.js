@@ -869,6 +869,9 @@
             var viewers = window.System.FileViewers.viewers[extension];
             var result = [];
             console.log(file, extension, viewers)
+            if (!viewers) {
+                return result;
+            }
             viewers.forEach((viewer, i) => {
                 var app = window.appRegistry.getInfo(viewer);
                 if (app.viewer) {

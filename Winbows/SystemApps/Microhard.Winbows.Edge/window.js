@@ -1,11 +1,3 @@
-var groups = {
-    0: ['home', 'gallery'],
-    1: ['desktop', 'donwloads', 'documents', 'pictures', 'music', 'videos'],
-    2: ['this_pc', 'network'],
-}
-
-var pages = ['home', 'gallery', 'desktop', 'donwloads', 'documents', 'pictures', 'music', 'videos', 'this_pc', 'network'];
-
 var tabView = document.createElement('div');
 tabView.className = 'tabview';
 document.body.appendChild(tabView);
@@ -53,8 +45,13 @@ function isLocalFile(page) {
     return is;
 }
 
-async function getIcon(page) {
-    return await fs.getFileURL('C:/Winbows/icons/applications/tools/edge.ico');
+function isWebDomain(url) {
+    const link = document.createElement('a');
+    link.href = url;
+    return {
+        valid: link.protocol === "http:" || link.protocol === "https:",
+        protocol: link.protocol
+    };
 }
 
 function getHeader(page) {
@@ -77,44 +74,8 @@ function getHeader(page) {
     })
 }
 
-function getPath(page) {
-    switch (page) {
-        case 'home':
-            return null;
-        case 'gallery':
-            return null;
-        case 'desktop':
-            return 'C:/Users/Admin/Desktop';
-        case 'donwloads':
-            return 'C:/Users/Admin/Downloads';
-        case 'documents':
-            return 'C:/Users/Admin/Documents';
-        case 'pictures':
-            return 'C:/Users/Admin/Pictures';
-        case 'music':
-            return 'C:/Users/Admin/Music';
-        case 'videos':
-            return 'C:/Users/Admin/Videos';
-        case 'this_pc':
-            return null;
-        case 'network':
-            return null;
-        default:
-            return page;
-    }
-}
-
-async function getPageStatus(page) {
-    if (pages.includes(page)) {
-        return 'pages';
-    }
-    var status = await fs.exists(page);
-    console.log(status)
-    return status.exists == true ? 'dir' : false;
-}
-
 function pageToPath(page) {
-    return pages.includes(page) ? getPath(page) : page;
+    return page;
 }
 
 /*
@@ -368,6 +329,10 @@ async function createTab(icon, header, active = true) {
         tabHeader.innerHTML = header;
     }
 
+    fs.getFileURL('C:/Winbows/icons/applications/tools/edge.ico').then(icon => {
+        changeIcon(icon);
+    })
+
     // Path
     var pathStrip = document.createElement('div');
     var pathStripActions = document.createElement('div');
@@ -390,18 +355,27 @@ async function createTab(icon, header, active = true) {
     pathStripActions.appendChild(pathStripActionRefresh);
 
     var content = document.createElement('div');
+    var viewer = document.createElement('div');
+    var viewerTitle = document.createElement('div');
+    var viewerList = document.createElement('div');
     var iframe = document.createElement('iframe');
 
     content.className = 'explorer-content';
+    viewer.className = 'explorer-content-viewer';
+    viewerTitle.className = 'explorer-content-viewer-title';
+    viewerList.className = 'explorer-content-viewer-list';
     iframe.className = 'explorer-content-iframe';
 
     tabViewItem.appendChild(pathStrip);
     tabViewItem.appendChild(content);
-    content.appendChild(iframe)
+    content.appendChild(iframe);
+    content.appendChild(viewer);
+    viewer.appendChild(viewerTitle);
+    viewer.appendChild(viewerList);
 
     var viewHistory = [];
     var currentHistory = -1;
-    var currentPage = 'about:blank';
+    var currentPage = 'C:/';
 
     function randomID() {
         var patterns = '0123456789abcdef';
@@ -414,29 +388,117 @@ async function createTab(icon, header, active = true) {
 
     var currentID = null;
 
+    function showIframe() {
+        iframe.style.display = 'block';
+        viewer.style.display = 'none';
+    }
+
+    function showViewer() {
+        iframe.style.display = 'none';
+        viewer.style.display = 'flex';
+    }
+
+    async function handleLocalURL() {
+        viewerTitle.innerHTML = '';
+        viewerList.innerHTML = '';
+        var exists = await fs.exists(currentPage);
+        changeHeader(currentPage);
+        if (!exists.exists) {
+            viewerList.innerHTML = 'File not found.';
+            showViewer();
+        } else {
+            if (exists.type == 'directory') {
+                viewerTitle.innerHTML = `Index of ${currentPage}`;
+                var items = await fs.readdir(currentPage);
+                var dirs = [];
+                var files = [];
+
+                items.forEach(item => {
+                    if (item.type == 'directory') {
+                        dirs.push(item);
+                    } else {
+                        files.push(item);
+                    }
+                })
+                var items = dirs.sort((a, b) => {
+                    try {
+                        return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
+                    } catch (e) { };
+                }).concat(files.sort((a, b) => {
+                    try {
+                        return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
+                    } catch (e) { };
+                }))
+
+                items.forEach(item => {
+                    var itemElement = document.createElement('div');
+                    var itemIcon = document.createElement('div');
+                    var itemName = document.createElement('div');
+                    itemElement.className = 'edge-file-item';
+                    itemIcon.className = 'edge-file-item-icon';
+                    itemName.className = 'edge-file-item-name';
+
+                    fs.getFileURL(item.type == 'directory' ? 'C:/Winbows/icons/folders/folder.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
+                        itemIcon.style.backgroundImage = `url(${url})`;
+                    })
+                    itemName.innerHTML = item.path.split('/').slice(-1) == '' ? item.path : item.path.split('/').slice(-1);
+                    itemElement.addEventListener('click', () => {
+                        currentPage = item.path;
+                        addToHistory(currentPage);
+                        getPage();
+                    })
+                    viewerList.appendChild(itemElement);
+                    itemElement.appendChild(itemIcon);
+                    itemElement.appendChild(itemName);
+                })
+
+                if (items.length == 0) {
+                    viewerList.innerHTML = '<span style="color:var(--label-color);">This folder is empty.</span>';
+                }
+
+                showViewer();
+            } else {
+                var url = await fs.getFileURL(currentPage);
+                getHeader(url).then(header => {
+                    if (header == url) return;
+                    changeHeader(header);
+                })
+                iframe.src = url;
+                showIframe();
+            }
+        }
+    }
+
     async function getPage() {
         console.log(currentPage);
 
         var isLocalFileURL = isLocalFile(currentPage);
-        var url = isLocalFileURL ? await fs.getFileURL(currentPage) : currentPage;
-
-        try {
-            getHeader(currentPage).then(header => {
-                changeHeader(header);
-            })
-            getIcon(currentPage).then(icon => {
-                changeIcon(icon);
-            })
-        } catch (e) { 
-            changeHeader(currentPage);
-        }
 
         // TODO : Add path select and input
         pathStripSearch.value = pageToPath(currentPage);
         update();
 
-        iframe.src = url;
-
+        if (isLocalFileURL == true) {
+            handleLocalURL(currentPage);
+        } else {
+            var status = isWebDomain(currentPage);
+            if (status.valid == true) {
+                if (!currentPage.startsWith('https://') || !currentPage.startsWith('http://')) {
+                    currentPage = status.protocol + '//' + currentPage;
+                } else if (currentPage.startsWith('//')) {
+                    currentPage = status.protocol + currentPage;
+                }
+            }
+            try {
+                getHeader(currentPage).then(header => {
+                    changeHeader(header);
+                })
+            } catch (e) {
+                changeHeader(currentPage);
+            }
+            iframe.src = currentPage;
+            showIframe();
+        }
         return;
     }
 
@@ -506,10 +568,6 @@ async function createTab(icon, header, active = true) {
         } catch (e) { };
     }
 
-    changeHeader(getHeader(currentPage));
-    getIcon(currentPage).then(icon => {
-        changeIcon(icon);
-    });
     addToHistory(currentPage);
     getPage();
     focus();
