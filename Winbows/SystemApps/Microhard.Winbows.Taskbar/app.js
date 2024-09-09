@@ -134,7 +134,10 @@
                 name: 'Info',
                 app: 'info'
             }],
-            [],
+            [{
+                name: 'Task Manager',
+                app: 'taskmgr'
+            }],
             []
         ];
         pinnedList.forEach(pinneds => {

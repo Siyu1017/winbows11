@@ -217,6 +217,11 @@
                 icon: 'C:/Winbows/icons/applications/office/code.ico',
                 script: 'C:/Program Files/VSCode/app.js',
                 viewer: 'C:/Program Files/VSCode/viewer.js'
+            },
+            'taskmgr': {
+                path: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr',
+                icon: 'C:/Winbows/icons/applications/tools/taskmanager.ico',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr/app.js'
             }
         },
         install: () => { },

@@ -27,6 +27,7 @@
     }
 
     var messengerTokens = [];
+    var listeners = [];
 
     function getToken() {
         var patterns = '0123456789abcdef';
@@ -38,6 +39,14 @@
             return getToken();
         }
         return id;
+    }
+
+    function triggerEvent(event, details) {
+        if (listeners[event]) {
+            listeners[event].forEach(listener => {
+                listener(details);
+            })
+        }
     }
 
     class Process {
@@ -71,6 +80,11 @@
             window.System.processes[this.id].url = this.url;
             window.System.processes[this.id].worker = this.worker;
             window.Winbows.Screen.style.cursor = 'auto';
+            triggerEvent('start', {
+                pid: this.id,
+                path: this.path,
+                type: this.type
+            })
             return;
         }
         exit() {
@@ -89,6 +103,11 @@
                     temp.remove()
                 } catch (e) { }
             })
+            triggerEvent('exit', {
+                pid: this.id,
+                path: this.path,
+                type: this.type
+            })
             delete window.System.processes[this.id];
         }
         _exit_Window() {
@@ -101,6 +120,11 @@
                 try {
                     temp.remove()
                 } catch (e) { }
+            })
+            triggerEvent('exit', {
+                pid: this.id,
+                path: this.path,
+                type: this.type
             })
             delete window.System.processes[this.id];
         }
@@ -163,6 +187,13 @@
                 }
             }.bind(this))
         }
+    }
+
+    Process.prototype.addEventListener = (event, listener) => {
+        if (!listeners[event]) {
+            listeners[event] = [];
+        }
+        listeners[event].push(listener);
     }
 
     /*

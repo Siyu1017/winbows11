@@ -59,6 +59,13 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             ICON.focus(windowID);
         })
 
+        if (config.x) {
+            hostElement.style.left = config.x + 'px';
+        }
+        if (config.y) {
+            hostElement.style.top = config.y + 'px';
+        }
+
         ICON.addEventListener('blur', (e) => {
             content.style.pointerEvents = '';
         })
