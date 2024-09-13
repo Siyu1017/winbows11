@@ -1,5 +1,36 @@
 {
   "dependencies": {
     "express": "^4.19.2"
-  }
+  },
+  "name": "winbows11",
+  "version": "1.0.0",
+  "description": "Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!",
+  "main": "server.js",
+  "directories": {
+    "test": "tests"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "node tree.js && node server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Siyu1017/winbows11.git"
+  },
+  "keywords": [
+    "Windows11",
+    "Winbows11",
+    "Web",
+    "OS",
+    "Windows",
+    "Win11",
+    "Javascript"
+  ],
+  "author": "Siyu1017",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Siyu1017/winbows11/issues"
+  },
+  "homepage": "https://github.com/Siyu1017/winbows11#readme"
 }
