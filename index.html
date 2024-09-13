@@ -19,7 +19,7 @@
     <meta property="og:url" content="https://winbows11.vercel.app">
     <title>Winbows11</title>
     <link rel="icon" href="./favicon.ico">
-    <link rel="stylesheet" href="./index.css">
+    <link rel="stylesheet" href="./index.css" data-tag="style-main">
     <style>
         .confirm {
             width: 100vw;
@@ -261,6 +261,15 @@
                 runWinbows();
             }
         })();
+
+        try {
+            var styleURL = `./index.css?timestamp=${new Date().getTime()}`;
+            var style = document.createElement('link');
+            style.rel = 'stylesheet';
+            style.href = styleURL;
+            style.type = 'text/css';
+            document.head.appendChild(style);
+        } catch (e) { };
     </script>
 </body>
 
