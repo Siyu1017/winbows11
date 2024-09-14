@@ -189,7 +189,7 @@
                 } catch (e) { }
 
                 try {
-                    await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
+                    await fetch(`./update.json?timestamp=${new Date().getTime()}`).then(res => {
                         return res.json();
                     }).then(async data => {
                         const build_id = data.build_id;
@@ -259,7 +259,7 @@
                     runWinbows();
                 })
                 confirmInstall.addEventListener('click', () => {
-                    location.href = './install.html';
+                    location.href = `./install.html?timestamp=${new Date().getTime()}`;
                 })
             } else {
                 runWinbows();

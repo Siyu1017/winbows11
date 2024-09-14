@@ -452,7 +452,7 @@ async function downloadFile(path) {
 }
 
 try {
-    fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
+    fetch(`./update.json?timestamp=${new Date().getTime()}`).then(res => {
         return res.json();
     }).then(async data => {
         var lastTime = Date.now();

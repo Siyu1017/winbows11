@@ -59,10 +59,6 @@ walk(__dirname + '/Program Files', function (err, results1) {
             results2[i] = file.replaceAll('\\', '/');
         });
         table = table.concat(results2);
-        fs.writeFile(__dirname + '/tree.json', JSON.stringify(table), function (err) {
-            if (err) return console.log(err);
-            return ''
-        });
 
         (async () => {
             const totalSize = await getDirectorySize(__dirname + '/Program Files') + await getDirectorySize(__dirname + '/Winbows');
@@ -73,7 +69,7 @@ walk(__dirname + '/Program Files', function (err, results1) {
                 table: table
             }
 
-            fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
+            fs.writeFile(__dirname + '/update.json', JSON.stringify(detail), function (err) {
                 if (err) return console.log(err);
                 return ''
             });
