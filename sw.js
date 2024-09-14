@@ -8,9 +8,6 @@ self.addEventListener('install', (event) => {
                 './index.html',
                 './index.js',
                 './index.css',
-                './install.html',
-                './install.css',
-                './install.js',
                 './favicon.ico'
             ])
         }).then(() => {

@@ -275,8 +275,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             hostElement.removeAttribute('data-maximized');
             hostElement.style.left = originalLeft + 'px';
             hostElement.style.top = originalTop + 'px';
-            hostElement.style.width = originalWidth + 'px';
-            hostElement.style.height = originalHeight + 'px';
+            // hostElement.style.width = originalWidth + 'px';
+            // hostElement.style.height = originalHeight + 'px';
 
             if (animation == true) {
                 hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
@@ -299,6 +299,9 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         }
 
         async function maximizeWindow(animation = true) {
+            updateSize();
+            updatePosition();
+
             /*
             originalWidth = hostElement.offsetWidth;
             originalHeight = hostElement.offsetHeight;
@@ -310,8 +313,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             hostElement.setAttribute('data-maximized', 'true');
             hostElement.style.left = '0';
             hostElement.style.top = '0';
-            hostElement.style.width = '100vw';
-            hostElement.style.height = 'calc(100vh - var(--taskbar-height))';
+            // hostElement.style.width = '100vw';
+            // hostElement.style.height = 'calc(100vh - var(--taskbar-height))';
 
             if (animation == true) {
                 hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
@@ -384,8 +387,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                     hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
                     hostElement.removeAttribute('data-maximized');
-                    hostElement.style.width = originalWidth + 'px';
-                    hostElement.style.height = originalHeight + 'px';
+                    // hostElement.style.width = originalWidth + 'px';
+                    // hostElement.style.height = originalHeight + 'px';
                     windowElement.style.width = originalWidth + 'px';
                     windowElement.style.height = originalHeight + 'px';
                     windowElement.style.borderRadius = 'revert-layer';

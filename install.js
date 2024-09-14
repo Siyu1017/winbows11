@@ -422,7 +422,7 @@ window.fs.downloadFile = downloadFile;
 
 var index = 0;
 var name = '';
-var totalSize = 0;
+var downloadedSize = 0;
 
 async function downloadFile(path) {
     function removeStringInRange(str, start, end) {
@@ -439,7 +439,7 @@ async function downloadFile(path) {
         }).then(async content => {
             var blob = content;
             await fs.writeFile(path, blob);
-            totalSize += blob.size;
+            downloadedSize += blob.size;
             return resolve();
         }).catch(async err => {
             console.log(`Failed to fetch file: ${path}`, err);
@@ -452,15 +452,21 @@ async function downloadFile(path) {
 }
 
 try {
-    fetch(`./tree.json?timestamp=${new Date().getTime()}`).then(res => {
+    fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
         return res.json();
-    }).then(async files => {
+    }).then(async data => {
         var lastTime = Date.now();
         var startTime = lastTime;
 
         var nameElement = document.createElement('div');
         var timeElement = document.createElement('div');
         var lastElement = document.createElement('div');
+
+        const files = data.table;
+        const build_id = data.build_id;
+        const size = data.size;
+
+        console.log('Whole size: ' + getSizeString(size).replaceAll('(','').replaceAll(')', ''));
 
         nameElement.innerHTML = 'Name: unknown';
         timeElement.innerHTML = 'Time remaining: unknown';
@@ -487,11 +493,28 @@ try {
             }
         }
 
+        function getSizeString(size) {
+            if (size < 0) return '';
+            if (size < 1024) {
+                // size < 1KB
+                return `(${size} bytes)`;
+            } else if (size < 1024 * 1024) {
+                // size < 1MB
+                return `(${(size / 1024).toFixed(2)} KB)`;
+            } else if (size < 1024 * 1024 * 1024) {
+                // size < 1GB
+                return `(${(size / (1024 * 1024)).toFixed(2)} MB)`;
+            } else {
+                // size >= 1GB
+                return `(${(size / (1024 * 1024 * 1024)).toFixed(2)} GB)`;
+            }
+        }
+
         function updateItem() {
             document.querySelector('.install-percent').innerHTML = ~~((index / (files.length - 1)) * 100) + '% complete';
             document.querySelector('.install-progress-bar').style.width = (index / (files.length - 1)) * 100 + '%';
             nameElement.innerHTML = `Name: ${name}`;
-            lastElement.innerHTML = `Remaining items: ${files.length - index - 1}`;
+            lastElement.innerHTML = `Remaining items: ${files.length - index - 1} ${getSizeString(size - downloadedSize)}`;
         }
         function updateTime() {
             updateItem();
@@ -523,9 +546,10 @@ try {
                 installed.push(files[i]);
                 localStorage.setItem('WINBOWS_DIRECTORIES', JSON.stringify(installed));
 
-                console.log(totalSize / 1024 / 1024 + ' MB');
-                
+                console.log(getSizeString(downloadedSize).replaceAll('(','').replaceAll(')', ''));
+
                 if (installed.length == files.length) {
+                    localStorage.setItem('WINBOWS_BUILD_ID', build_id);
                     update();
                     location.href = './';
                 }

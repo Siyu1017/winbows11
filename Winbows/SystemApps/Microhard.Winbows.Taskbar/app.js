@@ -137,6 +137,9 @@
             [{
                 name: 'Task Manager',
                 app: 'taskmgr'
+            }, {
+                name: 'Settings',
+                app: 'settings'
             }],
             []
         ];

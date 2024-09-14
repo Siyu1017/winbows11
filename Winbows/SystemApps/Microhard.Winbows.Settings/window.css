@@ -1,0 +1,4 @@
+.example::before {
+    content: '\e770';
+    font-family: Segoe Fluent Icons;
+}

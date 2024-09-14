@@ -222,6 +222,11 @@
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr',
                 icon: 'C:/Winbows/icons/applications/tools/taskmanager.ico',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr/app.js'
+            },
+            'settings': {
+                path: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings',
+                icon: 'C:/Winbows/icons/applications/tools/settings.ico',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings/app.js'
             }
         },
         install: () => { },

@@ -34,10 +34,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all .1s ease-in-out;
 }
 
 .sidebar-item.active {
     background: rgba(255, 255, 255, .7);
+}
+
+.sidebar-item:hover {
+    background: rgba(255,255,255,.4);
 }
 
 .sidebar-item-icon {
@@ -63,8 +68,7 @@
     font-size: .875rem;
 }
 
-.task,
-.task-header {
+.task, .task-header {
     display: flex;
     padding: .375rem .75rem;
     gap: .5rem;

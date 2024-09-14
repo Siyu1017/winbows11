@@ -136,8 +136,9 @@
 
     <script>
         (async function (params) {
-            var lib = await (await window.parent.fs.readFile('./lib.js')).text();
-            new Function(lib)();
+            var url = await window.parent.fs.getFileURL('C:/Program Files/Paint/lib.js') 
+            
+            import(url);
 
             function canvasClarifier(canvas, ctx, width, height) {
                 const originalSize = {

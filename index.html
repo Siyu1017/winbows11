@@ -159,6 +159,7 @@
         ; (async () => {
             var DIRECTORIES = localStorage.getItem('WINBOWS_DIRECTORIES') || true;
             window.needsUpdate = false;
+            window.build_id = localStorage.getItem('WINBOWS_BUILD_ID');
 
             var runWinbows = function () { };
             var scriptURL = `./index.js?timestamp=${new Date().getTime()}`;
@@ -188,10 +189,11 @@
                 } catch (e) { }
 
                 try {
-                    await fetch('./tree.json').then(res => {
+                    await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
                         return res.json();
-                    }).then(async files => {
-                        if (JSON.stringify(files) != DIRECTORIES) {
+                    }).then(async data => {
+                        const build_id = data.build_id;
+                        if (build_id != window.build_id) {
                             window.needsUpdate = true;
                         }
                     }).catch(err => {
