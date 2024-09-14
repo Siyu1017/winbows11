@@ -413,6 +413,7 @@ async function createTab(icon, header, active = true) {
     width: -webkit-fill-available;
     height: -webkit-fill-available;
     padding: 2rem;
+    overflow: auto;
 ">
     <div style="
     display: flex;
@@ -439,11 +440,11 @@ async function createTab(icon, header, active = true) {
     <div style="
     padding: 1rem 0;
 ">
-        <li data-href="C:/"style="
+        <li data-href="C:/" style="
     text-decoration: underline;
     cursor: pointer;
 ">View files under C:/</li>
-        <li data-href="siyu1017.github.io"style="
+        <li data-href="siyu1017.github.io" style="
     text-decoration: underline;
     cursor: pointer;
 ">Visit the Winbows11 author's website</li>

@@ -61,9 +61,14 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         if (config.x) {
             hostElement.style.left = config.x + 'px';
+        } else {
+            hostElement.style.left = (window.innerWidth / 2) - ((config.width ? config.width : 800) / 2) + 'px';
         }
         if (config.y) {
             hostElement.style.top = config.y + 'px';
+        } else {
+            // Taskbar height : 48
+            hostElement.style.top = ((window.innerHeight - 48) / 2) - ((config.height ? config.height : 600) / 2) + 'px';
         }
 
         ICON.addEventListener('blur', (e) => {
@@ -89,6 +94,18 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         shadowRoot.appendChild(windowElement);
         windowElement.appendChild(toolbarElement);
         windowElement.appendChild(contentElement);
+
+        function updateSize() {
+            originalWidth = hostElement.offsetWidth;
+            originalHeight = hostElement.offsetHeight;
+            console.log('size', originalWidth, originalHeight);
+        }
+
+        function updatePosition() {
+            originalLeft = utils.getPosition(hostElement).x;
+            originalTop = utils.getPosition(hostElement).y;
+            console.log('position', originalLeft, originalTop);
+        }
 
         Object.keys(resizerConfig).forEach(key => {
             var allowed = resizerConfig[key];
@@ -159,8 +176,11 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             }
 
             function handleEndResizing(e) {
+                if (pointerDown == false) return;
                 pointerDown = false;
                 appWrapper.classList.remove('moving');
+                updateSize();
+                updatePosition();
             }
 
             events.start.forEach(event => {
@@ -270,17 +290,21 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 windowElement.style.transition = 'none';
             }
 
-            windowElement.style.width = 'revert-layer';
-            windowElement.style.height = 'revert-layer';
+            windowElement.style.width = originalWidth + 'px';
+            windowElement.style.height = originalHeight + 'px';
             windowElement.style.borderRadius = 'revert-layer';
             maximizeImage.src = await window.fs.getFileURL(icons[1]);
+
+            console.log(originalWidth, originalHeight);
         }
 
         async function maximizeWindow(animation = true) {
+            /*
             originalWidth = hostElement.offsetWidth;
             originalHeight = hostElement.offsetHeight;
             originalLeft = utils.getPosition(hostElement).x;
             originalTop = utils.getPosition(hostElement).y;
+            */
 
             isMaximized = true;
             hostElement.setAttribute('data-maximized', 'true');
@@ -362,8 +386,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                     hostElement.removeAttribute('data-maximized');
                     hostElement.style.width = originalWidth + 'px';
                     hostElement.style.height = originalHeight + 'px';
-                    windowElement.style.width = 'revert-layer';
-                    windowElement.style.height = 'revert-layer';
+                    windowElement.style.width = originalWidth + 'px';
+                    windowElement.style.height = originalHeight + 'px';
                     windowElement.style.borderRadius = 'revert-layer';
                     window.fs.getFileURL(icons[1]).then(url => {
                         maximizeImage.src = url;
@@ -388,8 +412,10 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         }
 
         function handleEndMoving(e) {
+            if (pointerDown == false) return;
             pointerDown = false;
             appWrapper.classList.remove('moving');
+            updatePosition();
             triggerEvent('dragend', {
                 preventDefault: () => {
 

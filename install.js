@@ -445,7 +445,7 @@ async function downloadFile(path) {
             console.log(`Failed to fetch file: ${path}`, err);
             document.querySelector('.install-window').style.alignItems = 'center';
             document.querySelector('.install-window').style.justifyContent = 'center';
-            document.querySelector('.install-window').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:5rem;height:5rem;" viewBox="0 0 24 24" fill="none" stroke="#E69264" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><div style="max-width: 60%;word-break: break-all;font-weight: 600;font-size: 1.25rem;margin-top: 1rem;">發生錯誤，無法下載 ${name}</div><div style="font-size: .875rem;color: #454545;margin: .375rem;">建議您在網絡連線穩定的場所進行下載</div><br><a href="./" style="color: #fff;margin-bottom: .5rem;padding: .75rem 1.25rem;background: #0067c0;border-radius: .5rem;text-decoration: none;cursor: pointer;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;">重新執行 Winbows11?</a>`;
+            document.querySelector('.install-window').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:5rem;height:5rem;" viewBox="0 0 24 24" fill="none" stroke="#E69264" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg><div style= "max-width: 60%;word-break: break-all;font-weight: 600;font-size: 1.25rem;margin-top: 1rem;">An error occurred and cannot be downloaded ${name}</div> <div style="font-size: .875rem;color: #454545;margin: .375rem;">It is recommended that you download in a place with a stable network connection</div><br><a href="./" style="color: #fff;margin-bottom: .5rem;padding: .75rem 1.25rem;background: #0067c0;border-radius: .5rem;text-decoration: none;cursor: pointer;user-select:none; -webkit-user-select:none;-webkit-user-drag:none;">Re-execute Winbows11?</a>`;
             return reject(err);
         })
     })
@@ -462,9 +462,9 @@ try {
         var timeElement = document.createElement('div');
         var lastElement = document.createElement('div');
 
-        nameElement.innerHTML = '名稱：未知';
-        timeElement.innerHTML = '剩餘時間：未知';
-        lastElement.innerHTML = '剩餘項目：未知';
+        nameElement.innerHTML = 'Name: unknown';
+        timeElement.innerHTML = 'Time remaining: unknown';
+        lastElement.innerHTML = 'Remaining items: unknown';
 
         document.querySelector('.install-info').appendChild(nameElement);
         document.querySelector('.install-info').appendChild(timeElement);
@@ -475,27 +475,27 @@ try {
             var lastItems = files.length - index;
             var seconds = ~~(avarageTime * lastItems);
             if (lastTime == startTime) {
-                return '計算中...';
+                return 'Calculating...';
             } else if (seconds < 60) {
-                return `${seconds} 秒鐘`;
+                return `${seconds} sencond(s)`;
             } else if (seconds < 60 * 60) {
-                return `${~~(seconds / 60)} 分鐘 ${seconds % 60} 秒鐘`;
+                return `${~~(seconds / 60)} minute(s) and ${seconds % 60} sencond(s)`;
             } else if (seconds < 60 * 60 * 24) {
-                return `${~~(seconds / (60 * 60))} 小時 ${~~((seconds % (60 * 60)) / 60)} 分鐘 ${seconds % 60} 秒鐘`;
+                return `${~~(seconds / (60 * 60))} hour(s)`;
             } else {
-                return '超過一天';
+                return 'more than one day';
             }
         }
 
         function updateItem() {
-            document.querySelector('.install-percent').innerHTML = ~~((index / (files.length - 1)) * 100) + '% 已完成';
+            document.querySelector('.install-percent').innerHTML = ~~((index / (files.length - 1)) * 100) + '% complete';
             document.querySelector('.install-progress-bar').style.width = (index / (files.length - 1)) * 100 + '%';
-            nameElement.innerHTML = `名稱：${name}`;
-            lastElement.innerHTML = `剩餘項目：${files.length - index - 1}`;
+            nameElement.innerHTML = `Name: ${name}`;
+            lastElement.innerHTML = `Remaining items: ${files.length - index - 1}`;
         }
         function updateTime() {
             updateItem();
-            timeElement.innerHTML = `剩餘時間：${predictTime()}`;
+            timeElement.innerHTML = `Time remaining: ${predictTime()}`;
         }
         function update() {
             updateTime();

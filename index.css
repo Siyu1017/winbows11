@@ -755,8 +755,6 @@ body {
 .browser-window-container {
     position: fixed;
     z-index: 1;
-    top: 100px;
-    left: 100px;
     animation: browser-window-open 100ms ease-in-out 1 none;
     transform: scale(.9);
     opacity: 0;
