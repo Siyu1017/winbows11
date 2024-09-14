@@ -227,6 +227,11 @@
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings',
                 icon: 'C:/Winbows/icons/applications/tools/settings.ico',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings/app.js'
+            },
+            'fpsmeter': {
+                path: 'C:/Program Files/FPS Meter/',
+                icon: 'C:/Program Files/FPS Meter/favicon.ico',
+                script: 'C:/Program Files/FPS Meter/app.js'
             }
         },
         install: () => { },

@@ -1,0 +1,10 @@
+.window {
+    min-width: 300px;
+    min-height: 150px;
+    width: fit-content;
+    height: fit-content;
+}
+
+canvas {
+    background: #fff;
+}

@@ -759,6 +759,11 @@ body {
     transform: scale(.9);
     opacity: 0;
     transition: transform 100ms ease-in-out, opacity 100ms ease-in-out;
+    pointer-events: none;
+}
+
+.browser-window-container.show-on-top {
+    z-index: 9999999999 !important;
 }
 
 .browser-window-container.active.close {
@@ -768,6 +773,7 @@ body {
 .browser-window-container.active {
     transform: scale(1);
     opacity: 1;
+    pointer-events: all;
     /* box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1); */
 }
 

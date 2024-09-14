@@ -88,12 +88,21 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         toolbarElement.className = 'window-toolbar';
         contentElement.className = 'window-content';
 
-        appWrapper.appendChild(hostElement);
+        if (config.showOnTop == true) {
+            window.Winbows.Screen.appendChild(hostElement);
+            hostElement.classList.add('show-on-top');
+        } else {
+            appWrapper.appendChild(hostElement);
+        }
         hostElement.appendChild(resizers);
         hostElement.appendChild(content);
         shadowRoot.appendChild(windowElement);
         windowElement.appendChild(toolbarElement);
         windowElement.appendChild(contentElement);
+
+        if (config.resizable == false) {
+            resizers.remove();
+        }
 
         function updateSize() {
             originalWidth = hostElement.offsetWidth;
@@ -428,6 +437,18 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             })
         }
 
+        function setMovable(element, movable = true) {
+            if (movable == true) {
+                events.start.forEach(event => {
+                    element.addEventListener(event, e => handleStartMoving(e));
+                })
+            } else {
+                events.start.forEach(event => {
+                    element.removeEventListener(event, handleStartMoving);
+                })
+            }
+        }
+
         function triggerEvent(event, details) {
             if (listeners.hasOwnProperty(event)) {
                 listeners[event].forEach(listener => listener(details));
@@ -459,7 +480,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         return {
             shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
-            close, addEventListener
+            close, addEventListener, setMovable
         };
     },
     writable: false,

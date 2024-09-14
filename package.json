@@ -11,6 +11,7 @@
   },
   "devDependencies": {},
   "scripts": {
+    "setup": "node build.js",
     "test": "node build.js && node server.js",
     "start": "node server.js"
   },

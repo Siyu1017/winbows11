@@ -137,9 +137,12 @@
             [{
                 name: 'Task Manager',
                 app: 'taskmgr'
-            }, {
+            }, /*{
                 name: 'Settings',
                 app: 'settings'
+            }, */{
+                name: 'FPS Meter',
+                app: 'fpsmeter'
             }],
             []
         ];
