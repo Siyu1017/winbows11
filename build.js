@@ -69,7 +69,7 @@ walk(__dirname + '/Program Files', function (err, results1) {
                 table: table
             }
 
-            fs.writeFile(__dirname + '/update.json', JSON.stringify(detail), function (err) {
+            fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
                 if (err) return console.log(err);
                 return ''
             });

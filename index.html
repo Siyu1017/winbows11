@@ -189,7 +189,7 @@
                 } catch (e) { }
 
                 try {
-                    await fetch(`./update.json?timestamp=${new Date().getTime()}`).then(res => {
+                    await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
                         return res.json();
                     }).then(async data => {
                         const build_id = data.build_id;

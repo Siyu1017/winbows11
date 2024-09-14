@@ -11,8 +11,7 @@
   },
   "devDependencies": {},
   "scripts": {
-    "build": "node update.js",
-    "test": "node update.js && node server.js",
+    "test": "node build.js && node server.js",
     "start": "node server.js"
   },
   "repository": {
