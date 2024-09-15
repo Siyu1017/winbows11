@@ -524,8 +524,6 @@ async function createTab(icon, header, active = true) {
             if (defaultViewer != null) {
                 new Process(defaultViewer).start(`const FILE_PATH="${path}";`);
             } else {
-                // var viewers = window.System.FileViewers.getViewers(path);
-                // console.log(viewers[0])
                 console.log(utils.resolvePath('./chooseViewer.js'))
                 new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
             }

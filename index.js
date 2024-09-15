@@ -910,6 +910,17 @@
                 window.System.FileViewers.viewers[extension].splice(index, 1);
             }
         },
+        setDefaultViewer: (extension, app) => {
+            var exists = false;
+            Object.keys(window.System.FileViewers.registeredViewers).forEach(name => {
+                if (name == app || window.System.FileViewers.registeredViewers[name] == app) {
+                    exists = name;
+                }
+            })
+            if (exists != false) {
+                window.System.FileViewers.defaultViewers[extension] = exists;
+            }
+        },
         getDefaultViewer: (file = '') => {
             var extension = file.split('.').pop().toLowerCase();
             var viewer = window.System.FileViewers.defaultViewers[extension];

@@ -97,6 +97,7 @@ viewers.forEach(viewer => {
 
 alwaysButton.addEventListener('click', () => {
     if (selected == null) return;
+    window.System.FileViewers.setDefaultViewer(extension, selected);
     new Process(selected).start(`const FILE_PATH="${datas.file}";`);
     self = true;
     process.exit(0);
