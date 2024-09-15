@@ -73,10 +73,12 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         ICON.addEventListener('blur', (e) => {
             content.style.pointerEvents = '';
+            triggerEvent('blur', {})
         })
 
         ICON.addEventListener('focus', (e) => {
             content.style.pointerEvents = 'unset';
+            triggerEvent('focus', {});
         })
 
         // Outside
@@ -360,6 +362,16 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             console.log('close', windowID)
             ICON.close(windowID);
             window.System.processes[pid]._exit_Window();
+        }
+
+        if (config.fullscreenable == false) {
+            maximizeButton.remove();
+        }
+        if (config.minimizable == false) {
+            minimizeButton.remove();
+        }
+        if (config.closable == false) {
+            closeButton.remove();
         }
 
         var pointerDown = false;

@@ -520,9 +520,15 @@ async function createTab(icon, header, active = true) {
         itemName.innerHTML = details.name;
 
         item.addEventListener('click', () => {
-            var viewers = window.System.FileViewers.getViewer(path);
-            console.log(viewers[0])
-            new Process(viewers[0]).start(`const FILE_PATH="${path}";`);
+            var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+            if (defaultViewer != null) {
+                new Process(defaultViewer).start(`const FILE_PATH="${path}";`);
+            } else {
+                // var viewers = window.System.FileViewers.getViewers(path);
+                // console.log(viewers[0])
+                console.log(utils.resolvePath('./chooseViewer.js'))
+                new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
+            }
         })
 
         item.appendChild(itemIcon);

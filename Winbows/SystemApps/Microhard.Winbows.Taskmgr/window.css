@@ -42,7 +42,7 @@
 }
 
 .sidebar-item:hover {
-    background: rgba(255,255,255,.4);
+    background: rgba(255, 255, 255, .4);
 }
 
 .sidebar-item-icon {
@@ -52,23 +52,20 @@
     min-height: 1.25rem;
 }
 
-.tasks {
+.content {
     display: flex;
     flex-direction: column;
-    padding: 1rem;
+    padding: 0 1rem;
     background: #fff;
     width: -webkit-fill-available;
     height: -webkit-fill-available;
     /* overflow: hidden; */
     border-radius: .75rem 0 0 0;
+    overflow: auto;
 }
 
+.task,
 .task-header {
-    color: #676767;
-    font-size: .875rem;
-}
-
-.task, .task-header {
     display: flex;
     padding: .375rem .75rem;
     gap: .5rem;
@@ -76,6 +73,20 @@
     border-radius: .375rem;
     transition: all .1s ease-in-out;
     cursor: default;
+}
+
+
+.task-header {
+    color: #676767;
+    font-size: .875rem;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    padding-top: 1.375rem;
+}
+
+.tasks {
+    padding-bottom: 1rem;
 }
 
 .task:hover {

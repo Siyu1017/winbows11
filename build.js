@@ -45,14 +45,22 @@ async function getDirectorySize(directory) {
     return totalSize;
 }
 
-var table = [];
+var table = [
+    'C:/build.json', 
+    'C:/index.js', 
+    'C:/index.html', 
+    'C:/index.css', 
+    'C:/favicon.ico', 
+    'C:/banner.png', 
+    'C:/LICENSE'
+];
 
 walk(__dirname + '/Program Files', function (err, results1) {
     if (err) throw err;
     results1.forEach(function (file, i) {
         results1[i] = file.replaceAll('\\', '/');
     });
-    table = results1;
+    table = table.concat(results1);
     walk(__dirname + '/Winbows', async function (err, results2) {
         if (err) throw err;
         results2.forEach(function (file, i) {

@@ -373,7 +373,7 @@
     })
     Object.defineProperties(window.Taskbar, {
         'pinnedApps': {
-            value: ['explorer', 'edge', 'store']
+            value: ['C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js', 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.js', 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.js']
         },
         'pinApp': {
             value: (name) => {
@@ -395,9 +395,7 @@
         },
         'isPinned': {
             value: (path) => {
-                var app = window.appRegistry.getApp(path);
-                // console.log(app.name, app)
-                return window.Taskbar.pinnedApps.includes(app.name);
+                return window.Taskbar.pinnedApps.includes(path);
             },
             writable: false,
             configurable: false
@@ -709,7 +707,7 @@
 
                 await (async () => {
                     for (let i in window.Taskbar.pinnedApps) {
-                        var url = await fs.getFileURL(window.appRegistry.apps[window.Taskbar.pinnedApps[i]].icon);
+                        var url = await fs.getFileURL(window.appRegistry.getApp(window.Taskbar.pinnedApps[i]).icon);
                         await window.loadImage(url);
                     }
                     return;
@@ -755,8 +753,8 @@
                 // Taskbar pinned apps
                 for (let i in window.Taskbar.pinnedApps) {
                     await (async (i) => {
-                        var app = window.appRegistry.apps[window.Taskbar.pinnedApps[i]];
-                        var name = window.Taskbar.pinnedApps[i];
+                        var app = window.appRegistry.getApp(window.Taskbar.pinnedApps[i]);
+                        var name = app.name;
                         var script = app.script;
                         await window.Taskbar.createIcon({
                             title: name[0].toUpperCase() + name.slice(1),

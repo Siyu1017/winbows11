@@ -1,0 +1,114 @@
+.window {
+    width: 360px;
+    height: 540px;
+    -webkit-backdrop-filter: saturate(2) blur(60px);
+    backdrop-filter: saturate(2) blur(60px);
+    background: var(--winbows-taskbar-bg);
+    border: 1.5px solid rgba(0, 0, 0, .1);
+}
+
+.window * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+.window-toolbar {
+    display: none;
+}
+
+.window-content {
+    background: none;
+}
+
+.container {
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    padding: 1rem 1.25rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.content {
+    padding: 1rem 1.25rem;
+    display: flex;
+    overflow: auto;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.viewer {
+    padding: .75rem 1rem;
+    display: flex;
+    gap: .75rem;
+    align-items: center;
+    border-radius: .375rem;
+    position: relative;
+}
+
+.viewer.active, .viewer:hover {
+    background: #fff;
+}
+
+.viewer.active::before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: .25rem;
+    height: 1rem;
+    background: var(--winbows-primary-color);
+    border-radius: 99px;
+}
+
+.viewer-icon {
+    width: 1.75rem;
+    height: 1.75rem;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.viewer-name {
+    font-size: 1rem;
+}
+
+.footer {
+    padding: .625rem 1.5rem;
+    font-size: 0.875rem;
+    text-align: right;
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+    background: rgb(236 236 236);
+    gap: .5rem;
+    border-top: 1.5px solid rgba(0, 0, 0, .1);
+}
+
+.footer-button {
+    background: #fff;
+    border: none;
+    padding: .5rem 2rem;
+    border-radius: .375rem;
+    width: -webkit-fill-available;
+    font-size: .875rem;
+    transition: all .1s ease-in-out;
+    border: 1.5px solid rgba(0, 0, 0, .1);
+}
+
+.footer-button:hover {
+    background: #f8f8f8;
+}
+
+.footer-button:disabled {
+    pointer-events: none;
+}

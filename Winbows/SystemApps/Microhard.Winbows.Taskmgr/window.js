@@ -14,18 +14,23 @@ var icons = {
 var focusedIcon = 'tasks';
 var app = document.createElement('div');
 var sidebar = document.createElement('div');
+var content = document.createElement('div');
 var taskList = document.createElement('div');
 var taskHeader = document.createElement('div');
 
 app.className = 'app';
 sidebar.className = 'sidebar';
+content.className = 'content';
 taskList.className = 'tasks';
 taskHeader.className = 'task-header';
 
 document.body.appendChild(app);
 app.appendChild(sidebar);
-app.appendChild(taskList);
-taskList.appendChild(taskHeader);
+app.appendChild(content);
+content.appendChild(taskHeader);
+content.appendChild(taskList);
+
+document.body.classList.add('winui');
 
 Object.keys(icons).forEach(key => {
     var icon = icons[key];

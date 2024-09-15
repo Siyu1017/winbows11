@@ -215,8 +215,7 @@
             'code': {
                 path: 'C:/Program Files/VSCode/',
                 icon: 'C:/Winbows/icons/applications/office/code.ico',
-                script: 'C:/Program Files/VSCode/app.js',
-                viewer: 'C:/Program Files/VSCode/viewer.js'
+                script: 'C:/Program Files/VSCode/app.js'
             },
             'taskmgr': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr',
@@ -265,7 +264,7 @@
             return app;
         },
         exists: (name) => {
-            return !!window.appRegistry.apps[name];
+            return !!window.appRegistry.apps[name] || window.appRegistry.getApp(name) != {};
         }
     }
 
@@ -822,7 +821,7 @@
         await runKernel();
     })();
 
-    window.Taskbar.pinApp('cmd');
+    window.Taskbar.pinApp('C:/Program Files/Command/app.js');
     await window.Taskbar.preloadImage();
 
     window.System.CommandParsers = {
@@ -864,8 +863,40 @@
         viewers: {
             'css': ['code'],
             'js': ['code'],
-            'html': ['code'],
-            'txt': ['code']
+            'html': ['code', 'edge'],
+            'txt': ['code'],
+            'jpg': ['mediaplayer', 'edge'],
+            'jpeg': ['mediaplayer', 'edge'],
+            'png': ['mediaplayer', 'edge'],
+            'gif': ['mediaplayer', 'edge'],
+            'webp': ['mediaplayer', 'edge'],
+            'bmp': ['mediaplayer', 'edge'],
+            'svg': ['mediaplayer', 'edge'],
+            'ico': ['mediaplayer', 'edge'],
+            'pdf': [],
+            'json': ['code'],
+            'xml': ['code'],
+            'zip': [],
+            'tar': [],
+            'gz': [],
+            'mp3': ['mediaplayer'],
+            'wav': ['mediaplayer'],
+            'ogg': ['mediaplayer'],
+            'mp4': ['mediaplayer'],
+            'webm': ['mediaplayer'],
+            'avi': ['mediaplayer'],
+            'mov': ['mediaplayer']
+        },
+        defaultViewers: {
+            'css': 'code',
+            'js': 'code',
+            'html': 'code',
+            'txt': 'code'
+        },
+        registeredViewers: {
+            'code': 'C:/Program Files/VSCode/viewer.js',
+            'edge': '',
+            'mediaplayer': ''
         },
         register: (extension, app) => {
             if (!window.System.FileViewers.viewers[extension]) {
@@ -879,7 +910,16 @@
                 window.System.FileViewers.viewers[extension].splice(index, 1);
             }
         },
-        getViewer: (file) => {
+        getDefaultViewer: (file = '') => {
+            var extension = file.split('.').pop().toLowerCase();
+            var viewer = window.System.FileViewers.defaultViewers[extension];
+            if (!viewer) {
+                return null;
+            } else {
+                return window.System.FileViewers.registeredViewers[viewer];
+            }
+        },
+        getViewers: (file = '') => {
             var extension = file.split('.').pop().toLowerCase();
             var viewers = window.System.FileViewers.viewers[extension];
             var result = [];
@@ -888,9 +928,9 @@
                 return result;
             }
             viewers.forEach((viewer, i) => {
-                var app = window.appRegistry.getInfo(viewer);
-                if (app.viewer) {
-                    result.push(app.viewer);
+                var app = window.System.FileViewers.registeredViewers[viewer];
+                if (app) {
+                    result.push(window.System.FileViewers.registeredViewers[viewer]);
                 }
             })
             return result;
@@ -1021,6 +1061,7 @@
     }
 
     async function downloadFile(path, responseType = 'blob') {
+        if (!path || path.trim().length == 0) return;
         if (debuggerMode == true) {
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
