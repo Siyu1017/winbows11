@@ -4,7 +4,25 @@ style.type = 'text/css';
 style.href = await fs.getFileURL(utils.resolvePath('./chooseViewerWindow.css'));
 document.head.appendChild(style);
 
-var extension = datas.file.indexOf('.') > -1 ? datas.file.split('.').pop() : datas.file.split('/').pop();
+function getCategoryString() {
+    const file = datas.file;
+    if (file.indexOf('.') > -1) {
+        return `.${file.split('.').pop()}`;
+    } else {
+        return `[${file.split('/').pop()}]`;
+    }
+}
+
+function getExtension() {
+    const file = datas.file;
+    if (file.indexOf('.') > -1) {
+        return file.split('.').pop();
+    } else {
+        return '';
+    }
+}
+
+const extension = getExtension();
 
 var selected = null;
 
@@ -19,7 +37,7 @@ var footer = document.createElement('div');
 var alwaysButton = document.createElement('button');
 var onceButton = document.createElement('button');
 
-header.innerHTML = `Select the application to open the .${extension} file`;
+header.innerHTML = `Select the application to open the ${getCategoryString()} file`;
 // recommendedLabel.innerHTML = 'Suggested apps';
 // moreOptionLabel.innerHTML = 'More options';
 alwaysButton.innerHTML = 'Always';
@@ -95,8 +113,17 @@ viewers.forEach(viewer => {
     item.appendChild(itemName);
 })
 
+if (extension == '') {
+    alwaysButton.remove();
+}
+
+browserWindow.setMovable(header);
+
 alwaysButton.addEventListener('click', () => {
     if (selected == null) return;
+    if (extension == '') {
+        return;
+    }
     window.System.FileViewers.setDefaultViewer(extension, selected);
     new Process(selected).start(`const FILE_PATH="${datas.file}";`);
     self = true;

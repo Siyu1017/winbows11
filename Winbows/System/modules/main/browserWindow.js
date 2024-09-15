@@ -377,9 +377,17 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var pointerDown = false;
         var pointerPosition = [];
         var originalPosition = {};
+        var immovableElements = [];
 
         function handleStartMoving(e) {
             if (toolbarButtons.contains(e.target)) return;
+            var prevent = false;
+            immovableElements.forEach(element => {
+                if (element == e.target) {
+                    prevent = true;
+                }
+            })
+            if (prevent == true) return;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
                 e.pageX = touch.pageX;
@@ -449,15 +457,27 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             })
         }
 
-        function setMovable(element, movable = true) {
-            if (movable == true) {
-                events.start.forEach(event => {
-                    element.addEventListener(event, e => handleStartMoving(e));
-                })
-            } else {
-                events.start.forEach(event => {
-                    element.removeEventListener(event, handleStartMoving);
-                })
+        function setMovable(element) {
+            events.start.forEach(event => {
+                element.addEventListener(event, e => handleStartMoving(e));
+            })
+        }
+
+        function unsetMovable(element) {
+            events.start.forEach(event => {
+                element.removeEventListener(event, handleStartMoving);
+            })
+        }
+
+        function setImmovable(element) {
+            if (!immovableElements.includes(element)) {
+                immovableElements.push(element);
+            }
+        }
+
+        function unsetImmovable(element) {
+            if (immovableElements.includes(element)) {
+                immovableElements.splice(immovableElements.indexOf(element), 1);
             }
         }
 
@@ -492,7 +512,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         return {
             shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
-            close, addEventListener, setMovable
+            close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable
         };
     },
     writable: false,

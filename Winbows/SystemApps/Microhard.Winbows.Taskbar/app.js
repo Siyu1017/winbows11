@@ -502,12 +502,14 @@
                         lastClicked = null;
                         console.log(registry, id)
                         delete registry[id];
+                        if (!window.Taskbar.isPinned(owner) && Object.values(registry).length == 0) {
+                            delete iconRepository[owner];
+                        }
                         setTimeout(() => {
                             // remove window element
                             browserWindow.remove();
                             if (!window.Taskbar.isPinned(owner) && Object.values(registry).length == 0) {
                                 item.remove();
-                                delete iconRepository[owner];
                             }
                             window.System.processes[pid]._exit_Window();
                         }, 300);

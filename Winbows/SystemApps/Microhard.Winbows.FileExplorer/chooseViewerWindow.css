@@ -40,6 +40,21 @@
     overflow: auto;
     flex-direction: column;
     gap: .5rem;
+    transform: translateY(0);
+    opacity: 1;
+    animation: show-content 200ms ease-in-out 1 forwards;
+}
+
+@keyframes show-content {
+    0% {
+        opacity: 0;
+        transform: translateY(1rem);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .viewer {
@@ -51,7 +66,8 @@
     position: relative;
 }
 
-.viewer.active, .viewer:hover {
+.viewer.active,
+.viewer:hover {
     background: #fff;
 }
 

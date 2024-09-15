@@ -427,6 +427,56 @@
                 }
             }
 
+            async reportError(method, message) {
+                var detectList = ['list', 'open', 'readFile', 'readdir'];
+                if (detectList.includes(method)) {
+                    var incomplete = false;
+                    await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
+                        return res.json();
+                    }).then(async data => {
+                        const table = data.table;
+                        for (let i = 0; i < table.length; i++) {
+                            await this.exists(table[i]).then(status => {
+                                if (status.exists == false) {
+                                    // Not exist
+                                    localStorage.removeItem('WINBOWS_BUILD_ID');
+                                    localStorage.removeItem('WINBOWS_DIRECTORIES');
+                                    console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
+                                    incomplete = true;
+                                    // location.href = `./install.html?timestamp=${new Date().getTime()}`;
+                                }
+                            })
+                        }
+                    }).catch(err => {
+                        if (window.needsUpdate == false) {
+                            localStorage.removeItem('WINBOWS_BUILD_ID');
+                            localStorage.removeItem('WINBOWS_DIRECTORIES');
+                            console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
+                            incomplete = true;
+                            // location.href = `./install.html?timestamp=${new Date().getTime()}`;
+                        }
+                    }).finally(async () => {
+                        if (incomplete == false) return;
+                        var warningWindow = `document.documentElement.innerHTML='<div style="background:red;color:#fff;padding:4px 8px;border-radius:4px;user-select: none;-webkit-user-select: none;-webkit-user-drag: none;">THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.</div>';document.documentElement.style="display: flex;align-items: center;justify-content: center;width: fit-content;height: fit-content;";browserWindow.setMovable(document.documentElement)`;
+                        var warningWindowURL = `C:/Winbows/System/Temp/${[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+                        await fs.writeFile(warningWindowURL, new Blob([warningWindow], { 
+                            type: 'text/javascript' 
+                        })).catch(err => {
+                            window.Crash(err);
+                        })
+                        var warningProcess = `;(async()=>{System.requestAccessWindow('${warningWindowURL}',{title:'WARNING',width:300,height:150,resizable:false,showOnTop:true});})();`;
+                        var tempFileName = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+                        fs.writeFile(`C:/Winbows/System/Temp/${tempFileName}`, new Blob([warningProcess], {
+                            type: 'text/javascript'
+                        })).then(res => {
+                            new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
+                        }).catch(err => {
+                            window.Crash(err);
+                        })
+                    })
+                }
+            }
+
             // OK
             async list(url) {
                 const parsed = this.parseURL(url);
@@ -443,7 +493,8 @@
                         // resolve(dirFiles.map((file) => file.path));
                     };
                     request.onerror = (event) => {
-                        this.debugger('list', `Failed to list the contents of disk.`);
+                        this.debugger('list', `Failed to list the contents of ${url}.`);
+                        this.reportError('list', `Failed to list the contents of ${url}.`);
                         reject(event.target.error);
                     };
                 });
@@ -463,10 +514,12 @@
                             resolve(file);
                         } else {
                             this.debugger('open', `Failed to open file "${url}".`);
+                            this.reportError('open', `Failed to open file "${url}".`);
                             reject(new Error(`File not found: ${url}`));
                         }
                     };
                     request.onerror = (event) => {
+                        this.reportError('open', `Failed to open file "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -495,6 +548,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('writeFile', `Failed to write file "${url}".`);
+                        this.reportError('writeFile', `Failed to write file "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -514,10 +568,12 @@
                             resolve(file.content);
                         } else {
                             this.debugger('readFile', `Failed to read file "${url}".`);
+                            this.reportError('readFile', `Failed to read file "${url}".`);
                             reject(`File not found: ${url}`);
                         }
                     };
                     request.onerror = (event) => {
+                        this.reportError('readFile', `Failed to read file "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -536,6 +592,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('mkdir', `Failed to make directory "${url}".`);
+                        this.reportError('mkdir', `Failed to make directory "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -554,6 +611,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('rm', `Failed to remove "${url}".`);
+                        this.reportError('rm', `Failed to remove "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -589,15 +647,18 @@
 
                             deleteRequest.onerror = (event) => {
                                 this.debugger('mv', `Failed to delete "${from}".`);
+                                this.reportError('mv', `Failed to delete "${from}".`);
                                 reject(event.target.error);
                             };
                         } else {
                             this.debugger('mv', `Failed to move "${from}" to "${to}".`);
+                            this.reportError('mv', `Failed to move "${from}" to "${to}".`);
                             reject(new Error(`File not found: ${from}`));
                         }
                     };
 
                     readRequest.onerror = (event) => {
+                        this.reportError('mv', `Failed to move "${from}" to "${to}".`);
                         reject(event.target.error);
                     };
                 });
@@ -668,6 +729,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('readdir', `Failed to read directory "${url}".`);
+                        this.reportError('readdir', `Failed to read directory "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -714,6 +776,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('exists', `Failed to check if "${url}" exists.`);
+                        this.reportError('exists', `Failed to check if "${url}" exists.`);
                         reject({
                             exists: event.target.error,
                             type: 'error',
@@ -726,6 +789,10 @@
                 return new Promise((resolve, reject) => {
                     this[method].apply(this, param).then(response => {
                         resolve(response);
+                    }).catch(error => {
+                        this.reportError('proxy', {
+                            method, param, error
+                        });
                     })
                 });
             }
@@ -898,17 +965,31 @@
             'edge': '',
             'mediaplayer': ''
         },
-        register: (extension, app) => {
+        registerViewer: (name, script) => {
+            if (!window.System.FileViewers.registeredViewers.hasOwnProperty(name)) {
+                window.System.FileViewers.registeredViewers[name] = script;
+            }
+            localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));
+        },
+        unregisterViewer: (name) => {
+            if (window.System.FileViewers.registeredViewers.hasOwnProperty(name)) {
+                delete window.System.FileViewers.registeredViewers[name];
+            }
+            localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));
+        },
+        setViewer: (extension, app) => {
             if (!window.System.FileViewers.viewers[extension]) {
                 window.System.FileViewers.viewers[extension] = [];
             }
             window.System.FileViewers.viewers[extension].push(app);
+            localStorage.setItem('WINBOWS_SYSTEM_FV_VIEWERS', JSON.stringify(window.System.FileViewers.viewers));
         },
-        unregister: (extension, app) => {
+        unsetViewer: (extension, app) => {
             var index = window.System.FileViewers.viewers[extension].indexOf(app);
             if (index != -1) {
                 window.System.FileViewers.viewers[extension].splice(index, 1);
             }
+            localStorage.setItem('WINBOWS_SYSTEM_FV_VIEWERS', JSON.stringify(window.System.FileViewers.viewers));
         },
         setDefaultViewer: (extension, app) => {
             var exists = false;
@@ -920,6 +1001,13 @@
             if (exists != false) {
                 window.System.FileViewers.defaultViewers[extension] = exists;
             }
+            localStorage.setItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS', JSON.stringify(window.System.FileViewers.defaultViewers));
+        },
+        unsetDefaultViewer: (extension, app) => {
+            if (window.System.FileViewers.defaultViewers[extension]) {
+                window.System.FileViewers.defaultViewers.splice(window.System.FileViewers.defaultViewers.indexOf(app), 1)
+            }
+            localStorage.setItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS', JSON.stringify(window.System.FileViewers.defaultViewers));
         },
         getDefaultViewer: (file = '') => {
             var extension = file.split('.').pop().toLowerCase();
@@ -946,6 +1034,22 @@
             })
             return result;
         }
+    }
+
+    if (localStorage.getItem('WINBOWS_SYSTEM_FV_VIEWERS')) {
+        window.System.FileViewers.viewers = JSON.parse(localStorage.getItem('WINBOWS_SYSTEM_FV_VIEWERS'));
+    } else {
+        localStorage.setItem('WINBOWS_SYSTEM_FV_VIEWERS', JSON.stringify(window.System.FileViewers.viewers));
+    }
+    if (localStorage.getItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS')) {
+        window.System.FileViewers.defaultViewers = JSON.parse(localStorage.getItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS'));
+    } else {
+        localStorage.setItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS', JSON.stringify(window.System.FileViewers.defaultViewers));
+    }
+    if (localStorage.getItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS')) {
+        window.System.FileViewers.registeredViewers = JSON.parse(localStorage.getItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS'));
+    } else {
+        localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));
     }
 
     function delay(ms) {
