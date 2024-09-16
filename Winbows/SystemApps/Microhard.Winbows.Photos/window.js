@@ -258,7 +258,13 @@ if (photoPath) {
         render();
     }
     image.onerror = () => {
-        content.innerHTML = `<div>Failed to load image ( ${photoPath} )</div>`;
+        content.innerHTML = `<div style="
+    display: inline-flex;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    align-items: center;
+    justify-content: center;
+">Failed to load image ( ${photoPath} )</div>`;
     }
 
     function render() {
@@ -267,5 +273,14 @@ if (photoPath) {
         requestAnimationFrame(render);
     }
 } else {
-
+    content.innerHTML = `<div style="
+    display: inline-flex;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    align-items: center;
+    justify-content: center;
+">Select an image file from <span data-bind="run" style="text-decoration: underline;margin: 0 4px;cursor: pointer;">File Explorer</span> and open with Photos to view the file</div>`;
+    document.querySelector('[data-bind="run"]').addEventListener('click', function () {
+        window.System.Shell('run explorer');
+    });
 }
