@@ -456,6 +456,10 @@
         fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
             return res.json();
         }).then(async data => {
+            localStorage.removeItem('WINBOWS_SYSTEM_FV_VIEWERS');
+            localStorage.removeItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS');
+            localStorage.removeItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS');
+            
             var lastTime = Date.now();
             var startTime = lastTime;
 

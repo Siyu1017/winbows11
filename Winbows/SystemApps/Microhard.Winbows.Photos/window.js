@@ -6,10 +6,9 @@ document.head.appendChild(style);
 
 var photoPath = datas.file;
 
-var supportedExtensions = ["jpeg", "png", "gif", "webp", "bmp", "svg", "ico"];
+var supportedExtensions = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg", "ico"];
 var supportedMimeTypes = {
     'image/jpeg': 'jpg',
-    'image/jpeg': 'jpeg',
     'image/png': 'png',
     'image/gif': 'gif',
     'image/webp': 'webp',
