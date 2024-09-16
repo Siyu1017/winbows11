@@ -239,6 +239,20 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             toolbarIcon.src = url;
         })();
 
+        function changeTitle(title = '') {
+            if (!title) return;
+            config.title = title;
+            toolbarTitle.innerHTML = window.utils.replaceHTMLTags(title);
+            ICON.changeTitle(windowID, title);
+        }
+
+        function changeIcon(url = '') {
+            if (!url) return;
+            config.icon = url;
+            toolbarIcon.src = url;
+            ICON.changeIcon(windowID, url);
+        }
+
         var minimizeButton = document.createElement('div');
         var maximizeButton = document.createElement('div');
         var closeButton = document.createElement('div');
@@ -512,7 +526,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         return {
             shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
-            close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable
+            close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon
         };
     },
     writable: false,

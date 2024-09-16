@@ -231,6 +231,11 @@
                 path: 'C:/Program Files/FPS Meter/',
                 icon: 'C:/Program Files/FPS Meter/favicon.ico',
                 script: 'C:/Program Files/FPS Meter/app.js'
+            },
+            'photos': {
+                path: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos',
+                icon: 'C:/Winbows/icons/applications/novelty/photos.ico',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.js'
             }
         },
         install: () => { },
@@ -459,8 +464,8 @@
                         if (incomplete == false) return;
                         var warningWindow = `document.documentElement.innerHTML='<div style="background:red;color:#fff;padding:4px 8px;border-radius:4px;user-select: none;-webkit-user-select: none;-webkit-user-drag: none;">THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.</div>';document.documentElement.style="display: flex;align-items: center;justify-content: center;width: fit-content;height: fit-content;";browserWindow.setMovable(document.documentElement)`;
                         var warningWindowURL = `C:/Winbows/System/Temp/${[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-                        await fs.writeFile(warningWindowURL, new Blob([warningWindow], { 
-                            type: 'text/javascript' 
+                        await fs.writeFile(warningWindowURL, new Blob([warningWindow], {
+                            type: 'text/javascript'
                         })).catch(err => {
                             window.Crash(err);
                         })
@@ -810,6 +815,14 @@
     window.fs.downloadFile = downloadFile;
     window.fs.getFileURL = getFileURL;
     window.fs.Cache = {};
+    window.fs.getFileExtension = function (file = '') {
+        if (file.indexOf('.') > -1) {
+            return file.split('.').pop();
+        } else {
+            return '';
+        }
+    }
+
 
     Object.freeze(window.fs);
 
@@ -932,14 +945,14 @@
             'js': ['code'],
             'html': ['code', 'edge'],
             'txt': ['code'],
-            'jpg': ['mediaplayer', 'edge'],
-            'jpeg': ['mediaplayer', 'edge'],
-            'png': ['mediaplayer', 'edge'],
-            'gif': ['mediaplayer', 'edge'],
-            'webp': ['mediaplayer', 'edge'],
-            'bmp': ['mediaplayer', 'edge'],
-            'svg': ['mediaplayer', 'edge'],
-            'ico': ['mediaplayer', 'edge'],
+            'jpg': ['mediaplayer', 'edge', 'photos'],
+            'jpeg': ['mediaplayer', 'edge', 'photos'],
+            'png': ['mediaplayer', 'edge', 'photos'],
+            'gif': ['mediaplayer', 'edge', 'photos'],
+            'webp': ['mediaplayer', 'edge', 'photos'],
+            'bmp': ['mediaplayer', 'edge', 'photos'],
+            'svg': ['mediaplayer', 'edge', 'photos'],
+            'ico': ['mediaplayer', 'edge', 'photos'],
             'pdf': [],
             'json': ['code'],
             'xml': ['code'],
@@ -963,7 +976,8 @@
         registeredViewers: {
             'code': 'C:/Program Files/VSCode/viewer.js',
             'edge': '',
-            'mediaplayer': ''
+            'photos': 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/viewer.js',
+            'mediaplayer': '',
         },
         registerViewer: (name, script) => {
             if (!window.System.FileViewers.registeredViewers.hasOwnProperty(name)) {
@@ -1019,7 +1033,8 @@
             }
         },
         getViewers: (file = '') => {
-            var extension = file.split('.').pop().toLowerCase();
+            var extension = window.fs.getFileExtension(file).toLowerCase();
+            if (extension == '') return [];
             var viewers = window.System.FileViewers.viewers[extension];
             var result = [];
             console.log(file, extension, viewers)

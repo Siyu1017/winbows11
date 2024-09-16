@@ -143,6 +143,9 @@
             }, */{
                 name: 'FPS Meter',
                 app: 'fpsmeter'
+            }, {
+                name: 'Photos',
+                app: 'photos'
             }],
             []
         ];
@@ -429,7 +432,8 @@
                     status, type, owner, icon, item, itemImage,
                     open, close, show, hide, addEventListener, focus, blur, updateWindowStatus,
                     getRegistry,
-                    _show, _hide
+                    _show, _hide,
+                    changeIcon, changeTitle
                 }
 
                 function getRegistry() {
@@ -518,6 +522,14 @@
                         type: 'close'
                     });
                     updateStatus();
+                }
+
+                function changeIcon(id, icon) {
+                    registry[id].icon = icon;
+                }
+
+                function changeTitle(id, title) {
+                    registry[id].title = title;
                 }
 
                 function show(id) {

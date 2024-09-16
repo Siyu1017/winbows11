@@ -86,6 +86,8 @@ browserWindow.addEventListener('blur', (e) => {
 
 var viewers = window.System.FileViewers.getViewers(datas.file);
 
+console.log(viewers)
+
 viewers.forEach(viewer => {
     var item = document.createElement('div');
     var itemIcon = document.createElement('div');
