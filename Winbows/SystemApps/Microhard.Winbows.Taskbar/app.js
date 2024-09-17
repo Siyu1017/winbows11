@@ -208,7 +208,6 @@
             }
         })
         if (focused) {
-            console.log(iconRepository[idDatas[focused]], idDatas[focused], idDatas, focused)
             iconRepository[idDatas[focused]]._show(focused);
         } else if (activeWindows.length > 0) {
             iconRepository[idDatas[activeWindows[activeWindows.length - 1]]].focus([activeWindows[activeWindows.length - 1]]);
