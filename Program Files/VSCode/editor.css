@@ -1,0 +1,209 @@
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(24, 24, 24);
+    color: #fff;
+    z-index: 9;
+    position: fixed;
+    top: 0;
+    left: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: 1rem;
+    gap: 1rem;
+    flex-direction: row;
+}
+
+.loading-spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    box-sizing: border-box;
+    padding: 2px;
+    overflow: visible;
+}
+
+.loading-spinner>circle {
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    transform-origin: 50% 50%;
+    transition: all .2s ease-in-out 0s;
+    animation: 2s linear 0s infinite normal none running loading-spinner;
+}
+
+@keyframes loading-spinner {
+    0% {
+        stroke-dasharray: 0.01px, 43.97px;
+        transform: rotate(0);
+    }
+
+    50% {
+        stroke-dasharray: 21.99px, 21.99px;
+        transform: rotate(450deg);
+    }
+
+    100% {
+        stroke-dasharray: 0.01px, 43.97px;
+        transform: rotate(1080deg);
+    }
+}
+
+.monaco-main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    --tabs-height: 2.375rem;
+    background: rgb(24, 24, 24);
+}
+
+.monaco-sidebar {
+    height: -webkit-fill-available;
+    display: block;
+    width: 20rem;
+}
+
+.monaco-sidebar.hide {
+    display: none;
+}
+
+.monaco-container {
+    /* width: -webkit-fill-available; */
+    height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: auto;
+}
+
+.monaco-tabs {
+    width: 100%;
+    height: var(--tabs-height);
+    background: rgb(24, 24, 24);
+    min-height: var(--tabs-height);
+}
+
+.monaco-tab {
+    padding-left: 10px;
+    min-width: 120px;
+    width: fit-content;
+    height: 100%;
+    max-width: 20rem;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    display: flex;
+    font-size: .8125rem;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.monaco-tab.active {
+    background: rgb(30, 30, 30);
+    border-top: 1px solid #0078d4;
+}
+
+.monaco-tab-label {
+    display: flex;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    overflow: hidden;
+}
+
+.monaco-tab-icon {
+    width: fit-content;
+    height: -webkit-fill-available;
+    display: flex;
+    align-items: center;
+    padding-right: .375rem;
+}
+
+.monaco-tab-icon::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    min-width: 1rem;
+    min-height: 1rem;
+    display: block;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.monaco-tab-header {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.monaco-tab-close {
+    display: none;
+    min-width: 1.75rem;
+    width: 1.75rem;
+    align-items: center;
+}
+
+.monaco-tab-close-button {
+    background: none;
+    border: none;
+    height: 1.25rem;
+    width: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+    border-radius: .25rem;
+    margin: auto;
+    cursor: pointer;
+}
+
+.monaco-tab-close-button:hover {
+    background: rgba(255, 255, 255, .1);
+}
+
+.monaco-tab-close-button::before {
+    content: '';
+    width: 1rem;
+    height: 1rem;
+    min-width: 1rem;
+    min-height: 1rem;
+    display: block;
+    mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXgiPjxwYXRoIGQ9Ik0xOCA2IDYgMTgiLz48cGF0aCBkPSJtNiA2IDEyIDEyIi8+PC9zdmc+");
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: cover;
+    background: currentColor;
+}
+
+.monaco-tab:hover .monaco-tab-close,
+.monaco-tab.active .monaco-tab-close {
+    display: flex;
+}
+
+.monaco-editors {
+    width: 100%;
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+    overflow: hidden;
+}
+
+.monaco-editor {
+    width: 100%;
+    height: -webkit-fill-available;
+}
+
+.monaco-editor.hide {
+    display: none;
+}

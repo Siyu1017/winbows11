@@ -31,7 +31,8 @@ document.head.appendChild(style);
                 filePath: filePath,
                 fileContent: await (fileBlob).text(),
                 fileType: fileType,
-                type: 'init'
+                type: 'init',
+                browserWindow
             }
         });
         iframe.contentWindow.document.dispatchEvent(event);

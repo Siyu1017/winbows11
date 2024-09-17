@@ -184,22 +184,34 @@
     var lastClicked = null;     // For all
     var activeWindows = [];     // Only for apps, not for items
     var iconRepository = {};
+    var idDatas = {};
     var maxIndex = 0;
+
+    function getID(app) {
+        var arr = [];
+        Object.keys(idDatas).forEach(key => {
+            if (idDatas[key] == app) {
+                arr.push(key);
+            }
+        })
+        return arr;
+    }
 
     function updateStatus() {
         Object.values(iconRepository).forEach(icon => {
             if (icon.type == 'item') {
                 icon.blur();
-            } else if (!activeWindows.includes(icon.owner)) {
+            } else if (!Object.values(idDatas).includes(icon.owner)) {
                 icon._hide();
-            } else if (activeWindows.indexOf(icon.owner) != activeWindows.length - 1 || focused != null) {
+            } else if (!getID(icon.owner).includes(activeWindows[activeWindows.length - 1]) || focused != null) {
                 icon.blur();
             }
         })
         if (focused) {
-            iconRepository[focused]._show();
+            console.log(iconRepository[idDatas[focused]], idDatas[focused], idDatas, focused)
+            iconRepository[idDatas[focused]]._show(focused);
         } else if (activeWindows.length > 0) {
-            iconRepository[activeWindows[activeWindows.length - 1]].focus();
+            iconRepository[idDatas[activeWindows[activeWindows.length - 1]]].focus([activeWindows[activeWindows.length - 1]]);
         }
     }
 
@@ -224,7 +236,7 @@
     }
 
     function isSelf(owner) {
-        if (activeWindows[activeWindows.length - 1] == owner || lastClicked == owner) {
+        if (getID(owner).includes(activeWindows[activeWindows.length - 1]) || lastClicked == owner) {
             return true;
         } else {
             return false;
@@ -258,7 +270,7 @@
     function createThumbnailWindow(app, id) {
         var thumbnailWindow = document.createElement("div");
         var thumbnailBar = document.createElement("div");
-        var thumbnailIcon = document.createElement("img");
+        var thumbnailIcon = document.createElement("div");
         var thumbnailTitle = document.createElement("div");
         var thumbnailView = document.createElement("div");
         var thumbnailCloseButton = document.createElement("div");
@@ -279,11 +291,12 @@
         thumbnailBar.appendChild(thumbnailCloseButton);
 
         // Thumbnail info
-        thumbnailIcon.src = app.icon;
+        thumbnailIcon.style.backgroundImage = `url(${app.icon})`;
         thumbnailTitle.innerHTML = app.title;
 
         // Thumbnail styles
         thumbnailWindow.style.padding = `${thumbnailSetting.padding.top}px ${thumbnailSetting.padding.right}px ${thumbnailSetting.padding.bottom}px ${thumbnailSetting.padding.left}px`;
+        thumbnailWindow.style.maxWidth = `${thumbnailSetting.padding.right + thumbnailSetting.padding.left + thumbnailSetting.maxWidth}px`
         thumbnailView.style.maxWidth = thumbnailSetting.maxWidth + "px";
         thumbnailView.style.maxHeight = thumbnailSetting.maxHeight + "px";
         thumbnailView.style.width = '999px';
@@ -469,10 +482,11 @@
                             status.opened = true;
                             lastClicked = owner;
                             item.setAttribute('data-opened', status.opened);
-                            show();
-                            activeWindows = activeWindows.filter(item => item !== owner);
+                            idDatas[id] = owner;
+                            show(id);
+                            activeWindows = activeWindows.filter(item => item !== id);
                             if (type != 'item') {
-                                activeWindows.push(owner);
+                                activeWindows.push(id);
                             }
                         } catch (e) {
                             console.log(e);
@@ -494,18 +508,19 @@
                         const isLast = Object.values(registry).length == 1;
                         if (isLast == true) {
                             status.opened = false;
-                            activeWindows = activeWindows.filter(item => item !== owner);
+                            activeWindows = activeWindows.filter(item => item !== id);
                             item.setAttribute('data-opened', status.opened);
                         }
-                        blur();
+                        blur(id);
                         // close window
                         browserWindow.classList.remove('active');
                         if (!window.Taskbar.isPinned(owner) && isLast == true) {
                             item.classList.add('hide');
                         }
-                        lastClicked = null;
+                        lastClicked = owner;
                         console.log(registry, id)
                         delete registry[id];
+                        delete idDatas[id];
                         if (!window.Taskbar.isPinned(owner) && Object.values(registry).length == 0) {
                             delete iconRepository[owner];
                         }
@@ -549,28 +564,29 @@
                 }
 
                 function focus(id) {
+                    if (!id) {
+                        id = Object.keys(registry)[0];
+                    }
                     Object.values(iconRepository).filter(icon => icon != properties).forEach(icon => {
                         icon.blur();
                     })
-                    activeWindows = activeWindows.filter(item => item !== owner);
-                    activeWindows.push(owner);
-                    focused = owner;
+                    activeWindows = activeWindows.filter(item => item !== id);
+                    activeWindows.push(id);
+                    focused = id;
                     status.focused = true;
-                    lastClicked = owner;
                     item.setAttribute('data-focused', true);
                     updateWindowStatus(registry[id], 'focus');
                     triggerEvent('focus', {
-                        type: 'focus'
+                        type: 'focus', id
                     });
                 }
 
                 function blur(id) {
                     focused = activeWindows[activeWindows.length - 1];
                     status.focused = false;
-                    lastClicked = null;
                     item.setAttribute('data-focused', false);
                     triggerEvent('blur', {
-                        type: 'blur'
+                        type: 'blur', id
                     });
                 }
 
@@ -602,14 +618,17 @@
                 }
 
                 function _show(id) {
+                    if (!id) {
+                        id = Object.keys(registry)[0];
+                    }
                     if (!isSelf(owner)) {
                         item.removeAttribute('data-toggle');
                     }
                     status.show = true;
-                    activeWindows = activeWindows.filter(item => item !== owner);
+                    activeWindows = activeWindows.filter(item => item !== id);
                     if (type != 'item') {
-                        activeWindows.push(owner);
-                        focused = owner;
+                        activeWindows.push(id);
+                        focused = id;
                     }
                     item.setAttribute('data-show', status.show);
                     updateWindowStatus(registry[id], 'show');
@@ -621,7 +640,7 @@
                         item.removeAttribute('data-toggle');
                     }
                     status.show = false;
-                    activeWindows = activeWindows.filter(item => item !== owner);
+                    activeWindows = activeWindows.filter(item => item !== id);
                     focused = activeWindows[activeWindows.length - 1];
                     item.setAttribute('data-show', status.show);
                     updateWindowStatus(registry[id], 'hide');

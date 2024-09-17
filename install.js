@@ -107,6 +107,56 @@
                 }
             }
 
+            async reportError(method, message) {
+                var detectList = ['list', 'open', 'readFile', 'readdir'];
+                if (detectList.includes(method)) {
+                    var incomplete = false;
+                    await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
+                        return res.json();
+                    }).then(async data => {
+                        const table = data.table;
+                        for (let i = 0; i < table.length; i++) {
+                            await this.exists(table[i]).then(status => {
+                                if (status.exists == false) {
+                                    // Not exist
+                                    localStorage.removeItem('WINBOWS_BUILD_ID');
+                                    localStorage.removeItem('WINBOWS_DIRECTORIES');
+                                    console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
+                                    incomplete = true;
+                                    // location.href = `./install.html?timestamp=${new Date().getTime()}`;
+                                }
+                            })
+                        }
+                    }).catch(err => {
+                        if (window.needsUpdate == false) {
+                            localStorage.removeItem('WINBOWS_BUILD_ID');
+                            localStorage.removeItem('WINBOWS_DIRECTORIES');
+                            console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
+                            incomplete = true;
+                            // location.href = `./install.html?timestamp=${new Date().getTime()}`;
+                        }
+                    }).finally(async () => {
+                        if (incomplete == false) return;
+                        var warningWindow = `document.documentElement.innerHTML='<div style="background:red;color:#fff;padding:4px 8px;border-radius:4px;user-select: none;-webkit-user-select: none;-webkit-user-drag: none;">THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.</div>';document.documentElement.style="display: flex;align-items: center;justify-content: center;width: fit-content;height: fit-content;";browserWindow.setMovable(document.documentElement)`;
+                        var warningWindowURL = `C:/Winbows/System/Temp/${[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+                        await fs.writeFile(warningWindowURL, new Blob([warningWindow], {
+                            type: 'text/javascript'
+                        })).catch(err => {
+                            window.Crash(err);
+                        })
+                        var warningProcess = `;(async()=>{System.requestAccessWindow('${warningWindowURL}',{title:'WARNING',width:300,height:150,resizable:false,showOnTop:true});})();`;
+                        var tempFileName = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+                        fs.writeFile(`C:/Winbows/System/Temp/${tempFileName}`, new Blob([warningProcess], {
+                            type: 'text/javascript'
+                        })).then(res => {
+                            new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
+                        }).catch(err => {
+                            window.Crash(err);
+                        })
+                    })
+                }
+            }
+
             // OK
             async list(url) {
                 const parsed = this.parseURL(url);
@@ -123,7 +173,8 @@
                         // resolve(dirFiles.map((file) => file.path));
                     };
                     request.onerror = (event) => {
-                        this.debugger('list', `Failed to list the contents of disk.`);
+                        this.debugger('list', `Failed to list the contents of ${url}.`);
+                        this.reportError('list', `Failed to list the contents of ${url}.`);
                         reject(event.target.error);
                     };
                 });
@@ -143,10 +194,12 @@
                             resolve(file);
                         } else {
                             this.debugger('open', `Failed to open file "${url}".`);
+                            this.reportError('open', `Failed to open file "${url}".`);
                             reject(new Error(`File not found: ${url}`));
                         }
                     };
                     request.onerror = (event) => {
+                        this.reportError('open', `Failed to open file "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -155,6 +208,7 @@
             // OK
             async writeFile(url, content) {
                 const parsed = this.parseURL(url);
+                if (!parsed.path) return;
                 if (!await this.exists(url).exists) {
                     var splitted = parsed.path.split('/');
                     for (let i = 0; i < splitted.length; i++) {
@@ -174,6 +228,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('writeFile', `Failed to write file "${url}".`);
+                        this.reportError('writeFile', `Failed to write file "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -193,10 +248,12 @@
                             resolve(file.content);
                         } else {
                             this.debugger('readFile', `Failed to read file "${url}".`);
+                            this.reportError('readFile', `Failed to read file "${url}".`);
                             reject(`File not found: ${url}`);
                         }
                     };
                     request.onerror = (event) => {
+                        this.reportError('readFile', `Failed to read file "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -215,6 +272,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('mkdir', `Failed to make directory "${url}".`);
+                        this.reportError('mkdir', `Failed to make directory "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -223,18 +281,74 @@
             // OK
             async rm(url) {
                 const parsed = this.parseURL(url);
-                return new Promise((resolve, reject) => {
+                return new Promise(async (resolve, reject) => {
+                    const status = await this.exists(url);
                     const transaction = this.db.transaction(parsed.disk, 'readwrite');
                     const store = transaction.objectStore(parsed.disk);
-                    const request = store.delete(parsed.path);
-                    request.onsuccess = (event) => {
-                        this.debugger('rm', `Removed "${url}" successfully!`);
-                        resolve();
+                    if (status.type == 'file') {
+                        const request = store.delete(parsed.path);
+                        request.onsuccess = async (event) => {
+                            this.debugger('rm', `Removed "${url}" successfully!`);
+                        };
+                        request.onerror = (event) => {
+                            this.debugger('rm', `Failed to remove "${url}".`);
+                            this.reportError('rm', `Failed to remove "${url}".`);
+                            reject(event.target.error);
+                        };
+                        return;
+                    }
+                    const request = store.index('path').openCursor();
+                    request.onsuccess = async (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            const item = cursor.value;
+                            if (item.path.startsWith(`${parsed.path}`)) {
+                                await store.delete(item.path);
+                            }
+                            cursor.continue();
+                        } else {
+                            this.debugger('rm', `Removed "${url}" successfully!`);
+                            resolve();
+                        }
                     };
                     request.onerror = (event) => {
                         this.debugger('rm', `Failed to remove "${url}".`);
+                        this.reportError('rm', `Failed to remove "${url}".`);
                         reject(event.target.error);
                     };
+                });
+            }
+
+            async clear(url) {
+                const parsed = this.parseURL(url);
+                return new Promise(async (resolve, reject) => {
+                    const status = await this.exists(url);
+                    const transaction = this.db.transaction(parsed.disk, 'readwrite');
+                    const store = transaction.objectStore(parsed.disk);
+                    if (status.type == 'directory') {
+                        const request = store.index('path').openCursor();
+                        request.onsuccess = async (event) => {
+                            const cursor = event.target.result;
+                            if (cursor) {
+                                const item = cursor.value;
+                                if (item.path.startsWith(`${parsed.path}/`)) {
+                                    await store.delete(item.path);
+                                }
+                                cursor.continue();
+                            } else {
+                                this.debugger('clear', `Cleared "${url}" successfully!`);
+                                resolve();
+                            }
+                        };
+                        request.onerror = (event) => {
+                            this.debugger('clear', `Failed to clear "${url}".`);
+                            this.reportError('clear', `Failed to clear "${url}".`);
+                            reject(event.target.error);
+                        };
+                        return;
+                    } else {
+                        resolve();
+                    }
                 });
             }
 
@@ -268,15 +382,18 @@
 
                             deleteRequest.onerror = (event) => {
                                 this.debugger('mv', `Failed to delete "${from}".`);
+                                this.reportError('mv', `Failed to delete "${from}".`);
                                 reject(event.target.error);
                             };
                         } else {
                             this.debugger('mv', `Failed to move "${from}" to "${to}".`);
+                            this.reportError('mv', `Failed to move "${from}" to "${to}".`);
                             reject(new Error(`File not found: ${from}`));
                         }
                     };
 
                     readRequest.onerror = (event) => {
+                        this.reportError('mv', `Failed to move "${from}" to "${to}".`);
                         reject(event.target.error);
                     };
                 });
@@ -347,6 +464,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('readdir', `Failed to read directory "${url}".`);
+                        this.reportError('readdir', `Failed to read directory "${url}".`);
                         reject(event.target.error);
                     };
                 });
@@ -393,6 +511,7 @@
                     };
                     request.onerror = (event) => {
                         this.debugger('exists', `Failed to check if "${url}" exists.`);
+                        this.reportError('exists', `Failed to check if "${url}" exists.`);
                         reject({
                             exists: event.target.error,
                             type: 'error',
@@ -405,6 +524,10 @@
                 return new Promise((resolve, reject) => {
                     this[method].apply(this, param).then(response => {
                         resolve(response);
+                    }).catch(error => {
+                        this.reportError('proxy', {
+                            method, param, error
+                        });
                     })
                 });
             }
@@ -456,10 +579,18 @@
         fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
             return res.json();
         }).then(async data => {
+            // Clear configs
             localStorage.removeItem('WINBOWS_SYSTEM_FV_VIEWERS');
             localStorage.removeItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS');
             localStorage.removeItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS');
-            
+
+            // Remove Temp Files
+            try {
+                fs.rm('C:/Winbows/System/Temp');
+            } catch (err) {
+                console.error('Failed to remove temp files:', err);
+            }
+
             var lastTime = Date.now();
             var startTime = lastTime;
 
@@ -471,7 +602,7 @@
             const build_id = data.build_id;
             const size = data.size;
 
-            console.log('Whole size: ' + getSizeString(size).replaceAll('(', '').replaceAll(')', ''));
+            console.log('Whole size: ' + formatBytes(size).replaceAll('(', '').replaceAll(')', ''));
 
             nameElement.innerHTML = 'Name: unknown';
             timeElement.innerHTML = 'Time remaining: unknown';
@@ -498,28 +629,21 @@
                 }
             }
 
-            function getSizeString(size) {
-                if (size < 0) return '';
-                if (size < 1024) {
-                    // size < 1KB
-                    return `(${size} bytes)`;
-                } else if (size < 1024 * 1024) {
-                    // size < 1MB
-                    return `(${(size / 1024).toFixed(2)} KB)`;
-                } else if (size < 1024 * 1024 * 1024) {
-                    // size < 1GB
-                    return `(${(size / (1024 * 1024)).toFixed(2)} MB)`;
-                } else {
-                    // size >= 1GB
-                    return `(${(size / (1024 * 1024 * 1024)).toFixed(2)} GB)`;
-                }
+            function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '';
+
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+                return '(' + parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i] + ')';
             }
 
             function updateItem() {
                 document.querySelector('.install-percent').innerHTML = ~~((index / (files.length - 1)) * 100) + '% complete';
                 document.querySelector('.install-progress-bar').style.width = (index / (files.length - 1)) * 100 + '%';
                 nameElement.innerHTML = `Name: ${name}`;
-                lastElement.innerHTML = `Remaining items: ${files.length - index - 1} ${getSizeString(size - downloadedSize)}`;
+                lastElement.innerHTML = `Remaining items: ${files.length - index - 1} ${formatBytes(size - downloadedSize)}`;
             }
             function updateTime() {
                 updateItem();
@@ -551,7 +675,7 @@
                     installed.push(files[i]);
                     localStorage.setItem('WINBOWS_DIRECTORIES', JSON.stringify(installed));
 
-                    console.log(getSizeString(downloadedSize).replaceAll('(', '').replaceAll(')', ''));
+                    console.log(formatBytes(downloadedSize).replaceAll('(', '').replaceAll(')', ''));
 
                     if (installed.length == files.length) {
                         localStorage.setItem('WINBOWS_BUILD_ID', build_id);

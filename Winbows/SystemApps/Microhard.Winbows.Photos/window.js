@@ -230,31 +230,13 @@ if (photoPath) {
         }
     })
 
-    function getSizeString(size) {
-        if (size < 0) return '';
-        if (size < 1024) {
-            // size < 1KB
-            return `${size} bytes`;
-        } else if (size < 1024 * 1024) {
-            // size < 1MB
-            return `${(size / 1024).toFixed(2)} KB`;
-        } else if (size < 1024 * 1024 * 1024) {
-            // size < 1GB
-            return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-        } else {
-            // size >= 1GB
-            return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-        }
-    }
-
-
     var image = new Image();
     image.src = photoURL;
     image.onload = () => {
         x = viewerCanvas.offsetWidth / 2 - image.width / 2;
         y = viewerCanvas.offsetHeight / 2 - image.height / 2;
         viewerActionbarInfoResolution.textContent = `${image.naturalWidth} x ${image.naturalHeight}`;
-        viewerActionbarInfoSize.textContent = getSizeString(photoBlob.size);
+        viewerActionbarInfoSize.textContent = window.utils.formatBytes(photoBlob.size);
         render();
     }
     image.onerror = () => {

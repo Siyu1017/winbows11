@@ -289,8 +289,18 @@
         throw new Error('Winbows has been crashed...');
     }
 
-    window.utils.replaceHTMLTags = (content) => {
+    window.utils.replaceHTMLTags = (content = '') => {
         return content.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
+    window.utils.getFileName = (path = '') => {
+        return path.split('/').slice(-1)[0];
+    }
+    window.utils.getFileExtension = function (file = '') {
+        if (file.indexOf('.') > -1) {
+            return file.split('.').pop();
+        } else {
+            return '';
+        }
     }
 
     const mimeTypes = {
@@ -606,19 +616,74 @@
             // OK
             async rm(url) {
                 const parsed = this.parseURL(url);
-                return new Promise((resolve, reject) => {
+                return new Promise(async (resolve, reject) => {
+                    const status = await this.exists(url);
                     const transaction = this.db.transaction(parsed.disk, 'readwrite');
                     const store = transaction.objectStore(parsed.disk);
-                    const request = store.delete(parsed.path);
-                    request.onsuccess = (event) => {
-                        this.debugger('rm', `Removed "${url}" successfully!`);
-                        resolve();
+                    if (status.type == 'file') {
+                        const request = store.delete(parsed.path);
+                        request.onsuccess = async (event) => {
+                            this.debugger('rm', `Removed "${url}" successfully!`);
+                        };
+                        request.onerror = (event) => {
+                            this.debugger('rm', `Failed to remove "${url}".`);
+                            this.reportError('rm', `Failed to remove "${url}".`);
+                            reject(event.target.error);
+                        };
+                        return;
+                    }
+                    const request = store.index('path').openCursor();
+                    request.onsuccess = async (event) => {
+                        const cursor = event.target.result;
+                        if (cursor) {
+                            const item = cursor.value;
+                            if (item.path.startsWith(`${parsed.path}`)) {
+                                await store.delete(item.path);
+                            }
+                            cursor.continue();
+                        } else {
+                            this.debugger('rm', `Removed "${url}" successfully!`);
+                            resolve();
+                        }
                     };
                     request.onerror = (event) => {
                         this.debugger('rm', `Failed to remove "${url}".`);
                         this.reportError('rm', `Failed to remove "${url}".`);
                         reject(event.target.error);
                     };
+                });
+            }
+
+            async clear(url) {
+                const parsed = this.parseURL(url);
+                return new Promise(async (resolve, reject) => {
+                    const status = await this.exists(url);
+                    const transaction = this.db.transaction(parsed.disk, 'readwrite');
+                    const store = transaction.objectStore(parsed.disk);
+                    if (status.type == 'directory') {
+                        const request = store.index('path').openCursor();
+                        request.onsuccess = async (event) => {
+                            const cursor = event.target.result;
+                            if (cursor) {
+                                const item = cursor.value;
+                                if (item.path.startsWith(`${parsed.path}/`)) {
+                                    await store.delete(item.path);
+                                }
+                                cursor.continue();
+                            } else {
+                                this.debugger('clear', `Cleared "${url}" successfully!`);
+                                resolve();
+                            }
+                        };
+                        request.onerror = (event) => {
+                            this.debugger('clear', `Failed to clear "${url}".`);
+                            this.reportError('clear', `Failed to clear "${url}".`);
+                            reject(event.target.error);
+                        };
+                        return;
+                    } else {
+                        resolve();
+                    }
                 });
             }
 
@@ -1155,16 +1220,16 @@
     // new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js', 'system').start();
     // new Process('C:/Winbows/SystemApps/Microhard.Winbows.Test/app.js', 'system').start();
 
-    function getSizeString(size) {
-        if (size < 1024) {
-            return `${size} B`;
-        } else if (size < 1024 * 1024) {
-            return `${(size / 1024).toFixed(2)} KB`;
-        } else if (size < 1024 * 1024 * 1024) {
-            return `${(size / (1024 * 1024)).toFixed(2)} MB`;
-        } else {
-            return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-        }
+    window.utils.formatBytes = formatBytes;
+
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
     }
 
     function getStackTrace() {

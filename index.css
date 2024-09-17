@@ -992,6 +992,9 @@ body {
     height: 18px;
     min-width: 18px;
     padding-left: 2px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 .thumbnail-window-bar {

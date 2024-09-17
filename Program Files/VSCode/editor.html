@@ -14,19 +14,22 @@
             overflow: hidden;
         }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, Segoe WPC, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        }
+
         .loading {
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #1e1e1e;
+            background: rgb(24, 24, 24);
             color: #fff;
             z-index: 9;
             position: fixed;
             top: 0;
             left: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
             font-size: 1rem;
             gap: 1rem;
             flex-direction: row;
@@ -66,6 +69,275 @@
                 transform: rotate(1080deg);
             }
         }
+
+        .monaco {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .monaco-main {
+            width: 100%;
+            height: -webkit-fill-available;
+            display: flex;
+            --tabs-height: 2.375rem;
+            background: rgb(24, 24, 24);
+            color: #fdfdfd;
+            overflow: hidden;
+        }
+
+        .monaco-sidebar {
+            height: -webkit-fill-available;
+            display: block;
+            width: fit-content;
+            display: flex;
+        }
+
+        .monaco-sidebar-content {
+            width: 20rem;
+            border-left: 1px solid rgba(255, 255, 255, .1);
+            display: none;
+        }
+
+        .monaco-sidebar-content.active {
+            display: block;
+        }
+
+        .monaco-sidebar-list {
+            width: 3rem;
+            height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .monaco-sidebar-item {
+            width: 3rem;
+            height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #777;
+            position: relative;
+            transition: all .1s ease-in-out;
+            cursor: pointer;
+        }
+
+        .monaco-sidebar-item-icon {
+            width: 1.75rem;
+            height: 1.75rem;
+        }
+
+        .monaco-sidebar-item.active::before {
+            content: '';
+            display: block;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 2px;
+            height: -webkit-fill-available;
+            background: #0078d4;
+        }
+
+        .monaco-sidebar-item:hover,
+        .monaco-sidebar-item.active {
+            color: #fff;
+        }
+
+        .monaco-sidebar-header {
+            cursor: default;
+            height: 2.25rem;
+            padding: 0 1.25rem;
+            display: flex;
+            align-items: center;
+            font-size: .78rem;
+            font-weight: 100;
+        }
+
+        .monaco-container {
+            /* width: -webkit-fill-available; */
+            height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex: auto;
+            border-left: 1px solid rgba(255, 255, 255, .1);
+        }
+
+        .monaco-tabs {
+            width: 100%;
+            height: var(--tabs-height);
+            background: rgb(24, 24, 24);
+            min-height: var(--tabs-height);
+        }
+
+        .monaco-tab {
+            padding-left: 10px;
+            min-width: 120px;
+            width: fit-content;
+            height: 100%;
+            max-width: 20rem;
+            color: #fff;
+            display: flex;
+            font-size: .8125rem;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .monaco-tab.active {
+            background: rgb(30, 30, 30);
+            border-top: 1px solid #0078d4;
+        }
+
+        .monaco-tab-label {
+            display: flex;
+            align-items: center;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            overflow: hidden;
+        }
+
+        .monaco-tab-icon {
+            width: fit-content;
+            height: -webkit-fill-available;
+            display: flex;
+            align-items: center;
+            padding-right: .375rem;
+        }
+
+        .monaco-tab-icon::before {
+            content: '';
+            width: 1rem;
+            height: 1rem;
+            min-width: 1rem;
+            min-height: 1rem;
+            display: block;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        .monaco-tab-header {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .monaco-tab-close {
+            display: none;
+            min-width: 2rem;
+            width: 2rem;
+            align-items: center;
+        }
+
+        .monaco-tab-close-button {
+            background: none;
+            border: none;
+            height: 1.25rem;
+            width: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: inherit;
+            border-radius: .25rem;
+            margin: auto;
+            cursor: pointer;
+        }
+
+        .monaco-tab-close-button:hover {
+            background: rgba(255, 255, 255, .1);
+        }
+
+        .monaco-tab-close-button::before {
+            content: '';
+            width: 1rem;
+            height: 1rem;
+            min-width: 1rem;
+            min-height: 1rem;
+            display: block;
+            mask-image: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXgiPjxwYXRoIGQ9Ik0xOCA2IDYgMTgiLz48cGF0aCBkPSJtNiA2IDEyIDEyIi8+PC9zdmc+");
+            mask-position: center;
+            mask-repeat: no-repeat;
+            mask-size: cover;
+            background: currentColor;
+        }
+
+        .monaco-tab:hover .monaco-tab-close,
+        .monaco-tab.active .monaco-tab-close {
+            display: flex;
+        }
+
+        .monaco-tab.changed:not(:hover) .monaco-tab-close-button::before {
+            mask-image: url("data:image/svg+xml;base64,PHN2ZyBkYXRhLXYtNTZiZDdkZmM9IiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iNyIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1kb3QiPjxjaXJjbGUgY3g9IjEyLjEiIGN5PSIxMi4xIiByPSIzIj48L2NpcmNsZT48L3N2Zz4=");
+        }
+
+        .monaco-editors {
+            width: 100%;
+            height: -webkit-fill-available;
+            max-height: -webkit-fill-available;
+            overflow: hidden;
+        }
+
+        .monaco-editor {
+            width: 100%;
+            height: -webkit-fill-available;
+            outline: none !important;
+        }
+
+        .monaco-editor.hide {
+            display: none;
+        }
+
+        .monaco-footer {
+            flex: 1;
+            position: sticky;
+            bottom: 0;
+            width: -webkit-fill-available;
+            min-height: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, .1);
+            display: flex;
+            color: #efefef;
+            padding: 0 .75rem;
+        }
+
+        .monaco-footer-left {
+            position: sticky;
+            left: 0;
+            margin-right: auto;
+            display: flex;
+        }
+
+        .monaco-footer-right {
+            position: sticky;
+            right: 0;
+            margin-left: auto;
+            display: flex;
+            flex-direction: row-reverse;
+        }
+
+        .monaco-footer-item {
+            height: -webkit-fill-available;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            padding: 0 .375rem;
+            cursor: pointer;
+            font-size: .825rem;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
+            transition: all .1s ease-in-out;
+        }
+
+        .monaco-footer-item:hover {
+            background: rgba(255, 255, 255, .1);
+        }
+
+        .monaco-footer-item-icon {
+            width: .875rem;
+            height: .875rem;
+        }
     </style>
 </head>
 
@@ -76,105 +348,211 @@
         </svg>
         <div>Loading File...</div>
     </div>
-    <div id="container" style="width: 100%; height: 100%"></div>
-    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
-    <script>
-        var editor, origin, filePath, fileContent, fileType, source;
+    <div id="container" style="width: 100%; height: 100%">
+        <div class="monaco">
+            <div class="monaco-main">
+                <div class="monaco-sidebar">
+                    <div class="monaco-sidebar-list">
+                        <div class="monaco-sidebar-item active">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="monaco-sidebar-item-icon">
+                                <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                                <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                                <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="monaco-sidebar-content active">
+                        <div class="monaco-sidebar-header">EXPLORER</div>
+                        <div class="monaco-sidebar-page">
+                            <div style="padding: 0 1.25rem;">You have not yet opened a folder.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="monaco-container">
+                    <div class="monaco-tabs"></div>
+                    <div class="monaco-editors"></div>
+                </div>
+            </div>
+            <div class="monaco-footer">
+                <div class="monaco-footer-left"></div>
+                <div class="monaco-footer-right">
+                    <div class="monaco-footer-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="monaco-footer-item-icon">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                        </svg>
+                    </div>
+                    <div class="monaco-footer-item" id="language-mode">TXT</div>
+                </div>
+            </div>
+            <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+            <script>
+                var editor, origin, filePath, fileContent, fileType, source, browserWindow;
 
-        require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' } });
-        require(['vs/editor/editor.main'], function () {
-            editor = monaco.editor.create(document.getElementById('container'), {
-                value: '',
-                language: '',
-                theme: 'vs-dark',
-                automaticLayout: true,
-                "semanticHighlighting.enabled": true
-            });
+                function getLanguage(extension) {
+                    switch (extension) {
+                        case 'js':
+                            return 'javascript';
+                        case 'html':
+                            return 'html';
+                        case 'css':
+                            return 'css';
+                        case 'json':
+                            return 'json';
+                        default:
+                            return 'plaintext';
+                    }
+                }
 
-            document.addEventListener('keydown', async function (e) {
-                if (e.ctrlKey && e.key.toLocaleLowerCase() == 's') {
-                    e.preventDefault();
+                document.querySelectorAll('.monaco-sidebar-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        if (!item.classList.contains('active')) {
+                            document.querySelectorAll('.monaco-sidebar-item').forEach(item => {
+                                item.classList.remove('active');
+                            });
+                            item.classList.add('active');
+                            document.querySelector('.monaco-sidebar-content').classList.add('active');
+                        } else {
+                            item.classList.remove('active');
+                            document.querySelector('.monaco-sidebar-content').classList.remove('active');
+                        }
+                    })
+                })
 
-                    console.log('Save file');
+                document.addEventListener('init', (e) => {
+                    var data = e.detail;
 
-                    await window.parent.fs.writeFile(filePath, new Blob([editor.getValue()], fileType ? {
-                        type: fileType
-                    } : {})).then(() => {
-                        console.log('File saved');
+                    require.config({ paths: { 'vs': 'https://unpkg.com/monaco-editor@latest/min/vs' } });
+                    require(['vs/editor/editor.main'], function () {
+                        function createEditor() {
+                            var container = document.createElement('div');
+                            var tab = document.createElement('div');
+                            var tabLabel = document.createElement('div');
+                            var tabIcon = document.createElement('div');
+                            var tabHeader = document.createElement('div');
+                            var tabClose = document.createElement('div');
+                            var tabCloseButton = document.createElement('button');
+                            container.className = 'monaco-editor';
+                            tab.className = 'monaco-tab active';
+                            tabLabel.className = 'monaco-tab-label';
+                            tabIcon.className = 'monaco-tab-icon';
+                            tabHeader.className = 'monaco-tab-header';
+                            tabClose.className = 'monaco-tab-close';
+                            tabCloseButton.className = 'monaco-tab-close-button';
+                            document.querySelector('.monaco-editors').appendChild(container);
+                            document.querySelector('.monaco-tabs').appendChild(tab);
+                            tab.appendChild(tabLabel);
+                            tabLabel.appendChild(tabIcon);
+                            tabLabel.appendChild(tabHeader);
+                            tab.appendChild(tabClose);
+                            tabClose.appendChild(tabCloseButton);
+
+                            tabHeader.textContent = 'Untitled';
+
+                            var editor = monaco.editor.create(container, {
+                                value: '',
+                                language: '',
+                                theme: 'vs-dark',
+                                automaticLayout: true,
+                                "semanticHighlighting.enabled": true
+                            });
+
+                            document.addEventListener('keydown', async function (e) {
+                                if (e.ctrlKey && e.key.toLocaleLowerCase() == 's') {
+                                    e.preventDefault();
+
+                                    console.log('Save file');
+
+                                    var content = editor.getValue();
+
+                                    await window.parent.fs.writeFile(filePath, new Blob([content], fileType ? {
+                                        type: fileType
+                                    } : {})).then(() => {
+                                        console.log('File saved');
+                                        tab.classList.remove('changed');
+                                        browserWindow.changeTitle(window.parent.utils.getFileName(filePath) + ' - Visual Studio Code');
+                                        fileContent = content;
+                                    });
+                                }
+                            });
+
+                            window.onresize = function () {
+                                editor.layout();
+                            };
+
+                            return { editor, container, tabHeader, tab };
+                        }
+
+                        var { container, editor, tabHeader, tab } = createEditor();
+
+                        editor.layout();
+
+                        try {
+                            filePath = data.filePath;
+                            fileContent = data.fileContent;
+                            fileType = data.fileType;
+                            browserWindow = data.browserWindow;
+                            editor.setValue(data.fileContent);
+                            monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filePath.split('.').pop().toLowerCase()));
+
+                            document.getElementById('loading').remove();
+
+                            tabHeader.textContent = window.parent.utils.getFileName(filePath);
+                            document.getElementById('language-mode').textContent = window.parent.utils.getFileExtension(filePath).toLocaleUpperCase();
+
+                            browserWindow.changeTitle(window.parent.utils.getFileName(filePath) + ' - Visual Studio Code');
+
+                            editor.onDidChangeModelContent(function () {
+                                const currentContent = editor.getValue();
+
+                                if (currentContent !== fileContent) {
+                                    tab.classList.add('changed');
+                                    browserWindow.changeTitle('● ' + window.parent.utils.getFileName(filePath) + ' - Visual Studio Code');
+                                } else {
+                                    tab.classList.remove('changed');
+                                    browserWindow.changeTitle(window.parent.utils.getFileName(filePath) + ' - Visual Studio Code');
+                                }
+                            });
+                        } catch (error) {
+                            console.error('Error loading file:', error);
+                            status = 'error';
+                        }
+
+                        let event = new CustomEvent('check', {
+                            detail: {
+                                status: status
+                            }
+                        });
+                        window.parent.document.dispatchEvent(event);
                     });
-                }
-            });
+                })
 
-            window.onresize = function () {
-                editor.layout();
-            };
-        });
-
-        function getLanguage(extension) {
-            switch (extension) {
-                case 'js':
-                    return 'javascript';
-                case 'html':
-                    return 'html';
-                case 'css':
-                    return 'css';
-                case 'json':
-                    return 'json';
-                default:
-                    return 'plaintext';
-            }
-        }
-
-        document.addEventListener('init', (e) => {
-            var data = e.detail;
-
-            try {
-                filePath = data.filePath;
-                fileContent = data.fileContent;
-                fileType = data.fileType;
-                editor.setValue(data.fileContent);
-                monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filePath.split('.').pop().toLowerCase()));
-
-                loading.remove();
-            } catch (error) {
-                console.error('Error loading file:', error);
-                status = 'error';
-            }
-
-            let event = new CustomEvent('check', {
-                detail: {
-                    status: status
-                }
-            });
-            window.parent.document.dispatchEvent(event);
-        })
-
-        /*
-        window.addEventListener('message', (event) => {
-            origin = event.origin;
-            source = event.source;
-
-            var message = JSON.parse(event.data);
-            if (message.type == 'init') {
-                var status = 'ok';
-                try {
-                    filePath = message.filePath;
-                    fileContent = message.fileContent;
-                    editor.setValue(message.fileContent);
-                    monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filePath.split('.').pop().toLowerCase()));
-                } catch (error) {
-                    console.error('Error loading file:', error);
-                    status = 'error';
-                }
-
-                source.postMessage(JSON.stringify({
-                    type: 'check',
-                    status: status
-                }), origin);
-            }
-        });
-        */
-    </script>
+                /*
+                window.addEventListener('message', (event) => {
+                    origin = event.origin;
+                    source = event.source;
+        
+                    var message = JSON.parse(event.data);
+                    if (message.type == 'init') {
+                        var status = 'ok';
+                        try {
+                            filePath = message.filePath;
+                            fileContent = message.fileContent;
+                            editor.setValue(message.fileContent);
+                            monaco.editor.setModelLanguage(editor.getModel(), getLanguage(filePath.split('.').pop().toLowerCase()));
+                        } catch (error) {
+                            console.error('Error loading file:', error);
+                            status = 'error';
+                        }
+        
+                        source.postMessage(JSON.stringify({
+                            type: 'check',
+                            status: status
+                        }), origin);
+                    }
+                });
+                */
+            </script>
 </body>
 
 </html>
