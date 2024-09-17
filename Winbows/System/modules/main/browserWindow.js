@@ -77,7 +77,6 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         })
 
         ICON.addEventListener('focus', (e) => {
-            console.log(e.id, windowID)
             if (e.id != windowID) {
                 return content.style.pointerEvents = '';
             }
