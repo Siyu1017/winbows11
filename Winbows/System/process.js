@@ -66,14 +66,15 @@
                 window.Winbows.Screen.style.cursor = 'auto';
                 throw new Error('Can not run file.\n' + e.message);
             }
+            console.log(this.url)
             this.worker = new Worker(this.url);
             this.worker.onerror = (e) => {
                 this.exit();
-                console.log(e);
+                console.error(e);
             };
             this.worker.addEventListener('error', (e) => {
                 this.exit();
-                console.log(e);
+                console.error(e);
             })
             this.listenWorker();
             window.System.processes[this.id] = this;

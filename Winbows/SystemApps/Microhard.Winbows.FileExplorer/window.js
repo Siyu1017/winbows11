@@ -181,9 +181,9 @@ function randomID() {
     return id;
 }
 
-var tab = createTab();
+var tab = createTab(datas.page || 'C:/');
 
-async function createTab(icon, header, active = true) {
+async function createTab(page = 'C:/', active = true) {
     // Initialize tab
     var tab = document.createElement('div');
     var tabInfo = document.createElement('div');
@@ -458,7 +458,7 @@ async function createTab(icon, header, active = true) {
     var actionButtons = {};
     var viewHistory = [];
     var currentHistory = -1;
-    var currentPage = 'C:/';
+    var currentPage = page || 'C:/';
 
     Object.values(actionbarButtonIcons).forEach(icon => {
         var button = document.createElement('button');

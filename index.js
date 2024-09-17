@@ -90,6 +90,16 @@
     screen.appendChild(appWrapper);
     background.appendChild(backgroundImage);
 
+    // Desktop 
+    var desktop = document.createElement('div');
+    var desktopShortcuts = document.createElement('div');
+
+    desktop.className = 'desktop';
+    desktopShortcuts.className = 'desktop-shortcuts';
+
+    appWrapper.appendChild(desktop);
+    desktop.appendChild(desktopShortcuts);
+
     // Functions
     window.mainDisk = 'C';
     window.System = {};
@@ -166,6 +176,29 @@
         return result;
     }
 
+    window.System.createShortcut = createShortcut;
+
+    function createShortcut(icon, name, command) {
+        var shortcut = document.createElement('div');
+        var shortcutIcon = document.createElement('div');
+        var shortcutName = document.createElement('div');
+
+        shortcut.className = 'shortcut';
+        shortcutIcon.className = 'shortcut-icon';
+        shortcutName.className = 'shortcut-name';
+
+        shortcutIcon.style.backgroundImage = `url('${icon}')`;
+        shortcutName.textContent = name;
+
+        desktopShortcuts.appendChild(shortcut);
+        shortcut.appendChild(shortcutIcon);
+        shortcut.appendChild(shortcutName);
+
+        shortcut.addEventListener('click', (e) => {
+            window.System.Shell(command);
+        })
+    }
+
     window.utils.getPosition = getPosition;
     window.utils.getJsonFromURL = getJsonFromURL;
 
@@ -174,7 +207,8 @@
             'explorer': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/',
                 icon: 'C:/Winbows/icons/folders/explorer.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js',
+                configurable: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/configurable.js'
             },
             'edge': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/',
@@ -970,8 +1004,16 @@
     await window.Taskbar.preloadImage();
 
     window.System.CommandParsers = {
-        run: (file, ...options) => {
-            var script = file;
+        run: (params) => {
+            var file = params[0];
+            var config = [...params].slice(1).join(' ') || '';
+            if (config != '') {
+                try {
+                    config = `const ${config.replace('--config=', '')};`;
+                } catch (e) {
+                    config = '';
+                };
+            }
             if (file == 'all') {
                 Object.values(window.appRegistry.apps).forEach(app => {
                     new Process(app.script).start();
@@ -982,12 +1024,29 @@
                 }
             }
             if (window.appRegistry.exists(file)) {
-                script = window.appRegistry.getInfo(file).script;
-            }
-            new Process(script).start();
+                if (config != null && window.appRegistry.getInfo(file).configurable) {
+                    file = window.appRegistry.getInfo(file).configurable;
+                } else {
+                    file = window.appRegistry.getInfo(file).script;
+                }
+            } 
+            new Process(file).start(config);
             return {
                 status: 'ok',
                 message: `Successfully run ${file}.`
+            }
+        },
+        open: async (params) => {
+            var path = params[0];
+            path = path.replaceAll('"', '');
+            if (await (fs.exists(path)).exists == true) {
+                window.System.Shell(`run explorer --config=PAGE=\"${path}\"`);
+            } else {
+                window.open(path, '_blank');
+            }
+            return {
+                status: 'ok',
+                message: `Successfully open ${path}.`
             }
         }
     };
@@ -1003,6 +1062,27 @@
         }
         return window.System.CommandParsers[parser](parsed.slice(1));
     }
+
+    // Create Desktop Shortcuts
+    var shortcuts = [{
+        icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
+        name: 'Desktop',
+        command: 'run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"'
+    }, {
+        icon: await fs.getFileURL('C:/Winbows/icons/github.png'),
+        name: 'Github',
+        command: 'open "https://github.com/Siyu1017/winbows11/"'
+    }, {
+        icon: await fs.getFileURL('C:/Winbows/icons/applications/office/code.ico'),
+        name: 'VSCode',
+        command: 'run code'
+    }]
+
+    shortcuts.forEach(shortcut => {
+        ((shortcut) => {
+            window.System.createShortcut(shortcut.icon, shortcut.name, shortcut.command);
+        })(shortcut);
+    })
 
     window.System.FileViewers = {
         viewers: {
