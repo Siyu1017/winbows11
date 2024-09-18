@@ -181,6 +181,7 @@
                             new Function(file)();
                         }
                     }).catch(err => {
+                        scriptURL = './index.js';
                         runWinbows = function () {
                             var script = document.createElement('script');
                             script.src = scriptURL;
