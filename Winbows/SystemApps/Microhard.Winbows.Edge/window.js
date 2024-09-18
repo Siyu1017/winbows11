@@ -54,6 +54,18 @@ function isWebDomain(url) {
     };
 }
 
+function isValidURL(str) {
+    const pattern = new RegExp('^(https?:\\/\\/)?' + // Protocol (optional)
+        '((([a-zA-Z0-9$_.+!*\',;:&=-]|%[0-9a-fA-F]{2})+)(:([a-zA-Z0-9$_.+!*\',;:&=-]|%[0-9a-fA-F]{2})+)?@)?' + // User and password (optional)
+        '([a-zA-Z0-9.-]+|\\[[a-fA-F0-9:]+\\])' + // Domain or IPv6
+        '(\\:[0-9]+)?' + // Port (optional)
+        '(\\/([a-zA-Z0-9$_.+!*\',;:@&=-]|%[0-9a-fA-F]{2})*)*' + // Path (optional)
+        '(\\?([a-zA-Z0-9$_.+!*\',;:@&=-]|%[0-9a-fA-F]{2})*)?' + // Query string (optional)
+        '(#([a-zA-Z0-9$_.+!*\',;:@&=-]|%[0-9a-fA-F]{2})*)?$'); // Fragment (optional)
+
+    return !!pattern.test(str);
+}
+
 function getHeader(page) {
     return fetch(page).then(res => {
         return res.text();
@@ -558,13 +570,43 @@ async function createTab(icon, header, active = true) {
         } else {
             var status = isWebDomain(currentPage);
             var url = currentPage;
-            if (status.valid == true) {
+            /*
+            if (!isValidURL(url)) {
+                url = `https://winbows11-proxy-api.vercel.app/api/search?q=${encodeURI(url)}`
+            } else 
+            */
+           if (status.valid == true) {
                 if (!currentPage.startsWith('https://') && !currentPage.startsWith('http://')) {
                     url = status.protocol + '//' + currentPage;
                 } else if (currentPage.startsWith('//')) {
                     url = status.protocol + currentPage;
                 }
             }
+            /*
+            fetch('https://winbows11-proxy-api.vercel.app/api/view', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }),
+            }).then(res => {
+                return res.text();
+            }).then(res => {
+                var blob = new Blob([res], {
+                    type: 'text/html'
+                })
+                var url = URL.createObjectURL(blob);
+                try {
+                    getHeader(url).then(header => {
+                        changeHeader(header);
+                    })
+                } catch (e) {
+                    changeHeader(url);
+                }
+                iframe.src = url;
+                showIframe();
+            })
+            */
             try {
                 getHeader(url).then(header => {
                     changeHeader(header);
