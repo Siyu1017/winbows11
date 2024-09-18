@@ -1024,7 +1024,7 @@
                 }
             }
             if (window.appRegistry.exists(file)) {
-                if (config != null && window.appRegistry.getInfo(file).configurable) {
+                if (config != '' && window.appRegistry.getInfo(file).configurable) {
                     file = window.appRegistry.getInfo(file).configurable;
                 } else {
                     file = window.appRegistry.getInfo(file).script;
