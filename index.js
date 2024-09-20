@@ -490,6 +490,7 @@
                                     // Not exist
                                     localStorage.removeItem('WINBOWS_BUILD_ID');
                                     localStorage.removeItem('WINBOWS_DIRECTORIES');
+                                    localStorage.setItem('WINBOWS_REQUIRED', 'REPAIR');
                                     console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
                                     incomplete = true;
                                     // location.href = `./install.html?timestamp=${new Date().getTime()}`;
@@ -500,12 +501,15 @@
                         if (window.needsUpdate == false) {
                             localStorage.removeItem('WINBOWS_BUILD_ID');
                             localStorage.removeItem('WINBOWS_DIRECTORIES');
+                            localStorage.setItem('WINBOWS_REQUIRED', 'REPAIR');
                             console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
                             incomplete = true;
                             // location.href = `./install.html?timestamp=${new Date().getTime()}`;
                         }
                     }).finally(async () => {
                         if (incomplete == false) return;
+                        localStorage.setItem('WINBOWS_REQUIRED', 'REPAIR');
+
                         var warningWindow = `document.documentElement.innerHTML='<div style="background:red;color:#fff;padding:4px 8px;border-radius:4px;user-select: none;-webkit-user-select: none;-webkit-user-drag: none;">THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.</div>';document.documentElement.style="display: flex;align-items: center;justify-content: center;width: fit-content;height: fit-content;";browserWindow.setMovable(document.documentElement)`;
                         var warningWindowURL = `C:/Winbows/System/Temp/${[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
                         await fs.writeFile(warningWindowURL, new Blob([warningWindow], {
@@ -1029,7 +1033,7 @@
                 } else {
                     file = window.appRegistry.getInfo(file).script;
                 }
-            } 
+            }
             new Process(file).start(config);
             return {
                 status: 'ok',
@@ -1086,6 +1090,7 @@
 
     window.System.FileViewers = {
         viewers: {
+            '*': '',
             'css': ['code'],
             'js': ['code'],
             'html': ['code', 'edge'],
@@ -1119,42 +1124,75 @@
             'txt': 'code'
         },
         registeredViewers: {
-            'code': 'C:/Program Files/VSCode/viewer.js',
-            'edge': '',
-            'photos': 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/viewer.js',
-            'mediaplayer': '',
+            'code': {
+                name: 'Visual Studio Code',
+                script: 'C:/Program Files/VSCode/viewer.js',
+                accepts: [/*'css', 'js', 'jsx', 'ts', 'ejs', 'html', 'txt', 'json', 'xml', 'py', 'java', 'c', 'h', */'*']
+            },
+            'edge': {
+                name: 'Microhard Edge',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/viewer.js',
+                accepts: ['html', 'pdf', 'txt', 'js', 'css', 'png', 'jpg', 'jpeg', 'svg', 'bmp', 'ico', 'webp', 'gif']
+            },
+            'photos': {
+                name: 'Photos',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/viewer.js',
+                accepts: ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'svg', 'ico', 'webp']
+            },
+            'mediaplayer': {
+                name: 'MediaPlayer',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.MediaPlayer/window.js',
+                accepts: ['mp3', 'wav', 'ogg', 'mp4', 'webm', 'avi', 'mov']
+            }
         },
-        registerViewer: (name, script) => {
-            if (!window.System.FileViewers.registeredViewers.hasOwnProperty(name)) {
-                window.System.FileViewers.registeredViewers[name] = script;
+        isRegisterd: (name) => {
+            return window.System.FileViewers.registeredViewers.hasOwnProperty(name);
+        },
+        updateViewer: (viewer, prop, value) => {
+            if (window.System.FileViewers.isRegisterd(viewer)) {
+                window.System.FileViewers.registeredViewers[viewer][prop] = value;
+                localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));
+            }
+        },
+        registerViewer: (viewer, name, script, accepts) => {
+            if (!window.System.FileViewers.isRegisterd(viewer)) {
+                window.System.FileViewers.registeredViewers[viewer] = {
+                    name: name,
+                    script: script,
+                    accepts: accepts
+                };
             }
             localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));
         },
-        unregisterViewer: (name) => {
-            if (window.System.FileViewers.registeredViewers.hasOwnProperty(name)) {
-                delete window.System.FileViewers.registeredViewers[name];
+        unregisterViewer: (viewer) => {
+            if (window.System.FileViewers.isRegisterd(viewer)) {
+                delete window.System.FileViewers.registeredViewers[viewer];
             }
             localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));
         },
+        // Deprecated Method
         setViewer: (extension, app) => {
             if (!window.System.FileViewers.viewers[extension]) {
                 window.System.FileViewers.viewers[extension] = [];
             }
             window.System.FileViewers.viewers[extension].push(app);
             localStorage.setItem('WINBOWS_SYSTEM_FV_VIEWERS', JSON.stringify(window.System.FileViewers.viewers));
+            console.warn('%cSystem.FileViewers.setViewer()%c has been deprecated.\nPlease use %cSystem.FileViewers.updateViewer()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '')
         },
+        // Deprecated Method
         unsetViewer: (extension, app) => {
             var index = window.System.FileViewers.viewers[extension].indexOf(app);
             if (index != -1) {
                 window.System.FileViewers.viewers[extension].splice(index, 1);
             }
             localStorage.setItem('WINBOWS_SYSTEM_FV_VIEWERS', JSON.stringify(window.System.FileViewers.viewers));
+            console.warn('%cSystem.FileViewers.unsetViewer()%c has been deprecated.\nPlease use %cSystem.FileViewers.updateViewer()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '')
         },
         setDefaultViewer: (extension, app) => {
             var exists = false;
-            Object.keys(window.System.FileViewers.registeredViewers).forEach(name => {
-                if (name == app || window.System.FileViewers.registeredViewers[name] == app) {
-                    exists = name;
+            Object.keys(window.System.FileViewers.registeredViewers).forEach(viewer => {
+                if (viewer == app || window.System.FileViewers.registeredViewers[viewer] == app) {
+                    exists = viewer;
                 }
             })
             if (exists != false) {
@@ -1179,20 +1217,19 @@
         },
         getViewers: (file = '') => {
             var extension = window.fs.getFileExtension(file).toLowerCase();
-            if (extension == '') return [];
-            var viewers = window.System.FileViewers.viewers[extension];
-            var result = [];
-            console.log(file, extension, viewers)
-            if (!viewers) {
-                return result;
+            var accepted = ['*', extension];
+            if (extension == '') {
+                accepted = ['*'];
             }
-            viewers.forEach((viewer, i) => {
-                var app = window.System.FileViewers.registeredViewers[viewer];
-                if (app) {
-                    result.push(window.System.FileViewers.registeredViewers[viewer]);
+            var viewers = {};
+            Object.keys(window.System.FileViewers.registeredViewers).forEach(viewer => {
+                console.log(window.System.FileViewers.registeredViewers[viewer])
+                if (window.System.FileViewers.registeredViewers[viewer].accepts.some(ext => accepted.includes(ext))) {
+                    viewers[viewer] = window.System.FileViewers.registeredViewers[viewer];
                 }
             })
-            return result;
+            console.log(file, extension, viewers)
+            return viewers;
         }
     }
 

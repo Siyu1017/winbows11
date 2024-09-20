@@ -88,16 +88,16 @@ var viewers = window.System.FileViewers.getViewers(datas.file);
 
 console.log(viewers)
 
-viewers.forEach(viewer => {
+Object.keys(viewers).forEach(viewer => {
     var item = document.createElement('div');
     var itemIcon = document.createElement('div');
     var itemName = document.createElement('div');
-    var app = window.appRegistry.getApp(viewer);
+    var app = window.appRegistry.getApp(viewers[viewer].script);
 
     item.className = 'viewer';
     itemIcon.className = 'viewer-icon';
     itemName.className = 'viewer-name';
-    itemName.innerHTML = app.name;
+    itemName.innerHTML = viewers[viewer].name;
     fs.getFileURL(app.icon).then(url => {
         itemIcon.style.backgroundImage = `url(${url})`;
     })
@@ -126,15 +126,16 @@ alwaysButton.addEventListener('click', () => {
     if (extension == '') {
         return;
     }
+    console.log(selected)
     window.System.FileViewers.setDefaultViewer(extension, selected);
-    new Process(selected).start(`const FILE_PATH="${datas.file}";`);
+    new Process(viewers[selected].script).start(`const FILE_PATH="${datas.file}";`);
     self = true;
     process.exit(0);
 })
 
 onceButton.addEventListener('click', () => {
     if (selected == null) return;
-    new Process(selected).start(`const FILE_PATH="${datas.file}";`);
+    new Process(viewers[selected].script).start(`const FILE_PATH="${datas.file}";`);
     self = true;
     process.exit(0);
 })

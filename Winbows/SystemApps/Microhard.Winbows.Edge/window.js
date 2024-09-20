@@ -120,7 +120,11 @@ function randomID() {
 
 var tab = createTab();
 
-async function createTab(icon, header, active = true) {
+if (datas.page) {
+    createTab(datas.page)
+}
+
+async function createTab(page, active = true) {
     // Initialize tab
     var tab = document.createElement('div');
     var tabInfo = document.createElement('div');
@@ -390,7 +394,7 @@ async function createTab(icon, header, active = true) {
 
     var viewHistory = [];
     var currentHistory = -1;
-    var currentPage = '';
+    var currentPage = typeof page == 'string' ? page : '';
 
     function randomID() {
         var patterns = '0123456789abcdef';

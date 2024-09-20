@@ -20,12 +20,18 @@ document.head.appendChild(style);
         `;
 
     var iframe = document.createElement('iframe');
+    var loading = document.createElement('div');
+    loading.className = 'loading';
+    loading.innerHTML = '<svg class="loading-spinner" width="48" height="48" viewBox="0 0 16 16"><circle cx="8px" cy="8px" r="7px"></circle></svg><div>Loading...</div></div>';
     iframe.src = editor;
     document.body.appendChild(iframe);
+    document.body.appendChild(loading);
 
     console.log(datas)
 
     iframe.onload = async () => {
+        loading.remove();
+
         let event = new CustomEvent('init', {
             detail: {
                 filePath: filePath,

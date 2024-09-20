@@ -522,7 +522,7 @@ async function createTab(page = 'C:/', active = true) {
         item.addEventListener('click', () => {
             var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
             if (defaultViewer != null) {
-                new Process(defaultViewer).start(`const FILE_PATH="${path}";`);
+                new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
             } else {
                 console.log(utils.resolvePath('./chooseViewer.js'))
                 new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);

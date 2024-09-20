@@ -15,3 +15,14 @@ style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
 document.head.appendChild(style);
 
 document.body.innerHTML = '<div class="example"></div>';
+
+const app = browserWindow.useFrameWork('pages@latest');
+const router = app.useRouter(utils.resolvePath('./pages'));
+
+router.on('change', async (page, details) => {
+    app.render([utils.resolvePath('./components/sidebar.js'), page]);
+})
+
+app.listen(3000, () => {
+    router.push('/home');
+})

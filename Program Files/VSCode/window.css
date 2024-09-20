@@ -1,13 +1,72 @@
 .window-toolbar,
 .window-content {
-    background: rgb(24,24,24);
+    background: rgb(24, 24, 24);
     color: #fff;
 }
 
 .window-content {
-    border-top: 1px solid rgba(255,255,255,.1);
+    border-top: 1px solid rgba(255, 255, 255, .1);
+    display: flex;
+    max-width: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+    position: relative;
 }
 
 .window-toolbar-button-icon {
     filter: invert(1);
+}
+
+.loading {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgb(24, 24, 24);
+    color: #fff;
+    z-index: 9;
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 1rem;
+    gap: 1rem;
+    flex-direction: row;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+.loading-spinner {
+    width: 1.75rem;
+    height: 1.75rem;
+    box-sizing: border-box;
+    padding: 2px;
+    overflow: visible;
+}
+
+.loading-spinner>circle {
+    stroke: #fff;
+    fill: none;
+    stroke-width: 2px;
+    stroke-linecap: round;
+    transform-origin: 50% 50%;
+    transition: all .2s ease-in-out 0s;
+    animation: 2s linear 0s infinite normal none running loading-spinner;
+}
+
+@keyframes loading-spinner {
+    0% {
+        stroke-dasharray: 0.01px, 43.97px;
+        transform: rotate(0);
+    }
+
+    50% {
+        stroke-dasharray: 21.99px, 21.99px;
+        transform: rotate(450deg);
+    }
+
+    100% {
+        stroke-dasharray: 0.01px, 43.97px;
+        transform: rotate(1080deg);
+    }
 }

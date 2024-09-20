@@ -150,6 +150,9 @@
 
 <body>
     <script>
+        if (localStorage.getItem('WINBOWS_REQUIRED') == 'REPAIR') {
+            location.href = `./repair.html?timestamp=${new Date().getTime()}`;
+        }
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', scope: './' }).then((register) => {
                 register.update();

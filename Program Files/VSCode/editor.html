@@ -98,6 +98,9 @@
             width: 20rem;
             border-left: 1px solid rgba(255, 255, 255, .1);
             display: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-user-drag: none;
         }
 
         .monaco-sidebar-content.active {
@@ -299,6 +302,7 @@
             display: flex;
             color: #efefef;
             padding: 0 .75rem;
+            background: rgb(24, 24, 24);
         }
 
         .monaco-footer-left {
@@ -346,7 +350,7 @@
         <svg class="loading-spinner" width="48" height="48" viewBox="0 0 16 16">
             <circle cx="8px" cy="8px" r="7px"></circle>
         </svg>
-        <div>Loading File...</div>
+        <div>Loading...</div>
     </div>
     <div id="container" style="width: 100%; height: 100%">
         <div class="monaco">
