@@ -330,6 +330,7 @@
         return path.split('/').slice(-1)[0];
     }
     window.utils.getFileExtension = function (file = '') {
+        file = window.utils.getFileName(file);
         if (file.indexOf('.') > -1) {
             return file.split('.').pop();
         } else {
@@ -919,11 +920,8 @@
     window.fs.getFileURL = getFileURL;
     window.fs.Cache = {};
     window.fs.getFileExtension = function (file = '') {
-        if (file.indexOf('.') > -1) {
-            return file.split('.').pop();
-        } else {
-            return '';
-        }
+        console.warn('%cfs.getFileExtension()%c has been deprecated.\nPlease use %cutils.getFileExtension()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '')
+        return window.utils.getFileExtension(file);
     }
 
 
@@ -1207,7 +1205,7 @@
             localStorage.setItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS', JSON.stringify(window.System.FileViewers.defaultViewers));
         },
         getDefaultViewer: (file = '') => {
-            var extension = file.split('.').pop().toLowerCase();
+            var extension = window.utils.getFileExtension(file).toLowerCase();
             var viewer = window.System.FileViewers.defaultViewers[extension];
             if (!viewer) {
                 return null;
@@ -1216,7 +1214,7 @@
             }
         },
         getViewers: (file = '') => {
-            var extension = window.fs.getFileExtension(file).toLowerCase();
+            var extension = window.utils.getFileExtension(file).toLowerCase();
             var accepted = ['*', extension];
             if (extension == '') {
                 accepted = ['*'];

@@ -3,6 +3,8 @@ document.documentElement.style = `
     height: min(450px, 80vh);
 `
 
+browserWindow.setSnappable(false);
+
 document.documentElement.classList.add('winui-light');
 
 document.documentElement.querySelectorAll('.window-toolbar-button:not(.close)').forEach(btn => {

@@ -445,11 +445,20 @@
                     open, close, show, hide, addEventListener, focus, blur, updateWindowStatus,
                     getRegistry,
                     _show, _hide,
-                    changeIcon, changeTitle
+                    changeIcon, changeTitle,
+                    setMaxZIndex, getMaxZIndex
                 }
 
                 function getRegistry() {
                     return registry;
+                }
+
+                function getMaxZIndex() {
+                    return maxIndex;
+                }
+
+                function setMaxZIndex(value) {
+                    maxIndex = value;
                 }
 
                 function open(obj) {

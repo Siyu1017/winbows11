@@ -6,23 +6,15 @@ document.head.appendChild(style);
 
 function getCategoryString() {
     const file = datas.file;
-    if (file.indexOf('.') > -1) {
-        return `.${file.split('.').pop()}`;
+    const extension = window.utils.getFileExtension(datas.file);
+    if (extension != '') {
+        return `.${extension}`;
     } else {
         return `[${file.split('/').pop()}]`;
     }
 }
 
-function getExtension() {
-    const file = datas.file;
-    if (file.indexOf('.') > -1) {
-        return file.split('.').pop();
-    } else {
-        return '';
-    }
-}
-
-const extension = getExtension();
+const extension = window.utils.getFileExtension(datas.file);
 
 var selected = null;
 

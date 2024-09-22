@@ -1,3 +1,7 @@
+const snapPreview = document.createElement('div');
+snapPreview.className = 'browser-window-snap-preview';
+window.Winbows.AppWrapper.appendChild(snapPreview);
+
 Object.defineProperty(window.workerModules, 'browserWindow', {
     value: async (path = {}, config = {}, pid) => {
         console.log(path)
@@ -20,6 +24,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             "move": ["mousemove", "touchmove", "pointermove"],
             "end": ["mouseup", "touchend", "pointerup", "blur"]
         }
+        const parent = config.showOnTop == true ? window.Winbows.Screen : appWrapper;
 
         var resizerConfig = {
             'browser-window-resizer-top': 'vertical',
@@ -46,6 +51,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         var originalHeight = hostElement.offsetHeight;
         var originalLeft = utils.getPosition(hostElement).x;
         var originalTop = utils.getPosition(hostElement).y;
+        var originalSnapSide = '';
 
         const windowID = ICON.open({
             browserWindow: hostElement,
@@ -94,11 +100,9 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         contentElement.className = 'window-content';
 
         if (config.showOnTop == true) {
-            window.Winbows.Screen.appendChild(hostElement);
             hostElement.classList.add('show-on-top');
-        } else {
-            appWrapper.appendChild(hostElement);
         }
+        parent.appendChild(hostElement);
         hostElement.appendChild(resizers);
         hostElement.appendChild(content);
         shadowRoot.appendChild(windowElement);
@@ -327,9 +331,6 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         }
 
         async function maximizeWindow(animation = true) {
-            updateSize();
-            updatePosition();
-
             /*
             originalWidth = hostElement.offsetWidth;
             originalHeight = hostElement.offsetHeight;
@@ -391,10 +392,91 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             closeButton.remove();
         }
 
+        var showSnapPreview = false;
+        var snapMargin = 12;
         var pointerDown = false;
         var pointerPosition = [];
         var originalPosition = {};
         var immovableElements = [];
+        var snapSide = '';
+
+        function getSnapSide(x, y) {
+            var side = '';
+            if (y >= appWrapper.offsetHeight - snapMargin) {
+                side += 'b';
+            } else if (y <= snapMargin) {
+                side += 't';
+            }
+            if (x >= appWrapper.offsetWidth - snapMargin) {
+                side += 'r';
+            } else if (x <= snapMargin) {
+                side += 'l';
+            }
+            if (side.length == 1) {
+                side += 'f';
+            }
+            return side;
+        }
+
+        function getSnapSize(side) {
+            var width = appWrapper.offsetWidth;
+            var height = appWrapper.offsetHeight;
+            if (side.includes('l') || side.includes('r')) {
+                width = appWrapper.offsetWidth / 2;
+            }
+            if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
+                height = appWrapper.offsetHeight / 2;
+            }
+            return {
+                width: width,
+                height: height
+            }
+        }
+
+        function getSnapPosition(side) {
+            var left = 0;
+            var top = 0;
+            if (side.includes('r')) {
+                left = appWrapper.offsetWidth / 2;
+            }
+            if (side.includes('b')) {
+                top = appWrapper.offsetHeight / 2;
+            }
+            return {
+                left: left,
+                top: top
+            }
+        }
+
+        function getSnapPreviewSize(side) {
+            var width = appWrapper.offsetWidth - snapMargin * 2;
+            var height = appWrapper.offsetHeight - snapMargin * 2;
+            if (side.includes('l') || side.includes('r')) {
+                width = appWrapper.offsetWidth / 2 - snapMargin * 2;
+            }
+            if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
+                height = appWrapper.offsetHeight / 2 - snapMargin * 2;
+            }
+            return {
+                width: width,
+                height: height
+            }
+        }
+
+        function getSnapPreviewPosition(side) {
+            var left = snapMargin;
+            var top = snapMargin;
+            if (side.includes('r')) {
+                left = appWrapper.offsetWidth / 2 + snapMargin;
+            }
+            if (side.includes('b')) {
+                top = appWrapper.offsetHeight / 2 + snapMargin;
+            }
+            return {
+                left: left,
+                top: top
+            }
+        }
 
         function handleStartMoving(e) {
             if (toolbarButtons.contains(e.target)) return;
@@ -405,21 +487,33 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 }
             })
             if (prevent == true) return;
+            let pageX = e.pageX;
+            let pageY = e.pageY;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
+                pageX = touch.pageX;
+                pageY = touch.pageY;
+            }
+            if (pageX < 0) {
+                pageX = 0;
+            } else if (pageX > window.innerWidth) {
+                pageX = window.innerWidth;
+            }
+            if (pageY < 0) {
+                pageY = 0;
+            } else if (pageY > parent.offsetHeight) {
+                pageY = parent.offsetHeight;
             }
             pointerDown = true;
             var position = utils.getPosition(hostElement);
-            pointerPosition = [e.pageX, e.pageY];
+            pointerPosition = [pageX, pageY];
             originalPosition = {
                 x: position.x,
                 y: position.y
             }
             triggerEvent('dragstart', {
                 preventDefault: () => {
-                    pointerDown = false;
+                    handleEndMoving({}, 'preventDefault');
                 },
                 type: e.type,
                 target: e.target
@@ -428,7 +522,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         function handleMoveMoving(e) {
             if (pointerDown) {
-                if (isMaximized == true) {
+                if (originalSnapSide != '' || isMaximized == true) {
+                    originalSnapSide = '';
                     isMaximized = false;
                     hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
@@ -442,17 +537,67 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                         maximizeImage.src = url;
                     })
                 }
+                let pageX = e.pageX;
+                let pageY = e.pageY;
                 if (e.type.startsWith('touch')) {
                     var touch = e.touches[0] || e.changedTouches[0];
-                    e.pageX = touch.pageX;
-                    e.pageY = touch.pageY;
+                    pageX = touch.pageX;
+                    pageY = touch.pageY;
                 }
+                if (pageX < 0) {
+                    pageX = 0;
+                } else if (pageX > window.innerWidth) {
+                    pageX = window.innerWidth;
+                }
+                if (pageY < 0) {
+                    pageY = 0;
+                } else if (pageY > parent.offsetHeight) {
+                    pageY = parent.offsetHeight;
+                }
+                const side = getSnapSide(pageX, pageY);
                 appWrapper.classList.add('moving');
-                hostElement.style.left = originalPosition.x + e.pageX - pointerPosition[0] + 'px';
-                hostElement.style.top = originalPosition.y + e.pageY - pointerPosition[1] + 'px';
+                hostElement.style.left = originalPosition.x + pageX - pointerPosition[0] + 'px';
+                hostElement.style.top = originalPosition.y + pageY - pointerPosition[1] + 'px';
+                if (config.snappable == false) {
+                    snapSide = '';
+                } else {
+                    if (side != '') {
+                        snapPreview.style.position = 'fixed';
+                        if (!showSnapPreview == true) {
+                            snapPreview.style.width = hostElement.offsetWidth + 'px';
+                            snapPreview.style.height = hostElement.offsetHeight + 'px';
+                            snapPreview.style.left = window.utils.getPosition(hostElement).x + 'px';
+                            snapPreview.style.top = window.utils.getPosition(hostElement).y + 'px';
+                            snapPreview.classList.add('active');
+                        }
+                        var size = getSnapPreviewSize(side);
+                        var position = getSnapPreviewPosition(side);
+                        snapPreview.style.transition = 'all .15s ease-in-out';
+                        snapPreview.style.zIndex = hostElement.style.zIndex || ICON.getMaxZIndex();
+                        snapPreview.style.left = position.left + 'px';
+                        snapPreview.style.top = position.top + 'px';
+                        snapPreview.style.width = size.width + 'px';
+                        snapPreview.style.height = size.height + 'px';
+                        showSnapPreview = true;
+                    } else {
+                        if (showSnapPreview == true) {
+                            snapPreview.style.width = hostElement.offsetWidth + 'px';
+                            snapPreview.style.height = hostElement.offsetHeight + 'px';
+                            snapPreview.style.left = window.utils.getPosition(hostElement).x + 'px';
+                            snapPreview.style.top = window.utils.getPosition(hostElement).y + 'px';
+                            setTimeout(() => {
+                                if (showSnapPreview == true) return;
+                                snapPreview.style.transition = 'none';
+                                snapPreview.classList.remove('active');
+                            }, 150)
+                        }
+                        showSnapPreview = false;
+                    }
+                    snapSide = side;
+                }
                 triggerEvent('dragging', {
                     preventDefault: () => {
-                        pointerDown = false;
+                        handleEndMoving({}, 'preventDefault');
                     },
                     type: e.type,
                     target: e.target
@@ -460,11 +605,47 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             }
         }
 
-        function handleEndMoving(e) {
+        function handleEndMoving(e, type = 'user') {
             if (pointerDown == false) return;
+            if (type == 'user') {
+                originalWidth = hostElement.offsetWidth;
+                originalHeight = hostElement.offsetHeight;
+            }
             pointerDown = false;
+            showSnapPreview = false;
+            snapPreview.style.width = hostElement.offsetWidth + 'px';
+            snapPreview.style.height = hostElement.offsetHeight + 'px';
+            snapPreview.style.left = window.utils.getPosition(hostElement).x + 'px';
+            snapPreview.style.top = window.utils.getPosition(hostElement).y + 'px';
+            setTimeout(() => {
+                snapPreview.style.transition = 'none';
+                snapPreview.classList.remove('active');
+            }, 150)
             appWrapper.classList.remove('moving');
-            updatePosition();
+            if (snapSide != '') {
+                if (snapSide.includes('t') && snapSide.includes('f')) {
+                    maximizeWindow();
+                }
+                var position = getSnapPosition(snapSide);
+                var size = getSnapSize(snapSide);
+                hostElement.style.left = position.left + 'px';
+                hostElement.style.top = position.top + 'px';
+
+                hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                setTimeout(() => {
+                    hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                    windowElement.style.transition = 'none';
+                }, 200)
+
+                windowElement.style.width = size.width + 'px';
+                windowElement.style.height = size.height + 'px';
+                windowElement.style.borderRadius = 0;
+            } else if (type == 'user') {
+                updatePosition();
+            }
+            originalSnapSide = snapSide;
+            snapSide = '';
             triggerEvent('dragend', {
                 preventDefault: () => {
 
@@ -472,6 +653,10 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 type: e.type,
                 target: e.target
             })
+        }
+
+        function setSnappable(value) {
+            config.snappable = value == true;
         }
 
         function setMovable(element) {
@@ -527,9 +712,13 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         ICON.focus(windowID);
 
+        updatePosition();
+        updateSize();
+
         return {
             shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
-            close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon
+            close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon,
+            setSnappable
         };
     },
     writable: false,

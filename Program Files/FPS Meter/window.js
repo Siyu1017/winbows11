@@ -293,4 +293,5 @@ document.documentElement.appendChild(fps.canvas);
 
 console.log(browserWindow)
 
-browserWindow.setMovable(fps.canvas)
+browserWindow.setMovable(fps.canvas);
+browserWindow.setSnappable(false);
