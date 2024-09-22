@@ -419,13 +419,13 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         }
 
         function getSnapSize(side) {
-            var width = appWrapper.offsetWidth;
-            var height = appWrapper.offsetHeight;
+            var width = '100vw';
+            var height = 'calc(100vh - var(--taskbar-height))';
             if (side.includes('l') || side.includes('r')) {
-                width = appWrapper.offsetWidth / 2;
+                width = 'calc(100vw / 2)';
             }
             if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
-                height = appWrapper.offsetHeight / 2;
+                height = 'calc((100vh - var(--taskbar-height)) / 2)';
             }
             return {
                 width: width,
@@ -434,13 +434,13 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         }
 
         function getSnapPosition(side) {
-            var left = 0;
-            var top = 0;
+            var left = '0';
+            var top = '0';
             if (side.includes('r')) {
-                left = appWrapper.offsetWidth / 2;
+                left = 'calc(100vw / 2)';
             }
             if (side.includes('b')) {
-                top = appWrapper.offsetHeight / 2;
+                top = 'calc((100vh - var(--taskbar-height)) / 2)';
             }
             return {
                 left: left,
@@ -628,8 +628,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                 }
                 var position = getSnapPosition(snapSide);
                 var size = getSnapSize(snapSide);
-                hostElement.style.left = position.left + 'px';
-                hostElement.style.top = position.top + 'px';
+                hostElement.style.left = position.left;
+                hostElement.style.top = position.top;
 
                 hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                 windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
@@ -638,8 +638,8 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                     windowElement.style.transition = 'none';
                 }, 200)
 
-                windowElement.style.width = size.width + 'px';
-                windowElement.style.height = size.height + 'px';
+                windowElement.style.width = size.width;
+                windowElement.style.height = size.height;
                 windowElement.style.borderRadius = 0;
             } else if (type == 'user') {
                 updatePosition();
