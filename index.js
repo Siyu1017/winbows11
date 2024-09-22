@@ -215,6 +215,11 @@
                 icon: 'C:/Winbows/icons/applications/tools/edge.ico',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.js'
             },
+            'edgebeta': {
+                path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/',
+                icon: 'C:/Winbows/icons/applications/tools/edgebeta.ico',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.js'
+            },
             'store': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/',
                 icon: 'C:/Winbows/icons/applications/novelty/store2.ico',
@@ -1003,6 +1008,7 @@
     })();
 
     window.Taskbar.pinApp('C:/Program Files/Command/app.js');
+    window.Taskbar.pinApp('C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.js');
     await window.Taskbar.preloadImage();
 
     window.System.CommandParsers = {
@@ -1130,6 +1136,11 @@
             'edge': {
                 name: 'Microhard Edge',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/viewer.js',
+                accepts: ['html', 'pdf', 'txt', 'js', 'css', 'png', 'jpg', 'jpeg', 'svg', 'bmp', 'ico', 'webp', 'gif']
+            },
+            'edgebeta': {
+                name: 'Microhard Edge BETA',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/viewer.js',
                 accepts: ['html', 'pdf', 'txt', 'js', 'css', 'png', 'jpg', 'jpeg', 'svg', 'bmp', 'ico', 'webp', 'gif']
             },
             'photos': {

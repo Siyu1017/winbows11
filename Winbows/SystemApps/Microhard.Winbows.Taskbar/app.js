@@ -146,6 +146,9 @@
             }, {
                 name: 'Photos',
                 app: 'photos'
+            }, {
+                name: 'Edge BETA',
+                app: 'edgebeta'
             }],
             []
         ];

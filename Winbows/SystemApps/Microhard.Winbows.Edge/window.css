@@ -711,3 +711,8 @@ svg {
     text-overflow: ellipsis;
     font-size: .875rem;
 }
+
+.explorer-content-edgepages {
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+}
