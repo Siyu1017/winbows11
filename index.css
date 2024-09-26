@@ -845,8 +845,6 @@ body {
 }
 
 .browser-window-snap-preview {
-    width: 100%;
-    height: 100%;
     display: block;
     position: fixed;
     border: none;
