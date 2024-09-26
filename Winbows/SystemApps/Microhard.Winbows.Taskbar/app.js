@@ -20,16 +20,19 @@
 
     var taskbar = document.createElement('div');
     var taskbarIcons = document.createElement('div');
+    var taskbarControls = document.createElement('div');
     var taskbarItems = document.createElement('div');
     var taskbarApps = document.createElement('div');
 
     taskbar.className = 'taskbar';
     taskbarIcons.className = 'taskbar-group icons';
+    taskbarControls.className = 'taskbar-group controls';
     taskbarItems.className = 'taskbar-items';
     taskbarApps.className = 'taskbar-apps';
 
     window.Winbows.Screen.appendChild(taskbar);
     taskbar.appendChild(taskbarIcons);
+    taskbar.appendChild(taskbarControls);
     taskbarIcons.appendChild(taskbarItems);
     taskbarIcons.appendChild(taskbarApps);
 
@@ -111,6 +114,97 @@
         if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || iconRepository.start.item.contains(e.target)) return;
         iconRepository.start.hide();
     })
+
+    var controlBackgroundExpand = document.createElement('div');
+    var controlBackgroundIcons = document.createElement('div');
+    var controlPanelContainer = document.createElement('div');
+    var controlCalendarContainer = document.createElement('div');
+    var controlPanel = document.createElement('div');
+    var controlCalendar = document.createElement('div');
+    var controlPanelSummary = document.createElement('div');
+    var controlCalendarSummary = document.createElement('div');
+    var controlToggleDesktop = document.createElement('div');
+
+    controlBackgroundExpand.className = 'control-background-expand';
+    controlBackgroundIcons.className = 'control-background-icons';
+    controlPanelContainer.className = 'control-panel-container';
+    controlCalendarContainer.className = 'control-calendar-container';
+    controlPanel.className = 'control-panel';
+    controlCalendar.className = 'control-calendar';
+    controlPanelSummary.className = 'control-panel-summary';
+    controlCalendarSummary.className = 'control-calendar-summary';
+    controlToggleDesktop.className = 'control-toggle-desktop';
+
+    taskbarControls.appendChild(controlBackgroundExpand);
+    taskbarControls.appendChild(controlPanelSummary);
+    taskbarControls.appendChild(controlCalendarSummary);
+    taskbarControls.appendChild(controlToggleDesktop);
+
+    window.Winbows.Screen.appendChild(controlPanelContainer);
+    window.Winbows.Screen.appendChild(controlCalendarContainer);
+    controlPanelContainer.appendChild(controlPanel);
+    controlCalendarContainer.appendChild(controlCalendar);
+
+    // Controls - Panel Summary
+    var controlPanelSummaryWifi = document.createElement('div');
+    var controlPanelSummaryVolume = document.createElement('div');
+    var controlPanelSummaryBattery = document.createElement('div');
+
+    controlPanelSummaryWifi.className = 'control-panel-summary-item wifi';
+    controlPanelSummaryVolume.className = 'control-panel-summary-item volume';
+    controlPanelSummaryBattery.className = 'control-panel-summary-item battery';
+
+    controlPanelSummary.appendChild(controlPanelSummaryWifi);
+    controlPanelSummary.appendChild(controlPanelSummaryVolume);
+    controlPanelSummary.appendChild(controlPanelSummaryBattery);
+
+    // Controls - Calendar Summary
+    var controlCalendarSummaryMain = document.createElement('div');
+    var controlCalendarSummaryTime = document.createElement('div');
+    var controlCalendarSummaryDate = document.createElement('div');
+    var controlCalendarSummaryNotify = document.createElement('div');
+
+    controlCalendarSummaryMain.className = 'control-calendar-summary-main';
+    controlCalendarSummaryTime.className = 'control-calendar-summary-time';
+    controlCalendarSummaryDate.className = 'control-calendar-summary-date';
+    controlCalendarSummaryNotify.className = 'control-calendar-summary-notify';
+
+    controlCalendarSummary.appendChild(controlCalendarSummaryMain);
+    controlCalendarSummaryMain.appendChild(controlCalendarSummaryTime);
+    controlCalendarSummaryMain.appendChild(controlCalendarSummaryDate);
+    controlCalendarSummary.appendChild(controlCalendarSummaryNotify);
+
+    controlCalendarContainer.innerHTML = 'This feature is coming soon!';
+    controlCalendarContainer.style = "display: flex;align-items: center;justify-content: center;";
+    controlCalendarSummary.addEventListener('click', (e) => {
+        controlCalendarContainer.classList.toggle('active');
+    })
+    new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+        window.addEventListener(event, (e) => {
+            if (controlCalendarContainer.contains(e.target) || controlCalendarSummary.contains(e.target)) return;
+            controlCalendarContainer.classList.remove('active');
+        })
+    })
+
+    !(() => {
+        var pattern = [" AM", " PM"];
+
+        function updateTime() {
+            var now = new Date();
+            var leftToUpdateTime = (60 - now.getSeconds()) * 1000;
+            controlCalendarSummaryTime.innerHTML = (now.format("hh") < 13 ? now.format("hh:mm") : new Date(Date.now() - 12 * 1000 * 60 * 60).format("hh:mm")) + (now.format("hh") < 12 ? pattern[0] : pattern[1]);
+            setTimeout(updateTime, leftToUpdateTime);
+        }
+        function updateDate() {
+            var now = new Date();
+            var leftToUpdateDate = (((24 - now.getHours()) * 60 * 60) - ((60 - now.getMinutes()) * 60) - now.getSeconds()) * 1000;
+            controlCalendarSummaryDate.innerHTML = now.format("yyyy/MM/dd");
+            setTimeout(updateDate, leftToUpdateDate);
+        }
+
+        updateTime();
+        updateDate();
+    })();
 
     !(async () => {
         // Start Menu
@@ -216,6 +310,23 @@
             iconRepository[idDatas[activeWindows[activeWindows.length - 1]]].focus([activeWindows[activeWindows.length - 1]]);
         }
     }
+
+    !(() => {
+        var temp = [];
+        controlToggleDesktop.addEventListener('click', () => {
+            if (activeWindows.length > 0) {
+                temp = activeWindows;
+                activeWindows.forEach(id => {
+                    iconRepository[idDatas[id]].hide(id);
+                })
+            } else {
+                temp.forEach(id => {
+                    iconRepository[idDatas[id]].show(id);
+                })
+                temp = [];
+            }
+        })
+    })();
 
     function runItem(name, e = {}) {
         if (e.type == 'hide') {

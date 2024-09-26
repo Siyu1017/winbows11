@@ -1126,3 +1126,121 @@ body {
     height: 16px;
     margin: 0 auto;
 }
+
+/* Calendar container */
+.control-calendar-container {
+    position: fixed;
+    bottom: calc(var(--taskbar-height) + .5rem);
+    right: .5rem;
+    transform: translateX(150%);
+    transition: transform .2s cubic-bezier(.69, 0, .95, .93);
+    height: calc(100vh - var(--taskbar-height) - 1rem);
+    width: 22.5rem;
+    background: #fff;
+    z-index: 9999;
+    backdrop-filter: blur(64px) saturate(1.8);
+    background: rgb(255 255 255 / 80%);
+    border-radius: .75rem;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
+    border: 1px solid rgba(0, 0, 0, .2);
+}
+
+.control-calendar-container.active {
+    transform: translateX(0);
+    transition: transform .2s cubic-bezier(.27, 1.08, .85, .98);
+}
+
+/* Summaries in taskbar */
+.taskbar-group.controls {
+    position: sticky;
+    right: 0;
+    margin-left: auto;
+    width: fit-content;
+    height: 2.5rem;
+    transform: none;
+}
+
+.control-panel-summary,
+.control-calendar-summary {
+    font-size: .725rem;
+    text-align: center;
+    display: flex;
+    height: -webkit-fill-available;
+    align-items: center;
+    padding: 0 .5rem;
+    border-radius: .25rem;
+    border: 1.5px solid transparent;
+    gap: .375rem;
+}
+
+.control-panel-summary:hover,
+.control-calendar-summary:hover {
+    background: var(--winbows-taskbar-hover-color);
+    border: 1.5px solid rgba(0, 0, 0, .075);
+}
+
+/* Panel summary */
+.control-panel-summary {
+    gap: .25rem;
+    padding: 0 .25rem;
+}
+
+.control-panel-summary-item {
+    width: 1.25rem;
+    height: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-panel-summary-item::before {
+    font-family: var(--winbows-font-icon);
+    font-size: 1rem;
+}
+
+.control-panel-summary-item.wifi::before {
+    content: '\e701';
+}
+
+.control-panel-summary-item.volume::before {
+    content: '\e767';
+}
+
+.control-panel-summary-item.battery::before {
+    content: '\ecbf';
+}
+
+/* Calendar summary */
+.control-calendar-summary-notify {
+    width: 1rem;
+    height: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-calendar-summary-notify::before {
+    content: '\ea8f';
+    font-family: var(--winbows-font-icon);
+    font-size: .875rem;
+}
+
+/* Toggle desktop */
+.control-toggle-desktop {
+    width: .75rem;
+    min-width: .75rem;
+    height: -webkit-fill-available;
+    position: relative;
+}
+
+.control-toggle-desktop:hover::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: .075rem;
+    height: 40%;
+    background: rgb(131, 131, 131);
+    border-radius: 999px;
+}

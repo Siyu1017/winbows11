@@ -1341,6 +1341,22 @@
         }
     })
 
+    await (async () => {
+        try {
+            const fontName = 'WINBOWS_FONT_' + [...Array(12)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+            const fontURL = await fs.getFileURL('C:/Winbows/fonts/Segoe Fluent Icons.ttf');
+            const myFont = new FontFace(fontName, `url(${fontURL})`);
+            await myFont.load();
+
+            document.fonts.add(myFont);
+            document.querySelector(':root').style.setProperty('--winbows-font-icon', fontName);
+
+        } catch (error) {
+            console.error('Failed to load font', error);
+        }
+        return;
+    })();
+
     window.System.triggerEvent('load');
 
     // new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js', 'system').start();
