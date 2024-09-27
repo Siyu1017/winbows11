@@ -118,32 +118,32 @@
     var controlBackgroundExpand = document.createElement('div');
     var controlBackgroundIcons = document.createElement('div');
     var controlPanelContainer = document.createElement('div');
-    var controlCalendarContainer = document.createElement('div');
+    var controlSidebarContainer = document.createElement('div');
     var controlPanel = document.createElement('div');
-    var controlCalendar = document.createElement('div');
+    var controlSidebar = document.createElement('div');
     var controlPanelSummary = document.createElement('div');
-    var controlCalendarSummary = document.createElement('div');
+    var controlSidebarSummary = document.createElement('div');
     var controlToggleDesktop = document.createElement('div');
 
     controlBackgroundExpand.className = 'control-background-expand';
     controlBackgroundIcons.className = 'control-background-icons';
     controlPanelContainer.className = 'control-panel-container';
-    controlCalendarContainer.className = 'control-calendar-container';
+    controlSidebarContainer.className = 'control-sidebar-container';
     controlPanel.className = 'control-panel';
-    controlCalendar.className = 'control-calendar';
+    controlSidebar.className = 'control-sidebar';
     controlPanelSummary.className = 'control-panel-summary';
-    controlCalendarSummary.className = 'control-calendar-summary';
+    controlSidebarSummary.className = 'control-sidebar-summary';
     controlToggleDesktop.className = 'control-toggle-desktop';
 
     taskbarControls.appendChild(controlBackgroundExpand);
     taskbarControls.appendChild(controlPanelSummary);
-    taskbarControls.appendChild(controlCalendarSummary);
+    taskbarControls.appendChild(controlSidebarSummary);
     taskbarControls.appendChild(controlToggleDesktop);
 
     window.Winbows.Screen.appendChild(controlPanelContainer);
-    window.Winbows.Screen.appendChild(controlCalendarContainer);
+    window.Winbows.Screen.appendChild(controlSidebarContainer);
     controlPanelContainer.appendChild(controlPanel);
-    controlCalendarContainer.appendChild(controlCalendar);
+    controlSidebarContainer.appendChild(controlSidebar);
 
     // Controls - Panel Summary
     var controlPanelSummaryWifi = document.createElement('div');
@@ -158,31 +158,135 @@
     controlPanelSummary.appendChild(controlPanelSummaryVolume);
     controlPanelSummary.appendChild(controlPanelSummaryBattery);
 
-    // Controls - Calendar Summary
-    var controlCalendarSummaryMain = document.createElement('div');
-    var controlCalendarSummaryTime = document.createElement('div');
-    var controlCalendarSummaryDate = document.createElement('div');
-    var controlCalendarSummaryNotify = document.createElement('div');
+    // Controls - Sidebar Summary
+    var controlSidebarSummaryMain = document.createElement('div');
+    var controlSidebarSummaryTime = document.createElement('div');
+    var controlSidebarSummaryDate = document.createElement('div');
+    var controlSidebarSummaryNotify = document.createElement('div');
 
-    controlCalendarSummaryMain.className = 'control-calendar-summary-main';
-    controlCalendarSummaryTime.className = 'control-calendar-summary-time';
-    controlCalendarSummaryDate.className = 'control-calendar-summary-date';
-    controlCalendarSummaryNotify.className = 'control-calendar-summary-notify';
+    controlSidebarSummaryMain.className = 'control-sidebar-summary-main';
+    controlSidebarSummaryTime.className = 'control-sidebar-summary-time';
+    controlSidebarSummaryDate.className = 'control-sidebar-summary-date';
+    controlSidebarSummaryNotify.className = 'control-sidebar-summary-notify';
 
-    controlCalendarSummary.appendChild(controlCalendarSummaryMain);
-    controlCalendarSummaryMain.appendChild(controlCalendarSummaryTime);
-    controlCalendarSummaryMain.appendChild(controlCalendarSummaryDate);
-    controlCalendarSummary.appendChild(controlCalendarSummaryNotify);
+    controlSidebarSummary.appendChild(controlSidebarSummaryMain);
+    controlSidebarSummaryMain.appendChild(controlSidebarSummaryTime);
+    controlSidebarSummaryMain.appendChild(controlSidebarSummaryDate);
+    controlSidebarSummary.appendChild(controlSidebarSummaryNotify);
 
-    controlCalendarContainer.innerHTML = 'This feature is coming soon!';
-    controlCalendarContainer.style = "display: flex;align-items: center;justify-content: center;";
-    controlCalendarSummary.addEventListener('click', (e) => {
-        controlCalendarContainer.classList.toggle('active');
+    // Controls - Panel
+    var quickSettingGroup = document.createElement('div');
+    var quickSettingContent = document.createElement('div');
+    var quickSettingBlocks = document.createElement('div');
+    var quickSettingSliders = document.createElement('div');
+    var quickSettingFooter = document.createElement('div');
+    quickSettingGroup.className = 'control-panel-group';
+    quickSettingContent.className = 'control-panel-content';
+    quickSettingBlocks.className = 'control-panel-blocks';
+    quickSettingSliders.className = 'control-panel-sliders';
+    quickSettingFooter.className = 'control-panel-footer';
+    controlPanel.appendChild(quickSettingGroup);
+    quickSettingGroup.appendChild(quickSettingContent);
+    quickSettingContent.appendChild(quickSettingBlocks);
+    quickSettingContent.appendChild(quickSettingSliders);
+    quickSettingGroup.appendChild(quickSettingFooter);
+
+    var quickSettingItems = [{
+        label: 'WiFi',
+        status: 'enabled',
+        name: 'wifi'
+    }, {
+        label: 'Bluetooth',
+        status: 'disabled',
+        name: 'bluetooth'
+    }, {
+        label: 'Flight Mode',
+        status: 'disabled',
+        name: 'flight-mode'
+    }, {
+        label: 'Dark Theme',
+        status: 'disabled',
+        name: 'dark-theme'
+    }, {
+        label: 'Night Light',
+        status: 'disabled',
+        name: 'night-light'
+    }, {
+        label: 'Battery Saver',
+        status: 'disabled',
+        name: 'battery-saver'
+    }]
+
+    quickSettingItems.forEach(item => {
+        var quickSettingBlock = document.createElement('div');
+        var quickSettingButton = document.createElement('div');
+        var quickSettingIcon = document.createElement('div');
+        var quickSettingLabel = document.createElement('div');
+        quickSettingBlock.className = 'control-panel-block';
+        quickSettingButton.className = 'control-panel-block-button';
+        quickSettingIcon.className = 'control-panel-block-icon';
+        quickSettingLabel.className = 'control-panel-block-label';
+        quickSettingIcon.classList.add(item.name);
+        quickSettingLabel.innerHTML = item.label;
+        if (item.status == 'disabled') {
+            quickSettingBlock.disabled = true;
+        } else {
+            quickSettingButton.classList.add('active');
+        }
+        quickSettingButton.addEventListener('click', () => {
+            quickSettingButton.classList.toggle('active');
+        })
+        quickSettingBlocks.appendChild(quickSettingBlock);
+        quickSettingBlock.appendChild(quickSettingButton);
+        quickSettingButton.appendChild(quickSettingIcon);
+        quickSettingBlock.appendChild(quickSettingLabel);
+    })
+
+    controlPanelSummary.addEventListener('click', (e) => {
+        controlPanelContainer.classList.toggle('active');
     })
     new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
         window.addEventListener(event, (e) => {
-            if (controlCalendarContainer.contains(e.target) || controlCalendarSummary.contains(e.target)) return;
-            controlCalendarContainer.classList.remove('active');
+            if (controlPanelContainer.contains(e.target) || controlPanelSummary.contains(e.target)) return;
+            controlPanelContainer.classList.remove('active');
+        })
+    })
+
+    // Controls - Calendar and Notifications ( In sidebar )
+    var notifyGroup = document.createElement('div');
+    var calendarGroup = document.createElement('div');
+    notifyGroup.className = 'control-sidebar-group';
+    calendarGroup.className = 'control-sidebar-group';
+    controlSidebar.appendChild(notifyGroup);
+    controlSidebar.appendChild(calendarGroup);
+
+    var notifyHeader = document.createElement('div');
+    var notifyList = document.createElement('div');
+    notifyHeader.className = 'control-sidebar-notify-header';
+    notifyList.className = 'control-sidebar-notify-list';
+    notifyGroup.appendChild(notifyHeader);
+    notifyGroup.appendChild(notifyList);
+    notifyHeader.innerHTML = 'Notifications';
+
+    var calendarOverview = document.createElement('div');
+    var calendarOverviewDate = document.createElement('div');
+    var calendarMain = document.createElement('div');
+    calendarOverview.className = 'control-sidebar-calendar-overview';
+    calendarOverviewDate.className = 'control-sidebar-calendar-overview-date';
+    calendarMain.className = 'control-sidebar-calendar-main';
+    calendarGroup.appendChild(calendarOverview);
+    calendarOverview.appendChild(calendarOverviewDate);
+    calendarGroup.appendChild(calendarMain);
+    calendarMain.innerHTML = 'Calendar will soon be available.';
+    calendarMain.style = style = "display: flex;align-items: center;justify-content: center;";
+
+    controlSidebarSummary.addEventListener('click', (e) => {
+        controlSidebarContainer.classList.toggle('active');
+    })
+    new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+        window.addEventListener(event, (e) => {
+            if (controlSidebarContainer.contains(e.target) || controlSidebarSummary.contains(e.target)) return;
+            controlSidebarContainer.classList.remove('active');
         })
     })
 
@@ -192,13 +296,18 @@
         function updateTime() {
             var now = new Date();
             var leftToUpdateTime = (60 - now.getSeconds()) * 1000;
-            controlCalendarSummaryTime.innerHTML = (now.format("hh") < 13 ? now.format("hh:mm") : new Date(Date.now() - 12 * 1000 * 60 * 60).format("hh:mm")) + (now.format("hh") < 12 ? pattern[0] : pattern[1]);
+            controlSidebarSummaryTime.innerHTML = (now.format("hh") < 13 ? now.format("hh:mm") : new Date(Date.now() - 12 * 1000 * 60 * 60).format("hh:mm")) + (now.format("hh") < 12 ? pattern[0] : pattern[1]);
             setTimeout(updateTime, leftToUpdateTime);
         }
         function updateDate() {
             var now = new Date();
             var leftToUpdateDate = (((24 - now.getHours()) * 60 * 60) - ((60 - now.getMinutes()) * 60) - now.getSeconds()) * 1000;
-            controlCalendarSummaryDate.innerHTML = now.format("yyyy/MM/dd");
+            controlSidebarSummaryDate.innerHTML = now.format("yyyy/MM/dd");
+            calendarOverviewDate.innerHTML = now.toLocaleDateString(void 0, {
+                weekday: "long",
+                month: "long",
+                day: "numeric"
+            })
             setTimeout(updateDate, leftToUpdateDate);
         }
 

@@ -415,6 +415,9 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             if (side.length == 1) {
                 side += 'f';
             }
+            if (side.includes('b') && side.includes('f')) {
+                return '';
+            }
             return side;
         }
 

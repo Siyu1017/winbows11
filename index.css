@@ -849,12 +849,14 @@ body {
     position: fixed;
     border: none;
     border-radius: .5rem;
+    background: transparent;
 }
 
 .browser-window-snap-preview.active {
     background: rgba(255, 255, 255, .3);
     backdrop-filter: blur(36px);
     border: 1.5px solid rgba(0, 0, 0, .1);
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
 }
 
 .browser-window-content {
@@ -1125,27 +1127,175 @@ body {
     margin: 0 auto;
 }
 
+/* Panel container */
+.control-panel-container {
+    position: fixed;
+    bottom: calc(var(--taskbar-height) + .5rem);
+    right: .5rem;
+    transform: translateY(calc(var(--taskbar-height) + 150%));
+    transition: transform .15s cubic-bezier(.69, 0, .95, .93);
+    z-index: 9999;
+    box-sizing: border-box;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.control-panel {
+    display: flex;
+    width: 22.5rem;
+    max-height: calc(100vh - var(--taskbar-height) - 1rem);
+    height: fit-content;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.control-panel-container.active {
+    transform: translateY(0);
+    transition: transform .2s cubic-bezier(.27, 1.08, .85, .98);
+}
+
+.control-panel-group {
+    backdrop-filter: blur(64px) saturate(1.8);
+    background: rgb(242 242 242 / 85%);
+    border-radius: .75rem;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
+    border: 1px solid rgba(0, 0, 0, .2);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: fit-content;
+}
+
+.control-panel-content {
+    padding: 1.25rem;
+}
+
+.control-panel-footer {}
+
+.control-panel-blocks {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.control-panel-block-button {
+    width: 6rem;
+    height: 3rem;
+    border-radius: .25rem;
+    background: rgba(255, 255, 255, .7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .1s ease-in-out;
+    cursor: pointer;
+}
+
+.control-panel-block-button:hover {
+    background: rgba(248, 248, 248, .7);
+}
+
+.control-panel-block-button.active {
+    background: #0067c0;
+    color: #fff;
+}
+
+.control-panel-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.control-panel-block-label {
+    padding: .5rem 0 1.25rem;
+    font-size: .81rem;
+}
+
+.control-panel-block-icon {
+    width: 1rem;
+    height: 1rem;
+}
+
+.control-panel-block-icon::before {
+    font-family: var(--winbows-font-icon);
+}
+
+.control-panel-block-icon.wifi::before {
+    content: "\e701";
+}
+
+.control-panel-block-icon.bluetooth::before {
+    content: "\e702";
+}
+
+.control-panel-block-icon.flight-mode::before {
+    content: "\e709";
+}
+
+.control-panel-block-icon.dark-theme::before {
+    content: "\f0ce";
+}
+
+.control-panel-block-icon.night-light::before {
+    content: "\f08c";
+}
+
+.control-panel-block-icon.battery-saver::before {
+    content: "\ea95";
+}
+
 /* Calendar container */
-.control-calendar-container {
+.control-sidebar-container {
     position: fixed;
     bottom: calc(var(--taskbar-height) + .5rem);
     right: .5rem;
     transform: translateX(150%);
-    transition: transform .2s cubic-bezier(.69, 0, .95, .93);
-    height: calc(100vh - var(--taskbar-height) - 1rem);
-    width: 22.5rem;
-    background: #fff;
+    transition: transform .15s cubic-bezier(.69, 0, .95, .93);
     z-index: 9999;
+    box-sizing: border-box;
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
+.control-sidebar-container.active {
+    transform: translateX(0);
+    transition: transform .2s cubic-bezier(.27, 1.08, .85, .98);
+}
+
+.control-sidebar {
+    display: flex;
+    width: 22.5rem;
+    height: calc(100vh - var(--taskbar-height) - 1rem);
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.control-sidebar-group {
     backdrop-filter: blur(64px) saturate(1.8);
-    background: rgb(255 255 255 / 80%);
+    background: rgb(242 242 242 / 85%);
     border-radius: .75rem;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
     border: 1px solid rgba(0, 0, 0, .2);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.control-calendar-container.active {
-    transform: translateX(0);
-    transition: transform .2s cubic-bezier(.27, 1.08, .85, .98);
+.control-sidebar-notify-header {
+    padding: 1rem 1.25rem;
+}
+
+.control-sidebar-calendar-overview {
+    padding: 1rem 1.25rem;
+}
+
+.control-sidebar-calendar-main {
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    background: rgb(255 255 255 / 31%);
+    border-top: 1px solid rgba(0, 0, 0, .2);
 }
 
 /* Summaries in taskbar */
@@ -1159,7 +1309,7 @@ body {
 }
 
 .control-panel-summary,
-.control-calendar-summary {
+.control-sidebar-summary {
     font-size: .725rem;
     text-align: center;
     display: flex;
@@ -1172,7 +1322,7 @@ body {
 }
 
 .control-panel-summary:hover,
-.control-calendar-summary:hover {
+.control-sidebar-summary:hover {
     background: var(--winbows-taskbar-hover-color);
     border: 1.5px solid rgba(0, 0, 0, .075);
 }
@@ -1209,7 +1359,7 @@ body {
 }
 
 /* Calendar summary */
-.control-calendar-summary-notify {
+.control-sidebar-summary-notify {
     width: 1rem;
     height: 1rem;
     display: flex;
@@ -1217,7 +1367,7 @@ body {
     justify-content: center;
 }
 
-.control-calendar-summary-notify::before {
+.control-sidebar-summary-notify::before {
     content: '\ea8f';
     font-family: var(--winbows-font-icon);
     font-size: .875rem;

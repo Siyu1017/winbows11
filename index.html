@@ -277,6 +277,9 @@
             style.rel = 'stylesheet';
             style.href = styleURL;
             style.type = 'text/css';
+            style.onload = () => {
+                document.head.querySelector('[data-tag="style-main"]').remove();
+            }
             document.head.appendChild(style);
         } catch (e) { };
     </script>
