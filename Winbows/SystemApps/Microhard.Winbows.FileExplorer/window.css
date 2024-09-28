@@ -185,6 +185,22 @@
     height: 4rem;
     min-height: 4rem;
     min-width: 4rem;
+    position: relative;
+}
+
+.explorer-viewer-item-icon.shortcut::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 1.25rem;
+    height: 1.25rem;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: bottom;
+    background-image: var(--shortcut-icon);
 }
 
 .explorer-viewer-item-name {

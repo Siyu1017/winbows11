@@ -505,29 +505,44 @@ async function createTab(page = 'C:/', active = true) {
         itemIcon.className = 'explorer-viewer-item-icon';
         itemName.className = 'explorer-viewer-item-name';
 
-        fs.getFileURL(details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
-            itemIcon.style.backgroundImage = `url(${url})`;
-            if (details.type.startsWith('image/')) {
-                try {
-                    fs.getFileURL(path).then(url => {
-                        itemIcon.style.backgroundImage = `url(${url})`;
-                    })
-                } catch (e) {
-                    console.log('Failed to load image.');
+        if (details.type == 'application/winbows-link') {
+            fs.readFile(path).then(async result => {
+                const file = await result.text();
+                const link = JSON.parse(file);
+                itemIcon.style.backgroundImage = `url(${link.icon})`;
+                itemIcon.classList.add('shortcut');
+                itemName.innerHTML = link.name;
+                item.addEventListener('click', (e) => {
+                    window.System.Shell(link.command);
+                })
+            })
+            fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
+                itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
+            })
+        } else {
+            fs.getFileURL(details.type == 'application/winbows-link' ? '' : details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
+                itemIcon.style.backgroundImage = `url(${url})`;
+                if (details.type.startsWith('image/')) {
+                    try {
+                        fs.getFileURL(path).then(url => {
+                            itemIcon.style.backgroundImage = `url(${url})`;
+                        })
+                    } catch (e) {
+                        console.log('Failed to load image.');
+                    }
                 }
-            }
-        })
-        itemName.innerHTML = details.name;
-
-        item.addEventListener('click', () => {
-            var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
-            if (defaultViewer != null) {
-                new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
-            } else {
-                console.log(utils.resolvePath('./chooseViewer.js'))
-                new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
-            }
-        })
+            })
+            itemName.innerHTML = details.name;
+            item.addEventListener('click', () => {
+                var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                if (defaultViewer != null) {
+                    new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                } else {
+                    console.log(utils.resolvePath('./chooseViewer.js'))
+                    new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
+                }
+            })
+        }
 
         item.appendChild(itemIcon);
         item.appendChild(itemName);
@@ -629,7 +644,7 @@ async function createTab(page = 'C:/', active = true) {
                             active.classList.remove('active');
                         })
                         // TODO : Set the page of item
-                        currentPage = item || getPath(item);
+                        currentPage = getPath(item) || item;
                         addToHistory(currentPage);
                         getPage(currentPage);
                         itemElement.classList.add('active');

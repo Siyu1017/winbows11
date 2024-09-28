@@ -176,7 +176,21 @@
         return result;
     }
 
+    window.System.updateDesktop = updateDesktop;
     window.System.createShortcut = createShortcut;
+
+    async function updateDesktop() {
+        fs.readdir('C:/Users/Admin/Desktop').then(items => {
+            desktopShortcuts.innerHTML = '';
+            items.forEach(item => {
+                fs.readFile(item.path).then(async result => {
+                    const file = await result.text();
+                    const detail = JSON.parse(file);
+                    createShortcut(detail.icon, detail.name, detail.command);
+                })
+            })
+        })
+    }
 
     function createShortcut(icon, name, command) {
         var shortcut = document.createElement('div');
@@ -193,6 +207,10 @@
         desktopShortcuts.appendChild(shortcut);
         shortcut.appendChild(shortcutIcon);
         shortcut.appendChild(shortcutName);
+
+        fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
+            shortcutIcon.style.setProperty('--shortcut-icon', `url(${url})`);
+        })
 
         shortcut.addEventListener('click', (e) => {
             window.System.Shell(command);
@@ -1071,7 +1089,46 @@
         return window.System.CommandParsers[parser](parsed.slice(1));
     }
 
-    // Create Desktop Shortcuts
+    var defaultShortcuts = [{
+        path: 'C:/Users/Admin/Desktop/desktop.link',
+        content: {
+            icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
+            name: 'Desktop',
+            command: 'run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"'
+        }
+    }, {
+        path: 'C:/Users/Admin/Desktop/github.link',
+        content: {
+            icon: await fs.getFileURL('C:/Winbows/icons/github.png'),
+            name: 'Github',
+            command: 'open "https://github.com/Siyu1017/winbows11/"'
+        }
+    }, {
+        path: 'C:/Users/Admin/Desktop/code.link',
+        content: {
+            icon: await fs.getFileURL('C:/Winbows/icons/applications/office/code.ico'),
+            name: 'VSCode',
+            command: 'run code'
+        }
+    }, {
+        path: 'C:/Users/Admin/Desktop/author.link',
+        content: {
+            icon: await fs.getFileURL('C:/Winbows/icons/author.ico'),
+            name: 'Siyu',
+            command: 'open "https://siyu1017.github.io/"'
+        }
+    }]
+
+    for (let i = 0; i < defaultShortcuts.length; i++) {
+        var content = JSON.stringify(defaultShortcuts[i].content);
+        await fs.writeFile(defaultShortcuts[i].path, new Blob([content], {
+            type: 'application/winbows-link'
+        }));
+    }
+
+    window.System.updateDesktop();
+
+    /*
     var shortcuts = [{
         icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
         name: 'Desktop',
@@ -1091,6 +1148,7 @@
             window.System.createShortcut(shortcut.icon, shortcut.name, shortcut.command);
         })(shortcut);
     })
+    */
 
     window.System.FileViewers = {
         viewers: {
