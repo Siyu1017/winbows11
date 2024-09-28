@@ -145,6 +145,14 @@
     controlPanelContainer.appendChild(controlPanel);
     controlSidebarContainer.appendChild(controlSidebar);
 
+    // Overlays 
+    var brightnessOverlay = document.createElement('div');
+    var nightLightOverlay = document.createElement('div');
+    brightnessOverlay.className = 'overlay brightness';
+    nightLightOverlay.className = 'overlay nightlight';
+    document.body.appendChild(brightnessOverlay);
+    document.body.appendChild(nightLightOverlay);
+
     // Controls - Panel Summary
     var controlPanelSummaryWifi = document.createElement('div');
     var controlPanelSummaryVolume = document.createElement('div');
@@ -194,27 +202,91 @@
     var quickSettingItems = [{
         label: 'WiFi',
         status: 'enabled',
-        name: 'wifi'
+        name: 'wifi',
+        change: () => {
+
+        }
     }, {
         label: 'Bluetooth',
         status: 'disabled',
-        name: 'bluetooth'
+        name: 'bluetooth',
+        change: () => {
+
+        }
     }, {
         label: 'Flight Mode',
         status: 'disabled',
-        name: 'flight-mode'
+        name: 'flight-mode',
+        change: () => {
+
+        }
     }, {
         label: 'Dark Theme',
         status: 'disabled',
-        name: 'dark-theme'
+        name: 'dark-theme',
+        change: () => {
+
+        }
     }, {
         label: 'Night Light',
         status: 'disabled',
-        name: 'night-light'
+        name: 'night-light',
+        change: (status) => {
+            if (status == 'enabled') {
+                nightLightOverlay.style.opacity = '.8';
+            } else {
+                nightLightOverlay.style.opacity = '0';
+            }
+        }
     }, {
         label: 'Battery Saver',
         status: 'disabled',
-        name: 'battery-saver'
+        name: 'battery-saver',
+        change: () => {
+
+        }
+    }]
+    var quickSettingSliderBars = [{
+        name: 'brightness',
+        value: 100,
+        disabled: false,
+        change: (e) => {
+            var value = e.value;
+            brightnessOverlay.style.opacity = 0.9 * (100 - value) / 100;
+        }
+    }, {
+        name: 'volume',
+        value: 0,
+        disabled: false,
+        change: (e) => {
+            var value = e.value;
+            var classes = ['mute', 'volume0', 'volume1', 'volume2', 'volume3'];
+            classes.forEach(className => {
+                e.icon.classList.remove(className);
+                controlPanelSummaryVolume.classList.remove(className);
+            })
+            if (value == 0) {
+                e.icon.classList.add('mute');
+                controlPanelSummaryVolume.classList.add('mute');
+                return;
+            } else if (value > 0 && value <= 10) {
+                e.icon.classList.add('volume0');
+                controlPanelSummaryVolume.classList.add('volume0');
+                return;
+            } else if (value > 10 && value <= 30) {
+                e.icon.classList.add('volume1');
+                controlPanelSummaryVolume.classList.add('volume1');
+                return;
+            } else if (value > 30 && value <= 60) {
+                e.icon.classList.add('volume2');
+                controlPanelSummaryVolume.classList.add('volume2');
+                return;
+            } else {
+                e.icon.classList.add('volume3');
+                controlPanelSummaryVolume.classList.add('volume3');
+                return;
+            }
+        }
     }]
 
     quickSettingItems.forEach(item => {
@@ -222,6 +294,7 @@
         var quickSettingButton = document.createElement('div');
         var quickSettingIcon = document.createElement('div');
         var quickSettingLabel = document.createElement('div');
+        var status = item.status == 'enabled' ? 'enabled' : 'disabled';
         quickSettingBlock.className = 'control-panel-block';
         quickSettingButton.className = 'control-panel-block-button';
         quickSettingIcon.className = 'control-panel-block-icon';
@@ -234,12 +307,58 @@
             quickSettingButton.classList.add('active');
         }
         quickSettingButton.addEventListener('click', () => {
-            quickSettingButton.classList.toggle('active');
+            if (status == 'enabled') {
+                quickSettingButton.classList.remove('active');
+            } else {
+                quickSettingButton.classList.add('active');
+            }
+            status = status == 'enabled' ? 'disabled' : 'enabled';
+            item.change(status);
         })
         quickSettingBlocks.appendChild(quickSettingBlock);
         quickSettingBlock.appendChild(quickSettingButton);
         quickSettingButton.appendChild(quickSettingIcon);
         quickSettingBlock.appendChild(quickSettingLabel);
+    })
+
+    quickSettingSliderBars.forEach(item => {
+        var box = document.createElement('div');
+        var icon = document.createElement('div');
+        var slider = document.createElement('input');
+        var disabled = item.disabled == true;
+        var value = item.value;
+        box.className = 'control-panel-slider';
+        icon.className = 'control-panel-slider-icon';
+        icon.classList.add(item.name);
+        slider.className = 'control-panel-slider-bar';
+        if (disabled == true) {
+            box.classList.add('disabled');
+            slider.disabled = disabled;
+        }
+
+        // Initialize
+        slider.type = 'range';
+        slider.min = 0;
+        slider.max = 100;
+        slider.value = item.value;
+        slider.style.setProperty('--track-color', `linear-gradient(90deg, var(--winbows-primary-color) ${slider.value}%, #888888 ${slider.value}%)`);
+        item.change({ slider, box, icon, value });
+
+        // Input listener
+        slider.addEventListener('input', (e) => {
+            if (disabled == true) {
+                if (slider.value != value) {
+                    slider.value = value;
+                }
+                return;
+            }
+            slider.style.setProperty('--track-color', `linear-gradient(90deg, var(--winbows-primary-color) ${slider.value}%, #888888 ${slider.value}%)`);
+            value = slider.value;
+            item.change({ slider, box, icon, value });
+        })
+        box.appendChild(icon);
+        box.appendChild(slider);
+        quickSettingSliders.appendChild(box);
     })
 
     controlPanelSummary.addEventListener('click', (e) => {

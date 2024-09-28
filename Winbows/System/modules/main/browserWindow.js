@@ -216,7 +216,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
 
         // Default toolbar
         var toolbarInfo = document.createElement('div');
-        var toolbarIcon = document.createElement('img');
+        var toolbarIcon = document.createElement('div');
         var toolbarTitle = document.createElement('div');
         var toolbarButtons = document.createElement('div');
 
@@ -243,7 +243,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         (async () => {
             var url = await window.fs.getFileURL(icon);
             await loadImage(url);
-            toolbarIcon.src = url;
+            toolbarIcon.style.backgroundImage = `url(${url})`;
         })();
 
         function changeTitle(title = '') {
@@ -256,7 +256,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         function changeIcon(url = '') {
             if (!url) return;
             config.icon = url;
-            toolbarIcon.src = url;
+            toolbarIcon.style.backgroundImage = `url(${url})`;
             ICON.changeIcon(windowID, url);
         }
 
@@ -277,19 +277,19 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
         // iconStyle.innerHTML = `.window{--close-icon:url(${await window.fs.getFileURL(icons[0])});--maximize-icon:url(${await window.fs.getFileURL(icons[1])});--minimize-icon:url(${await window.fs.getFileURL(icons[2])});--maxmin-icon:url(${await window.fs.getFileURL(icons[3])});}`;
         // shadowRoot.appendChild(iconStyle);
 
-        var minimizeImage = document.createElement('img');
+        var minimizeImage = document.createElement('div');
         minimizeImage.className = 'window-toolbar-button-icon';
-        minimizeImage.src = await window.fs.getFileURL(icons[0]);
+        minimizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[0])}`;
         minimizeButton.appendChild(minimizeImage);
 
-        var maximizeImage = document.createElement('img');
+        var maximizeImage = document.createElement('div');
         maximizeImage.className = 'window-toolbar-button-icon';
-        maximizeImage.src = await window.fs.getFileURL(icons[1]);
+        maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[1])})`;
         maximizeButton.appendChild(maximizeImage);
 
-        var closeImage = document.createElement('img');
+        var closeImage = document.createElement('div');
         closeImage.className = 'window-toolbar-button-icon';
-        closeImage.src = await window.fs.getFileURL(icons[3]);
+        closeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[3])})`;
         closeButton.appendChild(closeImage)
 
         toolbarButtons.appendChild(minimizeButton);
@@ -325,7 +325,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             windowElement.style.width = originalWidth + 'px';
             windowElement.style.height = originalHeight + 'px';
             windowElement.style.borderRadius = 'revert-layer';
-            maximizeImage.src = await window.fs.getFileURL(icons[1]);
+            maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[1])})`;
 
             console.log(originalWidth, originalHeight);
         }
@@ -360,7 +360,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
             windowElement.style.width = '100vw';
             windowElement.style.height = 'calc(100vh - var(--taskbar-height))';
             windowElement.style.borderRadius = '0';
-            maximizeImage.src = await window.fs.getFileURL(icons[2]);
+            maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[2])})`;
         }
 
 
@@ -537,7 +537,7 @@ Object.defineProperty(window.workerModules, 'browserWindow', {
                     windowElement.style.height = originalHeight + 'px';
                     windowElement.style.borderRadius = 'revert-layer';
                     window.fs.getFileURL(icons[1]).then(url => {
-                        maximizeImage.src = url;
+                        maximizeImage.style.backgroundImage = `url(${url})`;
                     })
                 }
                 let pageX = e.pageX;
