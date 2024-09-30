@@ -297,7 +297,7 @@
             'network-listener': {
                 path: 'C:/Program Files/Network Listener/',
                 icon: 'C:/Winbows/icons/files/program.ico',
-                script: 'C:/Program Files/Network listener/app.js'
+                script: 'C:/Program Files/Network Listener/app.js'
             }
         },
         install: () => { },
