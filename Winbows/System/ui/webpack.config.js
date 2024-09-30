@@ -10,7 +10,7 @@ All rights reserved.
 WinUI v${pkg.version}`;
 
 module.exports = {
-    entry: './winui.js',
+    entry: './WinUI.js',
     module: {
         rules: [
             {
