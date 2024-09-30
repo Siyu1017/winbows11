@@ -112,6 +112,7 @@ if (extension == '') {
 }
 
 browserWindow.setMovable(header);
+browserWindow.setSnappable(false);
 
 alwaysButton.addEventListener('click', () => {
     if (selected == null) return;

@@ -4,6 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var walk = function (dir, done) {
     var results = [];
+    if (dir.endsWith('node_modules')) return [];
     fs.readdir(dir, function (err, list) {
         if (err) return done(err);
         var i = 0;

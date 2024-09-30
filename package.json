@@ -1,6 +1,12 @@
 {
   "dependencies": {
-    "express": "^4.19.2"
+    "clean-webpack-plugin": "^4.0.0",
+    "css-loader": "^7.1.2",
+    "express": "^4.19.2",
+    "path": "^0.12.7",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.10",
+    "webpack": "^5.95.0"
   },
   "name": "winbows11",
   "version": "1.0.0",
@@ -9,7 +15,6 @@
   "directories": {
     "test": "tests"
   },
-  "devDependencies": {},
   "scripts": {
     "setup": "node build.js",
     "test": "node build.js && node server.js",

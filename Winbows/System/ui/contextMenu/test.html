@@ -5,20 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
-    <script src="../WinUI.js"></script>
-    <link rel="stylesheet" href="./contextMenu.css">
-    <script src="./contextMenu.js"></script>
+    <script src="../build/winui.min.js"></script>
 </head>
 
 <body>
-    <div id="test"></div>
     <button id="btn">Test</button>
 
     <script>
-        var menu = WinUI.contextMenu(test, [
+        var menu = WinUI.contextMenu(btn, [
             {
                 className: "view",
-                icon: "",
+                icon: "view-all",
                 text: "View",
                 action: () => {
                     console.log("Settings clicked")
@@ -28,6 +25,7 @@
                         className: "large",
                         icon: "",
                         text: "Large",
+                        disabled: true,
                         action: () => {
                             console.log("Large clicked")
                         }
@@ -63,6 +61,10 @@
         btn.onclick = () => {
             menu.open();
         }
+        document.addEventListener('pointerdown', (e) => {
+            if (menu.container.contains(e.target)) return;
+            menu.close();
+        })
     </script>
 </body>
 

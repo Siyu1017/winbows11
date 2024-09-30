@@ -293,6 +293,11 @@
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos',
                 icon: 'C:/Winbows/icons/applications/novelty/photos.ico',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.js'
+            },
+            'network-listener': {
+                path: 'C:/Program Files/Network Listener/',
+                icon: 'C:/Winbows/icons/files/program.ico',
+                script: 'C:/Program Files/Network listener/app.js'
             }
         },
         install: () => { },

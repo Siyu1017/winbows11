@@ -471,6 +471,9 @@
             }, {
                 name: 'Edge BETA',
                 app: 'edgebeta'
+            }, {
+                name: 'Network Listener',
+                app: 'network-listener'
             }],
             []
         ];
@@ -527,7 +530,7 @@
             if (icon.type == 'item') {
                 icon.blur();
             } else if (!Object.values(idDatas).includes(icon.owner)) {
-                icon._hide();
+                icon._hide(null);
             } else if (!getID(icon.owner).includes(activeWindows[activeWindows.length - 1]) || focused != null) {
                 icon.blur();
             }
@@ -545,11 +548,19 @@
             if (activeWindows.length > 0) {
                 temp = activeWindows;
                 activeWindows.forEach(id => {
-                    iconRepository[idDatas[id]].hide(id);
+                    try {
+                        iconRepository[idDatas[id]].hide(id);
+                    } catch (e) {
+                        console.log(e);
+                    }
                 })
             } else {
                 temp.forEach(id => {
-                    iconRepository[idDatas[id]].show(id);
+                    try {
+                        iconRepository[idDatas[id]].show(id);
+                    } catch (e) {
+                        console.log(e);
+                    }
                 })
                 temp = [];
             }
@@ -858,7 +869,6 @@
                         const isLast = Object.values(registry).length == 1;
                         if (isLast == true) {
                             status.opened = false;
-                            activeWindows = activeWindows.filter(item => item !== id);
                             item.setAttribute('data-opened', status.opened);
                         }
                         blur(id);
@@ -869,6 +879,7 @@
                         }
                         lastClicked = owner;
                         console.log(registry, id)
+                        activeWindows = activeWindows.filter(item => item !== id);
                         delete registry[id];
                         delete idDatas[id];
                         if (!window.Taskbar.isPinned(owner) && Object.values(registry).length == 0) {
@@ -983,6 +994,7 @@
                     item.setAttribute('data-show', status.show);
                     updateWindowStatus(registry[id], 'show');
                     focus(id);
+                    triggerEvent('_show', id);
                 }
 
                 function _hide(id) {
@@ -993,8 +1005,10 @@
                     activeWindows = activeWindows.filter(item => item !== id);
                     focused = activeWindows[activeWindows.length - 1];
                     item.setAttribute('data-show', status.show);
+                    if (id == null) return;
                     updateWindowStatus(registry[id], 'hide');
                     blur(id);
+                    triggerEvent('_hide', id);
                 }
 
                 function updateWindowStatus(obj, type) {
@@ -1009,6 +1023,7 @@
                             obj.browserWindow.classList.add('active');
                         } else if (type == 'hide') {
                             obj.browserWindow.classList.remove('active');
+                            obj.browserWindow.style.setProperty('z-index', '-1', 'important');
                         } else if (type == 'toggle') {
                             obj.browserWindow.classList.toggle('active');
                         }
