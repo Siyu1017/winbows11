@@ -36,6 +36,47 @@
     taskbarIcons.appendChild(taskbarItems);
     taskbarIcons.appendChild(taskbarApps);
 
+    const taskbarMenu = WinUI.contextMenu([
+        {
+            className: "taskmgr",
+            icon: "diagnostic",
+            text: "Task Manager",
+            action: () => {
+                window.System.Shell('run taskmgr');
+            }
+        }, {
+            type: "separator"
+        }, {
+            className: "settings",
+            icon: "settings",
+            text: "Taskbar Settings",
+            disabled: true,
+            action: () => {
+                window.System.Shell('run settings');
+            },
+        },
+    ])
+
+    taskbarMenu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+    taskbarMenu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+
+    taskbar.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (e.type.startsWith('touch')) {
+            var touch = e.touches[0] || e.changedTouches[0];
+            e.pageX = touch.pageX;
+            e.pageY = touch.pageY;
+        }
+        taskbarMenu.open(e.pageX, taskbar.offsetHeight + 4, 'left-bottom');
+    })
+
+    new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+        window.addEventListener(event, (e) => {
+            if (taskbarMenu.container.contains(e.target)) return;
+            taskbarMenu.close();
+        })
+    })
+
     var startMenuContainer = document.createElement('div');
     var startMenu = document.createElement('div');
     var startMenuInner = document.createElement('div');
@@ -437,7 +478,7 @@
     !(async () => {
         // Start Menu
         var pinnedList = [
-            [{
+            {
                 name: 'File Explorer',
                 app: 'explorer'
             }, {
@@ -455,8 +496,7 @@
             }, {
                 name: 'Info',
                 app: 'info'
-            }],
-            [{
+            }, {
                 name: 'Task Manager',
                 app: 'taskmgr'
             }, /*{
@@ -474,36 +514,33 @@
             }, {
                 name: 'Network Listener',
                 app: 'network-listener'
-            }],
-            []
+            }, {
+                name: 'JSON Viewer',
+                app: 'json-viewer'
+            }
         ];
-        pinnedList.forEach(pinneds => {
-            var row = document.createElement('div');
-            row.className = 'start-menu-pinned-row';
-            pinneds.forEach(pinned => {
-                var info = window.appRegistry.getInfo(pinned.app);
-                var item = document.createElement('div');
-                var itemIcon = document.createElement('div');
-                var itemName = document.createElement('div');
-                item.className = 'start-menu-pinned-app';
-                itemIcon.className = 'start-menu-pinned-app-icon';
-                itemName.className = 'start-menu-pinned-app-name';
+        pinnedList.forEach(pinned => {
+            var info = window.appRegistry.getInfo(pinned.app);
+            var item = document.createElement('div');
+            var itemIcon = document.createElement('div');
+            var itemName = document.createElement('div');
+            item.className = 'start-menu-pinned-app';
+            itemIcon.className = 'start-menu-pinned-app-icon';
+            itemName.className = 'start-menu-pinned-app-name';
 
-                itemName.innerHTML = window.utils.replaceHTMLTags(pinned.name);
-                fs.getFileURL(info.icon).then(url => {
-                    itemIcon.style.backgroundImage = `url(${url})`;
-                })
+            itemName.innerHTML = window.utils.replaceHTMLTags(pinned.name);
+            fs.getFileURL(info.icon).then(url => {
+                itemIcon.style.backgroundImage = `url(${url})`;
+            })
 
-                item.addEventListener('click', (e) => {
-                    new Process(info.script, 'user').start();
-                    iconRepository.start.hide();
-                })
+            item.addEventListener('click', (e) => {
+                new Process(info.script, 'user').start();
+                iconRepository.start.hide();
+            })
 
-                row.appendChild(item);
-                item.appendChild(itemIcon);
-                item.appendChild(itemName);
-            });
-            pinnedApps.appendChild(row);
+            pinnedApps.appendChild(item);
+            item.appendChild(itemIcon);
+            item.appendChild(itemName);
         })
     })();
 

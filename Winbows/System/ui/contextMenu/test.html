@@ -5,6 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        @font-face {
+            font-family: icon-font;
+            src: url(./Segoe\ Fluent\ Icons.ttf);
+        }
+
+        :root {
+            --winbows-font-icon: icon-font;
+        }
+    </style>
     <script src="../build/winui.min.js"></script>
 </head>
 
@@ -12,7 +22,7 @@
     <button id="btn">Test</button>
 
     <script>
-        var menu = WinUI.contextMenu(btn, [
+        var menu = WinUI.contextMenu([
             {
                 className: "view",
                 icon: "view-all",
@@ -59,7 +69,8 @@
             direction: 'down'
         })
         btn.onclick = () => {
-            menu.open();
+            var position = WinUI.utils.getPosition(btn);
+            menu.open(position.x, position.y + btn.offsetHeight);
         }
         document.addEventListener('pointerdown', (e) => {
             if (menu.container.contains(e.target)) return;

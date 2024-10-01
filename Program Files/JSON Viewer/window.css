@@ -1,0 +1,201 @@
+.json-viewer-container {
+    font-family: monospace;
+    --default-color: #E3E2E3;
+    --key-color: #8EACF2;
+    --value-color: #8CD3F7;
+    --close: url("data:image/svg+xml,%3Csvg width='14' height='14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.5 6.65 4.9 2.8v7.7' fill='%23000'/%3E%3C/svg%3E");
+    --open: url("data:image/svg+xml,%3Csvg width='14' height='14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m7 9.45 3.85-5.6h-7.7' fill='%23000'/%3E%3C/svg%3E");
+    color: var(--default-color);
+    line-height: 12px;
+    font-size: 12px;
+    cursor: default;
+    position: relative;
+}
+
+.json-viewer-container *::selection {
+    background: rgba(255, 255, 255, .25);
+}
+
+.json-viewer-overview {
+    display: flex;
+    align-items: center;
+}
+
+.json-viewer-key {
+    color: var(--key-color);
+}
+
+.json-viewer-key:not([data-type="large-array"])::after {
+    content: ':';
+    color: var(--default-color);
+}
+
+.json-viewer-value {
+    color: var(--value-color);
+    margin-left: 4px;
+}
+
+.json-viewer-line {
+    display: flex;
+    align-items: center;
+}
+
+[data-expandable="true"] .json-viewer-value {
+    color: var(--default-color);
+}
+
+.json-viewer-expand {
+    mask-size: auto;
+    width: 14px;
+    height: 14px;
+    transition: all .1s ease-in-out;
+    min-width: 14px;
+    min-height: 14px;
+}
+
+.json-viewer-content {
+    padding-left: 12px;
+}
+
+[data-expandable="true"] .json-viewer-expand {
+    mask-image: var(--close);
+}
+
+[data-expand="true"][data-expandable="true"] .json-viewer-expand {
+    mask-image: var(--open);
+}
+
+[data-expand="false"][data-expandable="true"] .json-viewer-expand {
+    mask-image: var(--close);
+}
+
+[data-expandable="true"] .json-viewer-expand {
+    background-color: currentColor;
+}
+
+.json-viewer-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.json-viewer-next {
+    padding-left: 12px;
+    position: relative;
+}
+
+.json-viewer-value-empty {
+    color: #868686;
+}
+
+.json-viewer-value-symbol,
+.json-viewer-value-number {
+    color: #9783F7;
+}
+
+.json-viewer-line[data-expand="true"]~.json-viewer-next,
+.json-viewer-overview[data-expand="true"]~.json-viewer-content {
+    display: block;
+}
+
+.json-viewer-line[data-expand="false"]~.json-viewer-next,
+.json-viewer-overview[data-expand="false"]~.json-viewer-content {
+    display: none;
+}
+
+.json-viewer-overview-content,
+.json-viewer-value,
+.json-viewer-key {
+    white-space: nowrap;
+}
+
+.json-viewer-value-generic {
+    color: var(--default-color);
+}
+
+.json-viewer-overview:hover,
+.json-viewer-line:hover {
+    background: #63636366;
+}
+
+.json-viewer-overview,
+.json-viewer-line {
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.json-viewer-overview::after,
+.json-viewer-next::after {
+    width: 1px;
+    height: calc(100% - 10px);
+    background: #6E6E6E;
+    content: '';
+    display: block;
+    position: absolute;
+    left: 7px;
+    top: 3px;
+    bottom: 7px;
+}
+
+.json-viewer-overview::after {
+    top: 19px;
+    height: calc(100% - 26px);
+    bottom: 7px;
+}
+
+.window-toolbar,
+.window-content {
+    background: #262627;
+}
+
+.window-toolbar {
+    color: #fff;
+}
+
+.window-content {
+    padding: .5rem;
+    overflow: auto;
+}
+
+.window-toolbar-button-icon {
+    filter: invert(1);
+}
+
+.window-content * {
+    font-family: monospace;
+}
+
+
+*::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+    background: none;
+}
+
+*::-webkit-scrollbar-track {
+    box-shadow: inset 0 0 4px 4px transparent;
+    border: solid 4px transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    box-shadow: inset 0 0 4px 4px rgba(191, 191, 191, .5);
+    border: solid 4px transparent;
+    border-radius: 6px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    box-shadow: inset 0 0 4px 4px rgba(191, 191, 191, .9);
+    border: solid 4px transparent;
+    border-radius: 6px;
+}
+
+*::-webkit-scrollbar-button {
+    display: none;
+}
+
+*::-webkit-scrollbar-corner {
+    background: none;
+}
+
+*::selection {
+    background: rgba(255, 255, 255, .25);
+}

@@ -5,7 +5,7 @@
   "scripts": {
     "watch": "webpack --mode development --watch",
     "start": "webpack --mode development",
-    "build": "npm i\nwebpack --mode production"
+    "build": "webpack --mode production"
   },
   "author": "Siyu1017",
   "license": "MIT",

@@ -186,13 +186,13 @@
                 fs.readFile(item.path).then(async result => {
                     const file = await result.text();
                     const detail = JSON.parse(file);
-                    createShortcut(detail.icon, detail.name, detail.command);
+                    createShortcut(detail.icon, detail.name, detail.command, item.path);
                 })
             })
         })
     }
 
-    function createShortcut(icon, name, command) {
+    function createShortcut(icon, name, command, path) {
         var shortcut = document.createElement('div');
         var shortcutIcon = document.createElement('div');
         var shortcutName = document.createElement('div');
@@ -214,6 +214,37 @@
 
         shortcut.addEventListener('click', (e) => {
             window.System.Shell(command);
+        })
+
+        shortcut.addEventListener('contextmenu', (e) => {
+            const menu = WinUI.contextMenu([
+                {
+                    className: "open",
+                    text: "Open",
+                    action: () => {
+                        window.System.Shell(command);
+                    }
+                }, {
+                    className: "open-with",
+                    text: "Open with...",
+                    action: () => {
+                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                    }
+                }
+            ])
+            e.preventDefault();
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            menu.open(e.pageX, e.pageY, 'left-top');
+            new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+                window.addEventListener(event, (e) => {
+                    if (menu.container.contains(e.target)) return;
+                    menu.close();
+                })
+            })
         })
     }
 
@@ -298,6 +329,11 @@
                 path: 'C:/Program Files/Network Listener/',
                 icon: 'C:/Winbows/icons/files/program.ico',
                 script: 'C:/Program Files/Network Listener/app.js'
+            },
+            'json-viewer': {
+                path: 'C:/Program Files/JSON Viewer/',
+                icon: 'C:/Winbows/icons/files/program.ico',
+                script: 'C:/Program Files/JSON Viewer/app.js'
             }
         },
         install: () => { },
@@ -365,6 +401,10 @@
             return '';
         }
     }
+
+    window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    })
 
     const mimeTypes = {
         'jpg': 'image/jpeg',
@@ -952,7 +992,6 @@
         return window.utils.getFileExtension(file);
     }
 
-
     Object.freeze(window.fs);
 
     window.loadImage = loadImage;
@@ -997,6 +1036,7 @@
         async function runKernel() {
             var files = {
                 kernel: ['Winbows/System/process.js'],
+                ui: ['Winbows/System/ui/build/winui.min.js'],
                 module: ['Winbows/System/modules/main/toolbarComponents.js', 'Winbows/System/modules/main/browserWindow.js'],
                 component: [],
                 taskbar: ['Winbows/SystemApps/Microhard.Winbows.Taskbar/app.js'],
@@ -1017,9 +1057,13 @@
                 }
                 try {
                     for (let i in kernelFiles) {
-                        var file = await downloadFile(mainDisk + ':/' + kernelFiles[i]);
-                        const kernel = new Function(await file.text());
-                        await kernel();
+                        const path = await fs.getFileURL(mainDisk + ':/' + kernelFiles[i]);
+                        const kernel = document.createElement('script');
+                        kernel.src = path;
+                        kernel.onload = () => {
+                            kernel.remove();
+                        }
+                        document.head.appendChild(kernel);
                     }
                 } catch (e) {
                     window.Crash(e);
@@ -1184,12 +1228,7 @@
             'avi': ['mediaplayer'],
             'mov': ['mediaplayer']
         },
-        defaultViewers: {
-            'css': 'code',
-            'js': 'code',
-            'html': 'code',
-            'txt': 'code'
-        },
+        defaultViewers: {},
         registeredViewers: {
             'code': {
                 name: 'Visual Studio Code',
@@ -1215,6 +1254,11 @@
                 name: 'MediaPlayer',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.MediaPlayer/window.js',
                 accepts: ['mp3', 'wav', 'ogg', 'mp4', 'webm', 'avi', 'mov']
+            },
+            'json-viewer': {
+                name: 'JSON Viewer',
+                script: 'C:/Program Files/JSON Viewer/viewer.js',
+                accepts: ['json']
             }
         },
         isRegisterd: (name) => {

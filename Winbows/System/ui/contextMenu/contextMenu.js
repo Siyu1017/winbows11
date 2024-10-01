@@ -1,15 +1,5 @@
 import './contextMenu.css';
 
-function getPosition(element) {
-    function offset(el) {
-        var rect = el.getBoundingClientRect(),
-            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
-    }
-    return { x: offset(element).left, y: offset(element).top };
-}
-
 var icons = {
     "global-nav-button": "e700",
     "wifi": "e701",
@@ -1423,9 +1413,10 @@ var icons = {
  * @param {Object} config 
  * @returns 
  */
-function contextMenu(target, items, config) {
+function contextMenu(items, config) {
     var container = document.createElement('div');
     var createdContainer = false;
+    var items = items;
     container.className = 'winui-contextmenu-container';
 
     function generateMenu(target, items, config) {
@@ -1521,23 +1512,37 @@ function contextMenu(target, items, config) {
         return menuLayer;
     }
 
-    function open() {
-        if (createdContainer == true) return;
-        document.body.appendChild(container);
+    function open(horizontal, vertical, fixed = 'left-top') {
+        if (fixed.includes('right')) {
+            container.style.right = horizontal + 'px';
+        } else {
+            container.style.left = horizontal + 'px';
+        }
+        if (fixed.includes('bottom')) {
+            container.style.bottom = vertical + 'px';
+        } else {
+            container.style.top = vertical + 'px';
+        }
+        container.style.zIndex = '1';
+        if (createdContainer == false) {
+            document.body.appendChild(container);
+            generateMenu(container, items, config);
+        }
         createdContainer = true;
-        var position = getPosition(target);
-        container.style.top = position.y + target.offsetHeight + 'px';
-        container.style.left = position.x + 'px';
-        generateMenu(container, items, config);
     }
 
     function close() {
         createdContainer = false;
         container.remove();
         container.innerHTML = '';
+        container.style.zIndex = '-1';
     }
 
-    return { open, close, container }
+    function setItems(value) {
+        items = value;
+    }
+
+    return { open, close, setItems, container }
 }
 
 export default contextMenu;
