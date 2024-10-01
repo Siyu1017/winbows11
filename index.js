@@ -92,13 +92,13 @@
 
     // Desktop 
     var desktop = document.createElement('div');
-    var desktopShortcuts = document.createElement('div');
+    var desktopItems = document.createElement('div');
 
     desktop.className = 'desktop';
-    desktopShortcuts.className = 'desktop-shortcuts';
+    desktopItems.className = 'desktop-items';
 
     appWrapper.appendChild(desktop);
-    desktop.appendChild(desktopShortcuts);
+    desktop.appendChild(desktopItems);
 
     // Functions
     window.mainDisk = 'C';
@@ -176,80 +176,51 @@
         return result;
     }
 
-    window.System.updateDesktop = updateDesktop;
-    window.System.createShortcut = createShortcut;
-
-    async function updateDesktop() {
-        fs.readdir('C:/Users/Admin/Desktop').then(items => {
-            desktopShortcuts.innerHTML = '';
-            items.forEach(item => {
-                fs.readFile(item.path).then(async result => {
-                    const file = await result.text();
-                    const detail = JSON.parse(file);
-                    createShortcut(detail.icon, detail.name, detail.command, item.path);
-                })
-            })
-        })
-    }
-
-    function createShortcut(icon, name, command, path) {
-        var shortcut = document.createElement('div');
-        var shortcutIcon = document.createElement('div');
-        var shortcutName = document.createElement('div');
-
-        shortcut.className = 'shortcut';
-        shortcutIcon.className = 'shortcut-icon';
-        shortcutName.className = 'shortcut-name';
-
-        shortcutIcon.style.backgroundImage = `url('${icon}')`;
-        shortcutName.textContent = name;
-
-        desktopShortcuts.appendChild(shortcut);
-        shortcut.appendChild(shortcutIcon);
-        shortcut.appendChild(shortcutName);
-
-        fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
-            shortcutIcon.style.setProperty('--shortcut-icon', `url(${url})`);
-        })
-
-        shortcut.addEventListener('click', (e) => {
-            window.System.Shell(command);
-        })
-
-        shortcut.addEventListener('contextmenu', (e) => {
-            const menu = WinUI.contextMenu([
-                {
-                    className: "open",
-                    text: "Open",
-                    action: () => {
-                        window.System.Shell(command);
-                    }
-                }, {
-                    className: "open-with",
-                    text: "Open with...",
-                    action: () => {
-                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
-                    }
-                }
-            ])
-            e.preventDefault();
-            if (e.type.startsWith('touch')) {
-                var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
-            }
-            menu.open(e.pageX, e.pageY, 'left-top');
-            new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
-                window.addEventListener(event, (e) => {
-                    if (menu.container.contains(e.target)) return;
-                    menu.close();
-                })
-            })
-        })
-    }
-
     window.utils.getPosition = getPosition;
     window.utils.getJsonFromURL = getJsonFromURL;
+
+    window.fileIcons = {
+        getIcon: (path = '') => {
+            var ext = utils.getFileExtension(path);
+            if (window.fileIcons.registerd[ext]) {
+                return window.fileIcons.registerd[ext];
+            } else {
+                return window.fileIcons.registerd['*'];
+            }
+        },
+        registerd: {
+            // Default
+            '*': 'C:/Winbows/icons/files/generic.ico',
+            'jpg': 'C:/Winbows/icons/files/image.ico',
+            'png': 'C:/Winbows/icons/files/image.ico',
+            'gif': 'C:/Winbows/icons/files/image.ico',
+            'svg': 'C:/Winbows/icons/files/image.ico',
+            'webp': 'C:/Winbows/icons/files/image.ico',
+            'jpeg': 'C:/Winbows/icons/files/image.ico',
+            'ico': 'C:/Winbows/icons/files/image.ico',
+            'bmp': 'C:/Winbows/icons/files/image.ico',
+            'mp3': 'C:/Winbows/icons/files/audio.ico',
+            'wav': 'C:/Winbows/icons/files/audio.ico',
+            'ogg': 'C:/Winbows/icons/files/audio.ico',
+            'mp4': 'C:/Winbows/icons/files/video.ico',
+            'webm': 'C:/Winbows/icons/files/video.ico',
+            'avi': 'C:/Winbows/icons/files/video.ico',
+            'mov': 'C:/Winbows/icons/files/video.ico',
+            'txt': 'C:/Winbows/icons/files/text.ico',
+            'exe': 'C:/Winbows/icons/files/program.ico',
+            'zip': 'C:/Winbows/icons/folders/zip.ico',
+            // Edge
+            'html': 'C:/Winbows/icons/applications/tools/edge.ico',
+            // VSCode
+            'css': 'C:/Program Files/VSCode/File Icons/css.ico',
+            'js': 'C:/Program Files/VSCode/File Icons/javascript.ico',
+            'json': 'C:/Program Files/VSCode/File Icons/json.ico'
+        },
+        register: (ext, icon) => {
+            if (ext == '*') return;
+            window.fileIcons.registerd[ext] = icon;
+        }
+    }
 
     window.appRegistry = {
         apps: {
@@ -912,6 +883,48 @@
                 });
             }
 
+            async stat(url) {
+                const parsed = this.parseURL(url);
+                return new Promise((resolve, reject) => {
+                    const transaction = this.db.transaction(parsed.disk, 'readonly');
+                    const store = transaction.objectStore(parsed.disk);
+                    const request = store.get(parsed.path);
+                    request.onsuccess = (event) => {
+                        const response = event.target.result;
+                        if (response) {
+                            this.debugger('stat', `ok`);
+                            resolve({
+                                isFile: () => response.type == 'file',
+                                isDirectory: () => response.type == 'directory',
+                                size: response.content.size,
+                                content: response.content,
+                                exists: true
+                            });
+                        } else {
+                            this.debugger('stat', `not found`);
+                            resolve({
+                                isFile: () => false,
+                                isDirectory: () => false,
+                                size: 0,
+                                content: new Blob(),
+                                exists: false
+                            });
+                        }
+                    };
+                    request.onerror = (event) => {
+                        this.debugger('stat', `Failed to check if "${url}" exists.`);
+                        this.reportError('stat', `Failed to check if "${url}" exists.`);
+                        reject({
+                            isFile: () => false,
+                            isDirectory: () => false,
+                            size: 0,
+                            content: new Blob(),
+                            exists: false
+                        });
+                    };
+                });
+            }
+
             async exists(url) {
                 const parsed = this.parseURL(url);
                 return new Promise((resolve, reject) => {
@@ -1126,7 +1139,7 @@
         }
     };
 
-    window.System.Shell = function (command) {
+    window.System.Shell = function (command = '') {
         var parsed = command.split(' ').filter(cmd => cmd.length != 0);
         var parser = parsed[0];
         if (!window.System.CommandParsers[parser]) {
@@ -1138,66 +1151,214 @@
         return window.System.CommandParsers[parser](parsed.slice(1));
     }
 
-    var defaultShortcuts = [{
-        path: 'C:/Users/Admin/Desktop/desktop.link',
-        content: {
-            icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
-            name: 'Desktop',
-            command: 'run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"'
-        }
-    }, {
-        path: 'C:/Users/Admin/Desktop/github.link',
-        content: {
-            icon: await fs.getFileURL('C:/Winbows/icons/github.png'),
-            name: 'Github',
-            command: 'open "https://github.com/Siyu1017/winbows11/"'
-        }
-    }, {
-        path: 'C:/Users/Admin/Desktop/code.link',
-        content: {
-            icon: await fs.getFileURL('C:/Winbows/icons/applications/office/code.ico'),
-            name: 'VSCode',
-            command: 'run code'
-        }
-    }, {
-        path: 'C:/Users/Admin/Desktop/author.link',
-        content: {
-            icon: await fs.getFileURL('C:/Winbows/icons/author.ico'),
-            name: 'Siyu',
-            command: 'open "https://siyu1017.github.io/"'
-        }
-    }]
+    // For desktop
+    await (async () => {
+        window.System.updateDesktop = updateDesktop;
+        window.System.createDesktopItem = createDesktopItem;
 
-    for (let i = 0; i < defaultShortcuts.length; i++) {
-        var content = JSON.stringify(defaultShortcuts[i].content);
-        await fs.writeFile(defaultShortcuts[i].path, new Blob([content], {
-            type: 'application/winbows-link'
-        }));
-    }
+        async function updateDesktop() {
+            fs.readdir('C:/Users/Admin/Desktop').then(items => {
+                desktopItems.innerHTML = '';
+                items.forEach(item => {
+                    fs.stat(item.path).then(async result => {
+                        var type = utils.getFileExtension(item.path) == 'link' ? 'shortcut' : result.type == 'directory' ? 'directory' : 'file';
+                        var detail;
+                        if (type == 'shortcut') {
+                            var file = await result.content.text();
+                            detail = JSON.parse(file);
+                        } else if (type == 'directory') {
+                            detail = {
+                                name: utils.getFileName(item.path),
+                                command: `run explorer --config=PAGE=\"${item.path}\"`
+                            };
+                        } else {
+                            detail = {
+                                name: utils.getFileName(item.path),
+                                action: () => {
+                                    new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${item.path}";`);
+                                }
+                            };
+                        }
+                        detail.path = item.path;
+                        detail.type = type;
+                        detail.file = result.content;
+                        createDesktopItem(detail);
+                    })
+                })
+            })
+        }
 
-    window.System.updateDesktop();
+        function createDesktopItem(detail) {
+            const { icon, name, command, path, type, file, action } = detail;
 
-    /*
-    var shortcuts = [{
-        icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
-        name: 'Desktop',
-        command: 'run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"'
-    }, {
-        icon: await fs.getFileURL('C:/Winbows/icons/github.png'),
-        name: 'Github',
-        command: 'open "https://github.com/Siyu1017/winbows11/"'
-    }, {
-        icon: await fs.getFileURL('C:/Winbows/icons/applications/office/code.ico'),
-        name: 'VSCode',
-        command: 'run code'
-    }]
+            var item = document.createElement('div');
+            var itemIcon = document.createElement('div');
+            var itemName = document.createElement('div');
 
-    shortcuts.forEach(shortcut => {
-        ((shortcut) => {
-            window.System.createShortcut(shortcut.icon, shortcut.name, shortcut.command);
-        })(shortcut);
-    })
-    */
+            item.className = 'desktop-item';
+            itemIcon.className = 'desktop-item-icon';
+            itemName.className = 'desktop-item-name';
+
+            itemName.textContent = name;
+
+            desktopItems.appendChild(item);
+            item.appendChild(itemIcon);
+            item.appendChild(itemName);
+
+            if (type == 'shortcut') {
+                fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
+                    itemIcon.style.setProperty('--item-icon', `url(${url})`);
+                    itemIcon.style.backgroundImage = `url('${icon}')`;
+                })
+            } else if (type == 'directory') {
+                fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
+                    itemIcon.style.backgroundImage = `url('${url}')`;
+                })
+            } else {
+                var isImage = file.type.startsWith('image/');
+                fs.getFileURL(window.fileIcons.getIcon(path)).then(url => {
+                    itemIcon.style.backgroundImage = `url('${url}')`;
+                    if (isImage) {
+                        try {
+                            fs.getFileURL(path).then(url => {
+                                itemIcon.style.backgroundImage = `url(${url})`;
+                            })
+                        } catch (e) {
+                            console.log('Failed to load image.');
+                        }
+                    }
+                })
+            }
+
+            item.addEventListener('click', (e) => {
+                if (command) {
+                    window.System.Shell(command);
+                } else if (action) {
+                    action();
+                }
+            })
+
+            item.addEventListener('contextmenu', (e) => {
+                const menu = WinUI.contextMenu([
+                    {
+                        className: "open",
+                        text: "Open",
+                        action: () => {
+                            if (command) {
+                                window.System.Shell(command);
+                            } else if (action) {
+                                action();
+                            }
+                        }
+                    }, {
+                        className: "open-with",
+                        text: "Open with...",
+                        action: () => {
+                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                        }
+                    }
+                ])
+                e.preventDefault();
+                if (e.type.startsWith('touch')) {
+                    var touch = e.touches[0] || e.changedTouches[0];
+                    e.pageX = touch.pageX;
+                    e.pageY = touch.pageY;
+                }
+                menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+                menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+                menu.open(e.pageX, e.pageY, 'left-top');
+                new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+                    window.addEventListener(event, (e) => {
+                        if (menu.container.contains(e.target)) return;
+                        menu.close();
+                    })
+                })
+            })
+        }
+
+        const dropZone = desktop;
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false)
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false)
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false)
+        });
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            [...files].forEach(file => {
+                const reader = new FileReader();
+                reader.onload = async function (event) {
+                    const arrayBuffer = event.target.result;
+                    const blob = new Blob([arrayBuffer], { type: file.type });
+                    await fs.writeFile(`C:/Users/Admin/Desktop/${file.name}`, blob).then(() => {
+                        window.System.updateDesktop();
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+
+                console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
+            });
+        }
+
+        var defaultShortcuts = [{
+            path: 'C:/Users/Admin/Desktop/desktop.link',
+            content: {
+                icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
+                name: 'Desktop',
+                command: 'run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"'
+            }
+        }, {
+            path: 'C:/Users/Admin/Desktop/github.link',
+            content: {
+                icon: await fs.getFileURL('C:/Winbows/icons/github.png'),
+                name: 'Github',
+                command: 'open "https://github.com/Siyu1017/winbows11/"'
+            }
+        }, {
+            path: 'C:/Users/Admin/Desktop/code.link',
+            content: {
+                icon: await fs.getFileURL('C:/Winbows/icons/applications/office/code.ico'),
+                name: 'VSCode',
+                command: 'run code'
+            }
+        }, {
+            path: 'C:/Users/Admin/Desktop/author.link',
+            content: {
+                icon: await fs.getFileURL('C:/Winbows/icons/author.ico'),
+                name: 'Siyu',
+                command: 'open "https://siyu1017.github.io/"'
+            }
+        }]
+
+        for (let i = 0; i < defaultShortcuts.length; i++) {
+            var content = JSON.stringify(defaultShortcuts[i].content);
+            await fs.writeFile(defaultShortcuts[i].path, new Blob([content], {
+                type: 'application/winbows-link'
+            }));
+        }
+
+        return window.System.updateDesktop();
+    })();
 
     window.System.FileViewers = {
         viewers: {

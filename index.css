@@ -364,7 +364,7 @@ body {
     left: 0;
 }
 
-.desktop-shortcuts {
+.desktop-items {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
@@ -373,9 +373,11 @@ body {
     user-select: none;
     -webkit-user-select: none;
     -webkit-user-drag: none;
+    max-height: calc(100vh - var(--taskbar-height));
+    align-content: flex-start;
 }
 
-.shortcut {
+.desktop-item {
     width: 6rem;
     display: flex;
     flex-direction: column;
@@ -396,16 +398,16 @@ body {
     -webkit-user-drag: none;
 }
 
-.shortcut-icon {
+.desktop-item-icon {
     width: 2.5rem;
     height: 2.5rem;
     background-position: center;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: contain;
     position: relative;
 }
 
-.shortcut-icon::before {
+.desktop-item-icon::before {
     content: '';
     position: absolute;
     left: 0;
@@ -417,18 +419,23 @@ body {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: bottom;
-    background-image: var(--shortcut-icon);
+    background-image: var(--item-icon);
 }
 
-.shortcut-name {
+.desktop-item-name {
     font-size: .875rem;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     max-width: -webkit-fill-available;
+    /* color: #000; */
+    /* text-shadow: 0px 1px 2px #000; */
+    /* -webkit-text-stroke: 1px #fff; */
+    color: #fff;
+    text-shadow: -1px 0 black, 0 1px black, 1px 0 black, 0 -1px black;
 }
 
-.shortcut:hover {
+.desktop-item:hover {
     background: rgba(0, 0, 0, .05);
 }
 

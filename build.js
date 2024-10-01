@@ -35,7 +35,7 @@ async function getDirectorySize(directory) {
     for (const file of files) {
         const filePath = path.join(directory, file.name);
 
-        if (file.isDirectory()) {
+        if (file.isDirectory() && !filePath.includes('node_modules')) {
             totalSize += await getDirectorySize(filePath);
         } else {
             const stats = await fs.promises.stat(filePath);

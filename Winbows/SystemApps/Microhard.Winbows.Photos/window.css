@@ -9,6 +9,9 @@
     left: 0;
     font-weight: 400;
     pointer-events: none;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .container {
