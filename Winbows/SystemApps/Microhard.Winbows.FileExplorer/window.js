@@ -460,6 +460,51 @@ async function createTab(page = 'C:/', active = true) {
     var currentHistory = -1;
     var currentPage = page || 'C:/';
 
+    const dropZone = viewerContainer;
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false)
+    });
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false)
+    });
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false)
+    });
+    dropZone.addEventListener('drop', handleDrop, false);
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+
+        handleFiles(files);
+    }
+    function handleFiles(files) {
+        [...files].forEach(file => {
+            const reader = new FileReader();
+            reader.onload = async function (event) {
+                const arrayBuffer = event.target.result;
+                const blob = new Blob([arrayBuffer], { type: file.type });
+                var path = getPath(currentPage);
+                if (path) {
+                    if (!path.endsWith('/')) {
+                        path += '/';
+                    }
+                    const fullPath = `${path}${file.webkitRelativePath || file.name}`;
+                    await fs.writeFile(`${fullPath}`, blob).then(() => {
+                        getPage(currentPage);
+                    });
+                }
+            };
+            reader.readAsArrayBuffer(file);
+
+            console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
+        });
+    }
+
     Object.values(actionbarButtonIcons).forEach(icon => {
         var button = document.createElement('button');
         button.className = 'explorer-actionbar-button';
@@ -489,6 +534,36 @@ async function createTab(page = 'C:/', active = true) {
             currentPage = path;
             addToHistory(currentPage);
             getPage(currentPage);
+        })
+
+        item.addEventListener('contextmenu', async (e) => {
+            const menu = WinUI.contextMenu([
+                {
+                    icon: "delete",
+                    className: "delete",
+                    text: "Delete",
+                    action: () => {
+                        fs.rm(path).then(() => {
+                            item.remove();
+                        });
+                    }
+                }
+            ])
+            e.preventDefault();
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+            menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+            menu.open(e.pageX, e.pageY, 'left-top');
+            new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+                window.addEventListener(event, (e) => {
+                    if (menu.container.contains(e.target)) return;
+                    menu.close();
+                })
+            })
         })
 
         item.appendChild(itemIcon);
@@ -541,6 +616,55 @@ async function createTab(page = 'C:/', active = true) {
                     console.log(utils.resolvePath('./chooseViewer.js'))
                     new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
                 }
+            })
+
+            item.addEventListener('contextmenu', async (e) => {
+                const menu = WinUI.contextMenu([
+                    {
+                        className: "open",
+                        text: "Open",
+                        action: () => {
+                            var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                            if (defaultViewer != null) {
+                                new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                            } else {
+                                console.log(utils.resolvePath('./chooseViewer.js'))
+                                new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
+                            }
+                        }
+                    }, {
+                        icon: "open-with",
+                        className: "open-with",
+                        text: "Open with...",
+                        action: () => {
+                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                        }
+                    }, {
+                        icon: "delete",
+                        className: "delete",
+                        text: "Delete",
+                        action: () => {
+                            fs.rm(path).then(() => {
+                                item.remove();
+                            });
+                        }
+                    }
+                ])
+                e.preventDefault();
+                if (e.type.startsWith('touch')) {
+                    var touch = e.touches[0] || e.changedTouches[0];
+                    e.pageX = touch.pageX;
+                    e.pageY = touch.pageY;
+                }
+                menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+                menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+                menu.open(e.pageX, e.pageY, 'left-top');
+                new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+                    window.addEventListener(event, (e) => {
+                        if (menu.container.contains(e.target)) return;
+                        menu.close();
+                    })
+                })
             })
         }
 

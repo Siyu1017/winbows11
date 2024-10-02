@@ -1,5 +1,5 @@
 ;(async () => {
-    // var module = await System.fs('downloadFile', 'C:/Winbows/System/modules/html.js');
+    // var module = await fs('downloadFile', 'C:/Winbows/System/modules/html.js');
     // eval(await module.text());
 
     await System.requestAccessWindow('./window.js')

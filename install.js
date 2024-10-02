@@ -605,7 +605,7 @@
             console.log('Whole size: ' + formatBytes(size).replaceAll('(', '').replaceAll(')', ''));
 
             nameElement.innerHTML = 'Name: unknown';
-            timeElement.innerHTML = 'Time remaining: unknown';
+            timeElement.innerHTML = 'Remaining times: unknown';
             lastElement.innerHTML = 'Remaining items: unknown';
 
             document.querySelector('.install-info').appendChild(nameElement);
@@ -647,7 +647,7 @@
             }
             function updateTime() {
                 updateItem();
-                timeElement.innerHTML = `Time remaining: ${predictTime()}`;
+                timeElement.innerHTML = `Remaining times: ${predictTime()}`;
             }
             function update() {
                 updateTime();

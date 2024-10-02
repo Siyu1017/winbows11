@@ -77,14 +77,111 @@
         writable: false
     })
 
+    var listeners = {};
+
+    function triggerEvent(event, details) {
+        if (listeners[event]) {
+            listeners[event].forEach(listener => {
+                listener(details);
+            })
+        }
+    }
+
     const process = {
         platform: 'Winbows',
         exit: (code) => {
             self.close();
+        },
+        on: (event, listener) => {
+            if (!listeners[event]) {
+                listeners[event] = [];
+            }
+            listeners[event].push(listener);
+        },
+        off: (event, listener) => {
+            if (listeners[event]) {
+                listeners[event] = listeners[event].filter(listenerToRemove => listener !== listenerToRemove);
+            }
+        },
+        send: (message) => {
+            return System.request(message);
         }
     }
 
     self.process = process;
+
+    self.utils = {};
+    self.utils.replaceHTMLTags = (content = '') => {
+        return content.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
+    self.utils.getFileName = (path = '') => {
+        return path.split('/').slice(-1)[0];
+    }
+    self.utils.getFileExtension = function (file = '') {
+        file = self.utils.getFileName(file);
+        if (file.indexOf('.') > -1) {
+            return file.split('.').pop();
+        } else {
+            return '';
+        }
+    }
+    self.utils.getMimeType = getMimeType;
+    self.utils.getJsonFromURL = getJsonFromURL;
+
+    const mimeTypes = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'webp': 'image/webp',
+        'bmp': 'image/bmp',
+        'svg': 'image/svg+xml',
+        'ico': 'image/x-icon',
+        'pdf': 'application/pdf',
+        'txt': 'text/plain',
+        'html': 'text/html',
+        'css': 'text/css',
+        'js': 'application/javascript',
+        'json': 'application/json',
+        'xml': 'application/xml',
+        'zip': 'application/zip',
+        'tar': 'application/x-tar',
+        'gz': 'application/gzip',
+        'mp3': 'audio/mpeg',
+        'wav': 'audio/wav',
+        'ogg': 'audio/ogg',
+        'mp4': 'video/mp4',
+        'webm': 'video/webm',
+        'avi': 'video/x-msvideo',
+        'mov': 'video/quicktime'
+    };
+    function getJsonFromURL(url) {
+        if (!url) url = location.search;
+        var query = url.substr(1);
+        var result = {};
+        query.split("&").forEach(function (part) {
+            var item = part.split("=");
+            result[item[0]] = decodeURIComponent(item[1]);
+        });
+        return result;
+    }
+    function getMimeType(extension) {
+        return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
+    }
+
+    self.fs = async (method, ...args) => {
+        args[0] = computePath(args[0]);
+        if (method == 'resolve') {
+            return args[0];
+        }
+        return await System.request({
+            type: 'function',
+            name: 'fs',
+            method: method,
+            param: [...args],
+            current: __dirname
+        })
+    }
 
     var System = {};
     System.ToolbarComponents = {};
@@ -99,19 +196,6 @@
                 resolve(e);
                 delete System.messageIDs[messageID];
             }
-        })
-    }
-    System.fs = async (method, ...args) => {
-        args[0] = computePath(args[0]);
-        if (method == 'resolve') {
-            return args[0];
-        }
-        return await System.request({
-            type: 'function',
-            name: 'fs',
-            method: method,
-            param: [...args],
-            current: __dirname
         })
     }
     System.requestAccessWindow = async (script, config) => {
@@ -135,7 +219,7 @@
             })
         }
         async init(config) {
-            config.icon = await System.fs('resolve', './app.ico');
+            config.icon = await fs('resolve', './app.ico');
             return await System.request({
                 type: 'function',
                 name: 'browserWindow',
@@ -163,7 +247,7 @@
 
         }
         async getStatus() {
-            return await this.window.getStatus();
+            return await this.self.getStatus();
         }
     }
     System.customToolbar = class {
@@ -174,6 +258,7 @@
 
     onmessage = (e) => {
         if (e.data.token == TOKEN) {
+            triggerEvent('message', e);
             if (Object.keys(System.messageIDs).includes(e.data.messageID)) {
                 System.messageIDs[e.data.messageID](e.data.response);
                 delete System.messageIDs[e.data.messageID];

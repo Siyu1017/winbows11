@@ -86,7 +86,7 @@
                 path: this.path,
                 type: this.type
             })
-            return;
+            return this;
         }
         exit() {
             if (!this.worker) {
@@ -161,7 +161,7 @@
                         var id = getID();
                         var path = e.data.path;
                         var config = e.data.config || {};
-                        await window.Compilers.Window(path, this.token, this.id, config);
+                        await window.Compilers.Window(path, this.token, this.id, this.worker, config);
                         send({
                             response: id
                         })

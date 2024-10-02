@@ -1413,7 +1413,7 @@ var icons = {
  * @param {Object} config 
  * @returns 
  */
-function contextMenu(items, config) {
+function contextMenu(items, config = {}) {
     var container = document.createElement('div');
     var createdContainer = false;
     var items = items;
@@ -1462,7 +1462,7 @@ function contextMenu(items, config) {
             if (!item.submenu) {
                 itemExpand.remove();
             }
-            if (!item.icon) {
+            if (config.showIcon == false) {
                 itemIcon.remove();
             }
             if (disabled == true) {

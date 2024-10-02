@@ -364,6 +364,29 @@ body {
     left: 0;
 }
 
+.desktop::before {
+    content: "";
+    position: absolute;
+    top: .5rem;
+    left: .5rem;
+    width: calc(100% - 1rem);
+    height: calc(100% - 1rem);
+    background: transparent;
+    backdrop-filter: none;
+    pointer-events: none;
+    transition: all .1s ease-in-out;
+    border-radius: .5rem;
+    border: transparent;
+}
+
+.desktop.dragover::before {
+    background: rgba(255, 255, 255, .3);
+    backdrop-filter: blur(36px);
+    border: 1.5px solid rgba(0, 0, 0, .1);
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
+    z-index: 1;
+}
+
 .desktop-items {
     display: flex;
     flex-direction: column;
@@ -900,6 +923,7 @@ body {
     border: none;
     border-radius: .5rem;
     background: transparent;
+    pointer-events: none;
 }
 
 .browser-window-snap-preview.active {

@@ -5,7 +5,7 @@ Object.defineProperty(window.Compilers, 'Window', {
      * @param {String} token 
      * @returns {Blob} 
      */
-    value: async function (path, token, pid, config) {
+    value: async function (path, token, pid, worker, config) {
         // path.caller => Worker file ( background )
         // path.callee => Window file ( front )
         var file = await window.fs.downloadFile(path.callee);
@@ -14,6 +14,7 @@ Object.defineProperty(window.Compilers, 'Window', {
         directories.splice(-1);
 
         var windowObject = await window.workerModules.browserWindow(path, config, pid);
+        windowObject.worker = worker;
         var browserWindow = windowObject.shadowRoot;
 
         var proxyDocument = new Proxy(document, {
@@ -115,7 +116,7 @@ Object.defineProperty(window.Compilers, 'Window', {
             close: windowObject.close
         });
 
-        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${__dirname}",__filename="${__filename}",getStackTrace=()=>{var a;try{throw new Error('');}catch(e){a=e.stack||'';}a=a.split('\\n').map(function(t){return t.trim();});return a.splice(a[0]=='Error'?2:1);};(()=>{const TOKEN="${token}";})();(async()=>{\n${content}\n})();`;
+        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${__dirname}",__filename="${__filename}",getStackTrace=()=>{var a;try{throw new Error('');}catch(e){a=e.stack||'';}a=a.split('\\n').map(function(t){return t.trim();});return a.splice(a[0]=='Error'?2:1);};const TOKEN="${token}";(async()=>{\n${content}\n})();`;
 
         return Function(
             'document', 

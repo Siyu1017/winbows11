@@ -39,5 +39,10 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
     margin-inline-start: 0px;
     margin-inline-end: 0px;
 ">Winbows11 is in no way affiliated with Microsoft and should not be confused with Microsoft operating systems or products.</div>
+<div style="
+    margin-block-start: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+">Learn more on <a href="https://github.com/Siyu1017/winbows11">Github</a>.</div>
 			</div>
             </div>`;

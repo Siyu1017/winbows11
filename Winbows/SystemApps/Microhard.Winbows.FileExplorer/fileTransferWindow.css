@@ -1,0 +1,160 @@
+body {
+    margin: 0;
+    background: #000;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.window {
+    background: #fff;
+    border-radius: .5rem;
+    width: 480px;
+    height: 250px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.window-content {
+    padding: 1.5rem 2rem;
+}
+
+.percent {
+    padding: .25rem 0 1rem;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.progress {
+    background: #ddd;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    margin: 0;
+    position: relative;
+}
+
+.progress-bar {
+    background: #06b025;
+    height: 1.25rem;
+    display: block;
+    position: relative;
+    overflow: hidden;
+    width: 0%;
+}
+
+.progress-bar-peg {
+    width: 2rem;
+    height: 1.25rem;
+    background-color: transparent !important;
+    background: linear-gradient(to right, #fff0 0%, #fffa 50%, #fff0 100%);
+    position: absolute;
+    left: -100%;
+    top: 0;
+    animation: peg 5s linear infinite forwards;
+    animation-delay: 3s;
+}
+
+@keyframes peg {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+.info {
+    padding: 1rem 0;
+    text-align: left;
+    font-size: .875rem;
+    color: #333;
+}
+
+.info* {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.winui ::-webkit-scrollbar,
+.winui-light ::-webkit-scrollbar,
+[data-theme="dark"] .winui ::-webkit-scrollbar,
+.winui-dark ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+    border-radius: 7px
+}
+
+.winui ::-webkit-scrollbar,
+.winui-light ::-webkit-scrollbar {
+    --scroll: rgb(255 255 255 / 80%);
+    --scrollbar-top-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6.102 16.981c-1.074 0-1.648-1.265-.941-2.073l5.522-6.311a1.75 1.75 0 0 1 2.634 0l5.522 6.311c.707.808.133 2.073-.941 2.073H6.102z' fill='rgb(0 0 0 / 50%)'/%3E%3C/svg%3E");
+    --scrollbar-right-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M9 17.898c0 1.074 1.265 1.648 2.073.941l6.311-5.522a1.75 1.75 0 0 0 0-2.634l-6.311-5.522C10.265 4.454 9 5.028 9 6.102v11.796z' fill='rgb(0 0 0 / 50%)'/%3E%3C/svg%3E");
+    --scrollbar-bottom-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6.102 8c-1.074 0-1.648 1.265-.941 2.073l5.522 6.311a1.75 1.75 0 0 0 2.634 0l5.522-6.311c.707-.808.133-2.073-.941-2.073H6.102z' fill='rgb(0 0 0 / 50%)'/%3E%3C/svg%3E");
+    --scrollbar-left-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M15 17.898c0 1.074-1.265 1.648-2.073.941l-6.311-5.522a1.75 1.75 0 0 1 0-2.634l6.311-5.522c.808-.707 2.073-.133 2.073.941v11.796z' fill='rgb(0 0 0 / 50%)'/%3E%3C/svg%3E");
+}
+
+[data-theme="dark"] .winui ::-webkit-scrollbar,
+.winui-dark ::-webkit-scrollbar {
+    --scroll: rgb(44 44 44 / 25%);
+    --scrollbar-top-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6.102 16.981c-1.074 0-1.648-1.265-.941-2.073l5.522-6.311a1.75 1.75 0 0 1 2.634 0l5.522 6.311c.707.808.133 2.073-.941 2.073H6.102z' fill='rgb(255 255 255 / 50%)'/%3E%3C/svg%3E");
+    --scrollbar-right-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M9 17.898c0 1.074 1.265 1.648 2.073.941l6.311-5.522a1.75 1.75 0 0 0 0-2.634l-6.311-5.522C10.265 4.454 9 5.028 9 6.102v11.796z' fill='rgb(255 255 255 / 50%)'/%3E%3C/svg%3E");
+    --scrollbar-bottom-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M6.102 8c-1.074 0-1.648 1.265-.941 2.073l5.522 6.311a1.75 1.75 0 0 0 2.634 0l5.522-6.311c.707-.808.133-2.073-.941-2.073H6.102z' fill='rgb(255 255 255 / 50%)'/%3E%3C/svg%3E");
+    --scrollbar-left-btn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M15 17.898c0 1.074-1.265 1.648-2.073.941l-6.311-5.522a1.75 1.75 0 0 1 0-2.634l6.311-5.522c.808-.707 2.073-.133 2.073.941v11.796z' fill='rgb(255 255 255 / 50%)'/%3E%3C/svg%3E")
+}
+
+.winui ::-webkit-scrollbar:vertical:hover,
+.winui-light ::-webkit-scrollbar:vertical:hover,
+.winui-dark ::-webkit-scrollbar:vertical:hover {
+    background: var(--scrollbar-bottom-btn) 0% calc(100% - 3px)/contain no-repeat, var(--scrollbar-top-btn) 0% calc(0% + 3px)/contain no-repeat, var(--scroll);
+}
+
+.winui ::-webkit-scrollbar:horizontal:hover,
+.winui-light ::-webkit-scrollbar:horizontal:hover,
+.winui-dark ::-webkit-scrollbar:horizontal:hover {
+    background: var(--scrollbar-right-btn) calc(100% - 3px) 0%/contain no-repeat, var(--scrollbar-left-btn) calc(0% + 3px) 0%/contain no-repeat, var(--scroll);
+}
+
+.winui ::-webkit-scrollbar-thumb,
+.winui-light ::-webkit-scrollbar-thumb {
+    display: none;
+    display: block;
+    background: rgba(0, 0, 0, .5);
+    background-clip: padding-box;
+    border: 6px solid transparent;
+    border-radius: 14px
+}
+
+[data-theme=dark] .winui ::-webkit-scrollbar-thumb,
+.winui-dark ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .5);
+    background-clip: padding-box;
+    border: 6px solid transparent;
+}
+
+.winui ::-webkit-scrollbar-thumb:hover,
+.winui-dark ::-webkit-scrollbar-thumb:hover,
+.winui-light ::-webkit-scrollbar-thumb:hover {
+    border: 4px solid transparent;
+    background-clip: padding-box;
+}
+
+.winui ::-webkit-scrollbar-button:single-button,
+.winui-dark ::-webkit-scrollbar-button:single-button,
+.winui-light ::-webkit-scrollbar-button:single-button {
+    height: 14px;
+}
+
+.winui :hover::-webkit-scrollbar-thumb,
+.winui-dark :hover::-webkit-scrollbar-thumb,
+.winui-light :hover::-webkit-scrollbar-thumb {
+    display: block;
+}

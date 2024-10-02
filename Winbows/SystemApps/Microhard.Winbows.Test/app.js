@@ -1,7 +1,7 @@
 // TOKEN, __dirname, __filename => Added by compiler
 
 ;(async () => {
-    var module = await System.fs('downloadFile', 'C:/Winbows/System/modules/toolbarComponents.js');
+    var module = await fs('downloadFile', 'C:/Winbows/System/modules/toolbarComponents.js');
     eval(await module.text());
 
     var browserWindow = '';
@@ -17,9 +17,9 @@
     console.log(System.ToolbarComponents)
     console.log(browserWindow)
 
-    console.log('file :', await System.fs('readFile', __filename));
-    console.log('dir :', await System.fs('readdir', __dirname));
-    console.log('modules:', await System.fs('readdir', '../../System/modules'));
+    console.log('file :', await fs('readFile', __filename));
+    console.log('dir :', await fs('readdir', __dirname));
+    console.log('modules:', await fs('readdir', '../../System/modules'));
 
     var customToolbar = await new System.customToolbar({
         icon: [await new System.ToolbarComponents.Icon('./favicon.ico')],

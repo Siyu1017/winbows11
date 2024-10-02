@@ -31,9 +31,13 @@ If you think this project is good, please star this project, thanks!
 - [x] Lock screen
 - [x] Maximize, minimize, full screen window
 - [x] Microhard Edge
-- [ ] Right click menu
+- [x] Right click menu
+- [x] Upload file to desktop
+- [x] Image Viewer
+- [x] JSON Viewer
+- [x] Contextmenu
+- [x] Snap windows
 - [ ] Search Menu and Task View
-- [ ] Snap windows
 - [ ] Microhard Store
 - [ ] Settings
 - [ ] Media player
