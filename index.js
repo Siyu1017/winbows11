@@ -1058,8 +1058,8 @@
     window.setBackgroundImage = async (image = '') => {
         if (!image || image == currentBackgroundImage) return;
         var stats = await fs.stat(image);
-        if (!stats.exists == true) {
-            image = 'C:/Winbows/bg/img0.jpg'
+        if (stats.exists != true) {
+            image = 'C:/Winbows/bg/img0.jpg';
         }
         currentBackgroundImage = image;
         localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
@@ -1071,7 +1071,7 @@
         location.href = './install.html';
     }
 
-    await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE'));
+    await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
 
     await fs.mkdir('C:/Users');
     await fs.mkdir('C:/Users/Admin');
