@@ -49,6 +49,27 @@
         }
     }
 
+    async function handleError(err, traces) {
+        var traceHTML = '';
+        traces.forEach(trace => {
+            traceHTML += `<div style="text-indent:1rem">${trace.replaceAll("'", "\\'").replaceAll('"', '\\"')}</div>`
+        })
+        var warningWindow = `document.body.innerHTML='<div style="color: red;padding: .5rem .75rem;user-select: none;-webkit-user-select: none;-webkit-user-drag: none;width: -webkit-fill-available;height: -webkit-fill-available;overflow: auto;background: rgb(255 0 0 / 18%);"><div style="font-weight:600">ERROR: ${err.message}</div><details><summary>${traces[0].replaceAll("'", "\\'").replaceAll('"', '\\"')}</summary>${traceHTML}</details></div>';document.querySelector('.window-toolbar').style="background: rgb(255 0 0 / 18%);color: red;";document.documentElement.style="display: flex;align-items: center;justify-content: center;width: 450px;height: 240px;background: #fff;";`;
+        var warningWindowURL = `C:/Winbows/System/Temp/${[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
+        await fs.writeFile(warningWindowURL, new Blob([warningWindow], {
+            type: 'text/javascript'
+        })).catch(err => {
+            window.Crash(err);
+        })
+        var warningProcess = `;(async()=>{System.requestAccessWindow('${warningWindowURL}',{title:'ERROR',width:300,height:150,resizable:false,snappable:false,fullscreenable:false});})();`;
+        var tempFileName = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+        fs.writeFile(`C:/Winbows/System/Temp/${tempFileName}`, new Blob([warningProcess], {
+            type: 'text/javascript'
+        })).then(res => {
+            new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
+        })
+    }
+
     class Process {
         constructor(path, type) {
             this.path = path;
@@ -70,10 +91,14 @@
             this.worker = new Worker(this.url);
             this.worker.onerror = (e) => {
                 this.exit();
+                var trace = debuggers.getStackTrace(e);
+                handleError(e, trace);
                 console.error(e);
             };
             this.worker.addEventListener('error', (e) => {
                 this.exit();
+                var trace = debuggers.getStackTrace(e);
+                handleError(e, trace);
                 console.error(e);
             })
             this.listenWorker();
@@ -148,6 +173,13 @@
                     payload.messageID = e.data.messageID;
                     payload.token = e.data.token;
                     worker.postMessage(payload)
+                }
+                if (e.data.type == 'error') {
+                    this.exit();
+                    var err = e.data.error;
+                    var trace = debuggers.getStackTrace(err);
+                    handleError(err, trace);
+                    console.error(err);
                 }
                 if (e.data.type == 'close') {
                     this.exit();

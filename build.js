@@ -47,12 +47,12 @@ async function getDirectorySize(directory) {
 }
 
 var table = [
-    'C:/build.json', 
-    'C:/index.js', 
-    'C:/index.html', 
-    'C:/index.css', 
-    'C:/favicon.ico', 
-    'C:/banner.png', 
+    'C:/build.json',
+    'C:/index.js',
+    'C:/index.html',
+    'C:/index.css',
+    'C:/favicon.ico',
+    'C:/banner.png',
     'C:/LICENSE'
 ];
 
@@ -68,21 +68,27 @@ walk(__dirname + '/Program Files', function (err, results1) {
             results2[i] = file.replaceAll('\\', '/');
         });
         table = table.concat(results2);
-
-        (async () => {
-            const totalSize = await getDirectorySize(__dirname + '/Program Files') + await getDirectorySize(__dirname + '/Winbows');
-
-            const detail = {
-                size: totalSize,
-                build_id: BUILD_ID,
-                table: table
-            }
-
-            fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
-                if (err) return console.log(err);
-                return ''
+        walk(__dirname + '/Users', async function (err, results3) {
+            if (err) throw err;
+            results3.forEach(function (file, i) {
+                results3[i] = file.replaceAll('\\', '/');
             });
-        })();
+            table = table.concat(results3);
 
+            (async () => {
+                const totalSize = await getDirectorySize(__dirname + '/Program Files') + await getDirectorySize(__dirname + '/Winbows') + await getDirectorySize(__dirname + '/Users');
+
+                const detail = {
+                    size: totalSize,
+                    build_id: BUILD_ID,
+                    table: table
+                }
+
+                fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
+                    if (err) return console.log(err);
+                    return ''
+                });
+            })();
+        });
     });
 });

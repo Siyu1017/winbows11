@@ -68,12 +68,17 @@
             e.pageY = touch.pageY;
         }
         taskbarMenu.open(e.pageX, taskbar.offsetHeight + 4, 'left-bottom');
+        if (utils.getPosition(taskbarMenu.container).x + taskbarMenu.container.offsetWidth > window.innerWidth) {
+            taskbarMenu.container.style.left = 'unset';
+            taskbarMenu.container.style.right = '4px';
+        }
     })
 
     new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
         window.addEventListener(event, (e) => {
             if (taskbarMenu.container.contains(e.target)) return;
             taskbarMenu.close();
+            taskbarMenu.container.style.right = 'unset';
         })
     })
 

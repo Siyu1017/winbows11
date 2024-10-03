@@ -462,6 +462,101 @@ async function createTab(page = 'C:/', active = true) {
 
     const dropZone = viewerContainer;
 
+    dropZone.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragenter', (event) => {
+        event.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        dropZone.classList.remove('dragover');
+
+        var completed = 0;
+        var total = 0;
+        var target = getPath(currentPage);
+
+        if (target == '') return;
+        if (!target.endsWith('/')) {
+            target += '/';
+        }
+
+        console.log(currentPage, target)
+
+        const items = event.dataTransfer.items;
+        total = items.length;
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i].webkitGetAsEntry();
+            if (item) {
+                if (item.isFile) {
+                    await handleFile(item, "");
+                } else if (item.isDirectory) {
+                    await handleDirectory(item, item.name);
+                }
+            }
+        }
+
+        async function handleFile(fileEntry, path) {
+            return new Promise((resolve, reject) => {
+                fileEntry.file(file => {
+                    const filePath = (path ? path + "/" : '') + file.name;
+                    const reader = new FileReader();
+                    reader.onload = async function (event) {
+                        const arrayBuffer = event.target.result;
+                        const blob = new Blob([arrayBuffer], { type: file.type });
+                        const fullPath = `${target}${filePath}`;
+                        await fs.writeFile(fullPath, blob).then(() => {
+                            completed++;
+                            console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
+                            if (completed == total) {
+                                getPage(currentPage);
+                            }
+                            resolve({
+                                type: 'update',
+                                status: 'ok',
+                                name: file.name,
+                                path: fullPath,
+                                message: '',
+                                size: blob.size,
+                                blob: blob,
+                                completed: completed
+                            });
+                        });
+                    };
+                    reader.readAsArrayBuffer(file);
+                });
+            })
+        }
+
+        async function handleDirectory(directoryEntry, path) {
+            const reader = directoryEntry.createReader();
+            const entries = await new Promise((resolve, reject) => {
+                reader.readEntries(resolve, reject);
+            });
+            completed++;
+            total += entries.length;
+            for (const entry of entries) {
+                if (entry.isFile) {
+                    handleFile(entry, path);
+                } else if (entry.isDirectory) {
+                    await handleDirectory(entry, path + "/" + entry.name);
+                }
+            }
+        }
+    });
+
+    /*
+    const dropZone = viewerContainer;
+
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
         dropZone.addEventListener(eventName, preventDefaults, false)
     });
@@ -504,6 +599,7 @@ async function createTab(page = 'C:/', active = true) {
             console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
         });
     }
+        */
 
     Object.values(actionbarButtonIcons).forEach(icon => {
         var button = document.createElement('button');
@@ -619,7 +715,7 @@ async function createTab(page = 'C:/', active = true) {
             })
 
             item.addEventListener('contextmenu', async (e) => {
-                const menu = WinUI.contextMenu([
+                var items = [
                     {
                         className: "open",
                         text: "Open",
@@ -649,7 +745,26 @@ async function createTab(page = 'C:/', active = true) {
                             });
                         }
                     }
-                ])
+                ]
+                if (details.type.startsWith('image/')) {
+                    items.push({
+                        className: "set-as-background",
+                        text: "Set as background",
+                        action: async () => {
+                            await window.setBackgroundImage(path);
+                        }
+                    })
+                } else if (details.type.search('javascript') > -1) {
+                    items.push({
+                        className: "run-as-an-app",
+                        icon: 'window-snipping',
+                        text: "Run as an application",
+                        action: async () => {
+                            new Process(path).start();
+                        }
+                    })
+                }
+                const menu = WinUI.contextMenu(items)
                 e.preventDefault();
                 if (e.type.startsWith('touch')) {
                     var touch = e.touches[0] || e.changedTouches[0];

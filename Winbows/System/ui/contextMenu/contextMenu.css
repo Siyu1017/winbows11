@@ -6,7 +6,7 @@
     --contextmenu-hover: rgba(0, 0, 0, .05);
     --contextmenu-active: rgba(0, 0, 0, .1);
     --contextmenu-separator-bg: rgba(0, 0, 0, .1);
-    --contextmenu-backdrop-filter: none;
+    --contextmenu-backdrop-filter: initial;
     --contextmenu-icon-width: 1rem;
     --contextmenu-icon-height: 1rem;
     --contextmenu-icon-size: .875rem;
@@ -116,7 +116,7 @@
     min-height: var(--contextmenu-expand-height);
     font-size: var(--contextmenu-expand-size);
     content: '\e76c';
-    font-family: icon-font;
+    font-family: var(--winbows-font-icon);
     display: flex;
     justify-content: center;
     align-items: center;

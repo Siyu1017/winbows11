@@ -1055,9 +1055,14 @@
     window.getBackgroundImage = () => {
         return currentBackgroundImage;
     }
-    window.setBackgroundImage = async (image) => {
+    window.setBackgroundImage = async (image = '') => {
         if (!image || image == currentBackgroundImage) return;
+        var stats = await fs.stat(image);
+        if (!stats.exists == true) {
+            image = 'C:/Winbows/bg/img0.jpg'
+        }
         currentBackgroundImage = image;
+        localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
         var url = await getFileURL(currentBackgroundImage);
         await loadImage(url)
         backgroundImage.style.backgroundImage = `url(${url})`;
@@ -1066,7 +1071,7 @@
         location.href = './install.html';
     }
 
-    await window.setBackgroundImage('C:/Winbows/bg/img0.jpg');
+    await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE'));
 
     await fs.mkdir('C:/Users');
     await fs.mkdir('C:/Users/Admin');
@@ -1086,7 +1091,7 @@
             var files = {
                 kernel: ['Winbows/System/process.js'],
                 ui: ['Winbows/System/ui/build/winui.min.js'],
-                module: ['Winbows/System/modules/main/toolbarComponents.js', 'Winbows/System/modules/main/browserWindow.js'],
+                module: ['Winbows/System/modules/main/domtool.js', 'Winbows/System/modules/main/toolbarComponents.js', 'Winbows/System/modules/main/browserWindow.js'],
                 component: [],
                 taskbar: ['Winbows/SystemApps/Microhard.Winbows.Taskbar/app.js'],
                 compiler: ['Winbows/System/compilers/worker/compiler.js', 'Winbows/System/compilers/window/compiler.js']
@@ -1194,7 +1199,6 @@
     // For desktop
     await (async () => {
         window.System.updateDesktop = updateDesktop;
-        window.System.createDesktopItem = createDesktopItem;
 
         fs.on('change', (e) => {
             if (e.path.search('C:/Users/Admin/Desktop') > -1) {
@@ -1202,101 +1206,120 @@
             }
         });
 
+        var createdItems = [];
         var originalContent = [];
         var updating = false;
 
-        async function updateDesktop(force = true) {
-            fs.readdir('C:/Users/Admin/Desktop').then(async items => {
-                if ((items == originalContent) && force == false || updating == true) return;
-                originalContent = items;
-                updating = true;
-                var results = [];
-                for (let i = 0; i < items.length; i++) {
-                    results.push({
-                        result: await fs.stat(items[i].path),
-                        item: items[i]
-                    });
-                }
-                desktopItems.innerHTML = '';
-                for (let i = 0; i < results.length; i++) {
-                    ; await (async (res) => {
-                        var { result, item } = res;
-                        var type = utils.getFileExtension(item.path) == 'link' ? 'shortcut' : result.type == 'directory' ? 'directory' : 'file';
-                        var detail;
-                        if (type == 'shortcut') {
-                            var file = await result.content.text();
-                            detail = JSON.parse(file);
-                        } else if (type == 'directory') {
-                            detail = {
-                                name: utils.getFileName(item.path),
-                                command: `run explorer --config=PAGE=\"${item.path}\"`
-                            };
-                        } else {
-                            detail = {
-                                name: utils.getFileName(item.path),
-                                action: () => {
-                                    var defaultViewer = window.System.FileViewers.getDefaultViewer(item.path);
-                                    if (defaultViewer != null) {
-                                        new Process(defaultViewer.script).start(`const FILE_PATH="${item.path}";`);
-                                    } else {
-                                        console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js')
-                                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${item.path}";`);
-                                    }
-                                }
-                            };
-                        }
-                        detail.path = item.path;
-                        detail.type = type;
-                        detail.file = result.content;
-                        createDesktopItem(detail);
-                        return;
-                    })(results[i]);
-                }
-                updating = false;
-            })
-        }
-
-        function createDesktopItem(detail) {
-            const { icon, name, command, path, type, file, action } = detail;
-
+        function generateItem() {
             var item = document.createElement('div');
             var itemIcon = document.createElement('div');
             var itemName = document.createElement('div');
+            var action = function () { };
+            var name = '';
+            var icon = '';
+            var file = new Blob([]);
+            var command = '';
+            var type = 'unknown';
+            var path = '';
+            var id = [...Array(18)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+
+            var properties = {
+                id,
+                action, name, icon, file, command, type, path,
+                setAction, setName, setIcon, setCommand, setFile, setType, setPath,
+                update, remove
+            };
 
             item.className = 'desktop-item';
             itemIcon.className = 'desktop-item-icon';
             itemName.className = 'desktop-item-name';
 
-            itemName.textContent = name;
-
             desktopItems.appendChild(item);
             item.appendChild(itemIcon);
             item.appendChild(itemName);
 
-            if (type == 'shortcut') {
-                fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
-                    itemIcon.style.setProperty('--item-icon', `url(${url})`);
-                    itemIcon.style.backgroundImage = `url('${icon}')`;
-                })
-            } else if (type == 'directory') {
-                console.log(item)
-                fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
-                    itemIcon.style.backgroundImage = `url('${url}')`;
-                })
-            } else {
-                var isImage = file.type.startsWith('image/');
-                fs.getFileURL(window.fileIcons.getIcon(path)).then(url => {
-                    itemIcon.style.backgroundImage = `url('${url}')`;
-                    if (isImage) {
-                        try {
-                            fs.getFileURL(path).then(url => {
-                                itemIcon.style.backgroundImage = `url(${url})`;
-                            })
-                        } catch (e) {
-                            console.log('Failed to load image.');
+            createdItems.push(properties);
+
+            function isFunction(functionToCheck) {
+                return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+            }
+
+            function setName(value) {
+                if (name == value) return;
+                itemName.textContent = value;
+                name = value;
+            }
+            function setIcon(value) {
+                if (icon == value) return;
+                itemIcon.style.backgroundImage = `url('${value}')`;
+                icon = value;
+            }
+            function setAction(value) {
+                if (action == value || !isFunction(value)) return;
+                action = value;
+            }
+            function setCommand(value) {
+                if (command == value) return;
+                command = value;
+            }
+            function setType(value) {
+                if (type == value) return;
+                type = value;
+            }
+            function setPath(value) {
+                if (path == value) return;
+                path = value;
+            }
+            function setFile(value) {
+                if (path == value) return;
+                file = value;
+            }
+
+            function update(item) {
+                itemIcon.style.removeProperty('--item-icon');
+
+                const updateType = item.type;
+                const updateIcon = item.icon;
+                const updateFile = item.file;
+                const updatePath = item.path;
+                const updateName = item.name;
+                const updateAction = item.action;
+                const updateCommand = item.command;
+
+                setName(updateName);
+                setIcon(updateIcon);
+                setAction(updateAction);
+                setType(updateType);
+                setCommand(updateCommand);
+                setPath(updatePath);
+                setFile(updateFile);
+
+                if (type == 'shortcut') {
+                    fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
+                        itemIcon.style.setProperty('--item-icon', `url(${url})`);
+                    })
+                } else if (type == 'directory') {
+                    fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
+                        setIcon(url);
+                    })
+                } else {
+                    var isImage = file.type.startsWith('image/');
+                    fs.getFileURL(window.fileIcons.getIcon(path)).then(url => {
+                        setIcon(url);
+                        if (isImage) {
+                            try {
+                                fs.getFileURL(path).then(url => {
+                                    setIcon(url);
+                                })
+                            } catch (e) { console.log('Failed to load image.'); }
                         }
-                    }
-                })
+                    })
+                }
+            }
+
+            function remove() {
+                item.remove();
+                createdItems = createdItems.filter(item => item.id != id);
             }
 
             item.addEventListener('click', (e) => {
@@ -1308,8 +1331,15 @@
             })
 
             item.addEventListener('contextmenu', (e) => {
-                const menu = WinUI.contextMenu([
+                var items = [
                     {
+                        className: "refresh",
+                        icon: "refresh",
+                        text: "Refresh",
+                        action: () => {
+                            window.System.updateDesktop();
+                        }
+                    }, {
                         className: "open",
                         text: "Open",
                         action: () => {
@@ -1321,13 +1351,50 @@
                         }
                     }, {
                         className: "open-with",
+                        icon: 'open-with',
                         text: "Open with...",
                         action: () => {
                             new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
                         }
+                    }, {
+                        text: 'Open file location',
+                        icon: 'folder-open',
+                        action: () => {
+                            window.System.Shell('run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"')
+                        }
+                    }, {
+                        className: 'delete',
+                        icon: "delete",
+                        text: "Delete",
+                        action: () => {
+                            fs.rm(path).then(res => {
+                                window.System.updateDesktop();
+                            });
+                        }
                     }
-                ], {
-                    showIcon: false
+                ];
+                if (file instanceof Blob) {
+                    if (file.type.startsWith('image/')) {
+                        items.push({
+                            className: "set-as-bacckground",
+                            text: "Set as background",
+                            action: async () => {
+                                await window.setBackgroundImage(path);
+                            }
+                        })
+                    } else if (file.type.search('javascript') > -1) {
+                        items.push({
+                            className: "run-as-an-app",
+                            icon: 'window-snipping',
+                            text: "Run as an application",
+                            action: async () => {
+                                new Process(path).start();
+                            }
+                        })
+                    }
+                }
+                const menu = WinUI.contextMenu(items, {
+                    // showIcon: false
                 })
                 e.preventDefault();
                 e.stopPropagation();
@@ -1345,7 +1412,77 @@
                         menu.close();
                     })
                 })
-            }, false)
+            }, false);
+
+            return;
+        }
+
+        async function updateDesktop(force = true, sort = 'default') {
+            fs.readdir('C:/Users/Admin/Desktop').then(async items => {
+                if ((items == originalContent) && force == false || updating == true) return;
+                originalContent = items;
+                updating = true;
+                var results = [];
+                var count = Math.abs(items.length - createdItems.length);
+                if (createdItems.length < items.length) {
+                    for (let i = 0; i < count; i++) {
+                        generateItem();
+                    }
+                } else if (createdItems.length > items.length) {
+                    for (let i = 0; i < count; i++) {
+                        if (createdItems[i]) {
+                            createdItems[i].remove();
+                        }
+                    }
+                }
+                for (let i = 0; i < items.length; i++) {
+                    results.push({
+                        result: await fs.stat(items[i].path),
+                        item: items[i],
+                        name: utils.getFileName(items[i].path)
+                    });
+                }
+                if (sort == 'name') {
+                    // TODO
+                }
+                for (let i = 0; i < results.length; i++) {
+                    ; await (async (i) => {
+                        var { result, item, name } = results[i];
+                        var type = utils.getFileExtension(item.path) == 'link' ? 'shortcut' : result.type == 'directory' ? 'directory' : 'file';
+                        var detail = {};
+                        try {
+                            if (type == 'shortcut') {
+                                var file = await result.content.text();
+                                detail = JSON.parse(file);
+                            } else if (type == 'directory') {
+                                detail = {
+                                    name: name,
+                                    command: `run explorer --config=PAGE=\"${item.path}\"`
+                                };
+                            } else {
+                                detail = {
+                                    name: name,
+                                    action: () => {
+                                        var defaultViewer = window.System.FileViewers.getDefaultViewer(item.path);
+                                        if (defaultViewer != null) {
+                                            new Process(defaultViewer.script).start(`const FILE_PATH="${item.path}";`);
+                                        } else {
+                                            console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js')
+                                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${item.path}";`);
+                                        }
+                                    }
+                                };
+                            }
+                        } catch (e) { console.log(e) };
+                        detail.path = item.path;
+                        detail.type = type;
+                        detail.file = result.content;
+                        createdItems[i].update(detail);
+                        return;
+                    })(i);
+                }
+                updating = false;
+            })
         }
 
         const target = 'C:/Users/Admin/Desktop/';
@@ -1430,262 +1567,6 @@
             }
         });
 
-        /**
-         //  var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start();
-           //  worker = process.worker;
-        
-            const items = event.dataTransfer.items;
-        
-            var total = 0;
-            var processed = 0;
-            var current = 'Unknown';
-            var totalFiles = 0;
-        
-            // Calculate total items
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i].webkitGetAsEntry();
-                if (item) {
-                    if (item.isFile) {
-                        totalFiles += 1;
-                    } else if (item.isDirectory) {
-                        await countFilesInDirectory(item);
-                    }
-                }
-            }
-        
-            async function countFilesInDirectory(directoryEntry) {
-                const reader = directoryEntry.createReader();
-                const entries = await new Promise((resolve, reject) => {
-                    reader.readEntries(resolve, reject);
-                });
-        
-                for (const entry of entries) {
-                    if (entry.isFile) {
-                        totalFiles += 1;
-                    } else if (entry.isDirectory) {
-                        await countFilesInDirectory(entry);
-                    }
-                }
-            }
-        
-            updateProgress();
-        
-            worker.addEventListener('message', (e) => {
-                if (!e.data.token == process.token) return;
-                if (e.data.type == 'init') {
-                    updateProgress();
-                }
-            })
-            function updateProgress() {
-                console.log('updateProgress');
-                worker.postMessage({
-                    type: 'update',
-                    title: `Uploading ${total} item(s) to Desktop`,
-                    current: current,
-                    total: total,
-                    processed: processed,
-                    token: process.token
-                });
-            }
-        
-            console.log(items)
-        
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i].webkitGetAsEntry();
-                if (item) {
-                    if (item.isFile) {
-                        handleFile(item, "");
-                    } else if (item.isDirectory) {
-                        await handleDirectory(item, item.name);
-                    }
-                }
-            }
-        
-            function handleFile(fileEntry, path) {
-                fileEntry.file(file => {
-                    current = file.name;
-                    updateProgress();
-                    const filePath = (path ? path + "/" : '') + file.name;
-                    const reader = new FileReader();
-                    reader.onload = async function (event) {
-                        const arrayBuffer = event.target.result;
-                        const blob = new Blob([arrayBuffer], { type: file.type });
-                        const fullPath = `${target}${filePath}`;
-                        await fs.writeFile(fullPath, blob).then(() => {
-                            completed++;
-                            console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-                            updateProgress();
-                        });
-                    };
-                    reader.readAsArrayBuffer(file);
-                });
-            }
-        
-            async function handleDirectory(directoryEntry, path) {
-                const reader = directoryEntry.createReader();
-                const entries = await new Promise((resolve, reject) => {
-                    reader.readEntries(resolve, reject);
-                });
-                for (const entry of entries) {
-                    if (entry.isFile) {
-                        handleFile(entry, path);
-                    } else if (entry.isDirectory) {
-                        await handleDirectory(entry, path + "/" + entry.name);
-                    }
-                }
-            }
-         */
-
-        /*
-        const dropZone = desktop;
-        
-        ['dragenter', 'dragover', 'dragleave'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false)
-        });
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false)
-        });
-        
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false)
-        });
-        
-        dropZone.addEventListener('drop', (e) => {
-            preventDefaults(e)
-            handleDrop(e, e.dataTransfer.items)
-        }, false);
-        
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-        
-        async function handleDrop(e, items) {
-            e.dataTransfer.dropEffect = 'copy';
-        
-            const dt = e.dataTransfer;
-            const array = Array.from(dt.files);
-        
-            console.log(dt)
-        
-            const process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start();
-            const worker = process.worker;
-        
-            //const items = [...dt.items];
-            items = [...items]
-            console.log([...items]);
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i].webkitGetAsEntry(); // 檢測是否是文件或資料夾
-                console.log(item);
-                if (item) {
-                    if (item.isFile) {
-                        // 處理文件
-                        await handleFile(item);
-                    } else if (item.isDirectory) {
-                        // 處理資料夾
-                        await handleDirectory(item);
-                    }
-                }
-            }
-        
-            // window.System.updateDesktop();
-        
-            async function handleFile(fileEntry) {
-                return new Promise((resolve, reject) => {
-                    fileEntry.file(file => {
-                        const reader = new FileReader();
-                        reader.onload = async function (event) {
-                            const arrayBuffer = event.target.result;
-                            const blob = new Blob([arrayBuffer], { type: file.type });
-                            const fullPath = `${target}${file.webkitRelativePath || file.name}`;
-                            await fs('writeFile', fullPath, blob).then(() => {
-                                completed++;
-                                self.postMessage({
-                                    type: 'update',
-                                    status: 'ok',
-                                    name: file.name,
-                                    path: fullPath,
-                                    message: '',
-                                    size: blob.size,
-                                    blob: blob,
-                                    completed: completed
-                                });
-                                resolve({
-                                    type: 'update',
-                                    status: 'ok',
-                                    name: file.name,
-                                    path: fullPath,
-                                    message: '',
-                                    size: blob.size,
-                                    blob: blob,
-                                    completed: completed
-                                });
-                            });
-                        };
-                        reader.readAsArrayBuffer(file);
-        
-                        console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-                    })
-                });
-            }
-        
-            // 處理資料夾（遞歸檢索）
-            async function handleDirectory(directoryEntry) {
-                console.log(`Directory: ${directoryEntry}`)
-                const reader = directoryEntry.createReader();
-                const entries = await new Promise((resolve, reject) => {
-                    reader.readEntries(resolve, reject);
-                });
-        
-                for (const entry of entries) {
-                    if (entry.isFile) {
-                        await handleFile(entry);
-                    } else if (entry.isDirectory) {
-                        await handleDirectory(entry); // 遞歸處理子資料夾
-                    }
-                }
-            }
-            /*
-            worker.addEventListener('message', (e) => {
-                if (!e.data.token == process.token) return;
-                if (e.data.type == 'init') {
-                    worker.postMessage({
-                        type: 'transfer',
-                        items: array,
-                        target: 'C:/Users/Admin/Desktop/',
-                        token: process.token
-                    });
-                } else if (e.data.type == 'complete') {
-                    window.System.updateDesktop();
-                    console.log(e.data);
-                } else if (e.data.type == 'update') {
-                    console.log(e.data);
-                }
-            })
-                */
-        // }
-
-        function handleFiles(files) {
-            var length = 0;
-            [...files].forEach(file => {
-                const reader = new FileReader();
-                reader.onload = async function (event) {
-                    const arrayBuffer = event.target.result;
-                    const blob = new Blob([arrayBuffer], { type: file.type });
-                    await fs.writeFile(`C:/Users/Admin/Desktop/${file.name}`, blob).then(() => {
-                        length++;
-                        if (length == files.length) {
-                            window.System.updateDesktop();
-                        }
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-
-                console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-            });
-        }
-
         desktop.addEventListener('contextmenu', (e) => {
             const menu = WinUI.contextMenu([
                 {
@@ -1695,6 +1576,28 @@
                     action: () => {
                         window.System.updateDesktop();
                     }
+                }, {
+                    className: 'sort',
+                    icon: "sort",
+                    text: "Sort by",
+                    submenu: [{
+                        className: "name",
+                        icon: "sort_by_name",
+                        text: "Name",
+                        action: () => {
+                            window.System.updateDesktop(true, 'name');
+                        }
+                    },/* {
+                        className: "size",
+                        icon: "sort_by_size",
+                        text: "Size",
+                        action: () => { }
+                    }, {
+                        className: "type",
+                        icon: "sort_by_type",
+                        text: "Type",
+                        action: () => { }
+                    }*/]
                 }
             ])
             e.preventDefault();

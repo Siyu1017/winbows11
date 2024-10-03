@@ -18,7 +18,7 @@ Object.defineProperty(window.Compilers, 'Worker', {
             moduleContent += `;${await (await fs.downloadFile(modules[i])).text()}`;
         }
         
-        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${directories.join('/')}",__filename="${path}";(()=>{try{const TOKEN="${token}";${moduleContent};}catch(e){console.error(e)}})();\n${extra};${content}`;
+        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${directories.join('/')}",__filename="${path}";(()=>{try{const TOKEN="${token}";${moduleContent};}catch(e){console.error(e)}})();try{${extra};${content};}catch(e){process.error(e);}`;
         return new Blob([content], { type: 'application/javascript' });
     },
     configurable: false,

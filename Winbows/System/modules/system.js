@@ -92,6 +92,14 @@
         exit: (code) => {
             self.close();
         },
+        error: (err) => {
+            var payload = {
+                token: TOKEN,
+                type: 'error',
+                error: err
+            }
+            postMessage(payload);
+        },
         on: (event, listener) => {
             if (!listeners[event]) {
                 listeners[event] = [];
