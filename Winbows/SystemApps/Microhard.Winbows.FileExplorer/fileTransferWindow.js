@@ -32,6 +32,10 @@ progressBar.className = 'progress-bar';
 progressBarPeg.className = 'progress-bar-peg';
 infoElement.className = 'info';
 
+nameElement.style = "overflow: hidden;white-space: nowrap;text-overflow: ellipsis;";
+timeElement.style = "overflow: hidden;white-space: nowrap;text-overflow: ellipsis;";
+lastElement.style = "overflow: hidden;white-space: nowrap;text-overflow: ellipsis;";
+
 progressElement.appendChild(progressBar);
 progressBar.appendChild(progressBarPeg);
 
@@ -64,20 +68,24 @@ function predictTime() {
 }
 
 function update() {
-    percentElement.textContent = ~~((current / total) * 100) + '% complete';
-    progressBar.style.width = (current / total) * 100 + '%';
+    percentElement.textContent = ~~((processed / total) * 100) + '% complete';
+    progressBar.style.width = (processed / total) * 100 + '%';
     titleElement.textContent = title;
     nameElement.textContent = `Name: ${current}`;
     timeElement.textContent = `Remaining times: ${predictTime()}`;
     lastElement.textContent = `Remaining items: ${total - processed}`;
-    setTimeout(update, 1000)
 }
 
-update();
+setInterval(update, 1000);
+
+var initialized = false;
 
 browserWindow.worker.addEventListener('message', (e) => {
     console.log(e)
     if (!e.data.token == TOKEN) return;
+    if (e.data.type == 'init') {
+        return init();
+    }
     if (processed != e.data.processed) {
         lastTime = Date.now();
     }
@@ -87,3 +95,12 @@ browserWindow.worker.addEventListener('message', (e) => {
     title = e.data.title;
     update();
 })
+
+function init() {
+    browserWindow.worker.postMessage({
+        type: 'init',
+        token: TOKEN
+    })
+}
+
+init();

@@ -47,6 +47,7 @@ body {
     position: relative;
     overflow: hidden;
     width: 0%;
+    transition: width .2s ease-in-out;
 }
 
 .progress-bar-peg {
@@ -78,7 +79,7 @@ body {
     color: #333;
 }
 
-.info* {
+.info * {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

@@ -8,11 +8,8 @@
         resizable: false
     });
 
-    process.send({
-        type: 'init'
-    })
-
     process.on('message', async function (event) {
+        console.log(event.data)
         process.send(event.data);
     });
 })();

@@ -1,6 +1,6 @@
 document.documentElement.style = `
-    width: min(320px, 60vw);
-    height: min(450px, 80vh);
+    width: 320px;
+    height: 450px;
 `
 
 browserWindow.setSnappable(false);
@@ -29,6 +29,28 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
     margin-inline-start: 0px;
     margin-inline-end: 0px;
 ">Welcome to Winbows11, which allows you to experience Windows11 animations and themes on web pages, and has a file system built using IndexedDB. Happy using it~</div>
+<div style="
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin-bottom: .75rem;
+">Updates</div>
+<ul style=" 
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    padding-left: 1.5rem;
+">
+<li style="
+    margin: .5rem 0;
+">Drop file to desktop or file explorer ( Beta )</li>
+<li style="
+    margin: .5rem 0;
+">Right click menu</li>
+<li style="
+    margin: .5rem 0;
+">Set an image as background</li>
+</ul>
 				<div style="
     font-weight: 600;
     font-size: 1.5rem;

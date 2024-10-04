@@ -80,38 +80,40 @@
             this.windows = [];
         }
         async start(extra) {
-            window.Winbows.Screen.style.cursor = 'progress';
-            try {
-                this.url = URL.createObjectURL(await window.Compilers.Worker(this.path, this.token, extra));
-            } catch (e) {
+            return new Promise(async (resolve, reject) => {
+                window.Winbows.Screen.style.cursor = 'progress';
+                try {
+                    this.url = URL.createObjectURL(await window.Compilers.Worker(this.path, this.token, extra));
+                } catch (e) {
+                    window.Winbows.Screen.style.cursor = 'auto';
+                    reject('Can not run file.\n' + e.message);
+                }
+                console.log(this.url)
+                this.worker = new Worker(this.url);
+                this.worker.onerror = (e) => {
+                    this.exit();
+                    var trace = debuggers.getStackTrace(e);
+                    handleError(e, trace);
+                    console.error(e);
+                };
+                this.worker.addEventListener('error', (e) => {
+                    this.exit();
+                    var trace = debuggers.getStackTrace(e);
+                    handleError(e, trace);
+                    console.error(e);
+                })
+                this.listenWorker();
+                window.System.processes[this.id] = this;
+                window.System.processes[this.id].url = this.url;
+                window.System.processes[this.id].worker = this.worker;
                 window.Winbows.Screen.style.cursor = 'auto';
-                throw new Error('Can not run file.\n' + e.message);
-            }
-            console.log(this.url)
-            this.worker = new Worker(this.url);
-            this.worker.onerror = (e) => {
-                this.exit();
-                var trace = debuggers.getStackTrace(e);
-                handleError(e, trace);
-                console.error(e);
-            };
-            this.worker.addEventListener('error', (e) => {
-                this.exit();
-                var trace = debuggers.getStackTrace(e);
-                handleError(e, trace);
-                console.error(e);
-            })
-            this.listenWorker();
-            window.System.processes[this.id] = this;
-            window.System.processes[this.id].url = this.url;
-            window.System.processes[this.id].worker = this.worker;
-            window.Winbows.Screen.style.cursor = 'auto';
-            triggerEvent('start', {
-                pid: this.id,
-                path: this.path,
-                type: this.type
-            })
-            return this;
+                triggerEvent('start', {
+                    pid: this.id,
+                    path: this.path,
+                    type: this.type
+                })
+                resolve(this);
+            });
         }
         exit() {
             if (!this.worker) {
