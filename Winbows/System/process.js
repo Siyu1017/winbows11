@@ -124,7 +124,7 @@
             this.windows.forEach(windowObject => {
                 try {
                     windowObject.close();
-                } catch (e) { console.log(e) }
+                } catch (e) { console.error(e) }
             })
             Object.values(this.temp).forEach(temp => {
                 try {

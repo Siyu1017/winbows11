@@ -8,8 +8,12 @@
         resizable: false
     });
 
+    postMessage({
+        type: 'start'
+    });
+
     process.on('message', async function (event) {
         console.log(event.data)
-        process.send(event.data);
+        postMessage(event.data);
     });
 })();

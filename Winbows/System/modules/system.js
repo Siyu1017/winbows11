@@ -264,15 +264,16 @@
         }
     }
 
-    onmessage = (e) => {
+    self.addEventListener('message', (e) => {
         if (e.data.token == TOKEN) {
+            console.log(e.data)
             triggerEvent('message', e);
             if (Object.keys(System.messageIDs).includes(e.data.messageID)) {
                 System.messageIDs[e.data.messageID](e.data.response);
                 delete System.messageIDs[e.data.messageID];
             }
         }
-    }
+    })
 
     self.System = System;
 })();

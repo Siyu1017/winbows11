@@ -94,7 +94,7 @@
     var desktop = document.createElement('div');
     var desktopItems = document.createElement('div');
 
-    desktop.className = 'desktop';
+    desktop.className = 'desktop winui-no-background';
     desktopItems.className = 'desktop-items';
 
     appWrapper.appendChild(desktop);
@@ -1050,6 +1050,39 @@
     screenLockSigninAvatar.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/user.png')})`;
     screenLockBackground.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/bg/img100.jpg')})`;
 
+    function analyzeImage(img) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixels = imageData.data;
+
+        let totalBrightness = 0;
+
+        for (let i = 0; i < pixels.length; i += 4) {
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
+
+            const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+            totalBrightness += brightness;
+        }
+
+        const averageBrightness = totalBrightness / (img.width * img.height);
+
+        const threshold = 128;
+        if (averageBrightness > threshold) {
+            return 'light';
+        } else {
+            return 'dark';
+        }
+    }
+
     var currentBackgroundImage;
 
     window.getBackgroundImage = () => {
@@ -1064,8 +1097,15 @@
         currentBackgroundImage = image;
         localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
         var url = await getFileURL(currentBackgroundImage);
-        await loadImage(url)
-        backgroundImage.style.backgroundImage = `url(${url})`;
+        var img = new Image();
+        img.src = url;
+        img.onload = () => {
+            var theme = analyzeImage(img);
+            desktop.classList.remove('winui-light', 'winui-dark');
+            desktop.classList.add(`winui-${theme}`)
+            backgroundImage.style.backgroundImage = `url(${url})`;
+            console.log(theme)
+        }
     }
     window.WinbowsUpdate = () => {
         location.href = './install.html';
@@ -1198,7 +1238,9 @@
 
     // For desktop
     await (async () => {
-        window.System.updateDesktop = updateDesktop;
+        window.System.desktop = {};
+        window.System.desktop.selfChange = false;
+        window.System.desktop.update = updateDesktop;
 
         var createdItems = [];
         var originalContent = [];
@@ -1239,34 +1281,41 @@
             }
 
             function setName(value) {
-                if (name == value) return;
+                if (name == value) return true;
                 itemName.textContent = value;
                 name = value;
+                return false;
             }
             function setIcon(value) {
-                if (icon == value) return;
+                if (icon == value) return true;
                 itemIcon.style.backgroundImage = `url('${value}')`;
                 icon = value;
+                return false;
             }
             function setAction(value) {
-                if (action == value || !isFunction(value)) return;
+                if (action == value || !isFunction(value)) return true;
                 action = value;
+                return false;
             }
             function setCommand(value) {
-                if (command == value) return;
+                if (command == value) return true;
                 command = value;
+                return false;
             }
             function setType(value) {
-                if (type == value) return;
+                if (type == value) return true;
                 type = value;
+                return false;
             }
             function setPath(value) {
-                if (path == value) return;
+                if (path == value) return true;
                 path = value;
+                return false;
             }
             function setFile(value) {
-                if (path == value) return;
+                if (path == value) return true;
                 file = value;
+                return false;
             }
 
             function update(item) {
@@ -1280,13 +1329,13 @@
                 const updateAction = item.action;
                 const updateCommand = item.command;
 
-                setName(updateName);
-                setIcon(updateIcon);
-                setAction(updateAction);
-                setType(updateType);
-                setCommand(updateCommand);
-                setPath(updatePath);
-                setFile(updateFile);
+                var sameName = setName(updateName);
+                var sameIcon = setIcon(updateIcon);
+                var sameAction = setAction(updateAction);
+                var sameType = setType(updateType);
+                var sameCommand = setCommand(updateCommand);
+                var samePath = setPath(updatePath);
+                var sameFile = setFile(updateFile);
 
                 if (type == 'shortcut') {
                     fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
@@ -1331,7 +1380,7 @@
                         icon: "refresh",
                         text: "Refresh",
                         action: () => {
-                            window.System.updateDesktop();
+                            window.System.desktop.update();
                         }
                     }, {
                         type: 'separator'
@@ -1371,7 +1420,7 @@
                     text: "Delete",
                     action: () => {
                         fs.rm(path).then(res => {
-                            window.System.updateDesktop();
+                            window.System.desktop.update();
                         });
                     }
                 })
@@ -1415,6 +1464,10 @@
                 menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
                 menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
                 menu.open(e.pageX, e.pageY, 'left-top');
+                if (utils.getPosition(menu.container).x + menu.container.offsetWidth > window.innerWidth) {
+                    menu.container.style.left = 'unset';
+                    menu.container.style.right = '4px';
+                }
                 new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
                     window.addEventListener(event, (e) => {
                         if (menu.container.contains(e.target)) return;
@@ -1486,7 +1539,11 @@
                         detail.path = item.path;
                         detail.type = type;
                         detail.file = result.content;
-                        createdItems[i].update(detail);
+                        function update() {
+                            createdItems[i].update(detail);
+                            clearTimeout(update);
+                        }
+                        setTimeout(update, i);
                         return;
                     })(i);
                 }
@@ -1556,126 +1613,119 @@
 
             if (items.length == 0) return;
 
+            System.desktop.selfChange = true;
+
             var processed = 0;
-            var total = 0;
+            var total = items.length;
             var current = 'Unknown';
             var title = 'Uploading File to Desktop...';
             var worker;
             var update = () => { };
 
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i].webkitGetAsEntry();
-                if (item) {
-                    if (item.isFile) {
-                        total += 1;
-                    } else if (item.isDirectory) {
-                        await countFilesInDirectory(item);
-                    }
-                }
-            }
-
-            async function countFilesInDirectory(directoryEntry) {
-                const reader = directoryEntry.createReader();
-                const entries = await new Promise((resolve, reject) => {
-                    reader.readEntries(resolve, reject);
-                });
-
-                for (const entry of entries) {
-                    if (entry.isFile) {
-                        total += 1;
-                    } else if (entry.isDirectory) {
-                        await countFilesInDirectory(entry);
-                    }
-                }
-            }
+            var files = [];
 
             for (let i = 0; i < items.length; i++) {
                 const item = items[i].webkitGetAsEntry();
                 if (item) {
                     if (item.isFile) {
+                        console.log('file', i)
                         await handleFile(item, "");
                     } else if (item.isDirectory) {
+                        console.log('directory', i)
                         await handleDirectory(item, item.name);
                     }
+                } else {
+                    total--;
                 }
             }
 
-            async function handleFile(fileEntry, path) {
-                return new Promise(function (resolve, reject) {
-                    fileEntry.file(file => {
-                        current = file.name;
-                        update();
-
-                        const filePath = (path ? path + "/" : '') + file.name;
-                        const reader = new FileReader();
-                        reader.onload = async function (event) {
-                            const arrayBuffer = event.target.result;
-                            const blob = new Blob([arrayBuffer], { type: file.type });
-                            const fullPath = `${target}${filePath}`;
-                            await fs.writeFile(fullPath, blob).then(() => {
-                                processed++;
-                                console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-                                update();
-                                resolve({
-                                    type: 'update',
-                                    status: 'ok',
-                                    name: file.name,
-                                    path: fullPath,
-                                    message: '',
-                                    size: blob.size,
-                                    blob: blob,
-                                    processed: processed
-                                });
-                            });
-                        };
-                        reader.readAsArrayBuffer(file);
-                    });
-                });
+            function handleFile(fileEntry, path) {
+                return fileEntry.file(file => {
+                    files.push({ file, path });
+                    console.log(path, files.length, total)
+                    if (files.length == total) {
+                        run();
+                    }
+                })
             }
 
             async function handleDirectory(directoryEntry, path) {
-                const reader = directoryEntry.createReader();
-                const entries = await new Promise((resolve, reject) => {
-                    reader.readEntries(resolve, reject);
-                });
-                for (const entry of entries) {
-                    if (entry.isFile) {
-                        handleFile(entry, path);
-                    } else if (entry.isDirectory) {
-                        await handleDirectory(entry, path + "/" + entry.name);
+                total--;
+                return new Promise(async (resolve, reject) => {
+                    const reader = directoryEntry.createReader();
+                    const entries = await new Promise((resolve, reject) => {
+                        reader.readEntries(resolve, reject);
+                    });
+                    total += entries.length;
+                    for (const entry of entries) {
+                        if (entry.isFile) {
+                            await handleFile(entry, path);
+                        } else if (entry.isDirectory) {
+                            await handleDirectory(entry, path + "/" + entry.name);
+                        }
                     }
-                }
+                    resolve();
+                })
             }
 
-            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
-                worker = process.worker;
+            function run() {
+                console.log('run')
+                new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
+                    worker = process.worker;
 
-                update = () => {
+                    update = () => {
+                        worker.postMessage({
+                            type: 'update',
+                            token: process.token,
+                            current, processed, total, title
+                        });
+                        if (processed == total && processed != 0) {
+                            updateDesktop();
+                            return process.exit();
+                        }
+                    }
+
+                    console.log(files)
+
                     worker.postMessage({
-                        type: 'update',
+                        type: 'init',
+                        token: process.token
+                    })
+
+                    worker.postMessage({
+                        type: 'transfer',
                         token: process.token,
-                        current, processed, total, title
+                        files, title,
+                        target: 'C:/Users/Admin/Desktop/'
+                    })
+
+                    worker.addEventListener('message', async (e) => {
+                        if (!e.data.token == process.token) return;
+                        console.log('MAIN', e.data.type)
+                        if (e.data.type == 'start') {
+                            worker.postMessage({
+                                type: 'init',
+                                token: process.token
+                            })
+                        }
+                        if (e.data.type == 'init') {
+                            console.log('init')
+                            worker.postMessage({
+                                type: 'transfer',
+                                token: process.token,
+                                files, title,
+                                target: 'C:/Users/Admin/Desktop/'
+                            })
+                        }
+                        if (e.data.type == 'finished') {
+                            System.desktop.selfChange = false;
+                            updateDesktop();
+                        }
                     });
-                    if (processed == total && processed != 0) {
-                        updateDesktop();
-                        return process.exit();
-                    }
-                }
 
-                worker.postMessage({
-                    type: 'init',
-                    token: process.token
-                })
-
-                worker.addEventListener('message', async (e) => {
-                    if (!e.data.token == process.token) return;
-                    if (e.data.type == 'init') {
-                        
-                    }
+                    // process.exit();
                 });
-
-                // process.exit();
-            });
+            }
         });
 
         desktop.addEventListener('contextmenu', (e) => {
@@ -1685,7 +1735,7 @@
                     icon: "refresh",
                     text: "Refresh",
                     action: () => {
-                        window.System.updateDesktop();
+                        window.System.desktop.update();
                     }
                 }, {
                     className: 'sort',
@@ -1696,7 +1746,7 @@
                         icon: "sort_by_name",
                         text: "Name",
                         action: () => {
-                            window.System.updateDesktop(true, 'name');
+                            window.System.desktop.update(true, 'name');
                         }
                     },/* {
                         className: "size",
@@ -1720,6 +1770,10 @@
             menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
             menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
             menu.open(e.pageX, e.pageY, 'left-top');
+            if (utils.getPosition(menu.container).x + menu.container.offsetWidth > window.innerWidth) {
+                menu.container.style.left = 'unset';
+                menu.container.style.right = '4px';
+            }
             new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
                 window.addEventListener(event, (e) => {
                     if (menu.container.contains(e.target)) return;
@@ -1766,12 +1820,28 @@
         }
 
         fs.on('change', (e) => {
-            if (e.path.search('C:/Users/Admin/Desktop') > -1) {
+            if (e.path.search('C:/Users/Admin/Desktop') > -1 && !System.desktop.selfChange == true) {
                 updateDesktop(false);
             }
         });
 
-        return window.System.updateDesktop();
+        desktopItems.addEventListener('wheel', function (event) {
+            var delta = event.deltaY || event.detail || event.wheelDelta;
+            if (delta < 0) {
+                desktopItems.scrollTo({
+                    behavior: "smooth",
+                    left: desktopItems.scrollLeft - 300
+                })
+            } else {
+                desktopItems.scrollTo({
+                    behavior: "smooth",
+                    left: desktopItems.scrollLeft + 300
+                })
+            }
+            event.preventDefault();
+        });
+
+        return window.System.desktop.update();
     })();
 
     window.System.FileViewers = {
