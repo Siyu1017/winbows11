@@ -266,7 +266,7 @@
 
     self.addEventListener('message', (e) => {
         if (e.data.token == TOKEN) {
-            console.log(e.data)
+            // console.log(e.data)
             triggerEvent('message', e);
             if (Object.keys(System.messageIDs).includes(e.data.messageID)) {
                 System.messageIDs[e.data.messageID](e.data.response);

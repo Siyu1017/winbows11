@@ -1623,15 +1623,18 @@
             var update = () => { };
 
             var files = [];
+            var allRead = false;
 
             for (let i = 0; i < items.length; i++) {
                 const item = items[i].webkitGetAsEntry();
                 if (item) {
                     if (item.isFile) {
-                        console.log('file', i)
+                        allRead = true;
+                        // console.log('file', i)
                         await handleFile(item, "");
                     } else if (item.isDirectory) {
-                        console.log('directory', i)
+                        allRead = false;
+                        // console.log('directory', i)
                         await handleDirectory(item, item.name);
                     }
                 } else {
@@ -1642,8 +1645,8 @@
             function handleFile(fileEntry, path) {
                 return fileEntry.file(file => {
                     files.push({ file, path });
-                    console.log(path, files.length, total)
-                    if (files.length == total) {
+                    // console.log(path, files.length, total)
+                    if (files.length == total && allRead == true) {
                         run();
                     }
                 })
@@ -1661,15 +1664,17 @@
                         if (entry.isFile) {
                             await handleFile(entry, path);
                         } else if (entry.isDirectory) {
+                            allRead = false;
                             await handleDirectory(entry, path + "/" + entry.name);
                         }
                     }
+                    allRead = true;
                     resolve();
                 })
             }
 
             function run() {
-                console.log('run')
+                console.log('run', total, files);
                 new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
                     worker = process.worker;
 
@@ -1701,7 +1706,7 @@
 
                     worker.addEventListener('message', async (e) => {
                         if (!e.data.token == process.token) return;
-                        console.log('MAIN', e.data.type)
+                        // console.log('MAIN', e.data.type)
                         if (e.data.type == 'start') {
                             worker.postMessage({
                                 type: 'init',
@@ -1709,7 +1714,7 @@
                             })
                         }
                         if (e.data.type == 'init') {
-                            console.log('init')
+                            // console.log('init')
                             worker.postMessage({
                                 type: 'transfer',
                                 token: process.token,

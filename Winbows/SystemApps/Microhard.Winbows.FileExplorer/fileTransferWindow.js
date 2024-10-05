@@ -8,21 +8,21 @@ var title = 'Loading...';
 var stopped = false;
 
 browserWindow.worker.addEventListener('message', (e) => {
-    console.log('Message received');
-    console.log('WINDOW', e.data.type)
+    // console.log('Message received');
+    // console.log('WINDOW', e.data.type)
     if (!e.data.token == TOKEN) return;
     if (e.data.type == 'init') {
-        console.log('init');
+        // console.log('init');
         return init();
     }
     if (e.data.type == 'transfer') {
-        console.log(e.data, 'transfer', files);
+        // console.log(e.data, 'transfer', files);
         if (!e.data.files || !e.data.target) {
             clearInterval(update);
             return process.exit(0);
         }
         if (files == null) {
-            console.log(1)
+            // console.log(1)
             title = e.data.title;
             files = e.data.files;
             target = e.data.target;
@@ -81,10 +81,10 @@ document.body.appendChild(infoElement);
 document.body.classList.add('winui');
 
 function predictTime() {
-    var avarageTime = (Date.now() - lastTime) / 2 / 1000;
+    var avarageTime = (Date.now() - lastTime) / processed / 1000;
     var lastItems = total - processed;
     var seconds = ~~(avarageTime * lastItems);
-    if (lastTime == startTime) {
+    if (processed == 0) {
         return 'Calculating...';
     } else if (seconds < 60) {
         return `${seconds} sencond(s)`;
@@ -137,17 +137,18 @@ function init() {
 }
 
 async function handleFiles() {
+    console.groupCollapsed('File transfer');
     for (let i = 0; i < files.length; i++) {
         var file = files[i];
         await handleFile(file.file, file.path);
     }
+    console.groupEnd();
     window.System.desktop.selfChange = false;
     window.System.desktop.update();
 }
 
 function handleFile(file, path) {
     return new Promise(function (resolve, reject) {
-        lastTime = Date.now();
         current = file.name;
         updateItems();
 
