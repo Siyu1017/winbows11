@@ -43,6 +43,9 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">
 <li style="
     margin: .5rem 0;
+">Set a font file as default font</li>
+<li style="
+    margin: .5rem 0;
 ">Drop file to desktop or file explorer ( Beta )</li>
 <li style="
     margin: .5rem 0;

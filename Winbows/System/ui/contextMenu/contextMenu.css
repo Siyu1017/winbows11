@@ -20,7 +20,7 @@
 
 .winui-contextmenu-container,
 .winui-contextmenu-container * {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: var(--winbows-font-default);
     user-select: none;
     -webkit-user-select: none;
     -webkit-user-drag: none;
@@ -50,7 +50,8 @@
     background: var(--contextmenu-separator-bg);
 }
 
-.winui-contextmenu-menu-item {
+.winui-contextmenu-menu-item,
+.winui-contextmenu-menu-label {
     display: flex;
     padding: .375rem .75rem;
     border-radius: .25rem;
@@ -93,7 +94,12 @@
     white-space: nowrap;
     width: -webkit-fill-available;
     padding: 0 .5rem;
-    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.winui-contextmenu-menu-label .winui-contextmenu-menu-text {
+    padding: 0;
 }
 
 .winui-contextmenu-menu-expand {

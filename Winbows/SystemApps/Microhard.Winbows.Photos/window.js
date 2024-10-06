@@ -247,7 +247,7 @@ if (photoPath) {
             bottom: 6
         }, 6, {
             fontSize: 14,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+            fontFamily: 'var(--winbows-font-default)var(--winbows-font-default)',
             background: '#fff',
             border: '#fff',
             align: 'left'
@@ -262,7 +262,7 @@ if (photoPath) {
             bottom: 6
         }, 6, {
             fontSize: 14,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+            fontFamily: 'var(--winbows-font-default)var(--winbows-font-default)',
             background: '#9783F7',
             border: '#9783F7',
             align: 'left',
@@ -278,7 +278,7 @@ if (photoPath) {
             bottom: 6
         }, 6, {
             fontSize: 14,
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+            fontFamily: 'var(--winbows-font-default)var(--winbows-font-default)',
             background: '#9783F7',
             border: '#9783F7',
             align: 'center',
@@ -408,7 +408,7 @@ if (photoPath) {
                 bottom: 6
             }, 6, {
                 fontSize: 14,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                fontFamily: 'var(--winbows-font-default)var(--winbows-font-default)',
                 background: '#fff',
                 border: '#fff',
                 align: 'left'
@@ -423,7 +423,7 @@ if (photoPath) {
                 bottom: 6
             }, 6, {
                 fontSize: 14,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                fontFamily: 'var(--winbows-font-default)var(--winbows-font-default)',
                 background: '#9783F7',
                 border: '#9783F7',
                 align: 'left',
@@ -439,7 +439,7 @@ if (photoPath) {
                 bottom: 6
             }, 6, {
                 fontSize: 14,
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif',
+                fontFamily: 'var(--winbows-font-default)var(--winbows-font-default)',
                 background: '#9783F7',
                 border: '#9783F7',
                 align: 'center',

@@ -75,6 +75,10 @@ async function getIcon(page) {
         case 'C:/Users/Admin/Videos':
         case 'videos':
             return await fs.getFileURL(utils.resolvePath('./icons/videos.ico'));
+        case 'this_pc':
+            return await fs.getFileURL(utils.resolvePath('./icons/monitor.ico'));
+        case 'network':
+            return await fs.getFileURL(utils.resolvePath('./icons/network.ico'));
         default:
             return await fs.getFileURL(utils.resolvePath('./icons/folder.ico'));
     }
@@ -181,9 +185,9 @@ function randomID() {
     return id;
 }
 
-var tab = createTab(datas.page || 'C:/');
+var tab = createTab(datas.page || 'this_pc');
 
-async function createTab(page = 'C:/', active = true) {
+async function createTab(page = 'this_pc', active = true) {
     // Initialize tab
     var tab = document.createElement('div');
     var tabInfo = document.createElement('div');
@@ -412,6 +416,7 @@ async function createTab(page = 'C:/', active = true) {
     var pathStripActionUp = document.createElement('button');
     var pathStripActionRefresh = document.createElement('button');
     var pathStripPath = document.createElement('div');
+    var pathStripPathProtocol = document.createElement('div');
     var pathStripPathText = document.createElement('div');
     var pathStripSearch = document.createElement('input');
 
@@ -422,6 +427,7 @@ async function createTab(page = 'C:/', active = true) {
     pathStripActionUp.className = 'explorer-pathstrip-action up';
     pathStripActionRefresh.className = 'explorer-pathstrip-action refresh';
     pathStripPath.className = 'explorer-pathstrip-path';
+    pathStripPathProtocol.className = 'explorer-pathstrip-path-protocol';
     pathStripPathText.className = 'explorer-pathstrip-path-text';
     pathStripSearch.className = 'explorer-pathstrip-search';
 
@@ -434,31 +440,52 @@ async function createTab(page = 'C:/', active = true) {
     pathStripActions.appendChild(pathStripActionNext);
     pathStripActions.appendChild(pathStripActionUp);
     pathStripActions.appendChild(pathStripActionRefresh);
+    // pathStripPath.appendChild(pathStripPathProtocol);
     pathStripPath.appendChild(pathStripPathText);
+
+    pathStripPathProtocol.setAttribute('data-protocol', 'this_pc');
 
     var actionbar = document.createElement('div');
     var content = document.createElement('div');
     var sidebar = document.createElement('div');
     var viewerContainer = document.createElement('div');
     var viewer = document.createElement('div');
+    var footer = document.createElement('div');
+    var footerLeft = document.createElement('div');
+    var footerRight = document.createElement('div');
+    var footerPageItems = document.createElement('div');
+    var footerPageSize = document.createElement('div');
+    var footerSelectedItems = document.createElement('div');
 
     actionbar.className = 'explorer-actionbar';
     content.className = 'explorer-content';
     sidebar.className = 'explorer-sidebar';
     viewerContainer.className = 'explorer-viewer-container';
     viewer.className = 'explorer-viewer';
+    footer.className = 'explorer-footer';
+    footerLeft.className = 'explorer-footer-left';
+    footerRight.className = 'explorer-footer-right';
+    footerPageItems.className = 'explorer-footer-page-items';
+    footerPageSize.className = 'explorer-footer-page-size';
+    footerSelectedItems.className = 'explorer-footer-selected-items';
 
     tabViewItem.appendChild(pathStrip);
     tabViewItem.appendChild(actionbar);
     tabViewItem.appendChild(content);
+    tabViewItem.appendChild(footer);
     content.appendChild(sidebar);
     content.appendChild(viewerContainer);
     viewerContainer.appendChild(viewer);
+    footer.appendChild(footerLeft);
+    footer.appendChild(footerRight);
+    footerLeft.appendChild(footerPageItems);
+    footerLeft.appendChild(footerPageSize);
+    footerLeft.appendChild(footerSelectedItems);
 
     var actionButtons = {};
     var viewHistory = [];
     var currentHistory = -1;
-    var currentPage = page || 'C:/';
+    var currentPage = page || 'this_pc';
 
     const dropZone = viewerContainer;
 
@@ -634,7 +661,12 @@ async function createTab(page = 'C:/', active = true) {
 
         item.addEventListener('contextmenu', async (e) => {
             const menu = WinUI.contextMenu([
-                {
+                /*{
+                    type: 'label',
+                    text: details.name
+                }, {
+                    type: 'separator'
+                }, */{
                     icon: "delete",
                     className: "delete",
                     text: "Delete",
@@ -671,6 +703,7 @@ async function createTab(page = 'C:/', active = true) {
         var item = document.createElement('div');
         var itemIcon = document.createElement('div');
         var itemName = document.createElement('div');
+        var fontExtensions = ['ttf', 'otf', 'woff', 'woff2', 'eot'];
 
         item.className = 'explorer-viewer-item';
         itemIcon.className = 'explorer-viewer-item-icon';
@@ -691,7 +724,7 @@ async function createTab(page = 'C:/', active = true) {
                 itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
             })
         } else {
-            fs.getFileURL(details.type == 'application/winbows-link' ? '' : details.type.startsWith('image/') ? 'C:/Winbows/icons/files/image.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
+            fs.getFileURL(details.type == 'application/winbows-link' ? '' : window.fileIcons.getIcon(path)).then(url => {
                 itemIcon.style.backgroundImage = `url(${url})`;
                 if (details.type.startsWith('image/')) {
                     try {
@@ -713,75 +746,102 @@ async function createTab(page = 'C:/', active = true) {
                     new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
                 }
             })
+        }
 
-            item.addEventListener('contextmenu', async (e) => {
-                var items = [
+        item.addEventListener('contextmenu', async (e) => {
+            var items = [
+                    /*
                     {
-                        className: "open",
-                        text: "Open",
-                        action: () => {
-                            var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
-                            if (defaultViewer != null) {
-                                new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
-                            } else {
-                                console.log(utils.resolvePath('./chooseViewer.js'))
-                                new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
-                            }
-                        }
+                        type: 'label',
+                        text: details.name
                     }, {
-                        icon: "open-with",
-                        className: "open-with",
-                        text: "Open with...",
-                        action: () => {
-                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
-                        }
-                    }, {
-                        icon: "delete",
-                        className: "delete",
-                        text: "Delete",
-                        action: () => {
-                            fs.rm(path).then(() => {
-                                item.remove();
-                            });
+                        type: 'separator'
+                    }, */{
+                    className: "open",
+                    text: "Open",
+                    action: () => {
+                        var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                        if (defaultViewer != null) {
+                            new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                        } else {
+                            console.log(utils.resolvePath('./chooseViewer.js'))
+                            new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
                         }
                     }
-                ]
-                if (details.type.startsWith('image/')) {
-                    items.push({
-                        className: "set-as-background",
-                        text: "Set as background",
-                        action: async () => {
-                            await window.setBackgroundImage(path);
-                        }
-                    })
-                } else if (details.type.search('javascript') > -1) {
-                    items.push({
-                        className: "run-as-an-app",
-                        icon: 'window-snipping',
-                        text: "Run as an application",
-                        action: async () => {
-                            new Process(path).start();
-                        }
-                    })
+                }, {
+                    icon: "open-with",
+                    className: "open-with",
+                    text: "Open with...",
+                    action: () => {
+                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                    }
+                }, {
+                    icon: "delete",
+                    className: "delete",
+                    text: "Delete",
+                    action: () => {
+                        fs.rm(path).then(() => {
+                            item.remove();
+                        });
+                    }
                 }
-                const menu = WinUI.contextMenu(items)
-                e.preventDefault();
-                if (e.type.startsWith('touch')) {
-                    var touch = e.touches[0] || e.changedTouches[0];
-                    e.pageX = touch.pageX;
-                    e.pageY = touch.pageY;
-                }
-                menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
-                menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
-                menu.open(e.pageX, e.pageY, 'left-top');
-                new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
-                    window.addEventListener(event, (e) => {
-                        if (menu.container.contains(e.target)) return;
-                        menu.close();
-                    })
+            ]
+            if (details.type.startsWith('image/')) {
+                items.push({
+                    className: "set-as-background",
+                    text: "Set as background",
+                    action: async () => {
+                        await window.setBackgroundImage(path);
+                    }
+                })
+            } else if (details.type.search('javascript') > -1) {
+                items.push({
+                    className: "run-as-an-app",
+                    icon: 'window-snipping',
+                    text: "Run as an application",
+                    action: async () => {
+                        new Process(path).start();
+                    }
+                })
+            } else if (fontExtensions.includes(window.utils.getFileExtension(path))) {
+                items.push({
+                    className: "set-as-default-font",
+                    icon: 'font',
+                    text: "Set as default font",
+                    action: async () => {
+                        try {
+                            const fontName = 'WINBOWS_FONT_' + [...Array(12)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+                            const fontURL = await fs.getFileURL(path);
+                            const myFont = new FontFace(fontName, `url(${fontURL})`);
+                            await myFont.load();
+
+                            window.document.fonts.add(myFont);
+                            window.document.body.style.setProperty('--winbows-font-default', fontName);
+
+                        } catch (error) {
+                            console.error('Failed to load font', error);
+                        }
+                        return;
+                    }
+                })
+            }
+            const menu = WinUI.contextMenu(items)
+            e.preventDefault();
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+            menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+            menu.open(e.pageX, e.pageY, 'left-top');
+            new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+                window.addEventListener(event, (e) => {
+                    if (menu.container.contains(e.target)) return;
+                    menu.close();
                 })
             })
-        }
+        })
 
         item.appendChild(itemIcon);
         item.appendChild(itemName);
@@ -798,6 +858,15 @@ async function createTab(page = 'C:/', active = true) {
     }
 
     var currentID = null;
+
+    async function getSize(path) {
+        var items = await fs.readdir(path, true);
+        var size = 0;
+        items.forEach(item => {
+            size += item.size;
+        })
+        return size;
+    }
 
     async function getPage(page) {
         var pageStatus = await getPageStatus(page);
@@ -819,6 +888,64 @@ async function createTab(page = 'C:/', active = true) {
         update();
 
         if (pageStatus == null) return;
+
+        footerPageItems.innerHTML = 'Loading...';
+        footerPageSize.innerHTML = '';
+
+        if (page == 'this_pc') {
+            const quota = await navigator.storage.estimate();
+            footerPageItems.innerHTML = `${fs.disks.length} Items`;
+            for (var i = 0; i < fs.disks.length; i++) {
+                var disk = fs.disks[i];
+                var items = await fs.readdir(disk + ':/', true);
+                var itemElement = document.createElement('div');
+                var iconElement = document.createElement('div');
+                var infoElement = document.createElement('div');
+                var diskName = document.createElement('div');
+                var totalSizeBar = document.createElement('div');
+                var usedSizeBar = document.createElement('div');
+                var usedSizeText = document.createElement('div');
+
+                itemElement.className = 'explorer-viewer-disk-item';
+                iconElement.className = 'explorer-viewer-disk-icon';
+                infoElement.className = 'explorer-viewer-disk-info';
+                diskName.className = 'explorer-viewer-disk-name';
+                totalSizeBar.className = 'explorer-viewer-disk-total-bar';
+                usedSizeBar.className = 'explorer-viewer-disk-used-bar';
+                usedSizeText.className = 'explorer-viewer-disk-used-text';
+
+                fs.getFileURL('C:/Winbows/icons/devices/drives/Windows 11 Drive Unlocked.ico').then(url => {
+                    iconElement.style.backgroundImage = `url(${url})`;
+                })
+
+                diskName.innerHTML = disk.toUpperCase() + ':';
+
+                viewer.appendChild(itemElement);
+                itemElement.appendChild(iconElement);
+                itemElement.appendChild(infoElement);
+                infoElement.appendChild(diskName);
+                infoElement.appendChild(totalSizeBar);
+                totalSizeBar.appendChild(usedSizeBar);
+                infoElement.appendChild(usedSizeText);
+
+                itemElement.addEventListener('click', () => {
+                    addToHistory(disk + ':/');
+                    getPage(currentPage);
+                })
+
+                var size = 0;
+                items.forEach(item => {
+                    size += item.size;
+                    usedSizeBar.style.width = size / quota.quota * 100 + '%';
+                    usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
+                })
+
+                footerPageSize.innerHTML = window.utils.formatBytes(size);
+            }
+            viewer.style.animation = "revert-layer";
+            viewer.classList.add('animation');
+            return;
+        }
 
         await fs.readdir(page).then(async items => {
             if (targetID != currentID) return;
@@ -842,6 +969,11 @@ async function createTab(page = 'C:/', active = true) {
                     return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
                 } catch (e) { };
             }))
+            footerPageItems.innerHTML = `${items.length} Items`;
+            getSize(currentPage).then(size => {
+                footerPageSize.innerHTML = window.utils.formatBytes(size);
+            })
+
             for (let i in items) {
                 var item = items[i];
                 if (item.type == 'directory') {
@@ -899,10 +1031,15 @@ async function createTab(page = 'C:/', active = true) {
     }
 
     function addToHistory(page) {
-        if (page != viewHistory[viewHistory.length - 1]) {
+        console.log(currentPage, page)
+        if (page != viewHistory[viewHistory.length - 1] || page != currentPage) {
             viewHistory.splice(currentHistory + 1);
             viewHistory.push(page);
             currentHistory = viewHistory.length - 1;
+            currentPage = page;
+
+            pathStripActionNext.disabled = false;
+            pathStripActionBack.disabled = true;
         }
     }
 
@@ -965,7 +1102,7 @@ async function createTab(page = 'C:/', active = true) {
             } else {
                 pathStripActionBack.disabled = true;
             }
-            if (pageToPath(currentPage).split('/').slice(-1) != '' && pageToPath(currentPage) != '') {
+            if (pageToPath(currentPage).split('/').slice(-1) != '' && pageToPath(currentPage) != '' || currentPage == '') {
                 pathStripActionUp.disabled = false;
             } else {
                 pathStripActionUp.disabled = true;

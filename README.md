@@ -21,6 +21,12 @@ Windows11 is currently in development, so some features are not available yet, b
 
 If you think this project is good, please star this project, thanks!
 
+## Updates
+
+- Upload file to Desktop or File Explorer ( Your file won't be uploaded to the server )
+- Set an image file as background image
+- Set a font file as Winbows default font
+
 ## Features
 
 - [x] Command App

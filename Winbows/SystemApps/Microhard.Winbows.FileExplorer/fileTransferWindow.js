@@ -19,7 +19,6 @@ browserWindow.worker.addEventListener('message', (e) => {
         // console.log(e.data, 'transfer', files);
         if (!e.data.files || !e.data.target) {
             clearInterval(update);
-            return process.exit(0);
         }
         if (files == null) {
             // console.log(1)
@@ -143,8 +142,10 @@ async function handleFiles() {
         await handleFile(file.file, file.path);
     }
     console.groupEnd();
-    window.System.desktop.selfChange = false;
-    window.System.desktop.update();
+    browserWindow.worker.postMessage({
+        type: 'completed',
+        token: TOKEN
+    })
 }
 
 function handleFile(file, path) {

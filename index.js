@@ -209,6 +209,17 @@
             'txt': 'C:/Winbows/icons/files/text.ico',
             'exe': 'C:/Winbows/icons/files/program.ico',
             'zip': 'C:/Winbows/icons/folders/zip.ico',
+            'ttf': 'C:/Winbows/icons/files/font.ico',
+            'otf': 'C:/Winbows/icons/files/font.ico',
+            'woff': 'C:/Winbows/icons/files/font.ico',
+            'woff2': 'C:/Winbows/icons/files/font.ico',
+            'eot': 'C:/Winbows/icons/files/font.ico',
+            'doc': 'C:/Winbows/icons/files/office/worddocument.ico',
+            'docx': 'C:/Winbows/icons/files/office/worddocument.ico',
+            'xls': 'C:/Winbows/icons/files/office/excelsheet.ico',
+            'xlsx': 'C:/Winbows/icons/files/office/excelsheet.ico',
+            'ppt': 'C:/Winbows/icons/files/office/powerpointopen.ico',
+            'pptx': 'C:/Winbows/icons/files/office/powerpointopen.ico',
             // Edge
             'html': 'C:/Winbows/icons/applications/tools/edge.ico',
             // VSCode
@@ -857,7 +868,8 @@
                                     dirItems.push({
                                         path: parsed.disk + ':/' + file.path,
                                         type: file.type,
-                                        mimeType: file.content.type
+                                        mimeType: file.content.type,
+                                        size: file.content.size
                                     });
                                 }
                             } else {
@@ -866,13 +878,15 @@
                                     dirItems.push({
                                         path: parsed.disk + ':/' + file.path,
                                         type: file.type,
-                                        mimeType: file.content.type
+                                        mimeType: file.content.type,
+                                        size: file.content.size
                                     });
                                 } else if (file.path.startsWith(`${parsed.path}/`) && file.path.replace(`${parsed.path}/`, '').indexOf('/') == -1) {
                                     dirItems.push({
                                         path: parsed.disk + ':/' + file.path,
                                         type: file.type,
-                                        mimeType: file.content.type
+                                        mimeType: file.content.type,
+                                        size: file.content.size
                                     });
                                 }
                             }
@@ -1239,12 +1253,12 @@
     // For desktop
     await (async () => {
         window.System.desktop = {};
-        window.System.desktop.selfChange = false;
         window.System.desktop.update = updateDesktop;
 
         var createdItems = [];
         var originalContent = [];
         var updating = false;
+        var fileTransfer = 0;
 
         function generateItem() {
             var item = document.createElement('div');
@@ -1383,6 +1397,28 @@
                             window.System.desktop.update();
                         }
                     }, {
+                        className: 'sort',
+                        icon: "sort",
+                        text: "Sort by",
+                        submenu: [{
+                            className: "name",
+                            icon: "sort_by_name",
+                            text: "Name",
+                            action: () => {
+                                window.System.desktop.update(true, 'name');
+                            }
+                        },/* {
+                            className: "size",
+                            icon: "sort_by_size",
+                            text: "Size",
+                            action: () => { }
+                        }, {
+                            className: "type",
+                            icon: "sort_by_type",
+                            text: "Type",
+                            action: () => { }
+                        }*/]
+                    }, {
                         type: 'separator'
                     }, {
                         className: "open",
@@ -1397,22 +1433,23 @@
                     }
                 ];
                 if (type == 'file') {
-                    items = items.concat([
-                        {
-                            className: "open-with",
-                            icon: 'open-with',
-                            text: "Open with...",
-                            action: () => {
-                                new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
-                            }
-                        }, {
-                            text: 'Open file location',
-                            icon: 'folder-open',
-                            action: () => {
-                                window.System.Shell('run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"')
-                            }
+                    items.push({
+                        className: "open-with",
+                        icon: 'open-with',
+                        text: "Open with...",
+                        action: () => {
+                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
                         }
-                    ]);
+                    });
+                }
+                if (type != 'directory') {
+                    items.push({
+                        text: 'Open file location',
+                        icon: 'folder-open',
+                        action: () => {
+                            window.System.Shell('run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"')
+                        }
+                    })
                 }
                 items.push({
                     className: 'delete',
@@ -1447,6 +1484,30 @@
                             text: "Run as an application",
                             action: async () => {
                                 new Process(path).start();
+                            }
+                        })
+                    } else if (['ttf', 'otf', 'woff', 'woff2', 'eot'].includes(window.utils.getFileExtension(path))) {
+                        items.push({
+                            type: 'separator'
+                        })
+                        items.push({
+                            className: "set-as-default-font",
+                            icon: 'font',
+                            text: "Set as default font",
+                            action: async () => {
+                                try {
+                                    const fontName = 'WINBOWS_FONT_' + [...Array(12)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+                                    const fontURL = await fs.getFileURL(path);
+                                    const myFont = new FontFace(fontName, `url(${fontURL})`);
+                                    await myFont.load();
+
+                                    window.document.fonts.add(myFont);
+                                    window.document.body.style.setProperty('--winbows-font-default', fontName);
+
+                                } catch (error) {
+                                    console.error('Failed to load font', error);
+                                }
+                                return;
                             }
                         })
                     }
@@ -1613,8 +1674,6 @@
 
             if (items.length == 0) return;
 
-            System.desktop.selfChange = true;
-
             var processed = 0;
             var total = items.length;
             var current = 'Unknown';
@@ -1676,6 +1735,7 @@
             function run() {
                 console.log('run', total, files);
                 new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
+                    fileTransfer++;
                     worker = process.worker;
 
                     update = () => {
@@ -1722,8 +1782,8 @@
                                 target: 'C:/Users/Admin/Desktop/'
                             })
                         }
-                        if (e.data.type == 'finished') {
-                            System.desktop.selfChange = false;
+                        if (e.data.type == 'completed') {
+                            fileTransfer--;
                             updateDesktop();
                         }
                     });
@@ -1825,7 +1885,7 @@
         }
 
         fs.on('change', (e) => {
-            if (e.path.search('C:/Users/Admin/Desktop') > -1 && !System.desktop.selfChange == true) {
+            if (e.path.search('C:/Users/Admin/Desktop') > -1 && fileTransfer == 0) {
                 updateDesktop(false);
             }
         });

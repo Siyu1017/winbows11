@@ -1,6 +1,6 @@
 .window * {
     box-sizing: border-box;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: var(--winbows-font-default);
 }
 
 .window {
@@ -136,6 +136,14 @@
     background: var(--scrollbar-right-btn) calc(100% - 3px) 0%/contain no-repeat, var(--scrollbar-left-btn) calc(0% + 3px) 0%/contain no-repeat, var(--scroll);
 }
 
+.winui-no-background ::-webkit-scrollbar:vertical:hover {
+    background: var(--scrollbar-bottom-btn) 0% calc(100% - 3px)/contain no-repeat, var(--scrollbar-top-btn) 0% calc(0% + 3px)/contain no-repeat, transparent;
+}
+
+.winui-no-background ::-webkit-scrollbar:horizontal:hover {
+    background: var(--scrollbar-right-btn) calc(100% - 3px) 0%/contain no-repeat, var(--scrollbar-left-btn) calc(0% + 3px) 0%/contain no-repeat, transparent;
+}
+
 .winui ::-webkit-scrollbar-thumb,
 .winui-light ::-webkit-scrollbar-thumb {
     display: none;
@@ -151,6 +159,7 @@
     background: rgba(255, 255, 255, .5);
     background-clip: padding-box;
     border: 6px solid transparent;
+    border-radius: 14px
 }
 
 .winui ::-webkit-scrollbar-thumb:hover,
@@ -158,6 +167,7 @@
 .winui-light ::-webkit-scrollbar-thumb:hover {
     border: 4px solid transparent;
     background-clip: padding-box;
+    border-radius: 14px
 }
 
 .winui ::-webkit-scrollbar-button:single-button,

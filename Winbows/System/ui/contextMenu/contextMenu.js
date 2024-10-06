@@ -1459,18 +1459,21 @@ function contextMenu(items, config = {}) {
             itemElement.appendChild(itemExpand);
             itemElement.appendChild(itemSubmenu);
 
-            if (!item.submenu) {
+            if (!item.submenu || item.type == 'label') {
                 itemExpand.remove();
             }
-            if (config.showIcon == false) {
+            if (config.showIcon == false || item.type == 'label') {
                 itemIcon.remove();
             }
             if (disabled == true) {
                 itemElement.classList.add('disabled');
             }
+            if (item.type == 'label') {
+                itemElement.className = 'winui-contextmenu-menu-label';
+            }
 
             itemElement.addEventListener('pointerover', () => {
-                if (disabled == true) return;
+                if (disabled == true || item.type == 'label') return;
                 pointerOver = true;
                 if (created == true) return;
                 if (item.submenu) {
@@ -1481,7 +1484,7 @@ function contextMenu(items, config = {}) {
             })
 
             itemElement.addEventListener('pointerout', () => {
-                if (disabled == true) return;
+                if (disabled == true || item.type == 'label') return;
                 pointerOver = false;
                 function removeSubmenu() {
                     if (pointerOver == true || focused == true || submenu == null) return clearTimeout(removeSubmenu);
@@ -1495,7 +1498,7 @@ function contextMenu(items, config = {}) {
             })
 
             itemElement.addEventListener('click', () => {
-                if (disabled == true) return;
+                if (disabled == true || item.type == 'label') return;
                 focused = true;
                 if (created == true) return;
                 if (item.submenu) {
