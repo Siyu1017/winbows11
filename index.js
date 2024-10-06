@@ -1529,6 +1529,10 @@
                     menu.container.style.left = 'unset';
                     menu.container.style.right = '4px';
                 }
+                if (utils.getPosition(menu.container).y + menu.container.offsetHeight > window.innerHeight - 48) {
+                    menu.container.style.top = 'unset';
+                    menu.container.style.bottom = 'calc(var(--taskbar-height) + 4px)';
+                }
                 new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
                     window.addEventListener(event, (e) => {
                         if (menu.container.contains(e.target)) return;
@@ -1838,6 +1842,10 @@
             if (utils.getPosition(menu.container).x + menu.container.offsetWidth > window.innerWidth) {
                 menu.container.style.left = 'unset';
                 menu.container.style.right = '4px';
+            }
+            if (utils.getPosition(menu.container).y + menu.container.offsetHeight > window.innerHeight - 48) {
+                menu.container.style.top = 'unset';
+                menu.container.style.bottom = 'calc(var(--taskbar-height) + 4px)';
             }
             new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
                 window.addEventListener(event, (e) => {
