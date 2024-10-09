@@ -829,10 +829,10 @@
                 }
                 var listeners = {};
                 var item = document.createElement('div');
-                var itemImage = document.createElement('img');
+                var itemImage = document.createElement('div');
                 item.className = 'taskbar-item';
                 itemImage.className = 'taskbar-icon';
-                itemImage.src = icon.icon;
+                itemImage.style.backgroundImage = `url(${icon.icon})`;
                 item.appendChild(itemImage);
 
                 var properties = {
