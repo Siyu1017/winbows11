@@ -1275,8 +1275,12 @@
         var updating = false;
         var fileTransfer = 0;
 
+        var startXInCanvas = 0;
+        var startYInCanvas = 0;
         var startX = 0;
         var startY = 0;
+        var pointerXInCanvas = 0;
+        var pointerYInCanvas = 0;
         var pointerX = 0;
         var pointerY = 0;
         var selected = [];
@@ -1305,10 +1309,18 @@
                 e.pageY = touch.pageY;
             }
             selecting = true;
-            startX = e.pageX;
+
+            // For items
+            startX = e.pageX + desktopItems.scrollLeft;
             startY = e.pageY;
-            pointerX = e.pageX;
+            pointerX = e.pageX + desktopItems.scrollLeft;
             pointerY = e.pageY;
+
+            // For canvas
+            startXInCanvas = e.pageX;
+            startYInCanvas = e.pageY;
+            pointerXInCanvas = e.pageX;
+            pointerYInCanvas = e.pageY;
 
             selected = [];
             createdItems.forEach(item => {
@@ -1323,8 +1335,10 @@
                 e.pageX = touch.pageX;
                 e.pageY = touch.pageY;
             }
-            pointerX = e.pageX;
+            pointerX = e.pageX + desktopItems.scrollLeft;
             pointerY = e.pageY;
+            pointerXInCanvas = e.pageX;
+            pointerYInCanvas = e.pageY;
 
             render();
 
@@ -1345,6 +1359,8 @@
                 var position = utils.getPosition(item.item);
                 var itemWidth = item.item.offsetWidth;
                 var itemHeight = item.item.offsetHeight;
+
+                position.x += desktopItems.scrollLeft;
 
                 if (position.x <= rectX && rectX <= position.x + itemWidth && position.y <= rectY && rectY <= position.y + itemHeight) {
                     // Start point in item
@@ -1392,8 +1408,8 @@
             ctx.fillStyle = '#298de547';
             ctx.strokeStyle = '#298de5';
             ctx.lineWidth = .75;
-            ctx.fillRect(startX, startY, pointerX - startX, pointerY - startY);
-            ctx.strokeRect(startX, startY, pointerX - startX, pointerY - startY);
+            ctx.fillRect(startXInCanvas, startYInCanvas, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
+            ctx.strokeRect(startXInCanvas, startYInCanvas, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
             ctx.closePath();
             ctx.restore();
         }

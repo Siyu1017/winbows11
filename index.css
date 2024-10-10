@@ -512,7 +512,7 @@ body {
 .desktop-item-icon {
     width: 2.5rem;
     height: 2.5rem;
-    background-position: center;
+    background-position: center bottom;
     background-repeat: no-repeat;
     background-size: contain;
     position: relative;
