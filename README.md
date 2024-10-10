@@ -43,6 +43,8 @@ If you think this project is good, please star this project, thanks!
 - [x] JSON Viewer
 - [x] Contextmenu
 - [x] Snap windows
+- [x] Font and background customization
+- [x] Process desktop items in batches
 - [ ] Search Menu and Task View
 - [ ] Microhard Store
 - [ ] Settings

@@ -1064,7 +1064,7 @@
     screenLockSigninAvatar.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/user.png')})`;
     screenLockBackground.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/bg/img100.jpg')})`;
 
-    function analyzeImage(img) {
+    window.utils.getImageTheme = function getImageTheme(img) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
@@ -1097,6 +1097,21 @@
         }
     }
 
+    window.utils.canvasClarifier = function canvasClarifier(canvas, ctx, width, height) {
+        const originalSize = {
+            width: (width ? width : canvas.offsetWidth),
+            height: (height ? height : canvas.offsetHeight)
+        }
+        var ratio = window.devicePixelRatio || 1;
+        canvas.width = originalSize.width * ratio;
+        canvas.height = originalSize.height * ratio;
+        ctx.scale(ratio, ratio);
+        if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
+            canvas.style.width = originalSize.width + 'px';
+            canvas.style.height = originalSize.height + 'px';
+        }
+    }
+
     var currentBackgroundImage;
 
     window.getBackgroundImage = () => {
@@ -1114,7 +1129,7 @@
         var img = new Image();
         img.src = url;
         img.onload = () => {
-            var theme = analyzeImage(img);
+            var theme = utils.getImageTheme(img);
             desktop.classList.remove('winui-light', 'winui-dark');
             desktop.classList.add(`winui-${theme}`)
             backgroundImage.style.backgroundImage = `url(${url})`;
@@ -1260,6 +1275,145 @@
         var updating = false;
         var fileTransfer = 0;
 
+        var startX = 0;
+        var startY = 0;
+        var pointerX = 0;
+        var pointerY = 0;
+        var selected = [];
+        var selecting = false;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', {
+            willReadFrequently: true
+        })
+
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        desktop.appendChild(canvas);
+
+        function selectionStart(e) {
+            if (e.button == 2) {
+                // Right click
+                return;
+            }
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            selecting = true;
+            startX = e.pageX;
+            startY = e.pageY;
+            pointerX = e.pageX;
+            pointerY = e.pageY;
+
+            selected = [];
+            createdItems.forEach(item => {
+                item.item.classList.remove('active');
+            })
+        }
+
+        function selectionMove(e) {
+            if (selecting == false) return;
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            pointerX = e.pageX;
+            pointerY = e.pageY;
+
+            render();
+
+            var rectX = startX;
+            var rectY = startY;
+            var rectWidth = Math.abs(pointerX - startX);
+            var rectHeight = Math.abs(pointerY - startY);
+
+            if (pointerX < startX) {
+                rectX = pointerX;
+            }
+            if (pointerY < startY) {
+                rectY = pointerY;
+            }
+
+            selected = [];
+            createdItems.forEach(item => {
+                var position = utils.getPosition(item.item);
+                var itemWidth = item.item.offsetWidth;
+                var itemHeight = item.item.offsetHeight;
+
+                if (position.x <= rectX && rectX <= position.x + itemWidth && position.y <= rectY && rectY <= position.y + itemHeight) {
+                    // Start point in item
+                    item.item.classList.add('active');
+                    selected.push({
+                        path: item.getPath(),
+                        command: item.getCommand(),
+                        action: item.getAction()
+                    });
+                } else if (position.x >= rectX && position.y >= rectY && position.x + itemWidth <= pointerX && position.y + itemHeight <= pointerY) {
+                    // Rect in Selection
+                    item.item.classList.add('active');
+                    selected.push({
+                        path: item.getPath(),
+                        command: item.getCommand(),
+                        action: item.getAction()
+                    });
+                } else if (!(position.x + itemWidth < rectX ||
+                    position.x > rectX + rectWidth ||
+                    position.y + itemHeight < rectY ||
+                    position.y > rectY + rectHeight)) {
+                    // Overlap
+                    item.item.classList.add('active');
+                    selected.push({
+                        path: item.getPath(),
+                        command: item.getCommand(),
+                        action: item.getAction()
+                    });
+                } else {
+                    item.item.classList.remove('active');
+                }
+            })
+        }
+
+        function selectionEnd(e) {
+            selecting = false;
+            utils.canvasClarifier(canvas, ctx);
+        }
+
+        function render() {
+            utils.canvasClarifier(canvas, ctx);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = '#298de547';
+            ctx.strokeStyle = '#298de5';
+            ctx.lineWidth = .75;
+            ctx.fillRect(startX, startY, pointerX - startX, pointerY - startY);
+            ctx.strokeRect(startX, startY, pointerX - startX, pointerY - startY);
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        const events = {
+            "start": ["mousedown", "touchstart", "pointerdown"],
+            "move": ["mousemove", "touchmove", "pointermove"],
+            "end": ["mouseup", "touchend", "pointerup", "blur"]
+        }
+
+        events.start.forEach(event => {
+            desktop.addEventListener(event, e => selectionStart(e))
+        })
+        events.move.forEach(event => {
+            window.addEventListener(event, e => selectionMove(e))
+        })
+        events.end.forEach(event => {
+            window.addEventListener(event, e => selectionEnd(e))
+        })
+
         function generateItem() {
             var item = document.createElement('div');
             var itemIcon = document.createElement('div');
@@ -1274,9 +1428,10 @@
             var id = [...Array(18)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
 
             var properties = {
-                id,
+                id, item,
                 action, name, icon, file, command, type, path,
                 setAction, setName, setIcon, setCommand, setFile, setType, setPath,
+                getPath, getCommand, getAction,
                 update, remove
             };
 
@@ -1292,6 +1447,16 @@
 
             function isFunction(functionToCheck) {
                 return functionToCheck && {}.toString.call(functionToCheck) === '[object Function]';
+            }
+
+            function getPath() {
+                return path;
+            }
+            function getCommand() {
+                return command;
+            }
+            function getAction() {
+                return action;
             }
 
             function setName(value) {
@@ -1420,8 +1585,11 @@
                         }*/]
                     }, {
                         type: 'separator'
-                    }, {
-                        className: "open",
+                    }
+                ];
+                if (selected.length <= 1) {
+                    items.push({
+                        lassName: "open",
                         text: "Open",
                         action: () => {
                             if (command) {
@@ -1430,38 +1598,73 @@
                                 action();
                             }
                         }
-                    }
-                ];
-                if (type == 'file') {
-                    items.push({
-                        className: "open-with",
-                        icon: 'open-with',
-                        text: "Open with...",
-                        action: () => {
-                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
-                        }
-                    });
-                }
-                if (type != 'directory') {
-                    items.push({
-                        text: 'Open file location',
-                        icon: 'folder-open',
-                        action: () => {
-                            window.System.Shell('run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"')
-                        }
                     })
-                }
-                items.push({
-                    className: 'delete',
-                    icon: "delete",
-                    text: "Delete",
-                    action: () => {
-                        fs.rm(path).then(res => {
-                            window.System.desktop.update();
+                    if (type == 'file') {
+                        items.push({
+                            className: "open-with",
+                            icon: 'open-with',
+                            text: "Open with...",
+                            action: () => {
+                                new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                            }
                         });
                     }
-                })
-                if (file instanceof Blob) {
+                    if (type != 'directory') {
+                        items.push({
+                            text: 'Open file location',
+                            icon: 'folder-open',
+                            action: () => {
+                                window.System.Shell('run explorer --config=PAGE=\"C:/Users/Admin/Desktop\"')
+                            }
+                        })
+                    }
+                    items.push({
+                        className: 'delete',
+                        icon: "delete",
+                        text: "Delete",
+                        action: () => {
+                            fs.rm(path).then(res => {
+                                window.System.desktop.update();
+                            });
+                        }
+                    })
+                } else {
+                    items = items.concat([{
+                        lassName: "open",
+                        text: "Open",
+                        action: () => {
+                            selected.forEach(item => {
+                                if (item.command) {
+                                    window.System.Shell(item.command);
+                                } else if (item.action) {
+                                    item.action();
+                                }
+                            })
+                            selected = [];
+                            createdItems.forEach(item => {
+                                item.item.classList.remove('active');
+                            })
+                        }
+                    }, {
+                        className: 'delete',
+                        icon: "delete",
+                        text: "Delete",
+                        action: () => {
+                            console.log(selected)
+                            selected.forEach(item => {
+                                fs.rm(item.path).then(res => {
+                                    window.System.desktop.update();
+                                });
+                            })
+                            selected = [];
+                            createdItems.forEach(item => {
+                                item.item.classList.remove('active');
+                            })
+                        }
+                    }])
+                }
+
+                if (file instanceof Blob && selected.length <= 1) {
                     if (file.type.startsWith('image/')) {
                         // Alternative : item.splice(<position>,0,<item>)
                         items.push({
