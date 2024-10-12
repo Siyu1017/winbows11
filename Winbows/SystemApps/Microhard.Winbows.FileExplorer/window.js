@@ -734,9 +734,9 @@ async function createTab(page = 'this_pc', active = true) {
 
             // For canvas
             startXInCanvas = e.pageX;
-            startYInCanvas = e.pageY;
+            startYInCanvas = e.pageY + viewer.scrollTop;
             pointerXInCanvas = e.pageX;
-            pointerYInCanvas = e.pageY;
+            pointerYInCanvas = e.pageY + viewer.scrollTop;
 
             selected = [];
             createdItems.forEach(item => {
@@ -807,6 +807,8 @@ async function createTab(page = 'this_pc', active = true) {
         function render() {
             window.utils.canvasClarifier(canvas, ctx);
 
+            if (selecting == false) return;
+
             var position = window.utils.getPosition(canvas);
 
             ctx.save();
@@ -814,8 +816,8 @@ async function createTab(page = 'this_pc', active = true) {
             ctx.fillStyle = '#298de547';
             ctx.strokeStyle = '#298de5';
             ctx.lineWidth = .75;
-            ctx.fillRect(startXInCanvas - position.x, startYInCanvas - position.y, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
-            ctx.strokeRect(startXInCanvas - position.x, startYInCanvas - position.y, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
+            ctx.fillRect(startXInCanvas - position.x, startYInCanvas - position.y - viewer.scrollTop, pointerXInCanvas - startXInCanvas, pointerYInCanvas + viewer.scrollTop - startYInCanvas);
+            ctx.strokeRect(startXInCanvas - position.x, startYInCanvas - position.y - viewer.scrollTop, pointerXInCanvas - startXInCanvas, pointerYInCanvas + viewer.scrollTop - startYInCanvas);
             ctx.closePath();
             ctx.restore();
         }
@@ -835,6 +837,8 @@ async function createTab(page = 'this_pc', active = true) {
         events.end.forEach(event => {
             window.addEventListener(event, e => selectionEnd(e))
         })
+
+        viewer.addEventListener('scroll', render);
     })();
 
     function generateMultipleMenu(e) {

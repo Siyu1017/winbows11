@@ -1317,9 +1317,9 @@
             pointerY = e.pageY;
 
             // For canvas
-            startXInCanvas = e.pageX;
+            startXInCanvas = e.pageX + desktopItems.scrollLeft;
             startYInCanvas = e.pageY;
-            pointerXInCanvas = e.pageX;
+            pointerXInCanvas = e.pageX + desktopItems.scrollLeft;
             pointerYInCanvas = e.pageY;
 
             selected = [];
@@ -1403,13 +1403,15 @@
         function render() {
             utils.canvasClarifier(canvas, ctx);
 
+            if (selecting == false) return;
+
             ctx.save();
             ctx.beginPath();
             ctx.fillStyle = '#298de547';
             ctx.strokeStyle = '#298de5';
             ctx.lineWidth = .75;
-            ctx.fillRect(startXInCanvas, startYInCanvas, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
-            ctx.strokeRect(startXInCanvas, startYInCanvas, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
+            ctx.fillRect(startXInCanvas - desktopItems.scrollLeft, startYInCanvas, pointerXInCanvas + desktopItems.scrollLeft - startXInCanvas, pointerYInCanvas - startYInCanvas);
+            ctx.strokeRect(startXInCanvas - desktopItems.scrollLeft, startYInCanvas, pointerXInCanvas + desktopItems.scrollLeft - startXInCanvas, pointerYInCanvas - startYInCanvas);
             ctx.closePath();
             ctx.restore();
         }
@@ -1429,6 +1431,7 @@
         events.end.forEach(event => {
             window.addEventListener(event, e => selectionEnd(e))
         })
+        desktopItems.addEventListener('scroll', render);
 
         function generateItem() {
             var item = document.createElement('div');
@@ -1665,13 +1668,14 @@
                         className: 'delete',
                         icon: "delete",
                         text: "Delete",
-                        action: () => {
+                        action: async () => {
                             console.log(selected)
-                            selected.forEach(item => {
-                                fs.rm(item.path).then(res => {
+                            for (let i = 0; i < selected.length; i++) {
+                                var item = selected[i];
+                                await fs.rm(item.path).then(res => {
                                     window.System.desktop.update();
                                 });
-                            })
+                            }
                             selected = [];
                             createdItems.forEach(item => {
                                 item.item.classList.remove('active');
