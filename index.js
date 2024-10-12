@@ -2016,6 +2016,68 @@
             }
         });
 
+        document.addEventListener('paste', function (event) {
+            const clipboardItems = event.clipboardData.items;
+
+            console.log('paste', clipboardItems);
+
+            var files = [];
+
+            for (let i = 0; i < clipboardItems.length; i++) {
+                const item = clipboardItems[i];
+
+                if (item.kind === 'file') {
+                    console.log(item.webkitGetAsEntry())
+                    const file = item.getAsFile();
+                    files.push(file);
+                }
+            }
+
+            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
+                fileTransfer++;
+                var worker = process.worker;
+                var title = 'Pasting Files to Desktop...';
+
+                console.log(files)
+
+                worker.postMessage({
+                    type: 'init',
+                    token: process.token
+                })
+
+                worker.postMessage({
+                    type: 'transfer',
+                    token: process.token,
+                    files, title,
+                    target: 'C:/Users/Admin/Desktop/'
+                })
+
+                worker.addEventListener('message', async (e) => {
+                    if (!e.data.token == process.token) return;
+                    // console.log('MAIN', e.data.type)
+                    if (e.data.type == 'start') {
+                        worker.postMessage({
+                            type: 'init',
+                            token: process.token
+                        })
+                    }
+                    if (e.data.type == 'init') {
+                        // console.log('init')
+                        worker.postMessage({
+                            type: 'transfer',
+                            token: process.token,
+                            files, title,
+                            target: 'C:/Users/Admin/Desktop/'
+                        })
+                    }
+                    if (e.data.type == 'completed') {
+                        fileTransfer--;
+                        updateDesktop();
+                    }
+                });
+            });
+        });
+
         desktop.addEventListener('contextmenu', (e) => {
             const menu = WinUI.contextMenu([
                 {

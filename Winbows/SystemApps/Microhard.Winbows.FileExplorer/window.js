@@ -627,6 +627,57 @@ async function createTab(page = 'this_pc', active = true) {
         });
     }
         */
+/*
+    document.addEventListener('paste', function (event) {
+        // if (!document.body.contains(event.target)) return;
+
+        const clipboardItems = event.clipboardData.items;
+        var files = [];
+        for (let i = 0; i < clipboardItems.length; i++) {
+            const item = clipboardItems[i];
+            if (item.kind === 'file') {
+                const file = item.getAsFile();
+                files.push(file);
+            }
+        }
+        new Process(path.resolve('./fileTransfer.js')).start().then(async process => {
+            fileTransfer++;
+            var worker = process.worker;
+            var title = `Pasting Files to ${currentPage}...`;
+            var target = getPath(currentPage)
+            worker.postMessage({
+                type: 'init',
+                token: process.token
+            })
+            worker.postMessage({
+                type: 'transfer',
+                token: process.token,
+                files, title, target
+            })
+            worker.addEventListener('message', async (e) => {
+                if (!e.data.token == process.token) return;
+                // console.log('MAIN', e.data.type)
+                if (e.data.type == 'start') {
+                    worker.postMessage({
+                        type: 'init',
+                        token: process.token
+                    })
+                }
+                if (e.data.type == 'init') {
+                    // console.log('init')
+                    worker.postMessage({
+                        type: 'transfer',
+                        token: process.token,
+                        files, title, target
+                    })
+                }
+                if (e.data.type == 'completed') {
+                    fileTransfer--;
+                    updateDesktop();
+                }
+            });
+        });
+    });*/
 
     Object.values(actionbarButtonIcons).forEach(icon => {
         var button = document.createElement('button');

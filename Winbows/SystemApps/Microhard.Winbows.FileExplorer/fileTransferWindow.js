@@ -137,9 +137,10 @@ function init() {
 
 async function handleFiles() {
     console.groupCollapsed('File transfer');
+    console.log(files);
     for (let i = 0; i < files.length; i++) {
         var file = files[i];
-        await handleFile(file.file, file.path);
+        await handleFile(file instanceof File ? file : file.file, file.path);
     }
     console.groupEnd();
     browserWindow.worker.postMessage({
@@ -148,8 +149,30 @@ async function handleFiles() {
     })
 }
 
+async function writeFile(path, blob, exist = 0) {
+    return new Promise(function (resolve, reject) {
+        var pathToCheck = path;
+        var extension = window.utils.getFileExtension(path);
+        if (exist != 0) {
+            pathToCheck = `${path.substring(0, path.length - (extension.length + 1))} (${exist})${extension ? '.' + extension : ''}`;
+        }
+        fs.exists(pathToCheck).then(async result => {
+            if (result.exists == false) {
+                console.log(pathToCheck, 'can write');
+                fs.writeFile(pathToCheck, blob).then(() => {
+                    resolve();
+                })
+            } else {
+                console.log(pathToCheck);
+                resolve(writeFile(path, blob, exist+1));
+            }
+        })
+    });
+}
+
 function handleFile(file, path) {
     return new Promise(function (resolve, reject) {
+        console.log(file, path);
         current = file.name;
         updateItems();
 
@@ -159,7 +182,7 @@ function handleFile(file, path) {
             const arrayBuffer = event.target.result;
             const blob = new Blob([arrayBuffer], { type: file.type });
             const fullPath = `${target}${filePath}`;
-            fs.writeFile(fullPath, blob).then(() => {
+            writeFile(fullPath, blob).then(() => {
                 processed++;
                 console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
                 updateItems();
