@@ -46,6 +46,7 @@
     max-height: -webkit-fill-available;
     width: -webkit-fill-available;
     border-radius: .5rem;
+    position: relative;
 }
 
 .explorer-viewer {
@@ -101,7 +102,13 @@
 }
 
 .explorer-viewer-item:hover {
-    background: rgb(244 244 244);
+    background: rgba(0, 0, 0, .04);
+    box-shadow: 0 0 0px 1.5px rgba(0, 0, 0, .1);
+}
+
+.explorer-viewer-item.active {
+    background: rgba(0, 0, 0, .05);
+    box-shadow: 0 0 0px 1.5px rgba(0, 0, 0, .1);
 }
 
 .explorer-viewer-item-icon {
@@ -262,7 +269,10 @@
     pointer-events: none;
 }
 
-.explorer-tabstrip-tab.active::before, .explorer-tabstrip-tab.active::after, .explorer-tabstrip-tab:hover::before, .explorer-tabstrip-tab:hover::after {
+.explorer-tabstrip-tab.active::before,
+.explorer-tabstrip-tab.active::after,
+.explorer-tabstrip-tab:hover::before,
+.explorer-tabstrip-tab:hover::after {
     position: absolute;
     width: var(--radius);
     height: var(--radius);
@@ -276,13 +286,15 @@
     overflow: visible;
 }
 
-.explorer-tabstrip-tab.active::after, .explorer-tabstrip-tab:hover::after {
+.explorer-tabstrip-tab.active::after,
+.explorer-tabstrip-tab:hover::after {
     transform: translateX(100%);
     right: 0;
     background: radial-gradient(at 100% 0%, transparent var(--radius), var(--bg) 0);
 }
 
-.explorer-tabstrip-tab.active::before, .explorer-tabstrip-tab:hover::before {
+.explorer-tabstrip-tab.active::before,
+.explorer-tabstrip-tab:hover::before {
     transform: translateX(-100%);
     left: 0;
     background: radial-gradient(at 0% 0%, transparent var(--radius), var(--bg) 0);
@@ -495,7 +507,8 @@
     justify-content: center;
 }
 
-.explorer-actionbar-button:disabled, .explorer-actionbar-button.disabled {
+.explorer-actionbar-button:disabled,
+.explorer-actionbar-button.disabled {
     opacity: .5;
     pointer-events: none;
 }
@@ -533,8 +546,7 @@ svg {
     overflow: auto;
 }
 
-.explorer-sidebar-group {
-}
+.explorer-sidebar-group {}
 
 .explorer-sidebar-group+.explorer-sidebar-group::before {
     content: '';
@@ -566,7 +578,8 @@ svg {
     background: rgba(110, 220, 252, .3);
 }
 
-.explorer-pathstrip-action:disabled, .explorer-pathstrip-action.disabled {
+.explorer-pathstrip-action:disabled,
+.explorer-pathstrip-action.disabled {
     opacity: .5;
     pointer-events: none;
 }
@@ -687,8 +700,6 @@ svg {
     line-height: 1;
 }
 
-.explorer-footer-selected-items {
-}
+.explorer-footer-selected-items {}
 
-.explorer-footer-right {
-}
+.explorer-footer-right {}

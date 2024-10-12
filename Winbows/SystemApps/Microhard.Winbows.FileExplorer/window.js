@@ -627,57 +627,57 @@ async function createTab(page = 'this_pc', active = true) {
         });
     }
         */
-/*
-    document.addEventListener('paste', function (event) {
-        // if (!document.body.contains(event.target)) return;
-
-        const clipboardItems = event.clipboardData.items;
-        var files = [];
-        for (let i = 0; i < clipboardItems.length; i++) {
-            const item = clipboardItems[i];
-            if (item.kind === 'file') {
-                const file = item.getAsFile();
-                files.push(file);
+    /*
+        document.addEventListener('paste', function (event) {
+            // if (!document.body.contains(event.target)) return;
+    
+            const clipboardItems = event.clipboardData.items;
+            var files = [];
+            for (let i = 0; i < clipboardItems.length; i++) {
+                const item = clipboardItems[i];
+                if (item.kind === 'file') {
+                    const file = item.getAsFile();
+                    files.push(file);
+                }
             }
-        }
-        new Process(path.resolve('./fileTransfer.js')).start().then(async process => {
-            fileTransfer++;
-            var worker = process.worker;
-            var title = `Pasting Files to ${currentPage}...`;
-            var target = getPath(currentPage)
-            worker.postMessage({
-                type: 'init',
-                token: process.token
-            })
-            worker.postMessage({
-                type: 'transfer',
-                token: process.token,
-                files, title, target
-            })
-            worker.addEventListener('message', async (e) => {
-                if (!e.data.token == process.token) return;
-                // console.log('MAIN', e.data.type)
-                if (e.data.type == 'start') {
-                    worker.postMessage({
-                        type: 'init',
-                        token: process.token
-                    })
-                }
-                if (e.data.type == 'init') {
-                    // console.log('init')
-                    worker.postMessage({
-                        type: 'transfer',
-                        token: process.token,
-                        files, title, target
-                    })
-                }
-                if (e.data.type == 'completed') {
-                    fileTransfer--;
-                    updateDesktop();
-                }
+            new Process(path.resolve('./fileTransfer.js')).start().then(async process => {
+                fileTransfer++;
+                var worker = process.worker;
+                var title = `Pasting Files to ${currentPage}...`;
+                var target = getPath(currentPage)
+                worker.postMessage({
+                    type: 'init',
+                    token: process.token
+                })
+                worker.postMessage({
+                    type: 'transfer',
+                    token: process.token,
+                    files, title, target
+                })
+                worker.addEventListener('message', async (e) => {
+                    if (!e.data.token == process.token) return;
+                    // console.log('MAIN', e.data.type)
+                    if (e.data.type == 'start') {
+                        worker.postMessage({
+                            type: 'init',
+                            token: process.token
+                        })
+                    }
+                    if (e.data.type == 'init') {
+                        // console.log('init')
+                        worker.postMessage({
+                            type: 'transfer',
+                            token: process.token,
+                            files, title, target
+                        })
+                    }
+                    if (e.data.type == 'completed') {
+                        fileTransfer--;
+                        updateDesktop();
+                    }
+                });
             });
-        });
-    });*/
+        });*/
 
     Object.values(actionbarButtonIcons).forEach(icon => {
         var button = document.createElement('button');
@@ -686,7 +686,193 @@ async function createTab(page = 'this_pc', active = true) {
         button.disabled = true;
         actionbar.appendChild(button);
         actionButtons[icon] = button;
-    })
+    });
+
+    var selected = [];
+    var createdItems = [];
+
+    ; (() => {
+        var startXInCanvas = 0;
+        var startYInCanvas = 0;
+        var startX = 0;
+        var startY = 0;
+        var pointerXInCanvas = 0;
+        var pointerYInCanvas = 0;
+        var pointerX = 0;
+        var pointerY = 0;
+        var selecting = false;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', {
+            willReadFrequently: true
+        })
+
+        canvas.style.position = 'absolute';
+        canvas.style.left = '0';
+        canvas.style.top = '0';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        canvas.style.pointerEvents = 'none';
+        viewerContainer.appendChild(canvas);
+
+        function selectionStart(e) {
+            if (e.button == 2) {
+                // Right click
+                return;
+            }
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            selecting = true;
+
+            // For items
+            startX = e.pageX;
+            startY = e.pageY + viewer.scrollTop;
+            pointerX = e.pageX;
+            pointerY = e.pageY + viewer.scrollTop;
+
+            // For canvas
+            startXInCanvas = e.pageX;
+            startYInCanvas = e.pageY;
+            pointerXInCanvas = e.pageX;
+            pointerYInCanvas = e.pageY;
+
+            selected = [];
+            createdItems.forEach(item => {
+                item.item.classList.remove('active');
+            })
+        }
+
+        function selectionMove(e) {
+            if (selecting == false) return;
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            pointerX = e.pageX;
+            pointerY = e.pageY + viewer.scrollTop;
+            pointerXInCanvas = e.pageX;
+            pointerYInCanvas = e.pageY;
+
+            render();
+
+            var rectX = startX;
+            var rectY = startY;
+            var rectWidth = Math.abs(pointerX - startX);
+            var rectHeight = Math.abs(pointerY - startY);
+
+            if (pointerX < startX) {
+                rectX = pointerX;
+            }
+            if (pointerY < startY) {
+                rectY = pointerY;
+            }
+
+            selected = [];
+            createdItems.forEach(item => {
+                var position = window.utils.getPosition(item.item);
+                var itemWidth = item.item.offsetWidth;
+                var itemHeight = item.item.offsetHeight;
+
+                position.y += viewer.scrollTop;
+
+                if (position.x <= rectX && rectX <= position.x + itemWidth && position.y <= rectY && rectY <= position.y + itemHeight) {
+                    // Start point in item
+                    item.item.classList.add('active');
+                    selected.push(item);
+                } else if (position.x >= rectX && position.y >= rectY && position.x + itemWidth <= pointerX && position.y + itemHeight <= pointerY) {
+                    // Rect in Selection
+                    item.item.classList.add('active');
+                    selected.push(item);
+                } else if (!(position.x + itemWidth < rectX ||
+                    position.x > rectX + rectWidth ||
+                    position.y + itemHeight < rectY ||
+                    position.y > rectY + rectHeight)) {
+                    // Overlap
+                    item.item.classList.add('active');
+                    selected.push(item);
+                } else {
+                    item.item.classList.remove('active');
+                }
+            })
+        }
+
+        function selectionEnd(e) {
+            selecting = false;
+            window.utils.canvasClarifier(canvas, ctx);
+        }
+
+        function render() {
+            window.utils.canvasClarifier(canvas, ctx);
+
+            var position = window.utils.getPosition(canvas);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.fillStyle = '#298de547';
+            ctx.strokeStyle = '#298de5';
+            ctx.lineWidth = .75;
+            ctx.fillRect(startXInCanvas - position.x, startYInCanvas - position.y, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
+            ctx.strokeRect(startXInCanvas - position.x, startYInCanvas - position.y, pointerXInCanvas - startXInCanvas, pointerYInCanvas - startYInCanvas);
+            ctx.closePath();
+            ctx.restore();
+        }
+
+        const events = {
+            "start": ["mousedown", "touchstart", "pointerdown"],
+            "move": ["mousemove", "touchmove", "pointermove"],
+            "end": ["mouseup", "touchend", "pointerup", "blur"]
+        }
+
+        events.start.forEach(event => {
+            viewerContainer.addEventListener(event, e => selectionStart(e))
+        })
+        events.move.forEach(event => {
+            window.addEventListener(event, e => selectionMove(e))
+        })
+        events.end.forEach(event => {
+            window.addEventListener(event, e => selectionEnd(e))
+        })
+    })();
+
+    function generateMultipleMenu(e) {
+        const selectedItems = selected;
+        const menu = WinUI.contextMenu([
+            {
+                icon: "delete",
+                className: "delete",
+                text: "Delete",
+                action: () => {
+                    selectedItems.forEach(item => {
+                        fs.rm(item.path).then(() => {
+                            item.item.remove();
+                        });
+                    })
+                    selected = [];
+                    createdItems.forEach(item => {
+                        item.item.classList.remove('active');
+                    })
+                }
+            }
+        ])
+        e.preventDefault();
+        if (e.type.startsWith('touch')) {
+            var touch = e.touches[0] || e.changedTouches[0];
+            e.pageX = touch.pageX;
+            e.pageY = touch.pageY;
+        }
+        menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+        menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+        menu.open(e.pageX, e.pageY, 'left-top');
+        new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+            window.addEventListener(event, (e) => {
+                if (menu.container.contains(e.target)) return;
+                menu.close();
+            })
+        })
+    }
 
     async function createFolderItem(details, path) {
         var item = document.createElement('div');
@@ -711,6 +897,9 @@ async function createTab(page = 'this_pc', active = true) {
         })
 
         item.addEventListener('contextmenu', async (e) => {
+            if (selected.length > 1) {
+                return generateMultipleMenu(e);
+            }
             const menu = WinUI.contextMenu([
                 /*{
                     type: 'label',
@@ -745,8 +934,13 @@ async function createTab(page = 'this_pc', active = true) {
             })
         })
 
+        createdItems.push({
+            item, path, type: 'folder', details
+        })
+
         item.appendChild(itemIcon);
         item.appendChild(itemName);
+        viewer.appendChild(item);
         return item;
     }
 
@@ -800,6 +994,9 @@ async function createTab(page = 'this_pc', active = true) {
         }
 
         item.addEventListener('contextmenu', async (e) => {
+            if (selected.length > 1) {
+                return generateMultipleMenu(e);
+            }
             var items = [
                     /*
                     {
@@ -894,9 +1091,13 @@ async function createTab(page = 'this_pc', active = true) {
             })
         })
 
+        createdItems.push({
+            item, path, type: 'file', details
+        })
+
         item.appendChild(itemIcon);
         item.appendChild(itemName);
-        return item;
+        viewer.appendChild(item);
     }
 
     function randomID() {
@@ -931,6 +1132,7 @@ async function createTab(page = 'this_pc', active = true) {
             changeIcon(icon);
         })
 
+        createdItems = [];
         viewer.innerHTML = '';
         viewer.classList.remove('animation');
 
@@ -1028,15 +1230,15 @@ async function createTab(page = 'this_pc', active = true) {
             for (let i in items) {
                 var item = items[i];
                 if (item.type == 'directory') {
-                    viewer.appendChild(await createFolderItem({
+                    await createFolderItem({
                         name: item.path.split('/').slice(-1)
-                    }, item.path));
+                    }, item.path)
                 } else {
                     console.log(item.mimeType)
-                    viewer.appendChild(await createFileItem({
+                    await createFileItem({
                         name: item.path.split('/').slice(-1),
                         type: item.mimeType
-                    }, item.path));
+                    }, item.path)
                 }
             }
             viewer.style.animation = "revert-layer";
