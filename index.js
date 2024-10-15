@@ -1368,7 +1368,8 @@
                     selected.push({
                         path: item.getPath(),
                         command: item.getCommand(),
-                        action: item.getAction()
+                        action: item.getAction(),
+                        remove: item.remove
                     });
                 } else if (position.x >= rectX && position.y >= rectY && position.x + itemWidth <= pointerX && position.y + itemHeight <= pointerY) {
                     // Rect in Selection
@@ -1376,7 +1377,8 @@
                     selected.push({
                         path: item.getPath(),
                         command: item.getCommand(),
-                        action: item.getAction()
+                        action: item.getAction(),
+                        remove: item.remove
                     });
                 } else if (!(position.x + itemWidth < rectX ||
                     position.x > rectX + rectWidth ||
@@ -1387,7 +1389,8 @@
                     selected.push({
                         path: item.getPath(),
                         command: item.getCommand(),
-                        action: item.getAction()
+                        action: item.getAction(),
+                        remove: item.remove
                     });
                 } else {
                     item.item.classList.remove('active');
@@ -1673,9 +1676,10 @@
                             for (let i = 0; i < selected.length; i++) {
                                 var item = selected[i];
                                 await fs.rm(item.path).then(res => {
-                                    window.System.desktop.update();
+                                    item.remove();
                                 });
                             }
+                            window.System.desktop.update();
                             selected = [];
                             createdItems.forEach(item => {
                                 item.item.classList.remove('active');

@@ -709,9 +709,9 @@ async function createTab(page = 'this_pc', active = true) {
         canvas.style.position = 'absolute';
         canvas.style.left = '0';
         canvas.style.top = '0';
+        canvas.style.pointerEvents = 'none';
         canvas.style.width = '100%';
         canvas.style.height = '100%';
-        canvas.style.pointerEvents = 'none';
         viewerContainer.appendChild(canvas);
 
         function selectionStart(e) {
@@ -746,6 +746,7 @@ async function createTab(page = 'this_pc', active = true) {
 
         function selectionMove(e) {
             if (selecting == false) return;
+            document.getSelection().removeAllRanges();
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
                 e.pageX = touch.pageX;
@@ -839,6 +840,9 @@ async function createTab(page = 'this_pc', active = true) {
         })
 
         viewer.addEventListener('scroll', render);
+
+        var resizeObserver = new ResizeObserver(render);
+        resizeObserver.observe(viewerContainer);
     })();
 
     function generateMultipleMenu(e) {

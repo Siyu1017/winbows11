@@ -45,7 +45,6 @@
     overflow: auto;
     max-height: -webkit-fill-available;
     width: -webkit-fill-available;
-    border-radius: .5rem;
     position: relative;
 }
 
