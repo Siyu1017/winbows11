@@ -11,6 +11,7 @@ document.head.appendChild(style);
 
     browserWindow.changeTitle(`${window.utils.getFileName(filePath)} - JSON Viewer`)
 
+    // JSON Viewer
     'use strict';
 
     function isJSON(item) {
@@ -157,6 +158,8 @@ document.head.appendChild(style);
         }
     }
 
+    var listeners = {};
+
     class Viewer {
         constructor(json) {
             this.container = document.createElement('div');
@@ -224,10 +227,38 @@ document.head.appendChild(style);
                     appended = true;
                 }
             })
-
+            this.overview.addEventListener('pointerenter', () => {
+                this._triggerEvent('pointerChange', {
+                    type: getType(this.json),
+                    levels: [{
+                        type: getType(this.json),
+                        key: '…',
+                        item: this.overview
+                    }],
+                    value: this.json
+                })
+            })
             return this;
         }
-        _getLevel(level, parent) {
+        on(event, listener) {
+            if (!listeners[event]) {
+                listeners[event] = [];
+            }
+            listeners[event].push(listener);
+        }
+        _triggerEvent(event, details) {
+            if (listeners[event]) {
+                listeners[event].forEach(listener => {
+                    listener(details);
+                })
+            }
+        }
+        _getLevel(level, parent, parentData = {
+            levels: [],
+            type: level.type
+        }) {
+            const parentLevels = [...parentData.levels];
+
             if (getType(level) == 'array') {
                 if (isLargeArray(level)) {
                     var groups = level.length % 100 == 0 ? Math.floor(level.length / 100) : Math.floor(level.length / 100) + 1
@@ -258,15 +289,26 @@ document.head.appendChild(style);
                                     expanded = !expanded;
                                     line.setAttribute('data-expand', expanded);
                                     if (append == false) {
-                                        this._getLevel(value, next);
+                                        this._getLevel(value, next, {
+                                            type: 'array',
+                                            levels: parentLevels,
+                                            item: line
+                                        });
                                         append = true;
                                     }
                                 }
                             })
+                            line.addEventListener('pointerenter', () => {
+                                this._triggerEvent('pointerChange', {
+                                    type: 'array',
+                                    levels: parentLevels,
+                                    value: value,
+                                    item: line
+                                })
+                            })
                             item.appendChild(line);
                             item.appendChild(next);
                             parent.appendChild(item);
-
                         })();
                     }
                     return;
@@ -299,10 +341,28 @@ document.head.appendChild(style);
                         expanded = !expanded;
                         line.setAttribute('data-expand', expanded);
                         if (append == false) {
-                            this._getLevel(level[key], next);
+                            this._getLevel(level[key], next, {
+                                type: getType(level),
+                                levels: parentLevels.concat([{
+                                    type: getType(level[key]),
+                                    key: key,
+                                    item: line
+                                }])
+                            });
                             append = true;
                         }
                     }
+                })
+                line.addEventListener('pointerenter', () => {
+                    this._triggerEvent('pointerChange', {
+                        type: getType(level[key]),
+                        levels: parentLevels.concat([{
+                            type: getType(level[key]),
+                            key: key,
+                            item: line
+                        }]),
+                        value: level[key]
+                    })
                 })
                 item.appendChild(line);
                 item.appendChild(next);
@@ -377,6 +437,43 @@ document.head.appendChild(style);
         }
     }
 
+    var breadCrumbs = document.createElement('div');
+    var editor = document.createElement('div');
     var viewer = new Viewer(fileContent);
-    document.body.appendChild(viewer.container);
+    editor.className = 'editor';
+    breadCrumbs.className = 'breadcrumbs';
+    document.body.appendChild(breadCrumbs);
+    document.body.appendChild(editor);
+    editor.appendChild(viewer.container);
+    // viewer.container.style.overflow = 'auto';
+
+    breadCrumbs.innerHTML = ''
+
+    viewer.on('pointerChange', (e) => {
+        breadCrumbs.innerHTML = '';
+        for (let i = 0; i < e.levels.length; i++) {
+            ((i) => {
+                var item = document.createElement('span');
+                item.className = 'breadcrumb-item';
+                item.innerHTML = `<div class="breadcrumb-icon ${e.levels[i].type}"></div><div class="breadcrumb-label">${e.levels[i].key}</div>`;
+                item.addEventListener('click', () => {
+                    /*document.querySelectorAll('.json-viewer-overview.active, .json-viewer-line.active').forEach(item => {
+                        item.classList.remove('active');
+                    })*/
+                    console.log(i, e.levels[i].item)
+
+                    e.levels[i].item.style.background = '#8EACF256';
+                    setTimeout(() => {
+                        e.levels[i].item.style.background = 'transparent';
+                    }, 300)
+                })
+                breadCrumbs.appendChild(item);
+                if (i < e.levels.length - 1) {
+                    var span = document.createElement('span');
+                    span.innerHTML = '&gt;';
+                    breadCrumbs.appendChild(span);
+                }
+            })(i);
+        }
+    })
 })();

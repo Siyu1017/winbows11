@@ -53,7 +53,11 @@ var table = [
     'C:/index.css',
     'C:/favicon.ico',
     'C:/banner.png',
-    'C:/LICENSE'
+    'C:/presentation.png',
+    'C:/LICENSE',
+    'C:/README.md',
+    'C:/package.json',
+    'C:/package-lock.json'
 ];
 
 walk(__dirname + '/Program Files', function (err, results1) {
