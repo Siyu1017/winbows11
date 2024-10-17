@@ -314,7 +314,7 @@
             },
             'json-viewer': {
                 path: 'C:/Program Files/JSON Viewer/',
-                icon: 'C:/Winbows/icons/files/program.ico',
+                icon: 'C:/Program Files/JSON Viewer/json-viewer.svg',
                 script: 'C:/Program Files/JSON Viewer/app.js'
             }
         },
@@ -2439,6 +2439,10 @@
             if (init == true) {
                 initTaskbar();
                 init = false;
+                var command = getJsonFromURL()['command'];
+                if (command) {
+                    window.System.Shell(command);
+                }
             }
         })
 

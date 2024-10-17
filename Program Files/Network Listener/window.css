@@ -546,3 +546,17 @@
 .window-toolbar-button-icon {
     filter: invert(1);
 }
+
+.btn {
+    background: rgb(61, 101, 255);
+    color: #fff;
+    padding: .375rem .75rem;
+    border-radius: .375rem;
+    border: none;
+    transition: all .1s ease-in-out;
+    margin: .5rem 0;
+}
+
+.btn:hover {
+    background: rgb(82, 116, 255);
+}

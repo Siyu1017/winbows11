@@ -217,6 +217,8 @@ class Viewer {
         })
             */
 
+        this.isJson = expandable(this.json);
+
         this.overviewContent.innerHTML = expandable(this.json) == true ? this._getOverview(this.json).replaceAll("<", "&lt;").replaceAll(">", "&gt;") : this._formatValue(this.json).replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 
         this.overview.addEventListener('click', () => {
@@ -649,6 +651,55 @@ class Network {
         }
         this.detailContent.querySelector('[data-element="network-payload"]').appendChild(payloadViewer.container);
         this.detailContent.querySelector('[data-element="network-response"]').appendChild(responseViewer.container);
+
+        if (payloadViewer.isJson == true) {
+            var url = utils.resolvePath(`./saved/payloads/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
+            var openWith = document.createElement('button');
+            openWith.className = 'btn';
+            openWith.innerHTML = `Open with JSON Viewer<!--span style="font-size: 12px;
+            scale: 0.8;
+            transform-origin: center center;
+            display: inline-block;
+            color: rgb(255, 255, 255);
+            margin-left: 4px;
+            background: rgb(61, 101, 255);
+            border-radius: 1000px;
+            padding: 2px 6px;">New</span-->`;
+            openWith.onclick = async () => {
+                document.body.style.cursor = 'progress';
+                await fs.writeFile(url, new Blob([request.body], {
+                    type: 'application/json'
+                })).then((result) => {
+                    new Process('C:/Program Files/JSON Viewer/viewer.js').start(`const FILE_PATH="${url}";`);
+                    document.body.style.cursor = 'auto';
+                })
+            }
+            this.detailContent.querySelector('[data-element="network-payload"]').appendChild(openWith);
+        }
+        if (responseViewer.isJson == true) {
+            var url = utils.resolvePath(`./saved/responses/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
+            var openWith = document.createElement('button');
+            openWith.className = 'btn';
+            openWith.innerHTML = `Open with JSON Viewer<!--span style="font-size: 12px;
+            scale: 0.8;
+            transform-origin: center center;
+            display: inline-block;
+            color: rgb(255, 255, 255);
+            margin-left: 4px;
+            background: rgb(61, 101, 255);
+            border-radius: 1000px;
+            padding: 2px 6px;">New</span-->`;
+            openWith.onclick = async () => {
+                document.body.style.cursor = 'progress';
+                await fs.writeFile(url, new Blob([await request.response.text()], {
+                    type: 'application/json'
+                })).then((result) => {
+                    new Process('C:/Program Files/JSON Viewer/viewer.js').start(`const FILE_PATH="${url}";`);
+                    document.body.style.cursor = 'auto';
+                })
+            }
+            this.detailContent.querySelector('[data-element="network-response"]').appendChild(openWith);
+        }
     }
     _hideDetail() {
         this.container.classList.remove('show-detail');

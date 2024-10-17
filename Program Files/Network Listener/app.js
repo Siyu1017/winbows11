@@ -2,7 +2,6 @@
     await System.requestAccessWindow('./window.js', {
         title: 'Network Listener',
         width: 420,
-        height: 600,
-        showOnTop: true
+        height: 600
     })
 })()

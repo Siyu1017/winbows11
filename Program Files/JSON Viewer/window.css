@@ -14,7 +14,8 @@
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    height: 2rem;
+    min-height: 2rem;
+    overflow-y: hidden;
 }
 
 .breadcrumb-item {
@@ -25,6 +26,7 @@
     padding: .125rem .25rem;
     border-radius: .25rem;
     transition: all .1s ease-in-out;
+    white-space: nowrap;
 }
 
 .breadcrumb-item:hover {
@@ -198,14 +200,14 @@
 .json-viewer-line:hover,
 .json-viewer-overview.active,
 .json-viewer-line.active {
-    background: #63636366;
+    background: #63636366 !important;
 }
 
 .json-viewer-overview,
 .json-viewer-line {
     padding: 2px;
     border-radius: 4px;
-    transition: all .1s ease-in-out;
+    /*transition: all .1s ease-in-out;*/
 }
 
 .json-viewer-overview::after,
@@ -219,6 +221,7 @@
     left: 7px;
     top: 3px;
     bottom: 7px;
+    pointer-events: none;
 }
 
 .json-viewer-overview::after {

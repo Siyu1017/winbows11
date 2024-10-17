@@ -447,7 +447,53 @@ document.head.appendChild(style);
     editor.appendChild(viewer.container);
     // viewer.container.style.overflow = 'auto';
 
-    breadCrumbs.innerHTML = ''
+    /**
+     * @param {HTMLElement} element 
+     */
+    function highlight(element) {
+        const startColor = [142, 172, 242, .5];
+        const endColor = [142, 172, 242, 0];
+        const duration = 200;
+
+        transitionBackground(startColor, endColor, duration, element);
+        setTimeout(() => {
+            const startColor = [142, 172, 242, .7];
+            const endColor = [142, 172, 242, 0];
+            const duration = 500;
+
+            transitionBackground(startColor, endColor, duration, element);
+        }, duration);
+    }
+
+    function interpolateColor(color1, color2, factor) {
+        const result = color1.slice();
+        for (let i = 0; i < 4; i++) {
+            result[i] = color1[i] + factor * (color2[i] - color1[i]);
+        }
+        return result;
+    }
+
+    function rgbaToString(rgbaArray) {
+        return `rgba(${Math.round(rgbaArray[0])}, ${Math.round(rgbaArray[1])}, ${Math.round(rgbaArray[2])}, ${rgbaArray[3].toFixed(2)})`;
+    }
+
+    function transitionBackground(startColor, endColor, duration, element) {
+        const startTime = performance.now();
+
+        function update() {
+            const currentTime = performance.now();
+            const elapsedTime = currentTime - startTime;
+            const factor = Math.min(elapsedTime / duration, 1);
+
+            const currentColor = interpolateColor(startColor, endColor, factor);
+            element.style.backgroundColor = rgbaToString(currentColor);
+
+            if (factor < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        requestAnimationFrame(update);
+    }
 
     viewer.on('pointerChange', (e) => {
         breadCrumbs.innerHTML = '';
@@ -460,12 +506,9 @@ document.head.appendChild(style);
                     /*document.querySelectorAll('.json-viewer-overview.active, .json-viewer-line.active').forEach(item => {
                         item.classList.remove('active');
                     })*/
-                    console.log(i, e.levels[i].item)
 
-                    e.levels[i].item.style.background = '#8EACF256';
-                    setTimeout(() => {
-                        e.levels[i].item.style.background = 'transparent';
-                    }, 300)
+                    editor.scrollTop = window.utils.getPosition(e.levels[i].item).y + editor.scrollTop - editor.offsetHeight / 2 - window.utils.getPosition(editor).y;
+                    highlight(e.levels[i].item);
                 })
                 breadCrumbs.appendChild(item);
                 if (i < e.levels.length - 1) {
@@ -476,4 +519,18 @@ document.head.appendChild(style);
             })(i);
         }
     })
+
+    // Initialize
+    var item = document.createElement('span');
+    item.className = 'breadcrumb-item';
+    item.innerHTML = `<div class="breadcrumb-icon ${getType(viewer.json)}"></div><div class="breadcrumb-label">…</div>`;
+    item.addEventListener('click', () => {
+        /*document.querySelectorAll('.json-viewer-overview.active, .json-viewer-line.active').forEach(item => {
+            item.classList.remove('active');
+        })*/
+
+        editor.scrollTop = window.utils.getPosition(viewer.overview).y + editor.scrollTop - editor.offsetHeight / 2 - window.utils.getPosition(editor).y;
+        highlight(viewer.overview);
+    })
+    breadCrumbs.appendChild(item);
 })();
