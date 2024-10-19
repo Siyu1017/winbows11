@@ -150,7 +150,18 @@
 
 <body>
     <script>
-        if (localStorage.getItem('WINBOWS_REQUIRED') == 'REPAIR') {
+        function getJsonFromURL(url) {
+            if (!url) url = location.search;
+            var query = url.substr(1);
+            var result = {};
+            query.split("&").forEach(function (part) {
+                var item = part.split("=");
+                result[item[0]] = decodeURIComponent(item[1]);
+            });
+            return result;
+        }
+
+        if (localStorage.getItem('WINBOWS_REQUIRED') == 'REPAIR' && !getJsonFromURL()['embed']) {
             location.href = `./repair.html?timestamp=${new Date().getTime()}`;
         }
         if ('serviceWorker' in navigator) {
@@ -207,7 +218,7 @@
                 } catch (e) { }
             }
 
-            if (window.needsUpdate == true) {
+            if (window.needsUpdate == true && !getJsonFromURL()['embed']) {
                 document.body.style.backgroundImage = 'linear-gradient(transparent, transparent)'
                 document.body.style.transition = 'background-image .2s ease-in-out';
 
