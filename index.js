@@ -2041,6 +2041,8 @@
                 }
             }
 
+            if (files.length == 0) return;
+
             new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
                 fileTransfer++;
                 var worker = process.worker;

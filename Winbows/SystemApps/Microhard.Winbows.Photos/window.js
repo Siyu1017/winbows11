@@ -34,47 +34,66 @@ document.body.appendChild(container);
 container.appendChild(content);
 
 if (!photoPath) {
-    content.innerHTML = `<div style="
+    await chooseFile();
+}
+
+function chooseFile(message) {
+    content.style = `width: -webkit-fill-available;
+    height: -webkit-fill-available;display: flex;align-items: center;
+    justify-content: center;flex-direction: column;`
+    content.innerHTML = `${message ? `<div>${message}</div>` : ''}<div style="
     display: inline-flex;
-    width: -webkit-fill-available;
-    height: -webkit-fill-available;
     align-items: center;
     justify-content: center;
 ">Select an image file from <span data-bind="run" style="text-decoration: underline;margin: 0 4px;cursor: pointer;">File Explorer</span> and open with Photos to view the file</div>`;
 
-    await(async () => {
-        return new Promise((resolve, reject) => {
-            document.querySelector('[data-bind="run"]').addEventListener('click', async function () {
-                var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.js').start();
-                process.worker.addEventListener('message', (e) => {
-                    if (e.data.token != process.token) return;
-                    if (e.data.type == 'confirm') {
-                        photoPath = e.data.items[0];
-                        process.exit(0);
-                        content.innerHTML = '';
-                        resolve();
-                    }
-                    if (e.data.type == 'cancel') {
-                        process.exit(0);
-                    }
-                    console.log(e.data.type, e.data.items);
-                })
-                //window.System.Shell('run explorer');
-            });
-        })
-    })();
+    return new Promise((resolve, reject) => {
+        document.querySelector('[data-bind="run"]').addEventListener('click', async function () {
+            var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.js').start();
+            process.worker.addEventListener('message', (e) => {
+                if (e.data.token != process.token) return;
+                if (e.data.type == 'confirm') {
+                    photoPath = e.data.items[0];
+                    process.exit(0);
+                    content.style = '';
+                    content.innerHTML = '';
+                    resolve();
+                }
+                if (e.data.type == 'cancel') {
+                    process.exit(0);
+                }
+                console.log(e.data.type, e.data.items);
+            })
+            //window.System.Shell('run explorer');
+        });
+    })
 }
 
-console.log(photoPath)
+function check() {
+    return new Promise(async (resolve, reject) => {
+        try {
+            var photoBlob = await fs.readFile(photoPath);
+            var photoBlobType = mineTypeToExtension(photoBlob ? photoBlob.type : '');
+            var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
+            var photoURL = URL.createObjectURL(photoBlob);
+            if (!supportedExtensions.includes(photoExtension)) {
+                resolve(chooseFile(`<div>Unsupported file type ( ${photoPath} )</div><br>`));
+            } else {
+                resolve();
+            }
+        } catch (e) {
+            resolve(chooseFile(`<div>Unsupported file type ( ${photoPath} )</div><br>`));
+            console.warn(e);
+        }
+    })
+}
+
+await check();
 
 var photoBlob = await fs.readFile(photoPath);
 var photoBlobType = mineTypeToExtension(photoBlob ? photoBlob.type : '');
 var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
 var photoURL = URL.createObjectURL(photoBlob);
-if (!supportedExtensions.includes(photoExtension)) {
-    content.innerHTML = `<div>Unsupported file type ( ${photoPath} )</div>`;
-    return;
-}
 
 var debuggerMode = false;
 var x = 0;
@@ -360,7 +379,7 @@ events.end.forEach(event => {
     window.addEventListener(event, handleEndDragging);
 })
 
-var scaleStages = [0.01, 0.02, 0.05, 0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7.5, 10];
+var scaleStages = [0.01, 0.02, 0.04, 0.06, 0.075, 0.08, 0.09, 0.1, 0.14, 0.2, 0.25, 0.28, 0.33, 0.4, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 7.5, 10];
 function getStage(scale, zoom = 'in') {
     if (zoom == 'in') {
         return scaleStages[scaleStages.findIndex(stage => stage > scale)] || scaleStages[scaleStages.length - 1];

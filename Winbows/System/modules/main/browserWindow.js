@@ -126,12 +126,12 @@
                 ICON.focus(windowID);
             })
 
-            if (config.x) {
+            if (config.x != undefined) {
                 hostElement.style.left = config.x + 'px';
             } else {
                 hostElement.style.left = (window.innerWidth / 2) - ((config.width ? config.width : 800) / 2) + 'px';
             }
-            if (config.y) {
+            if (config.y != undefined) {
                 hostElement.style.top = config.y + 'px';
             } else {
                 // Taskbar height : 48
@@ -169,7 +169,7 @@
                 if (e.id != windowID) return;
                 var iconPosition = window.utils.getPosition(ICON.item);
                 var originalWidth = originalSnapSide == '' ? hostElement.offsetWidth : originalWidth;
-                var originalHeight = originalSnapSide == ''? hostElement.offsetHeight : originalHeight;
+                var originalHeight = originalSnapSide == '' ? hostElement.offsetHeight : originalHeight;
 
                 hostElement.style.opacity = 1;
                 hostElement.style.transition = `transform 200ms cubic-bezier(.9,.1,.87,.5), opacity 100ms ease-in-out, scale 200ms cubic-bezier(.9,.1,.87,.5)`;
@@ -295,13 +295,13 @@
                 }
 
                 events.start.forEach(event => {
-                    resizer.addEventListener(event, e => handleStartResizing(e));
+                    resizer.addEventListener(event, handleStartResizing);
                 })
                 events.move.forEach(event => {
-                    window.addEventListener(event, e => handleMoveResizing(e));
+                    window.addEventListener(event, handleMoveResizing);
                 })
                 events.end.forEach(event => {
-                    window.addEventListener(event, e => handleEndResizing(e));
+                    window.addEventListener(event, handleEndResizing);
                 })
 
                 resizers.appendChild(resizer);
@@ -760,7 +760,7 @@
 
             function setMovable(element) {
                 events.start.forEach(event => {
-                    element.addEventListener(event, e => handleStartMoving(e));
+                    element.addEventListener(event, handleStartMoving);
                 })
             }
 
@@ -796,13 +796,13 @@
             }
 
             events.start.forEach(event => {
-                toolbarElement.addEventListener(event, e => handleStartMoving(e));
+                toolbarElement.addEventListener(event, handleStartMoving);
             })
             events.move.forEach(event => {
-                window.addEventListener(event, e => handleMoveMoving(e));
+                window.addEventListener(event, handleMoveMoving);
             })
             events.end.forEach(event => {
-                window.addEventListener(event, e => handleEndMoving(e));
+                window.addEventListener(event, handleEndMoving);
             })
 
             hostElement.addEventListener('pointerdown', (e) => {
