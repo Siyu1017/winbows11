@@ -1,0 +1,138 @@
+.tabview-item {
+    display: none;
+    overflow: hidden;
+    -webkit-user-drag: none;
+    flex-direction: column;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    background: #fff;
+}
+
+.tabview-tabstrip-tab {
+    --radius: .375rem;
+    --bg: rgba(0, 0, 0, 0);
+}
+
+.tabview-tabstrip-tab.active {
+    --bg: rgb(249 249 249);
+}
+
+.tabview-tabstrip-tab:not(.active):hover {
+    --bg: rgb(255 255 255 / 50%);
+    background: var(--bg);
+}
+
+.tabview-tabstrip-tab:not(.active, :hover)+.tabview-tabstrip-tab:not(.active, :hover)::before {
+    background: rgba(0, 0, 0, .1);
+}
+
+.tabview-tabstrip-tab:last-child:not(.active, :hover)::after {
+    background: rgba(0, 0, 0, .1);
+}
+
+.tabview-tabstrip-tab.active::before,
+.tabview-tabstrip-tab.active::after,
+.tabview-tabstrip-tab:hover::before,
+.tabview-tabstrip-tab:hover::after {
+    background: var(--bg);
+}
+
+.tabview-tabstrip-tab.active {
+    background-color: var(--bg);
+}
+
+.tabview-tabstrip-tab.active::after,
+.tabview-tabstrip-tab:hover::after {
+    background: radial-gradient(at 100% 0%, transparent var(--radius), var(--bg) 0);
+}
+
+.tabview-tabstrip-tab.active::before,
+.tabview-tabstrip-tab:hover::before {
+    background: radial-gradient(at 0% 0%, transparent var(--radius), var(--bg) 0);
+}
+
+.tabview-tabstrip-tab-close:hover {
+    background: rgb(185 185 185 / 40%);
+}
+
+.tabview-tabstrip-tab.active .tabview-tabstrip-tab-close:hover {
+    background: rgb(233, 233, 233);
+}
+
+.tabview-tabstrip-create-button:hover {
+    background: rgba(255, 255, 255, .5);
+}
+
+.menubar {
+    display: flex;
+    flex-direction: row;
+    background: rgb(249, 249, 249);
+    border-bottom: 1.5px solid var(--border-color);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+}
+
+.menubar-items {
+    display: flex;
+    flex-direction: row;
+    padding: .125rem;
+    gap: .125rem;
+}
+
+.menubar-item {
+    padding: .375rem .625rem;
+    transition: all .1s ease-in-out;
+    border-radius: .25rem;
+    cursor: default;
+    font-size: .875rem;
+}
+
+.menubar-item:hover {
+    background: rgba(0, 0, 0, .05)
+}
+
+.menubar-item.active {
+    background: rgba(0, 0, 0, .075);
+}
+
+.editor {
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    overflow: hidden;
+}
+
+.window {
+    --border-color: rgb(0, 0, 0, .1);
+}
+
+.window-toolbar {
+    backdrop-filter: blur(120px) saturate(1.5);
+    background: rgba(235, 235, 235, .7);
+}
+
+.window-toolbar-icon {
+    margin-left: .375rem;
+}
+
+.window-content {}
+
+.simple-editor {
+    outline: none;
+    padding: .375rem .5rem;
+    overflow: auto;
+    height: auto;
+    max-height: -webkit-fill-available;
+    border: none;
+}
+
+.simple-editor-line {
+    word-break: break-all;
+    white-space: pre-wrap;
+    min-height: 21px;
+}
+
+.simple-editor *::selection {
+    background: rgb(211 227 253);
+    color: unset;
+}

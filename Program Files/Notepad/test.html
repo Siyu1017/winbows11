@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        function createEditor(target) {
+            var editor = document.createElement('div');
+            var textarea = document.createElement('textarea');
+            editor.contentEditable = true;
+            editor.style.width = '100%';
+            editor.style.height = '100%';
+            editor.style.border = 'none';
+            editor.className = 'simple-editor';
+            target.appendChild(editor);
+
+            var lines = [];
+
+            createLine();
+
+            function createLine() {
+                var line = document.createElement('div');
+                line.textContent = '';
+                line.className = 'simple-editor-line';
+                editor.appendChild(line);
+                lines.push(line);
+                return line;
+            }
+
+            editor.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    var line = createLine();
+                    placeCaretAtEnd(line);
+                    syncContent();
+                }
+            });
+
+            editor.addEventListener('input', (e) => {
+                e.preventDefault();
+                syncContent();
+            });
+
+            function syncContent() {
+                var content = '';
+                lines.forEach((line, index) => {
+                    content += line.textContent;
+                    if (index < lines.length - 1) {
+                        content += '\n';
+                    }
+                });
+                textarea.value = content;
+                var contentLines = content.endsWith('\n') ? content.split('\n').push('') : content.split('\n');
+
+                if (contentLines.length < lines.length) {
+                    while (lines.length > contentLines.length) {
+                        lines.pop().remove();
+                    }
+                } else if (contentLines.length > lines.length) {
+                    while (lines.length < contentLines.length) {
+                        createLine();
+                    }
+                }
+
+                for (var i = 0; i < contentLines.length; i++) {
+                    lines[i].textContent = contentLines[i];
+                }
+            }
+
+            editor.addEventListener('paste', (e) => {
+                e.preventDefault();
+                var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+                syncContent();
+            });
+
+            function placeCaretAtEnd(el) {
+                el.focus();
+                var range = document.createRange();
+                range.selectNodeContents(el);
+                range.collapse(false);
+                var selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+
+            function getValue() {
+                return textarea.value;
+            }
+
+            function setValue(value) {
+                textarea.value = value;
+                var contentLines = value.endsWith('\n') ? value.split('\n').push('') : value.split('\n');
+                if (contentLines.length < lines.length) {
+                    while (lines.length > contentLines.length) {
+                        lines.pop().remove();
+                    }
+                } else if (contentLines.length > lines.length) {
+                    while (lines.length < contentLines.length) {
+                        createLine();
+                    }
+                }
+                for (var i = 0; i < contentLines.length; i++) {
+                    lines[i].textContent = contentLines[i];
+                }
+            }
+
+            return { editor, getValue, setValue };
+        }
+
+        var editor = createEditor(document.body);
+    </script>
+</body>
+
+</html>

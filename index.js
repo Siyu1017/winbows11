@@ -316,6 +316,11 @@
                 path: 'C:/Program Files/JSON Viewer/',
                 icon: 'C:/Program Files/JSON Viewer/json-viewer.svg',
                 script: 'C:/Program Files/JSON Viewer/app.js'
+            },
+            'notepad': {
+                path: 'C:/Program Files/Notepad/',
+                icon: 'C:/Program Files/Notepad/favicon.ico',
+                script: 'C:/Program Files/Notepad/app.js'
             }
         },
         install: () => { },
@@ -1611,7 +1616,7 @@
                 ];
                 if (selected.length <= 1) {
                     items.push({
-                        lassName: "open",
+                        className: "open",
                         text: "Open",
                         action: () => {
                             if (command) {

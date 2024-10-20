@@ -1,6 +1,5 @@
 .window * {
     box-sizing: border-box;
-    font-family: var(--winbows-font-default);
 }
 
 .window {
@@ -12,6 +11,9 @@
     display: flex;
     flex-direction: column;
     box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1);
+    font-family: var(--winbows-font-default);
+    --tabview-tab-separator-color: rgba(0, 0, 0, .1);
+    --tabview-tab-background-hover:
 }
 
 .window-toolbar,
@@ -39,6 +41,7 @@
 }
 
 .window-toolbar-icon {
+    min-width: 1.25rem;
     width: 1.25rem;
     height: 1.25rem;
     background-position: center;
@@ -179,5 +182,242 @@
 .winui :hover::-webkit-scrollbar-thumb,
 .winui-dark :hover::-webkit-scrollbar-thumb,
 .winui-light :hover::-webkit-scrollbar-thumb {
+    display: block;
+}
+
+.tabview {
+    display: block;
+    overflow: hidden;
+    -webkit-user-drag: none;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+}
+
+.tabview-item {
+    display: none;
+    overflow: hidden;
+    -webkit-user-drag: none;
+    flex-direction: column;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    background: #fff;
+}
+
+.tabview-item.active {
+    display: flex;
+}
+
+
+@keyframes show-tab {
+    0% {
+        transform: translateY(1rem);
+        opacity: 0;
+    }
+
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.tabview-tabstrip {
+    width: -webkit-fill-available;
+    height: fit-content;
+    min-height: fit-content;
+    padding: .375rem;
+    padding-right: 2.5rem;
+    padding-bottom: 0;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden;
+}
+
+.tabview-tabstrip-tabs {
+    height: -webkit-fill-available;
+    max-width: calc(100% - 2.875rem);
+    display: flex;
+    gap: .5rem;
+    overflow: visible;
+}
+
+.tabview-tabstrip-tab {
+    --radius: .375rem;
+    --bg: rgba(0, 0, 0, 0);
+    position: relative;
+    width: 15rem;
+    height: 2.125rem;
+    background: none;
+    border-radius: var(--radius) var(--radius) 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 .5rem;
+    gap: .25rem;
+    flex: 1;
+    min-width: 0;
+    max-width: -webkit-fill-available;
+    /*
+    opacity: 0;
+    transform: translateY(1rem);
+    animation: show-tab 200ms ease-in-out 1 forwards;
+    */
+}
+
+.tabview-tabstrip-tab.active {
+    --bg: rgb(255, 255, 255);
+    z-index: 9;
+}
+
+.tabview-tabstrip-tab:not(.active):hover {
+    --bg: rgb(255 255 255 / 50%);
+    background: var(--bg);
+}
+
+.tabview-tabstrip-tab:not(.active) {
+    /* height: 1.75rem; */
+    /* border-radius: var(--radius); */
+}
+
+.tabview-tabstrip-tab:not(.active, :hover)+.tabview-tabstrip-tab:not(.active, :hover)::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 1.25px;
+    height: calc(100% - .75rem);
+    background: rgba(0, 0, 0, .1);
+    transform: translateX(-.25rem);
+    pointer-events: none;
+}
+
+.tabview-tabstrip-tab:last-child:not(.active, :hover)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    width: 1.25px;
+    height: calc(100% - .75rem);
+    background: rgba(0, 0, 0, .1);
+    transform: translateX(.25rem);
+    pointer-events: none;
+}
+
+.tabview-tabstrip-tab.active::before,
+.tabview-tabstrip-tab.active::after,
+.tabview-tabstrip-tab:hover::before,
+.tabview-tabstrip-tab:hover::after {
+    position: absolute;
+    width: var(--radius);
+    height: var(--radius);
+    background: var(--bg);
+    content: '';
+    bottom: 0;
+}
+
+.tabview-tabstrip-tab.active {
+    background-color: var(--bg);
+    overflow: visible;
+}
+
+.tabview-tabstrip-tab.active::after,
+.tabview-tabstrip-tab:hover::after {
+    transform: translateX(100%);
+    right: 0;
+    background: radial-gradient(at 100% 0%, transparent var(--radius), var(--bg) 0);
+}
+
+.tabview-tabstrip-tab.active::before,
+.tabview-tabstrip-tab:hover::before {
+    transform: translateX(-100%);
+    left: 0;
+    background: radial-gradient(at 0% 0%, transparent var(--radius), var(--bg) 0);
+}
+
+.tabview-tabstrip-tab-info {
+    display: flex;
+    gap: .25rem;
+    padding-bottom: .125rem;
+    overflow: hidden;
+    max-width: -webkit-fill-available;
+}
+
+.tabview-tabstrip-tab-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    min-width: 1.25rem;
+    min-height: 1.25rem;
+}
+
+.tabview-tabstrip-tab-header {
+    font-size: .875rem;
+    height: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 .25rem;
+}
+
+.tabview-tabstrip-tab-close {
+    padding: .25rem .375rem;
+    border-radius: .25rem;
+}
+
+.tabview-tabstrip-tab-close:hover {
+    background: rgb(185 185 185 / 40%);
+}
+
+.tabview-tabstrip-tab.active .tabview-tabstrip-tab-close:hover {
+    background: rgb(233, 233, 233);
+}
+
+.tabview-tabstrip-tab-close::before {
+    content: '';
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXgiPjxwYXRoIGQ9Ik0xOCA2IDYgMTgiLz48cGF0aCBkPSJtNiA2IDEyIDEyIi8+PC9zdmc+);
+    background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: block;
+    width: .875rem;
+    height: .875rem;
+}
+
+.tabview-tabstrip-create {
+    padding: .75rem .5rem;
+    overflow: hidden;
+    display: block;
+    height: 2.125rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.875rem;
+    /* flex: 1; */
+}
+
+.tabview-tabstrip-create-button {
+    height: 1.425rem;
+    width: 1.875rem;
+    border: 0;
+    border-radius: .25rem;
+    background: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tabview-tabstrip-create-button:hover {
+    background: rgba(255, 255, 255, .5);
+}
+
+.tabview-tabstrip-create-button::before {
+    content: '';
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtcGx1cyI+PHBhdGggZD0iTTUgMTJoMTQiLz48cGF0aCBkPSJNMTIgNXYxNCIvPjwvc3ZnPg==);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    width: .925rem;
+    height: .925rem;
     display: block;
 }

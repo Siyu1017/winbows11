@@ -1417,7 +1417,14 @@ function contextMenu(items, config = {}) {
     var container = document.createElement('div');
     var createdContainer = false;
     var items = items;
+    var listeners = {};
     container.className = 'winui-contextmenu-container';
+
+    function triggerEvent(event, detail) {
+        if (listeners[event]) {
+            listeners[event].forEach(listener => listener(detail));
+        }
+    }
 
     function generateMenu(target, items, config) {
         var menuLayer = document.createElement('div');
@@ -1507,6 +1514,9 @@ function contextMenu(items, config = {}) {
                     created = true;
                 } else {
                     item.action();
+                    triggerEvent('select', {
+                        
+                    })
                     close();
                 }
             });
@@ -1545,7 +1555,14 @@ function contextMenu(items, config = {}) {
         items = value;
     }
 
-    return { open, close, setItems, container }
+    function on(event, listener) {
+        if (!listeners[event]) {
+            listeners[event] = [];
+        }
+        listeners[event].push(listener);
+    }
+
+    return { open, close, setItems, on, container }
 }
 
 export default contextMenu;

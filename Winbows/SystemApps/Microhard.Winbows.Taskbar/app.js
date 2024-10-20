@@ -522,6 +522,9 @@
             }, {
                 name: 'JSON Viewer',
                 app: 'json-viewer'
+            }, {
+                name: 'Notepad',
+                app: 'notepad'
             }
         ];
         pinnedList.forEach(pinned => {

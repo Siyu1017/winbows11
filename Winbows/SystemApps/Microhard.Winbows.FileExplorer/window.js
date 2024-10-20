@@ -229,7 +229,7 @@ async function createTab(page = 'this_pc', active = true) {
         const children = Array.from(container.children);
 
         if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
-            console.error('索引超出範圍');
+            console.error('over range');
             return;
         }
 
@@ -245,7 +245,7 @@ async function createTab(page = 'this_pc', active = true) {
 
     function moveArrayItem(arr, fromIndex, toIndex) {
         if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
-            console.error('索引超出範圍');
+            console.error('over range');
             return;
         }
 

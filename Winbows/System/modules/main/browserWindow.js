@@ -250,6 +250,9 @@
 
                 function handleMoveResizing(e) {
                     if (pointerDown == true) {
+                        try {
+                            document.getSelection().removeAllRanges();
+                        } catch (e) { };
                         if (e.type.startsWith('touch')) {
                             var touch = e.touches[0] || e.changedTouches[0];
                             e.pageX = touch.pageX;
@@ -621,6 +624,9 @@
 
             function handleMoveMoving(e) {
                 if (pointerDown) {
+                    try {
+                        document.getSelection().removeAllRanges();
+                    } catch (e) { };
                     if (originalSnapSide != '' || isMaximized == true) {
                         originalSnapSide = '';
                         isMaximized = false;
@@ -814,10 +820,282 @@
             updatePosition();
             updateSize();
 
+            function useTabview() {
+                var tabview = document.createElement('div');
+                var tabStrip = document.createElement('div');
+                var tabStripTabs = document.createElement('div');
+                var tabStripCreate = document.createElement('div');
+                var tabStripCreateButton = document.createElement('button');
+
+                tabview.className = 'tabview';
+                tabStrip.className = 'tabview-tabstrip';
+                tabStripTabs.className = 'tabview-tabstrip-tabs';
+                tabStripCreate.className = 'tabview-tabstrip-create';
+                tabStripCreateButton.className = 'tabview-tabstrip-create-button';
+
+                contentElement.appendChild(tabview);
+                toolbarInfo.replaceChild(tabStrip, toolbarTitle);
+                tabStrip.appendChild(tabStripTabs);
+                tabStrip.appendChild(tabStripCreate);
+                tabStripCreate.appendChild(tabStripCreateButton);
+
+                tabStripCreateButton.addEventListener('click', async () => {
+                    triggerEvent('requestCreateTab', {
+                        active: true,
+                        target: tabStripCreateButton
+                    })
+                })
+
+                addEventListener('dragstart', (e) => {
+                    if (e.target == tabStripCreateButton || tabStripTabs.contains(e.target)) {
+                        e.preventDefault();
+                    }
+                })
+
+                var order = [];
+                var tabs = {};
+                var listeners = {};
+
+                function randomID() {
+                    var patterns = '0123456789abcdef';
+                    var id = '_';
+                    for (var i = 0; i < 6; i++) {
+                        id += patterns.charAt(Math.floor(Math.random() * patterns.length));
+                    }
+                    if (tabs[id]) {
+                        return randomID();
+                    }
+                    return id;
+                }
+
+                function on(event, listener) {
+                    if (!listeners[event]) {
+                        listeners[event] = []
+                    }
+                    listeners[event].push(listener);
+                }
+
+                function triggerEvent(event, detail) {
+                    if (listeners[event]) {
+                        listeners[event].forEach(listener => listener(detail));
+                    }
+                }
+
+                class Tab {
+                    constructor(config = {
+                        active: true,
+                        icon: true
+                    }) {
+                        // Initialize tab
+                        this.tab = document.createElement('div');
+                        this.tabInfo = document.createElement('div');
+                        this.tabIcon = document.createElement('div');
+                        this.tabHeader = document.createElement('div');
+                        this.tabClose = document.createElement('div');
+                        this.tabviewItem = document.createElement('div');
+
+                        this.id = randomID();
+                        order.push(this.id);
+
+                        this.tab.className = 'tabview-tabstrip-tab';
+                        this.tabInfo.className = 'tabview-tabstrip-tab-info';
+                        this.tabIcon.className = 'tabview-tabstrip-tab-icon';
+                        this.tabHeader.className = 'tabview-tabstrip-tab-header';
+                        this.tabClose.className = 'tabview-tabstrip-tab-close';
+                        this.tabviewItem.className = 'tabview-item';
+
+                        var originalPosition = order.indexOf(this.id);
+                        var currentPosition = order.indexOf(this.id);
+                        var startX = 0;
+                        var dragging = false;
+                        var events = {
+                            "start": ["mousedown", "touchstart", "pointerdown"],
+                            "move": ["mousemove", "touchmove", "pointermove"],
+                            "end": ["mouseup", "touchend", "pointerup", "blur"]
+                        }
+
+                        tabs[this.id] = this;
+
+                        function moveNodeToIndex(nodeIndex, targetIndex, container) {
+                            const children = Array.from(container.children);
+                            if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
+                                // console.error('over range');
+                                return;
+                            }
+                            const nodeToMove = children[nodeIndex];
+                            if (targetIndex === children.length - 1) {
+                                container.appendChild(nodeToMove);
+                            } else if (targetIndex < nodeIndex) {
+                                container.insertBefore(nodeToMove, children[targetIndex]);
+                            } else {
+                                container.insertBefore(nodeToMove, children[targetIndex + 1]);
+                            }
+                        }
+
+                        function moveArrayItem(arr, fromIndex, toIndex) {
+                            if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
+                                // console.error('over range');
+                                return;
+                            }
+                            const item = arr.splice(fromIndex, 1)[0];
+                            arr.splice(toIndex, 0, item);
+                            // console.log(arr, item)
+                            return arr;
+                        }
+
+                        var dragStart = (e) => {
+                            if (this.tabClose.contains(e.target)) return;
+                            this.focus();
+                            if (e.type.startsWith('touch')) {
+                                var touch = e.touches[0] || e.changedTouches[0];
+                                e.pageX = touch.pageX;
+                            }
+                            originalPosition = order.indexOf(this.id);
+                            currentPosition = order.indexOf(this.id);
+                            this.tab.style.transition = 'none';
+                            dragging = true;
+                            startX = e.pageX;
+                        }
+
+                        var dragMove = (e) => {
+                            if (!dragging) return;
+                            try {
+                                document.getSelection().removeAllRanges();
+                            } catch (e) { };
+                            if (e.type.startsWith('touch')) {
+                                var touch = e.touches[0] || e.changedTouches[0];
+                                e.pageX = touch.pageX;
+                            }
+                            var x = e.pageX - startX;
+                            var unit = this.tab.offsetWidth + 8;
+                            var count = Math.round(x / unit);
+
+                            this.tab.style.transform = `translateX(${x}px)`;
+
+                            currentPosition = originalPosition + count;
+                            if (currentPosition > order.length - 1) {
+                                currentPosition = order.length - 1;
+                            } else if (currentPosition < 0) {
+                                currentPosition = 0;
+                            }
+                            count = currentPosition - originalPosition;
+
+                            if (x > 0) {
+                                Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
+                                    tab.tab.style.transition = 'revert-layer';
+                                    var index = order.indexOf(tab.id);
+                                    if (index <= originalPosition + count && index > originalPosition) {
+                                        tab.tab.style.transform = 'translateX(calc(-100% - 8px))';
+                                    } else {
+                                        tab.tab.style.transform = '';
+                                    }
+                                })
+                            } else if (x < 0) {
+                                Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
+                                    tab.tab.style.transition = 'revert-layer';
+                                    var index = order.indexOf(tab.id);
+                                    if (index >= originalPosition + count && index < originalPosition) {
+                                        tab.tab.style.transform = 'translateX(calc(100% + 8px))';
+                                    } else {
+                                        tab.tab.style.transform = '';
+                                    }
+                                })
+                            }
+                        }
+
+                        var dragEnd = () => {
+                            if (dragging == false) return;
+                            dragging = false;
+                            if (currentPosition != originalPosition) {
+                                moveNodeToIndex(originalPosition, currentPosition, tabStripTabs);
+                                moveArrayItem(order, originalPosition, currentPosition);
+                                originalPosition = currentPosition;
+                                Object.values(tabs).forEach(tab => {
+                                    tab.tab.style.transition = 'none';
+                                    tab.tab.style.transform = 'translateX(0)';
+                                    setTimeout(() => {
+                                        tab.tab.style.transition = 'revert-layer';
+                                    }, 200)
+                                })
+                            } else {
+                                this.tab.style.transition = 'revert-layer';
+                                this.tab.style.transform = '';
+                            }
+                        }
+
+                        events.start.forEach(event => {
+                            this.tab.addEventListener(event, dragStart);
+                        })
+                        events.move.forEach(event => {
+                            window.addEventListener(event, dragMove);
+                        })
+                        events.end.forEach(event => {
+                            window.addEventListener(event, dragEnd);
+                        })
+
+                        this.tabClose.addEventListener('click', () => {
+                            this.close()
+                        });
+
+                        this.tab.appendChild(this.tabInfo);
+                        this.tab.appendChild(this.tabClose);
+                        this.tabInfo.appendChild(this.tabIcon);
+                        this.tabInfo.appendChild(this.tabHeader);
+                        tabStripTabs.appendChild(this.tab);
+                        tabview.appendChild(this.tabviewItem);
+
+                        if (config.active != false) {
+                            this.focus();
+                        }
+                        if (config.icon == false) {
+                            this.tabIcon.remove();
+                        }
+                    }
+                    getContainer() {
+                        return this.tabviewItem;
+                    }
+                    focus() {
+                        Object.values(tabs).forEach(tab => {
+                            tab.blur();
+                        })
+                        this.tab.classList.add('active');
+                        this.tabviewItem.classList.add('active');
+                    }
+                    changeHeader(header) {
+                        this.tabHeader.innerHTML = header;
+                    }
+                    changeIcon(icon) {
+                        this.tabIcon.style.backgroundImage = `url(${icon})`;
+                    }
+                    close() {
+                        this.tab.remove();
+                        this.tabviewItem.remove();
+                        var index = order.indexOf(this.id);
+                        delete tabs[this.id];
+                        order.splice(index, 1);
+                        if (Object.keys(tabs).length == 0) {
+                            return close();
+                        } else if (order[index]) {
+                            return tabs[order[index]].focus();
+                        } else if (order[index - 1]) {
+                            return tabs[order[index - 1]].focus();
+                        } else {
+                            return tabs[order[0]].focus();
+                        }
+                    }
+                    blur() {
+                        this.tab.classList.remove('active');
+                        this.tabviewItem.classList.remove('active');
+                    }
+                }
+                return { Tab, on };
+            }
+
             return {
                 shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
                 close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon,
-                setSnappable
+                setSnappable,
+                useTabview
             };
         },
         writable: false,
