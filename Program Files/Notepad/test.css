@@ -1,0 +1,42 @@
+.simple-editor {
+    font-family: var(--winbows-font-default);
+    outline: none;
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+    border: none;
+    display: flex;
+    flex-direction: column;
+}
+
+.simple-editor-content {
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+    overflow: hidden;
+}
+
+.simple-editor-lines {
+    padding: .375rem .5rem;
+    overflow: auto;
+    max-height: -webkit-fill-available;
+}
+
+.simple-editor-line {
+    word-break: break-all;
+    white-space: pre-wrap;
+    min-height: 21px;
+}
+
+.simple-editor-footer {
+    position: sticky;
+    bottom: 0;
+    color: #000;
+    padding: .5rem .75rem;
+    display: flex;
+    align-items: center;
+    margin-top: auto;
+}
+
+.simple-editor *::selection {
+    background: rgb(211 227 253);
+    color: unset;
+}

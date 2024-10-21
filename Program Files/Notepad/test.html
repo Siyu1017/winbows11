@@ -5,21 +5,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        body {
+            margin: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        :root {
+            --winbows-font-default: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        }
+    </style>
+    <link rel="stylesheet" href="./test.css">
 </head>
 
 <body>
     <script>
         function createEditor(target) {
             var editor = document.createElement('div');
+            var editorContent = document.createElement('div');
+            var editorLines = document.createElement('div');
+            var editorFooter = document.createElement('div');
+            var editorFooterCursor = document.createElement('div');
+            var editorFooterCount = document.createElement('div');
             var textarea = document.createElement('textarea');
+
             editor.contentEditable = true;
-            editor.style.width = '100%';
-            editor.style.height = '100%';
-            editor.style.border = 'none';
             editor.className = 'simple-editor';
+            editorContent.className = 'simple-editor-content';
+            editorLines.className = 'simple-editor-lines';
+            editorFooter.className = 'simple-editor-footer';
+            editorFooterCursor.className = 'simple-editor-footer-cursor';
+            editorFooterCount.className = 'simple-editor-footer-count';
+
             target.appendChild(editor);
+            editor.appendChild(editorContent);
+            editorContent.appendChild(editorLines);
+            editor.appendChild(editorFooter);
+            editorFooter.appendChild(editorFooterCursor);
+            editorFooter.appendChild(editorFooterCount);
+
+            editorFooterCursor.innerHTML = 'Line 1, Column 1';
+            editorFooterCount.textContent = '0 character';
 
             var lines = [];
+            var textContents = [];
 
             createLine();
 
@@ -27,23 +58,30 @@
                 var line = document.createElement('div');
                 line.textContent = '';
                 line.className = 'simple-editor-line';
-                editor.appendChild(line);
+                editorLines.appendChild(line);
                 lines.push(line);
+                line.addEventListener('input', () => {
+                    textContents[lines.indexOf(line)] = line.textContent;
+                })
                 return line;
             }
 
             editor.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    var line = createLine();
-                    placeCaretAtEnd(line);
-                    syncContent();
+                    var cursorPosition = getCaretPosition();
+                    insertNewLineInTextarea(cursorPosition);
+                    var newLine = createLine();  
+                    placeCaretAtEnd(newLine); 
+                    syncContent(); 
+                    scrollToCursor(); 
                 }
             });
 
             editor.addEventListener('input', (e) => {
                 e.preventDefault();
                 syncContent();
+                scrollToCursor();
             });
 
             function syncContent() {
@@ -68,8 +106,30 @@
                 }
 
                 for (var i = 0; i < contentLines.length; i++) {
-                    lines[i].textContent = contentLines[i];
+                    console.log(contentLines[i])
+                    if (contentLines[i] == '') {
+                        lines[i].innerHTML = '<br>';
+                    } else {
+                        lines[i].textContent = contentLines[i];
+                    }
                 }
+            }
+
+            function insertNewLineInTextarea(cursorPosition) {
+                var text = textarea.value;
+                textarea.value = text.slice(0, cursorPosition) + '\n' + text.slice(cursorPosition);
+            }
+
+            function getCaretPosition() {
+                var selection = window.getSelection();
+                if (selection.rangeCount > 0) {
+                    var range = selection.getRangeAt(0);
+                    var preCaretRange = range.cloneRange();
+                    preCaretRange.selectNodeContents(editor);
+                    preCaretRange.setEnd(range.endContainer, range.endOffset);
+                    return preCaretRange.toString().length;
+                }
+                return 0;
             }
 
             editor.addEventListener('paste', (e) => {
@@ -77,6 +137,19 @@
                 var text = (e.clipboardData || window.clipboardData).getData('text/plain');
                 document.execCommand('insertText', false, text);
                 syncContent();
+                scrollToCursor();
+            });
+
+            editor.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            editor.addEventListener('drop', (e) => {
+                e.preventDefault();
+                var text = (e.dataTransfer.getData('text/plain') || '');
+                document.execCommand('insertText', false, text);
+                syncContent();
+                scrollToCursor();
             });
 
             function placeCaretAtEnd(el) {
@@ -108,6 +181,10 @@
                 for (var i = 0; i < contentLines.length; i++) {
                     lines[i].textContent = contentLines[i];
                 }
+            }
+
+            function scrollToCursor() {
+                // TODO
             }
 
             return { editor, getValue, setValue };

@@ -6,8 +6,15 @@ document.head.appendChild(style);
 
 ; (async () => {
     var filePath = datas.file || 'C:/build.json';
-    var fileBlob = await fs.readFile(filePath);
-    var fileContent = await fileBlob.text();
+    var fileURL = await fs.getFileURL(filePath);
+    var fileContent = '';
+    await fetch(fileURL).then(res => {
+        return res.json();
+    }).then(res => {
+        fileContent = res;
+    }).finally(() => {
+        return;
+    })
 
     browserWindow.changeTitle(`${window.utils.getFileName(filePath)} - JSON Viewer`)
 

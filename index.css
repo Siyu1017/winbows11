@@ -799,23 +799,24 @@ body {
     overflow: hidden;
     box-shadow: 0 0 8px 4px rgb(0 0 0 / 9%);
     width: 40rem;
-    height: min(100vh - 3rem, 45rem);
+    height: min(100vh - 2rem - var(--taskbar-height), 45rem);
     display: flex;
     flex-direction: column;
 }
 
 .start-menu-inner {
     padding: 2rem;
-    background: rgba(252, 252, 252, .9);
-    backdrop-filter: saturate(1.5) blur(32px);
+    background: rgba(255, 255, 255, .9);
+    backdrop-filter: saturate(2) blur(32px);
     height: -webkit-fill-available;
+    overflow: auto;
 }
 
 .start-menu-footer {
     padding: .45rem 3.5rem;
     background: rgba(252, 252, 252, .9);
     backdrop-filter: saturate(3) blur(32px);
-    border-top: 1.5px solid rgb(229 229 229);
+    border-top: 1.5px solid rgba(0,0,0,.1);
     display: flex;
     justify-content: space-between;
 }
