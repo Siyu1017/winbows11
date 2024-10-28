@@ -71,6 +71,6 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
     margin-block-start: 1em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
-">Learn more on <a href="https://github.com/Siyu1017/winbows11">Github</a>.</div>
+">Learn more on <a href="https://github.com/Siyu1017/winbows11" target="_blank">Github</a>.</div>
 			</div>
             </div>`;
