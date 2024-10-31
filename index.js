@@ -2029,6 +2029,7 @@
             }
         });
 
+        /*
         document.addEventListener('paste', function (event) {
             const clipboardItems = event.clipboardData.items;
 
@@ -2092,6 +2093,7 @@
                 });
             });
         });
+        */
 
         desktop.addEventListener('contextmenu', (e) => {
             const menu = WinUI.contextMenu([
