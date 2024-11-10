@@ -83,7 +83,11 @@
             return new Promise(async (resolve, reject) => {
                 window.Winbows.Screen.style.cursor = 'progress';
                 try {
-                    this.url = URL.createObjectURL(await window.Compilers.Worker(this.path, this.token, extra));
+                    await window.Compilers.Worker(this.path, this.token, extra).then(blob => {
+                        this.url = URL.createObjectURL(blob);
+                    }).catch((e) => {
+                        window.Crash(e.message)
+                    })
                 } catch (e) {
                     window.Winbows.Screen.style.cursor = 'auto';
                     reject('Can not run file.\n' + e.message);

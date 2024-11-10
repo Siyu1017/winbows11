@@ -6,20 +6,26 @@ Object.defineProperty(window.Compilers, 'Worker', {
      * @returns {Blob} 
      */
     value: async function (path, token, extra = '') {
-        var file = await window.fs.downloadFile(path);
-        var content = await file.text();
-        var directories = path.trim().split('/').filter(dir => dir.length > 0);
-        directories.splice(-1);
-        
-        var modules = ['C:/Winbows/System/modules/system.js'];
-        var moduleContent = '';
+        return new Promise(async (resolve, reject) => {
+            var file = await window.fs.downloadFile(path);
+            var content = await file.text();
+            var directories = path.trim().split('/').filter(dir => dir.length > 0);
+            directories.splice(-1);
 
-        for (let i in modules) {
-            moduleContent += `;${await (await fs.downloadFile(modules[i])).text()}`;
-        }
-        
-        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${directories.join('/')}",__filename="${path}";(()=>{try{const TOKEN="${token}";${moduleContent};}catch(e){console.error(e)}})();try{${extra};${content};}catch(e){process.error(e);}`;
-        return new Blob([content], { type: 'application/javascript' });
+            var modules = ['C:/Winbows/System/modules/system.js'];
+            var moduleContent = '';
+
+            for (let i in modules) {
+                try {
+                    moduleContent += `;${await (await fs.downloadFile(modules[i])).text()}`;
+                } catch (error) {
+                    reject(error);
+                }
+            }
+
+            content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${directories.join('/')}",__filename="${path}";(()=>{try{const TOKEN="${token}";${moduleContent};}catch(e){console.error(e)}})();try{${extra};${content};}catch(e){process.error(e);}`;
+            resolve(new Blob([content], { type: 'application/javascript' }));
+        });
     },
     configurable: false,
     writable: false
