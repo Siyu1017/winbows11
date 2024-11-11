@@ -1,4 +1,6 @@
 !(async () => {
+    var browserWindowPosition = {};
+
     const snapPreview = document.createElement('div');
     snapPreview.className = 'browser-window-snap-preview';
     window.Winbows.AppWrapper.appendChild(snapPreview);
@@ -126,17 +128,26 @@
                 ICON.focus(windowID);
             })
 
+            var x = (window.innerWidth / 2) - ((config.width ? config.width : 800) / 2);
+            var y = ((window.innerHeight - 48) / 2) - ((config.height ? config.height : 600) / 2);
+
             if (config.x != undefined) {
-                hostElement.style.left = config.x + 'px';
-            } else {
-                hostElement.style.left = (window.innerWidth / 2) - ((config.width ? config.width : 800) / 2) + 'px';
+                x = config.x;
             }
             if (config.y != undefined) {
-                hostElement.style.top = config.y + 'px';
-            } else {
                 // Taskbar height : 48
-                hostElement.style.top = ((window.innerHeight - 48) / 2) - ((config.height ? config.height : 600) / 2) + 'px';
+                y = config.y;
             }
+
+            if (browserWindowPosition[path.caller]) {
+                x = browserWindowPosition[path.caller][0];
+                y = browserWindowPosition[path.caller][1];
+            }
+
+            hostElement.style.left = x + 'px';
+            hostElement.style.top = y + 'px';
+
+            browserWindowPosition[path.caller] = [x + 20 >= window.innerWidth ? 0 : x + 20, y + 20 >= window.innerHeight - 48 ? 0 : y + 20];
 
             ICON.addEventListener('blur', (e) => {
                 content.style.pointerEvents = '';
@@ -151,22 +162,21 @@
                 triggerEvent('focus', {});
             })
 
-            ICON.addEventListener('_show', (e) => {
+            ICON.addEventListener('_show', (id) => {
                 return;
-
-                if (e.id != windowID) return;
+                if (id != windowID) return;
                 var iconPosition = window.utils.getPosition(ICON.item);
 
                 hostElement.style.transition = 'transform 200ms ease, opacity 100ms ease-in-out, scale 200ms ease';
                 hostElement.style.opacity = 1;
                 hostElement.style.transformOrigin = 'bottom center'//`bottom ${iconPosition.x < window.innerWidth / 2 ? 'left' : iconPosition.x > window.innerWidth / 2 ? 'right' : 'center'}`;
                 hostElement.style.transform = `translate(0, 0)`;
+                hostElement.style.scale = 'revert-layer';
             })
 
-            ICON.addEventListener('_hide', (e) => {
+            ICON.addEventListener('_hide', (id) => {
                 return;
-
-                if (e.id != windowID) return;
+                if (id != windowID) return;
                 var iconPosition = window.utils.getPosition(ICON.item);
                 var originalWidth = originalSnapSide == '' ? hostElement.offsetWidth : originalWidth;
                 var originalHeight = originalSnapSide == '' ? hostElement.offsetHeight : originalHeight;
@@ -174,7 +184,8 @@
                 hostElement.style.opacity = 1;
                 hostElement.style.transition = `transform 200ms cubic-bezier(.9,.1,.87,.5), opacity 100ms ease-in-out, scale 200ms cubic-bezier(.9,.1,.87,.5)`;
                 hostElement.style.transformOrigin = 'bottom center'//`bottom ${iconPosition.x < window.innerWidth / 2 ? 'left' : iconPosition.x > window.innerWidth / 2 ? 'right' : 'center'}`;
-                hostElement.style.transform = `translate(${-(originalLeft + originalWidth / 2 - iconPosition.x)}px, ${-(originalTop + originalHeight - iconPosition.y)}px) scale(0)`;
+                hostElement.style.transform = `translate(${iconPosition.x + ICON.item.offsetWidth / 2 - (originalLeft + originalWidth / 2)}px, ${iconPosition.y - (originalTop + originalHeight)}px)`;
+                hostElement.style.scale = 0;
                 setTimeout(function () {
                     if (ICON.status.show == false) {
                         hostElement.style.opacity = 0;

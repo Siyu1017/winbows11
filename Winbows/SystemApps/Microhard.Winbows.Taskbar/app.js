@@ -155,9 +155,55 @@
     footerProfile.appendChild(footerProfileUsername);
     footerPower.appendChild(footerPowerButton);
 
+    const powerMenu = WinUI.contextMenu([]);
+
+    footerPowerButton.addEventListener('click', (e) => {
+        powerMenu.setItems([
+            {
+                icon: "lock",
+                text: "Lock",
+                action: () => {
+                    window.Winbows.ShowLockScreen();
+                }
+            }, {
+                icon: "quiet-hours",
+                text: "Sleep",
+                action: () => {
+
+                },
+                disabled: true
+            }, {
+                icon: "power-button",
+                text: "Shut down",
+                action: () => {
+
+                },
+                disabled: true
+            }, {
+                icon: "update-restore",
+                text: "Restart",
+                action: () => {
+                    location.reload();
+                },
+                disabled: true
+            }
+        ])
+        var position = window.utils.getPosition(footerPowerButton);
+        powerMenu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+        powerMenu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+        powerMenu.open(position.x, window.innerHeight - position.y, 'left-bottom');
+    })
+
+    new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+        window.addEventListener(event, (e) => {
+            if (powerMenu.container.contains(e.target)) return;
+            powerMenu.close();
+        })
+    })
+
     document.addEventListener('pointerdown', e => {
         if (!iconRepository.start) return;
-        if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || iconRepository.start.item.contains(e.target)) return;
+        if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || powerMenu.container.contains(e.target) || iconRepository.start.item.contains(e.target)) return;
         iconRepository.start.hide();
     })
 

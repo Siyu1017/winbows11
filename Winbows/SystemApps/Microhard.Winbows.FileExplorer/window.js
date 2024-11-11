@@ -1059,6 +1059,18 @@ async function createTab(page = 'this_pc', active = true) {
                         new Process(path).start();
                     }
                 })
+            } else if (window.utils.getFileExtension(path) == 'wbsf') {
+                items.push({
+                    icon: 'window-snipping',
+                    text: 'Run file',
+                    action: async () => {
+                        const file = await fs.readFile(path);
+                        const script = await file.text();
+                        script.split('\n').filter(t => t.trim().length > 0).forEach(line => {
+                            window.System.Shell(line.trim());
+                        })
+                    }
+                })
             } else if (fontExtensions.includes(window.utils.getFileExtension(path))) {
                 items.push({
                     className: "set-as-default-font",

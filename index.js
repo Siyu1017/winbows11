@@ -225,7 +225,9 @@
             // VSCode
             'css': 'C:/Program Files/VSCode/File Icons/css.ico',
             'js': 'C:/Program Files/VSCode/File Icons/javascript.ico',
-            'json': 'C:/Program Files/VSCode/File Icons/json.ico'
+            'json': 'C:/Program Files/VSCode/File Icons/json.ico',
+            // Winbows script files
+            'wbsf': 'C:/Winbows/icons/files/executable.ico'
         },
         register: (ext, icon) => {
             if (ext == '*') return;
@@ -361,11 +363,19 @@
     window.Winbows = {};
     window.Winbows.Screen = screen;
     window.Winbows.AppWrapper = appWrapper;
+    window.Winbows.ShowLockScreen = () => {
+        screenLock.classList.remove('signin');
+        screenLockContainer.classList.add('active');
+    }
+
+    var crashed = false;
 
     window.Components = {};
     window.Compilers = {};
     window.Crash = (err) => {
-        console.log(err)
+        if (crashed == true) return;
+        crashed = true;
+        console.log(err);
         try {
             document.body.innerHTML = `<div class="bsod"><div class="bsod-container"><h1 style="font-size: 6rem;margin: 0 0 2rem;font-weight: 300;">:(</h1><div style="font-size:1.375rem">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div></div>`;
         } catch (e) {
@@ -540,7 +550,7 @@
 
             async reportError(method, message) {
                 var detectList = ['list', 'open', 'readFile', 'readdir'];
-                if (detectList.includes(method)) {
+                if (detectList.includes(method) && crashed == false) {
                     var incomplete = false;
                     await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
                         return res.json();
@@ -1255,6 +1265,21 @@
                 status: 'ok',
                 message: `Successfully open ${path}.`
             }
+        },
+        kill: async (params) => {
+            var selector = params[0];
+            if (window.System.processes[selector]) {
+                window.System.processes[selector].exit();
+                return {
+                    status: 'ok',
+                    message: `Successfully killed process with ID ${pid}.`
+                }
+            } else {
+                return {
+                    status: 'error',
+                    message: `[ERROR] Process with ID ${pid} does not exist.`
+                }
+            }
         }
     };
 
@@ -1677,7 +1702,6 @@
                         icon: "delete",
                         text: "Delete",
                         action: async () => {
-                            console.log(selected)
                             for (let i = 0; i < selected.length; i++) {
                                 var item = selected[i];
                                 await fs.rm(item.path).then(res => {
@@ -1716,6 +1740,18 @@
                             text: "Run as an application",
                             action: async () => {
                                 new Process(path).start();
+                            }
+                        })
+                    } else if (window.utils.getFileExtension(path) == 'wbsf') {
+                        items.push({
+                            icon: 'window-snipping',
+                            text: 'Run file',
+                            action: async () => {
+                                const file = await fs.readFile(path);
+                                const script = await file.text();
+                                script.split('\n').filter(t => t.trim().length > 0).forEach(line => {
+                                    window.System.Shell(line.trim());
+                                })
                             }
                         })
                     } else if (['ttf', 'otf', 'woff', 'woff2', 'eot'].includes(window.utils.getFileExtension(path))) {
@@ -1777,6 +1813,7 @@
         }
 
         async function updateDesktop(force = true, sort = 'default') {
+            console.log('Updating Desktop', '\nForce : ' + force);
             fs.readdir('C:/Users/Admin/Desktop').then(async items => {
                 if (items == originalContent && force == false || updating == true) return;
                 originalContent = items;
@@ -2190,9 +2227,19 @@
             }));
         }
 
+        var lastTime = Date.now();
+
         fs.on('change', (e) => {
             if (e.path.search('C:/Users/Admin/Desktop') > -1 && fileTransfer == 0) {
-                updateDesktop(false);
+                var timeout = () => {
+                    var now = Date.now();
+                    if (lastTime - now > 1000) {
+                        lastTime = now;
+                        updateDesktop(false);
+                    }
+                    clearTimeout(timeout);
+                };
+                setTimeout(timeout, 1000);
             }
         });
 
