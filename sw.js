@@ -5,6 +5,7 @@ self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_NAME).then((cache) => {
             return cache.addAll([
+                './fs.js',
                 './index.html',
                 './index.js',
                 './index.css',

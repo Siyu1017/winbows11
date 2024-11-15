@@ -443,7 +443,7 @@ body {
 
 .desktop {
     width: 100vw;
-    height: calc(100vh - var(--taskbar-height));
+    height: calc(100% - var(--taskbar-height));
     z-index: 0;
     position: fixed;
     top: 0;
@@ -482,7 +482,7 @@ body {
     user-select: none;
     -webkit-user-select: none;
     -webkit-user-drag: none;
-    max-height: calc(100vh - var(--taskbar-height));
+    max-height: 100%;
     align-content: flex-start;
     overflow: auto;
     height: -webkit-fill-available;
@@ -1005,7 +1005,7 @@ body {
     z-index: 1;
     position: absolute;
     width: 100vw;
-    height: calc(100vh - var(--taskbar-height));
+    height: calc(100% - var(--taskbar-height));
 }
 
 .browser-window-container {

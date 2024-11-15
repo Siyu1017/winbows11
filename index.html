@@ -17,6 +17,7 @@
     <meta property="og:description" content="Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!" />
     <meta property="og:url" content="https://winbows11.vercel.app">
     <title>Winbows11</title>
+    <script src="./fs.js"></script>
     <link rel="icon" href="./favicon.ico">
     <link rel="stylesheet" href="./index.css" data-tag="style-main">
     <style>
@@ -165,12 +166,6 @@
         if (localStorage.getItem('WINBOWS_REQUIRED') == 'REPAIR' && !getJsonFromURL()['embed']) {
             location.href = `./repair.html?timestamp=${new Date().getTime()}`;
         }
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', scope: './' }).then((register) => {
-                register.update();
-                console.log('register success')
-            }, (err) => console.log('register fail:', err));
-        }
 
         ; (async () => {
             var DIRECTORIES = localStorage.getItem('WINBOWS_DIRECTORIES') || true;
@@ -294,6 +289,14 @@
             }
             document.head.appendChild(style);
         } catch (e) { };
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', scope: './' }).then((register) => {
+                register.update();
+                console.log('register success')
+            }, (err) => console.log('register fail:', err));
+        }
     </script>
 </body>
 
