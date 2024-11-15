@@ -18,19 +18,28 @@
     // Loading
     var loadingContainer = document.createElement('div');
     var loadingImage = document.createElement('div');
-    var loadingSpinner = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    var loadingSpinner = devMode == true || window.needsUpdate == true ? document.createElement('div') : document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    var loadingProgress = document.createElement('div');
+    var loadingProgressBar = document.createElement('div');
 
     loadingContainer.className = 'winbows-loading active';
     loadingImage.className = 'winbows-loading-image';
-    loadingSpinner.setAttribute('class', 'winbows-loading-spinner');
-    loadingSpinner.setAttribute('width', 48);
-    loadingSpinner.setAttribute('height', 48);
-    loadingSpinner.setAttribute('viewBox', "0 0 16 16");
-    loadingSpinner.innerHTML = '<circle cx="8px" cy="8px" r="7px"></circle>';
-
     loadingContainer.appendChild(loadingImage);
-    loadingContainer.appendChild(loadingSpinner);
     document.body.appendChild(loadingContainer);
+
+    if (devMode == false && window.needsUpdate == false) {
+        loadingSpinner.setAttribute('class', 'winbows-loading-spinner');
+        loadingSpinner.setAttribute('width', 48);
+        loadingSpinner.setAttribute('height', 48);
+        loadingSpinner.setAttribute('viewBox', "0 0 16 16");
+        loadingSpinner.innerHTML = '<circle cx="8px" cy="8px" r="7px"></circle>';
+        loadingContainer.appendChild(loadingSpinner);
+    } else {
+        loadingProgress.classList.add('winbows-loading-progress');
+        loadingProgressBar.classList.add('winbows-loading-progress-bar');
+        loadingContainer.appendChild(loadingProgress);
+        loadingProgress.appendChild(loadingProgressBar);
+    }
 
     // Lock panel
     var screenLockContainer = document.createElement('div');
@@ -553,8 +562,10 @@
                 var loadedKernels = 0;
                 window.loadedKernel = () => {
                     loadedKernels++;
+                    loadingProgressBar.style.width = loadedKernels / kernelFiles.length * 100 + '%';
                     console.log(loadedKernels)
                     if (loadedKernels == kernelFiles.length) {
+                        loadingProgressBar.style.width = '100%';
                         resolve();
                     }
                 }

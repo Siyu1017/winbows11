@@ -280,6 +280,22 @@ body {
     }
 }
 
+.winbows-loading-progress {
+    width: 18rem;
+    height: .375rem;
+    border-radius: 99rem;
+    overflow: hidden;
+    background: rgba(255, 255, 255, .1);
+    margin-top: 3rem;
+}
+
+.winbows-loading-progress-bar {
+    width: 0%;
+    height: 100%;
+    background: #fff;
+    transition: all .05s ease-in-out;
+}
+
 .screen-lock-container,
 .screen-lock-container * {
     transition: all .2s ease-in-out;
