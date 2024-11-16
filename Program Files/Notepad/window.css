@@ -100,6 +100,9 @@
     width: -webkit-fill-available;
     height: -webkit-fill-available;
     overflow: hidden;
+    max-width: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+    position: relative;
 }
 
 .window {
@@ -124,6 +127,12 @@
     height: auto;
     max-height: -webkit-fill-available;
     border: none;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    resize: none;
+    font-family: var(--winbows-font-default);
+    font-size: inherit;
+    font-weight: inherit;
 }
 
 .simple-editor-line {
@@ -132,6 +141,7 @@
     min-height: 21px;
 }
 
+.simple-editor::selection,
 .simple-editor *::selection {
     background: rgb(211 227 253);
     color: unset;

@@ -51,12 +51,14 @@ function createEditor(target) {
             syncContent();
             scrollToCursor();
         }
+        triggerEvent('change', e);
     });
 
     editor.addEventListener('input', (e) => {
         e.preventDefault();
         syncContent();
         scrollToCursor();
+        triggerEvent('change', e);
     });
 
     function syncContent() {
@@ -91,6 +93,7 @@ function createEditor(target) {
         document.execCommand('insertText', false, text);
         syncContent();
         scrollToCursor();
+        triggerEvent('change', e);
     });
 
     editor.addEventListener('dragover', (e) => {
@@ -99,11 +102,26 @@ function createEditor(target) {
 
     editor.addEventListener('drop', (e) => {
         e.preventDefault();
-        var text = (e.dataTransfer.getData('text/plain') || ''); 
+        var text = (e.dataTransfer.getData('text/plain') || '');
         document.execCommand('insertText', false, text);
         syncContent();
         scrollToCursor();
     });
+
+    var listeners = {};
+
+    function triggerEvent(event, detail) {
+        if (listeners[event]) {
+            listeners[event].forEach(listener => listener(detail));
+        }
+    }
+
+    function on(event, callback) {
+        if (!listeners[event]) {
+            listeners[event] = [];
+        }
+        listeners[event].push(callback);
+    }
 
     function placeCaretAtEnd(el) {
         el.focus();
@@ -140,7 +158,54 @@ function createEditor(target) {
         // TODO
     }
 
-    return { editor, getValue, setValue };
+    return { editor, getValue, setValue, on };
+}
+
+function createEditor(target) {
+    var editor = document.createElement('textarea');
+    editor.className = 'simple-editor';
+    target.appendChild(editor);
+
+    editor.addEventListener('keydown', (e) => {
+        triggerEvent('change', e);
+    });
+
+    editor.addEventListener('input', (e) => {
+        triggerEvent('change', e);
+    });
+
+    editor.addEventListener('paste', (e) => {
+        triggerEvent('change', e);
+    });
+
+    editor.addEventListener('drop', (e) => {
+        triggerEvent('change', e);
+    });
+
+    var listeners = {};
+
+    function triggerEvent(event, detail) {
+        if (listeners[event]) {
+            listeners[event].forEach(listener => listener(detail));
+        }
+    }
+
+    function on(event, callback) {
+        if (!listeners[event]) {
+            listeners[event] = [];
+        }
+        listeners[event].push(callback);
+    }
+
+    function getValue() {
+        return editor.value;
+    }
+
+    function setValue(value) {
+        editor.value = value;
+    }
+
+    return { editor, getValue, setValue, on };
 }
 
 function setupPage(tab) {
@@ -165,7 +230,16 @@ function setupPage(tab) {
 
     if (filePath != '') {
         editor.setValue(fileContent);
+        tab.changeHeader(window.parent.utils.getFileName(filePath));
     }
+
+    editor.on('change', () => {
+        if (fileContent != editor.getValue()) {
+            tab.changeHeader('● ' + (filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled'));
+        } else {
+            tab.changeHeader(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
+        }
+    })
 
     var menuItems = [{
         text: 'File',
@@ -174,16 +248,27 @@ function setupPage(tab) {
                 text: 'New File',
                 action: () => {
                     // Clear content
+                    fileContent = '';
+                    filePath = '';
+                    editor.setValue(fileContent);
+                    tab.changeHeader('Untitled');
                 }
             }, {
                 text: 'Open File...',
                 action: async () => {
-                    var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFileWindow.js').start();
-                    process.worker.addEventListener('message', (e) => {
+                    var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.js').start();
+                    process.worker.addEventListener('message', async (e) => {
                         if (e.data.token != process.token) return;
                         if (e.data.type == 'confirm') {
                             filePath = e.data.items[0];
                             process.exit(0);
+                            await fs.readFile(filePath).then(async res => {
+                                return res.text()
+                            }).then(content => {
+                                fileContent = content;
+                                editor.setValue(fileContent);
+                                tab.changeHeader(window.parent.utils.getFileName(filePath));
+                            })
                         }
                         if (e.data.type == 'cancel') {
                             process.exit(0);
@@ -283,6 +368,7 @@ function setupPage(tab) {
         function show() {
             menubarItem.classList.add('active');
             var position = window.utils.getPosition(menubarItem);
+            menu.container.style.setProperty('--contextmenu-bg', 'rgb(249, 249, 249)');
             menu.open(position.x, position.y + menubarItem.offsetHeight + 4, 'left-top');
         }
         function hide() {

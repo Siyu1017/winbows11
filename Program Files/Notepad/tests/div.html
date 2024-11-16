@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editable Text Area with Lines</title>
+    <style>
+        #editableDiv {
+            border: 1px solid #ccc;
+            padding: 10px;
+            min-height: 50px;
+            /*white-space: pre-wrap;*/
+            outline: none;
+            /* 防止選擇時的藍框 */
+        }
+
+        .line {
+            display: flex;
+            padding: 5px 0;
+            min-height: 20px;
+            border-bottom: 1px dashed #aaa;
+        }
+
+        .line-content {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="editableDiv" contenteditable="true" aria-label="Editable text area">
+        <!-- 最初插入一個空行 -->
+        <div class="line">
+            <div class="line-content">&nbsp;</div>
+        </div>
+    </div>
+
+    <script>
+        const editableDiv = document.getElementById('editableDiv');
+        let linesData = [];
+
+        // 確保光標能放到一個空行中
+        const initializeLine = () => {
+            const lines = editableDiv.querySelectorAll('.line');
+            if (lines.length === 0) {
+                // 如果沒有任何行，插入一個空行
+                const newLine = document.createElement('div');
+                newLine.className = 'line';
+                const lineContent = document.createElement('div');
+                lineContent.className = 'line-content';
+                lineContent.innerHTML = '&nbsp;';
+                newLine.appendChild(lineContent);
+                editableDiv.appendChild(newLine);
+            }
+
+            // 保證至少一行並且將光標放置於該行內
+            placeCaretAt(lines[0].querySelector('.line-content'));
+        };
+
+        // 確保每行至少有一行存在
+        const maintainAtLeastOneLine = () => {
+            const lines = editableDiv.querySelectorAll('.line');
+            if (lines.length === 0) {
+                const newLine = document.createElement('div');
+                newLine.className = 'line';
+                const lineContent = document.createElement('div');
+                lineContent.className = 'line-content';
+                lineContent.innerHTML = '&nbsp;';
+                newLine.appendChild(lineContent);
+                editableDiv.appendChild(newLine);
+            }
+        };
+
+        const handleInput = () => {
+            const rawLines = Array.from(editableDiv.children).map(line => {
+                const content = line.querySelector('.line-content')?.textContent || '';
+                return content.trim() === '' ? '' : content;
+            });
+
+            if (JSON.stringify(linesData) !== JSON.stringify(rawLines)) {
+                linesData = rawLines;
+            }
+
+            // 每次輸入後確保至少一行存在
+            maintainAtLeastOneLine();
+        };
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // 禁止默認換行行為
+
+                const selection = window.getSelection();
+                const range = selection.getRangeAt(0);
+
+                // 確保正確找到當前行
+                const currentLine = range.startContainer.nodeType === Node.TEXT_NODE
+                    ? range.startContainer.parentElement.closest('.line')
+                    : range.startContainer.closest('.line');
+
+                // 插入新行
+                const newLine = document.createElement('div');
+                newLine.className = 'line';
+                const lineContent = document.createElement('div');
+                lineContent.className = 'line-content';
+                lineContent.innerHTML = '&nbsp;';
+                newLine.appendChild(lineContent);
+
+                if (currentLine && currentLine.nextSibling) {
+                    editableDiv.insertBefore(newLine, currentLine.nextSibling);
+                } else {
+                    editableDiv.appendChild(newLine);
+                }
+
+                // 移動光標到新行
+                placeCaretAt(newLine.querySelector('.line-content'));
+
+                // 更新暫存內容
+                handleInput();
+            }
+        };
+
+        const handleDeleteKey = (event) => {
+            const lines = editableDiv.querySelectorAll('.line');
+
+            if (lines.length === 1 && lines[0].querySelector('.line-content').textContent.trim() === '') {
+                // 如果只有一行且該行為空行，阻止刪除
+                event.preventDefault();
+            }
+        };
+
+        const placeCaretAt = (element) => {
+            const range = document.createRange();
+            const selection = window.getSelection();
+            range.selectNodeContents(element);
+            range.collapse(true);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        };
+
+        // 綁定事件
+        editableDiv.addEventListener('input', handleInput);
+        editableDiv.addEventListener('keydown', handleKeyDown);
+        editableDiv.addEventListener('keydown', handleDeleteKey);
+
+        // 初始化
+        initializeLine();
+        handleInput();
+    </script>
+</body>
+
+</html>
