@@ -377,21 +377,8 @@
         screenLockContainer.classList.add('active');
     }
 
-    var crashed = false;
-
     window.Components = {};
     window.Compilers = {};
-    window.Crash = (err) => {
-        if (crashed == true) return;
-        crashed = true;
-        console.log(err);
-        try {
-            document.body.innerHTML = `<div class="bsod"><div class="bsod-container"><h1 style="font-size: 6rem;margin: 0 0 2rem;font-weight: 300;">:(</h1><div style="font-size:1.375rem">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div></div>`;
-        } catch (e) {
-            console.error(e);
-        }
-        throw new Error('Winbows has been crashed...');
-    }
 
     window.utils.replaceHTMLTags = (content = '') => {
         return content.replaceAll("<", "&lt;").replaceAll(">", "&gt;");

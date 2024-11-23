@@ -1,5 +1,3 @@
-const { response } = require("express");
-
 // File System
 !(async () => {
     const mainDisk = 'C';
@@ -11,6 +9,20 @@ const { response } = require("express");
     function computePath(path, currentPath) { const currentPathDirs = currentPath.split('/').filter(dir => dir !== ''), pathDirs = path.split('/').filter(dir => dir !== ''), resultPath = [...currentPathDirs]; for (const dir of pathDirs) { if (dir === '..') { if (resultPath.length > 0) { resultPath.pop(); } } else if (dir !== '.') { resultPath.push(dir); } } const outputPath = resultPath.join('/'); return outputPath; };
     function parseURL(url = '') { url = url.replaceAll('\\', '/'); var disk = ((/([A-Z]{1})(\:\/)/gi).exec(url) || [])[1] || mainDisk, path = url.replace(`${disk}:/`, ''); return { disk, path }; };
     // --------------------------- Utils --------------------------- //
+
+    window.crashed = false;
+    window.Crash = (err) => {
+        if (window.crashed == true) return;
+        window.crashed = true;
+        console.log(err);
+        try {
+            document.body.innerHTML = `<div class="bsod"><div class="bsod-container"><h1 style="font-size: 6rem;margin: 0 0 2rem;font-weight: 300;">:(</h1><div style="font-size:1.375rem">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div></div>`;
+        } catch (e) {
+            console.error(e);
+        }
+        setTimeout(() => { location.reload() }, 5000);
+        throw new Error('Winbows has been crashed...');
+    }
 
     !(() => {
         var queue = [];
@@ -601,7 +613,7 @@ const { response } = require("express");
 
         async reportError(method, message) {
             var detectList = ['list', 'open', 'readFile', 'readdir'];
-            if (detectList.includes(method) && crashed == false) {
+            if (detectList.includes(method) && window.crashed == false) {
                 var incomplete = false;
                 await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
                     return res.json();

@@ -4,6 +4,20 @@
     const debuggerMode = false;
     const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop']) ? true : false;
 
+    window.crashed = false;
+    window.Crash = (err) => {
+        if (window.crashed == true) return;
+        window.crashed = true;
+        console.log(err);
+        try {
+            document.body.innerHTML = `<div class="bsod"><div class="bsod-container"><h1 style="font-size: 6rem;margin: 0 0 2rem;font-weight: 300;">:(</h1><div style="font-size:1.375rem">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div></div>`;
+        } catch (e) {
+            console.error(e);
+        }
+        setTimeout(() => { location.reload() }, 5000);
+        throw new Error('Winbows has been crashed...');
+    }
+
     function getJsonFromURL(url) {
         if (!url) url = location.search;
         var query = url.substr(1);
@@ -21,10 +35,14 @@
             listeners[event].forEach(listener => listener(detail));
         }
     }
+
+    var db = null;
+    var repairWaitingList = [];
+    var repairing = false;
+
     class IDBFS {
         constructor(dbName, mainDisk = 'C') {
             this.dbName = dbName;
-            this.db = null;
             this.mainDisk = mainDisk;
             this.disks = [];
             this.debuggerMode = debuggerMode;
@@ -34,13 +52,14 @@
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(this.dbName);
                 request.onupgradeneeded = (event) => {
-                    const db = event.target.result;
-                    const store = db.createObjectStore(this.mainDisk, { keyPath: 'path' });
+                    var db = event.target.result;
+                    var store = db.createObjectStore(this.mainDisk, { keyPath: 'path' });
                     store.createIndex('path', 'path', { unique: true });
                 };
                 request.onsuccess = async (event) => {
-                    this.db = event.target.result;
+                    db = event.target.result;
                     var mainDiskExist = false;
+                    this.disks.length = 0;
                     Array.from(event.target.result.objectStoreNames).forEach(async name => {
                         if (name === this.mainDisk) {
                             mainDiskExist = true;
@@ -50,7 +69,6 @@
                     if (mainDiskExist == false) {
                         await this.createDisk(mainDiskExist)
                     }
-                    const db = event.target.result;
                     db.onversionchange = function () {
                         db.close();
                     };
@@ -64,12 +82,12 @@
         }
 
         async createDisk(diskName, config) {
-            if (!this.db) {
+            if (!db) {
                 await this.init();
             }
-            if (!this.db.objectStoreNames.contains(diskName)) {
+            if (!db.objectStoreNames.contains(diskName)) {
                 return new Promise((resolve) => {
-                    const request = indexedDB.open(this.dbName, this.db.version + 1);
+                    const request = indexedDB.open(this.dbName, db.version + 1);
                     request.onupgradeneeded = (event) => {
                         this.console.log('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
                         const db = event.target.result;
@@ -79,7 +97,7 @@
                         }
                     };
                     request.onsuccess = (event) => {
-                        this.db = event.target.result;
+                        db = event.target.result;
                         this.disks.push(diskName)
                         Array.from(event.target.result.objectStoreNames).forEach(async name => {
 
@@ -124,9 +142,37 @@
             }
         }
 
+        async getTransaction(n, m, p = false) {
+            try {
+                if (p == true) {
+                    repairWaitingList.forEach(fn => fn());
+                    this.console.log('Successfully repaired idbfs!');
+                    repairing = false;
+                    repairWaitingList = [];
+                }
+                return db.transaction(n, m);
+            } catch (e) {
+                if (p == false) {
+                    if (repairing == false) {
+                        repairing = true;
+                        await this.init();
+                        this.console.log('Trying to repair idbfs...');
+                        return this.getTransaction(n, m, true);
+                    } else {
+                        return new Promise((resolve, reject) => {
+                            repairWaitingList.push(() => { resolve(db.transaction(n, m)); });
+                        })
+                    }
+                } else {
+                    window.Crash();
+                    this.console.log('Failed to repair idbfs.');
+                }
+            }
+        }
+
         async reportError(method, message) {
             var detectList = ['list', 'open', 'readFile', 'readdir'];
-            if (detectList.includes(method) && crashed == false) {
+            if (detectList.includes(method) && window.crashed == false) {
                 var incomplete = false;
                 await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
                     return res.json();
@@ -181,8 +227,8 @@
         // OK
         async list(url) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readonly');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.index('path').getAllKeys() // getAll(IDBKeyRange.only(path));
                 request.onsuccess = (event) => {
@@ -204,8 +250,8 @@
         // OK
         async open(url) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readwrite');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
@@ -239,8 +285,8 @@
                     }
                 }
             }
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readwrite');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.put({ path: parsed.path, content, type: 'file' });
                 request.onsuccess = (event) => {
@@ -261,8 +307,8 @@
         // OK
         async readFile(url) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readonly');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
@@ -286,8 +332,8 @@
         // OK
         async mkdir(url) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readwrite');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.put({ path: parsed.path, type: 'directory' });
                 request.onsuccess = (event) => {
@@ -310,7 +356,7 @@
             const parsed = this.parseURL(url);
             return new Promise(async (resolve, reject) => {
                 const status = await this.exists(url);
-                const transaction = this.db.transaction(parsed.disk, 'readwrite');
+                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 if (status.type == 'file') {
                     const request = store.delete(parsed.path);
@@ -356,7 +402,7 @@
             const parsed = this.parseURL(url);
             return new Promise(async (resolve, reject) => {
                 const status = await this.exists(url);
-                const transaction = this.db.transaction(parsed.disk, 'readwrite');
+                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 if (status.type == 'directory') {
                     const request = store.index('path').openCursor();
@@ -392,24 +438,24 @@
         async mv(from, to) {
             const parsedFrom = this.parseURL(from);
             const parsedTo = this.parseURL(to);
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
                 // Read original file
-                const readTransaction = this.db.transaction(parsedFrom.disk, 'readwrite');
+                const readTransaction = await this.getTransaction(parsedFrom.disk, 'readwrite');
                 const readStore = readTransaction.objectStore(parsedFrom.disk);
                 const readRequest = readStore.get(parsedFrom.path);
 
-                readRequest.onsuccess = (event) => {
+                readRequest.onsuccess = async (event) => {
                     const file = event.target.result;
                     if (file) {
                         // Delete the original file
-                        const deleteTransaction = this.db.transaction(parsedFrom.disk, 'readwrite');
+                        const deleteTransaction = await this.getTransaction(parsedFrom.disk, 'readwrite');
                         const deleteStore = deleteTransaction.objectStore(parsedFrom.disk);
                         const deleteRequest = deleteStore.delete(parsedFrom.path);
 
-                        deleteRequest.onsuccess = (event) => {
+                        deleteRequest.onsuccess = async (event) => {
                             file.path = parsedTo.path;
                             // Put the file to the destination
-                            const putTransaction = this.db.transaction(parsedTo.disk, 'readwrite');
+                            const putTransaction = await this.getTransaction(parsedTo.disk, 'readwrite');
                             const putStore = putTransaction.objectStore(parsedTo.disk);
                             putStore.put(file);
                             this.debugger('mv', `Moved "${from}" to "${to}" successfully!`);
@@ -441,8 +487,8 @@
         // OK
         async readdir(url, deep = false) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readonly');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.index('path').openCursor() // getAll(IDBKeyRange.only(path));
                 var dirItems = [];
@@ -515,8 +561,8 @@
 
         async stat(url) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
-                const transaction = this.db.transaction(parsed.disk, 'readonly');
+            return new Promise(async (resolve, reject) => {
+                const transaction = await this.getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
@@ -560,7 +606,7 @@
 
         async exists(url) {
             const parsed = this.parseURL(url);
-            return new Promise((resolve, reject) => {
+            return new Promise(async (resolve, reject) => {
                 if (parsed.path == '' || !parsed.path) {
                     if (this.disks.includes(parsed.disk)) {
                         resolve({
@@ -576,7 +622,7 @@
                         });
                     }
                 }
-                const transaction = this.db.transaction(parsed.disk, 'readonly');
+                const transaction = await this.getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
