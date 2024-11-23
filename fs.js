@@ -15,6 +15,7 @@
             console.error(e);
         }
         setTimeout(() => { location.reload() }, 5000);
+        console.log(window.debuggers.getStackTrace());
         throw new Error('Winbows has been crashed...');
     }
 
