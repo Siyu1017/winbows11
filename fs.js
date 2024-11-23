@@ -165,8 +165,8 @@
                         })
                     }
                 } else {
-                    window.Crash();
                     this.console.log('Failed to repair idbfs.');
+                    window.Crash();
                 }
             }
         }
