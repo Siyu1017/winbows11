@@ -145,13 +145,14 @@
 
         async getTransaction(n, m, p = false) {
             try {
+                var t = db.transaction(n, m);
                 if (p == true) {
                     repairWaitingList.forEach(fn => fn());
                     this.console.log('Successfully repaired idbfs!');
                     repairing = false;
                     repairWaitingList = [];
                 }
-                return db.transaction(n, m);
+                return t;
             } catch (e) {
                 if (p == false) {
                     if (repairing == false) {
@@ -164,7 +165,7 @@
                             repairWaitingList.push(() => { resolve(db.transaction(n, m)); });
                         })
                     }
-                } else {
+                } else if (e.name === 'InvalidStateError' && p == true) {
                     this.console.log('Failed to repair idbfs.');
                     window.Crash();
                 }
