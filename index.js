@@ -1685,6 +1685,11 @@
                 name: 'JSON Viewer',
                 script: 'C:/Program Files/JSON Viewer/viewer.js',
                 accepts: ['json']
+            },
+            'notepad': {
+                name: 'Notepad',
+                script: 'C:/Program Files/Notepad/viewer.js',
+                accepts: ['*']
             }
         },
         isRegisterd: (name) => {
@@ -1775,17 +1780,17 @@
         }
     }
 
-    if (localStorage.getItem('WINBOWS_SYSTEM_FV_VIEWERS')) {
+    if (localStorage.getItem('WINBOWS_SYSTEM_FV_VIEWERS') && devMode == false) {
         window.System.FileViewers.viewers = JSON.parse(localStorage.getItem('WINBOWS_SYSTEM_FV_VIEWERS'));
     } else {
         localStorage.setItem('WINBOWS_SYSTEM_FV_VIEWERS', JSON.stringify(window.System.FileViewers.viewers));
     }
-    if (localStorage.getItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS')) {
+    if (localStorage.getItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS') && devMode == false) {
         window.System.FileViewers.defaultViewers = JSON.parse(localStorage.getItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS'));
     } else {
         localStorage.setItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS', JSON.stringify(window.System.FileViewers.defaultViewers));
     }
-    if (localStorage.getItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS')) {
+    if (localStorage.getItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS') && devMode == false) {
         window.System.FileViewers.registeredViewers = JSON.parse(localStorage.getItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS'));
     } else {
         localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(window.System.FileViewers.registeredViewers));

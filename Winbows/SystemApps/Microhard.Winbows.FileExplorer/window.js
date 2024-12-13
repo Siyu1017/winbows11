@@ -446,6 +446,9 @@ async function createTab(page = 'this_pc', active = true) {
     pathStripPathProtocol.setAttribute('data-protocol', 'this_pc');
 
     var actionbar = document.createElement('div');
+    var actionbarCreate = document.createElement('div');
+    var actionbarCreateButton = document.createElement('button');
+    var actionbarQuickActions = document.createElement('div');
     var content = document.createElement('div');
     var sidebar = document.createElement('div');
     var viewerContainer = document.createElement('div');
@@ -458,6 +461,9 @@ async function createTab(page = 'this_pc', active = true) {
     var footerSelectedItems = document.createElement('div');
 
     actionbar.className = 'explorer-actionbar';
+    actionbarCreate.className = 'explorer-actionbar-group';
+    actionbarCreateButton.className = 'explorer-actionbar-button create';
+    actionbarQuickActions.className = 'explorer-actionbar-group';
     content.className = 'explorer-content';
     sidebar.className = 'explorer-sidebar';
     viewerContainer.className = 'explorer-viewer-container';
@@ -471,6 +477,9 @@ async function createTab(page = 'this_pc', active = true) {
 
     tabViewItem.appendChild(pathStrip);
     tabViewItem.appendChild(actionbar);
+    actionbar.appendChild(actionbarCreate);
+    actionbar.appendChild(actionbarQuickActions);
+    actionbarCreate.appendChild(actionbarCreateButton);
     tabViewItem.appendChild(content);
     tabViewItem.appendChild(footer);
     content.appendChild(sidebar);
@@ -684,9 +693,43 @@ async function createTab(page = 'this_pc', active = true) {
         button.className = 'explorer-actionbar-button';
         button.innerHTML = icon;
         button.disabled = true;
-        actionbar.appendChild(button);
+        actionbarQuickActions.appendChild(button);
         actionButtons[icon] = button;
     });
+
+    actionbarCreateButton.innerHTML = 'New';
+    actionbarCreateButton.addEventListener('click', async () => {
+        var path = pageToPath(currentPage);
+        var menu = WinUI.contextMenu([
+            {
+                icon: await fs.getFileURL(utils.resolvePath('./icons/folder.ico')),
+                text: "Folder",
+                action: async () => {
+                    await fs.mkdir(path + (path.endsWith('/') ? '' : '/') + 'folder').then(() => {
+                        getPage(currentPage);
+                    })
+                }
+            }, {
+                icon: await fs.getFileURL(window.fileIcons.registerd['txt']),
+                text: "Text Document",
+                action: async () => {
+                    await fs.writeFile(path + (path.endsWith('/') ? '' : '/') + 'document.txt', new Blob([])).then(() => {
+                        getPage(currentPage);
+                    })
+                }
+            }
+        ])
+        var position = window.utils.getPosition(actionbarCreateButton);
+        menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+        menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+        menu.open(position.x, position.y + actionbarCreateButton.offsetHeight + 8, 'left-top');
+        new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+            window.addEventListener(event, (e) => {
+                if (menu.container.contains(e.target)) return;
+                menu.close();
+            })
+        })
+    })
 
     var selected = [];
     var createdItems = [];
@@ -1142,7 +1185,14 @@ async function createTab(page = 'this_pc', active = true) {
 
     async function getPage(page) {
         var pageStatus = await getPageStatus(page);
-        if (pageStatus == false) return;
+        if (pageStatus == false) {
+            viewer.innerHTML = '';
+            viewer.classList.remove('animation');
+            viewer.style.animation = "revert-layer";
+            viewer.classList.add('animation');
+            viewer.innerHTML = '<span style="width:100%;text-align:center;color:var(--label-color);">This folder can not be found.</span>';
+            return
+        }
 
         var targetID = randomID();
         currentID = targetID;

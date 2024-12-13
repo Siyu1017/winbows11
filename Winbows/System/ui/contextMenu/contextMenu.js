@@ -1461,6 +1461,13 @@ function contextMenu(items, config = {}) {
             itemIcon.innerHTML = icons[item.icon] ? '&#x' + icons[item.icon] + ';' : '';
             itemText.innerText = item.text;
 
+            if (!icons[item.icon]) {
+                itemIcon.style.backgroundImage = 'url(' + item.icon + ')';
+                itemIcon.style.backgroundSize = 'cover';
+                itemIcon.style.backgroundPosition = 'center';
+                itemIcon.style.backgroundRepeat = 'no-repeat';
+            }
+
             itemElement.appendChild(itemIcon);
             itemElement.appendChild(itemText);
             itemElement.appendChild(itemExpand);

@@ -493,6 +493,21 @@
     gap: .375rem;
 }
 
+.explorer-actionbar-group {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    height: -webkit-fill-available;
+}
+
+.explorer-actionbar-group + .explorer-actionbar-group::before {
+    content: '';
+    height: 100%;
+    width: 1.25px;
+    background: rgba(0, 0, 0, .1);
+    display: block;
+}
+
 .explorer-actionbar-button {
     background: none;
     border: none;

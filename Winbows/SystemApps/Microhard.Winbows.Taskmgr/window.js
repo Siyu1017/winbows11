@@ -57,6 +57,15 @@ Object.keys(icons).forEach(key => {
     taskHeader.appendChild(taskHeaderPid);
 })();
 
+var menu = null;
+new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
+    window.addEventListener(event, (e) => {
+        if (menu == null) return;
+        if (menu.container.contains(e.target)) return;
+        menu.close();
+    })
+})
+
 var taskItems = {};
 
 function createTaskItem(pid) {
@@ -98,6 +107,28 @@ function createTaskItem(pid) {
         task.remove();
         delete taskItems[pid];
     }
+
+    task.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        menu = WinUI.contextMenu([
+            {
+                icon: "clear",
+                className: "delete",
+                text: "Kill process",
+                action: () => {
+                    window.System.processes[pid].exit();
+                }
+            }
+        ])
+        if (e.type.startsWith('touch')) {
+            var touch = e.touches[0] || e.changedTouches[0];
+            e.pageX = touch.pageX;
+            e.pageY = touch.pageY;
+        }
+        menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
+        menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
+        menu.open(e.pageX, e.pageY, 'left-top');
+    })
 
     taskItems[pid] = { changeIcon, changeName, exit };
 

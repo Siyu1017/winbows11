@@ -208,7 +208,7 @@ function createEditor(target) {
     return { editor, getValue, setValue, on };
 }
 
-function setupPage(tab) {
+async function setupPage(tab) {
     tab.changeHeader('Untitled');
 
     var container = tab.getContainer();
@@ -224,13 +224,18 @@ function setupPage(tab) {
     container.appendChild(editorContainer);
     menubar.appendChild(menubarItems);
 
-    var filePath = '';
+    var filePath = datas.page || '';
     var fileContent = '';
     var editor = createEditor(editorContainer);
 
     if (filePath != '') {
-        editor.setValue(fileContent);
-        tab.changeHeader(window.parent.utils.getFileName(filePath));
+        await fs.readFile(filePath).then(async res => {
+            return res.text();
+        }).then(res => {
+            fileContent = res;
+            editor.setValue(fileContent);
+            tab.changeHeader(window.parent.utils.getFileName(filePath));
+        })
     }
 
     editor.on('change', () => {
@@ -281,7 +286,9 @@ function setupPage(tab) {
                     if (filePath != '') {
                         fs.writeFile(filePath, new Blob([editor.getValue()], {
                             type: 'text/plain;charset=utf-8'
-                        }))
+                        })).then(() => {
+                            tab.changeHeader(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
+                        })
                     } else {
                         var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/saveFile.js').start();
                         process.worker.addEventListener('message', (e) => {

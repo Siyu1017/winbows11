@@ -92,6 +92,38 @@
             }
         }
 
+        var repairWaitingList = [];
+        var repairing = false;
+
+        var getTransaction = async (n, m, p = false) => {
+            try {
+                var t = db.transaction(n, m);
+                if (p == true) {
+                    repairWaitingList.forEach(fn => fn());
+                    this.console.log('Successfully repaired idbfs!');
+                    repairing = false;
+                    repairWaitingList = [];
+                }
+                return t;
+            } catch (e) {
+                if (p == false) {
+                    if (repairing == false) {
+                        repairing = true;
+                        await this.init();
+                        this.console.log('Trying to repair idbfs...');
+                        return this.getTransaction(n, m, true);
+                    } else {
+                        return new Promise((resolve, reject) => {
+                            repairWaitingList.push(() => { resolve(db.transaction(n, m)); });
+                        })
+                    }
+                } else if (e.name === 'InvalidStateError' && p == true) {
+                    this.console.log('Failed to repair idbfs.');
+                    window.Crash();
+                }
+            }
+        }
+
         var dbName = 'winbows11';
         var mainDisk = 'C';
         var disks = [];
@@ -114,7 +146,7 @@
                 runner: (path) => {
                     const parsed = parseURL(url);
                     return new Promise((resolve, reject) => {
-                        const transaction = db.transaction(parsed.disk, 'readwrite');
+                        const transaction = getTransaction(parsed.disk, 'readwrite');
                         const store = transaction.objectStore(parsed.disk);
                         const request = store.get(parsed.path);
                         request.onsuccess = (event) => {
@@ -182,7 +214,7 @@
                         }
                     }
                     return new Promise((resolve, reject) => {
-                        const transaction = db.transaction(parsed.disk, 'readwrite');
+                        const transaction = getTransaction(parsed.disk, 'readwrite');
                         const store = transaction.objectStore(parsed.disk);
                         const request = store.put({ path: parsed.path, content, type: 'file' });
                         request.onsuccess = (event) => {
@@ -274,7 +306,7 @@
                 runner: (url) => {
                     const parsed = parseURL(url);
                     return new Promise((resolve, reject) => {
-                        const transaction = db.transaction(parsed.disk, 'readonly');
+                        const transaction = getTransaction(parsed.disk, 'readonly');
                         const store = transaction.objectStore(parsed.disk);
                         const request = store.index('path').getAllKeys() // getAll(IDBKeyRange.only(path));
                         request.onsuccess = (event) => {
@@ -311,7 +343,7 @@
                 runner: (url) => {
                     const parsed = parseURL(url);
                     return new Promise((resolve, reject) => {
-                        const transaction = db.transaction(parsed.disk, 'readwrite');
+                        const transaction = getTransaction(parsed.disk, 'readwrite');
                         const store = transaction.objectStore(parsed.disk);
                         const request = store.get(parsed.path);
                         request.onsuccess = (event) => {
@@ -370,7 +402,7 @@
                         }
                     }
                     return new Promise((resolve, reject) => {
-                        const transaction = db.transaction(parsed.disk, 'readwrite');
+                        const transaction = getTransaction(parsed.disk, 'readwrite');
                         const store = transaction.objectStore(parsed.disk);
                         const request = store.put({ path: parsed.path, content, type: 'file' });
                         request.onsuccess = (event) => {
@@ -414,7 +446,7 @@
                 runner: (url) => {
                     const parsed = parseURL(url);
                     return new Promise((resolve, reject) => {
-                        const transaction = db.transaction(parsed.disk, 'readonly');
+                        const transaction = getTransaction(parsed.disk, 'readonly');
                         const store = transaction.objectStore(parsed.disk);
                         const request = store.get(parsed.path);
                         request.onsuccess = (event) => {
@@ -670,7 +702,7 @@
         async list(url) {
             const parsed = parseURL(url);
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readonly');
+                const transaction = getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.index('path').getAllKeys() // getAll(IDBKeyRange.only(path));
                 request.onsuccess = (event) => {
@@ -693,7 +725,7 @@
         async open(url) {
             const parsed = parseURL(url);
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readwrite');
+                const transaction = getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
@@ -728,7 +760,7 @@
                 }
             }
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readwrite');
+                const transaction = getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.put({ path: parsed.path, content, type: 'file' });
                 request.onsuccess = (event) => {
@@ -750,7 +782,7 @@
         async readFile(url) {
             const parsed = parseURL(url);
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readonly');
+                const transaction = getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
@@ -775,7 +807,7 @@
         async mkdir(url) {
             const parsed = parseURL(url);
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readwrite');
+                const transaction = getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.put({ path: parsed.path, type: 'directory' });
                 request.onsuccess = (event) => {
@@ -798,7 +830,7 @@
             const parsed = parseURL(url);
             return new Promise(async (resolve, reject) => {
                 const status = await exists(url);
-                const transaction = db.transaction(parsed.disk, 'readwrite');
+                const transaction = getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 if (status.type == 'file') {
                     const request = store.delete(parsed.path);
@@ -844,7 +876,7 @@
             const parsed = parseURL(url);
             return new Promise(async (resolve, reject) => {
                 const status = await exists(url);
-                const transaction = db.transaction(parsed.disk, 'readwrite');
+                const transaction = getTransaction(parsed.disk, 'readwrite');
                 const store = transaction.objectStore(parsed.disk);
                 if (status.type == 'directory') {
                     const request = store.index('path').openCursor();
@@ -882,7 +914,7 @@
             const parsedTo = parseURL(to);
             return new Promise((resolve, reject) => {
                 // Read original file
-                const readTransaction = db.transaction(parsedFrom.disk, 'readwrite');
+                const readTransaction = getTransaction(parsedFrom.disk, 'readwrite');
                 const readStore = readTransaction.objectStore(parsedFrom.disk);
                 const readRequest = readStore.get(parsedFrom.path);
 
@@ -890,14 +922,14 @@
                     const file = event.target.result;
                     if (file) {
                         // Delete the original file
-                        const deleteTransaction = db.transaction(parsedFrom.disk, 'readwrite');
+                        const deleteTransaction = getTransaction(parsedFrom.disk, 'readwrite');
                         const deleteStore = deleteTransaction.objectStore(parsedFrom.disk);
                         const deleteRequest = deleteStore.delete(parsedFrom.path);
 
                         deleteRequest.onsuccess = (event) => {
                             file.path = parsedTo.path;
                             // Put the file to the destination
-                            const putTransaction = db.transaction(parsedTo.disk, 'readwrite');
+                            const putTransaction = getTransaction(parsedTo.disk, 'readwrite');
                             const putStore = putTransaction.objectStore(parsedTo.disk);
                             putStore.put(file);
                             debugLog('mv', `Moved "${from}" to "${to}" successfully!`);
@@ -930,7 +962,7 @@
         async readdir(url, deep = false) {
             const parsed = parseURL(url);
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readonly');
+                const transaction = getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.index('path').openCursor() // getAll(IDBKeyRange.only(path));
                 var dirItems = [];
@@ -1004,7 +1036,7 @@
         async stat(url) {
             const parsed = parseURL(url);
             return new Promise((resolve, reject) => {
-                const transaction = db.transaction(parsed.disk, 'readonly');
+                const transaction = getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {
@@ -1064,7 +1096,7 @@
                         });
                     }
                 }
-                const transaction = db.transaction(parsed.disk, 'readonly');
+                const transaction = getTransaction(parsed.disk, 'readonly');
                 const store = transaction.objectStore(parsed.disk);
                 const request = store.get(parsed.path);
                 request.onsuccess = (event) => {

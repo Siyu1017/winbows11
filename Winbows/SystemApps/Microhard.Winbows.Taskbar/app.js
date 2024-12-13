@@ -1012,7 +1012,7 @@
                     triggerEvent('hide', {
                         type: 'hide'
                     });
-                    updateStatus();
+                    //updateStatus();
                 }
 
                 function focus(id) {
@@ -1112,9 +1112,11 @@
                             }
                         } else if (type == 'show') {
                             obj.browserWindow.classList.add('active');
+                            obj.browserWindow.style.pointerEvents = 'all';
                         } else if (type == 'hide') {
                             obj.browserWindow.classList.remove('active');
-                            obj.browserWindow.style.setProperty('z-index', '-1', 'important');
+                            obj.browserWindow.style.pointerEvents = 'none';
+                            // obj.browserWindow.style.setProperty('z-index', '-1', 'important');
                         } else if (type == 'toggle') {
                             obj.browserWindow.classList.toggle('active');
                         }
