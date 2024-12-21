@@ -15,6 +15,8 @@
     const debuggerMode = false;
     const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop'] || getJsonFromURL()['embed']) ? true : false;
 
+    var startLoadingTime = Date.now();
+
     // Loading
     var loadingContainer = document.createElement('div');
     var loadingImage = document.createElement('div');
@@ -1903,6 +1905,10 @@
                 }
             }
         })
+
+        if (now - startLoadingTime < 1000) {
+            await delay(1000 - (now - startLoadingTime));
+        }
 
         // await delay(1000);
 
