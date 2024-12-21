@@ -147,6 +147,12 @@
             text-decoration: underline;
             cursor: help;
         }
+
+        .confirm-highlighted-text {
+            font-weight: 600;
+            color: #0067c0;
+            text-shadow: 0 0 #0067c0;
+        }
     </style>
 </head>
 
@@ -252,7 +258,7 @@
                 confirmButtons.appendChild(confirmInstall);
 
                 confirmTitle.innerHTML = 'Confirm to install Winbows11?';
-                confirmDescription.innerHTML = "<div>Installing Winbows11 on your device can make it run more smoothly than using the Internet. The size of Winbows11 is about 150MB, and the installation process takes about 2 minutes to complete. </div><br><div>If you don’t want to install it, you can also just use the Internet to experience Winbows11! </div>";
+                confirmDescription.innerHTML = "<div>Installing Winbows11 on your device can make it run more smoothly than using the Internet. The size of Winbows11 is about <span class='confirm-highlighted-text'>150MB</span>, and the installation process takes <span class='confirm-highlighted-text'>about 2 minutes</span> to complete. </div><br><div>If you don’t want to install it, you can also just use the Internet to experience Winbows11! </div>";
                 confirmTip.innerHTML = "<div>If you choose to install, we will save the necessary files for Winbows11 to <a href='https://developer.mozilla.org/zh-TW/docs/Web/API/IndexedDB_API/Using_IndexedDB' in the browser target='_blank' class='confirm-learn-link'>Indexed DB</a>. </div>";
                 confirmCancel.innerHTML = 'Refuse';
                 confirmInstall.innerHTML = 'Install';

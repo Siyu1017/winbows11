@@ -184,7 +184,7 @@ body {
     height: 100%;
     z-index: 0;
     background-color: black;
-    font-family: Comic Sans MS, Comic Sans, cursive;
+    font-family: var(--winbows-font-default);
     flex-direction: column;
     user-select: none;
     transition: all .3s ease-in-out;
@@ -219,9 +219,35 @@ body {
 }
 
 .winbows-loading-text {
+    height: 1.5rem;
+    text-align: center;
+}
+
+.winbows-loading-text-container {
     color: #fff;
-    padding: 0 0 15vh;
-    font-size: 150%;
+    /* padding: 0 0 2.5rem; */
+    font-size: 100%;
+    position: absolute;
+    bottom: 8rem;
+}
+
+.winbows-loading-text-strip {
+    height: 1.5rem;
+    overflow: hidden;
+}
+
+.winbows-loading-text-shadow-top {
+    background: linear-gradient(to top, transparent 70%, rgba(0, 0, 0, 0.5) 100%);
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    position: absolute;
+}
+
+.winbows-loading-text-shadow-bottom {
+    background: linear-gradient(to bottom, transparent 70%, rgba(0, 0, 0, 0.5) 100%);
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+    position: absolute;
 }
 
 .winbows-loading .winbows-loading-spinner {
@@ -286,7 +312,8 @@ body {
     border-radius: 99rem;
     overflow: hidden;
     background: rgba(255, 255, 255, .1);
-    margin-top: 3rem;
+    position: absolute;
+    bottom: 6rem;
 }
 
 .winbows-loading-progress-bar {
@@ -294,6 +321,7 @@ body {
     height: 100%;
     background: #fff;
     transition: all .05s ease-in-out;
+    border-radius: inherit;
 }
 
 .screen-lock-container,

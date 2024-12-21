@@ -19,13 +19,33 @@
     var loadingContainer = document.createElement('div');
     var loadingImage = document.createElement('div');
     var loadingSpinner = devMode == true || window.needsUpdate == true ? document.createElement('div') : document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    var loadingTextContainer = document.createElement('div');
+    var loadingTextShadowTop = document.createElement('div');
+    var loadingTextShadowBottom = document.createElement('div');
+    var loadingTextStrip = document.createElement('div');
     var loadingProgress = document.createElement('div');
     var loadingProgressBar = document.createElement('div');
 
     loadingContainer.className = 'winbows-loading active';
     loadingImage.className = 'winbows-loading-image';
+    loadingTextContainer.className = 'winbows-loading-text-container';
+    loadingTextShadowTop.className = 'winbows-loading-text-shadow-top';
+    loadingTextShadowBottom.className = 'winbows-loading-text-shadow-bottom';
+    loadingTextStrip.className = 'winbows-loading-text-strip';
     loadingContainer.appendChild(loadingImage);
     document.body.appendChild(loadingContainer);
+
+    function loadingText(content) {
+        var loadingText = document.createElement('div');
+        loadingText.textContent = content;
+        loadingText.className = 'winbows-loading-text';
+        loadingTextStrip.appendChild(loadingText);
+        loadingTextStrip.scrollTo({
+            top: loadingTextStrip.scrollHeight,
+            behavior: "smooth"
+        })
+        return loadingText;
+    }
 
     if (devMode == false && window.needsUpdate == false) {
         loadingSpinner.setAttribute('class', 'winbows-loading-spinner');
@@ -37,9 +57,15 @@
     } else {
         loadingProgress.classList.add('winbows-loading-progress');
         loadingProgressBar.classList.add('winbows-loading-progress-bar');
+        loadingContainer.appendChild(loadingTextContainer);
+        loadingTextContainer.appendChild(loadingTextShadowTop);
+        loadingTextContainer.appendChild(loadingTextShadowBottom);
+        loadingTextContainer.appendChild(loadingTextStrip);
         loadingContainer.appendChild(loadingProgress);
         loadingProgress.appendChild(loadingProgressBar);
     }
+
+    loadingText('Starting Winbows11...');
 
     // Lock panel
     var screenLockContainer = document.createElement('div');
@@ -164,6 +190,11 @@
     }
     */
 
+    /**
+     * Find the distance of an element from the upper left corner of the document
+     * @param {Element} element 
+     * @returns {Object}
+     */
     function getPosition(element) {
         function offset(el) {
             var rect = el.getBoundingClientRect(),
@@ -547,12 +578,15 @@
                     kernelFiles = kernelFiles.concat(category);
                 })
                 var loadedKernels = 0;
+                var kernelLoading = loadingText(`Loading kernels ( ${loadedKernels} / ${kernelFiles.length} )`);
                 window.loadedKernel = () => {
                     loadedKernels++;
+                    kernelLoading.innerHTML = `Loading kernels ( ${loadedKernels} / ${kernelFiles.length} )`;
                     loadingProgressBar.style.width = loadedKernels / kernelFiles.length * 100 + '%';
                     console.log(loadedKernels)
                     if (loadedKernels == kernelFiles.length) {
                         loadingProgressBar.style.width = '100%';
+                        loadingText(`Loading assets...`);
                         resolve();
                     }
                 }
@@ -1870,7 +1904,7 @@
             }
         })
 
-        await delay(1000);
+        // await delay(1000);
 
         // Remove loading 
         loadingContainer.classList.remove('active');
@@ -1882,6 +1916,8 @@
             window.Taskbar.init();
         }
     })
+
+    loadingText(`Almost done!`);
 
     await (async () => {
         try {

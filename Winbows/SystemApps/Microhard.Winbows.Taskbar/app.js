@@ -1190,7 +1190,6 @@
                 await (async () => {
                     for (let i in Object.values(items)) {
                         var url = await fs.getFileURL(Object.values(items)[i].icon);
-                        await window.loadImage(url);
                         Object.values(items)[i].icon = url;
                     }
                     return;
@@ -1199,7 +1198,7 @@
                 await (async () => {
                     for (let i in window.Taskbar.pinnedApps) {
                         var url = await fs.getFileURL(window.appRegistry.getApp(window.Taskbar.pinnedApps[i]).icon);
-                        await window.loadImage(url);
+                        window.appRegistry.getApp(window.Taskbar.pinnedApps[i]).cachedIcon = url;
                     }
                     return;
                 })();
@@ -1250,7 +1249,7 @@
                         await window.Taskbar.createIcon({
                             title: name[0].toUpperCase() + name.slice(1),
                             name: app.script,
-                            icon: await fs.getFileURL(app.icon),
+                            icon: app.cachedIcon, //await fs.getFileURL(app.icon),
                             openable: true,
                             category: 'app'
                         }, (e) => {
