@@ -1101,8 +1101,9 @@
                         icon: "delete",
                         text: "Delete",
                         action: async () => {
-                            for (let i = 0; i < selected.length; i++) {
-                                var item = selected[i];
+                            var temp = selected;
+                            for (let i = 0; i < temp.length; i++) {
+                                var item = temp[i];
                                 await fs.rm(item.path).then(res => {
                                     item.remove();
                                 });
