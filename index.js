@@ -13,7 +13,7 @@
         ui: 'Winbows/System/ui'
     }
     const debuggerMode = false;
-    const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop']) ? true : false;
+    const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop'] || getJsonFromURL()['embed']) ? true : false;
 
     // Loading
     var loadingContainer = document.createElement('div');
