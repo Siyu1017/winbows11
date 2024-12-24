@@ -751,4 +751,8 @@
     }
 
     Object.freeze(window.fs);
+
+    if (window.__fscf) {
+        window.__fscf.t();
+    }
 })();

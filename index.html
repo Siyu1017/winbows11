@@ -158,6 +158,13 @@
 
 <body>
     <script>
+        window.__fscf = {
+            l: [],
+            t: () => window.__fscf.l.forEach(f=>f()),
+            c: g => window.__fscf.l.push(g)
+        }
+    </script>
+    <script>
         function getJsonFromURL(url) {
             if (!url) url = location.search;
             var query = url.substr(1);
