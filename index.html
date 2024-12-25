@@ -160,7 +160,7 @@
     <script>
         window.__fscf = {
             l: [],
-            t: () => window.__fscf.l.forEach(f=>f()),
+            t: () => window.__fscf.l.forEach(f => f()),
             c: g => window.__fscf.l.push(g)
         }
     </script>
@@ -271,14 +271,10 @@
                 confirmInstall.innerHTML = 'Install';
                 confirmSymbol.innerHTML = '<div class="confirm-symbol-bg"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="confirm-symbol-arrow"><path d="M15 6v10h4l-7 7-7-7h4V6h6z"/></svg></div>';
 
-                var bg = new Image();
-                bg.src = './Winbows/bg/img0.jpg';
-                bg.onload = () => {
-                    document.body.style.backgroundPosition = 'center';
-                    document.body.style.backgroundSize = 'cover';
-                    document.body.style.backgroundRepeat = 'no-repeat';
-                    document.body.style.backgroundImage = 'url(./Winbows/bg/img0.jpg)';
-                }
+                document.body.style.backgroundPosition = 'center';
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundImage = 'url(./Winbows/bg/img-low-quality.jpg)';
 
                 confirmCancel.addEventListener('click', () => {
                     runWinbows();
