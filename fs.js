@@ -695,9 +695,9 @@
         }
     }
 
-    window.fs = new IDBFS('winbows11', mainDisk)
-
-    await window.fs.init();
+    var fs = new IDBFS('winbows11', mainDisk);
+    await fs.init();
+    window.fs = fs;
     window.fs.Cache = {};
     window.fs.getFileExtension = function (file = '') {
         console.warn('%cfs.getFileExtension()%c has been deprecated.\nPlease use %cutils.getFileExtension()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '')
