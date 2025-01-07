@@ -606,12 +606,47 @@
                 try {
                     for (let i in kernelFiles) {
                         const path = await fs.getFileURL(mainDisk + ':/' + kernelFiles[i]);
-                        const kernel = document.createElement('script');
+                        fetch(path).then(res => res.text()).then((kernel) => {
+                            try {
+                                new Function(kernel)();
+                            } catch (e) {
+                                var warning = document.createElement('div');
+                                var warningContainer = document.createElement('div');
+                                var warningText = document.createElement('span');
+                                var warningRestart = document.createElement('div');
+
+                                warning.className = 'winbows-loading-warning';
+                                warningContainer.className = 'winbows-loading-warning-container';
+                                warningRestart.className = 'winbows-loading-warning-restart';
+                                warningText.className = 'winbows-loading-warning-text';
+
+                                warningText.innerHTML = `Failed to execute kernel : ${kernelFiles[i]}`;
+                                warningRestart.innerHTML = `Restart`;
+                                document.body.appendChild(warning);
+                                warning.appendChild(warningContainer);
+                                warningContainer.appendChild(warningText);
+                                warningContainer.appendChild(warningRestart);
+                                loadingText(`Failed to execute kernel : ${kernelFiles[i]}`);
+                                // window.Crash(`Failed to execute kernel : ${kernelFiles[i]}`);
+
+                                warningRestart.addEventListener('click', async () => {
+                                    try {
+                                        fs.rm(mainDisk + ':/' + kernelFiles[i]).then(() => {
+                                            location.reload();
+                                        });
+                                    } catch (e) {
+                                        location.reload();
+                                    }
+                                });
+                            }
+                        })
+                        /*
                         kernel.src = path;
                         kernel.onload = () => {
                             kernel.remove();
                         }
                         document.head.appendChild(kernel);
+                        */
                     }
                 } catch (e) {
                     window.Crash(e);

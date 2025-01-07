@@ -1767,3 +1767,68 @@ body {
     background: rgb(255 255 255 / 31%);
     border-top: 1px solid rgba(0, 0, 0, .2);
 }
+
+.winbows-loading-warning {
+    position: fixed;
+    bottom: 2rem;
+    left: 0px;
+    right: 0px;
+    width: 100%;
+    height: fit-content;
+    padding: 0px 2rem;
+    z-index: 999999999;
+    display: flex;
+    justify-content: center;
+    user-select: none;
+    transform: translateY(8rem);
+    animation: show-loading-warning 300ms ease-in-out forwards 1;
+}
+
+.winbows-loading-warning-container {
+    background: rgb(255, 255, 255);
+    color: rgb(0, 0, 0);
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    padding-right: .5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+}
+
+.winbows-loading-warning-restart {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .375rem .75rem;
+    background: var(--winbows-primary-color);
+    border-radius: .375rem;
+    color: #fff;
+}
+
+.winbows-loading-warning-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@keyframes show-loading-warning {
+    0% {
+        opacity: 0;
+        transform: translateY(8rem);
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+        transform: translateY(-2px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
