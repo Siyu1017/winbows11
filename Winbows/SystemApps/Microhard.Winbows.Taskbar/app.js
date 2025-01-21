@@ -184,8 +184,7 @@
                 text: "Restart",
                 action: () => {
                     location.reload();
-                },
-                disabled: true
+                }
             }
         ])
         var position = window.utils.getPosition(footerPowerButton);

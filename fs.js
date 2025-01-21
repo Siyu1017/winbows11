@@ -226,12 +226,12 @@
                     })).catch(err => {
                         window.Crash(err);
                     })
-                    var warningProcess = `;(async()=>{System.requestAccessWindow('${warningWindowURL}',{title:'WARNING',width:300,height:150,resizable:false,showOnTop:true});})();`;
+                    var warningProcess = `;(async()=>{System.requestAccessWindow('${warningWindowURL}',{title:'WARNING',width:300,height:150,resizable:false});})();`;
                     var tempFileName = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
                     fs.writeFile(`C:/Winbows/System/Temp/${tempFileName}`, new Blob([warningProcess], {
                         type: 'text/javascript'
                     })).then(res => {
-                        new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
+                        //new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
                     }).catch(err => {
                         window.Crash(err);
                     })

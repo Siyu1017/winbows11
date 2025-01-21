@@ -112,6 +112,7 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-user-drag: none;
+            height: 2.75rem;
         }
 
         .confirm-button.outline {
@@ -120,11 +121,11 @@
             border: 1.25px solid #0067c0;
         }
 
-        .confirm-button.outline:hover {
+        .confirm-button.outline:not(:disabled):hover {
             background: #efefef;
         }
 
-        .confirm-button:hover {
+        .confirm-button:not(:disabled):hover {
             background: #025ba8;
         }
 
@@ -152,6 +153,57 @@
             font-weight: 600;
             color: #0067c0;
             text-shadow: 0 0 #0067c0;
+        }
+
+        .winbows-loading-spinner {
+            box-sizing: border-box;
+            width: 18px;
+            height: 18px;
+            padding: 2px;
+            overflow: visible;
+        }
+
+        .winbows-loading-spinner>circle {
+            stroke: #fff;
+            fill: none;
+            stroke-width: 2px;
+            stroke-linecap: round;
+            transform-origin: 50% 50%;
+            transition: all .2s ease-in-out 0s;
+            animation: 2s linear 0s infinite normal none running loading-spinner;
+        }
+
+        @keyframes loading-spinner {
+            0% {
+                stroke-dasharray: 0.01px, 43.97px;
+                transform: rotate(0);
+            }
+
+            50% {
+                stroke-dasharray: 21.99px, 21.99px;
+                transform: rotate(450deg);
+            }
+
+            100% {
+                stroke-dasharray: 0.01px, 43.97px;
+                transform: rotate(1080deg);
+            }
+        }
+
+        .confirm-button.loading {
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-button.outline .winbows-loading-spinner>circle {
+            stroke: #0067c0;
+        }
+
+        .confirm-button.outline .winbows-loading-spinner {
+            height: 1.5rem;
+            width: 1.5rem;
         }
     </style>
 </head>
@@ -276,8 +328,16 @@
                 document.body.style.backgroundRepeat = 'no-repeat';
                 document.body.style.backgroundImage = 'url(./Winbows/bg/img-low-quality.jpg)';
 
+                var clicked = false;
                 confirmCancel.addEventListener('click', () => {
+                    if (clicked == true) {
+                        return;
+                    }
+                    clicked = true;
                     runWinbows();
+                    confirmCancel.classList.add('loading');
+                    confirmCancel.innerHTML = '<svg class="winbows-loading-spinner" width="48" height="48" viewBox="0 0 16 16"><circle cx="8px" cy="8px" r="7px"></circle></svg>';
+                    confirmCancel.disabled = true;
                 })
                 confirmInstall.addEventListener('click', () => {
                     location.href = `./install.html?timestamp=${new Date().getTime()}`;

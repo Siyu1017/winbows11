@@ -631,11 +631,12 @@
 
                                 warningRestart.addEventListener('click', async () => {
                                     try {
-                                        fs.rm(mainDisk + ':/' + kernelFiles[i]).then(() => {
+                                        fs.rm(mainDisk + ':/' + kernelFiles[i]).then((status) => {
+                                            console.log(status);
                                             location.reload();
                                         });
                                     } catch (e) {
-                                        location.reload();
+                                        window.Crash(e);
                                     }
                                 });
                             }
