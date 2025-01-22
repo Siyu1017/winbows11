@@ -110,7 +110,11 @@ Object.defineProperty(window.Compilers, 'Window', {
             configurable: false
         })
 
-        var currentProcess = window.System.processes[pid]
+        var currentProcess = window.System.processes[pid];
+        if (!currentProcess) {
+            windowObject.close();
+            return;
+        }
 
         currentProcess.windows.push({
             close: windowObject.close
