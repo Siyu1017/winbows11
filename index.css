@@ -440,6 +440,7 @@ body {
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+    aspect-ratio: 1/1;
 }
 
 .screen-lock-signin-username {
@@ -776,7 +777,9 @@ body {
 
 @keyframes taskbar-icon-active-true {
     0% {
-        transform: translateY(0) scale(.8);
+        transform:
+            /*translateY(0)*/
+            scale(.8);
     }
 
     40% {
@@ -788,13 +791,17 @@ body {
     }
 
     100% {
-        transform: translateY(0) scale(1);
+        transform:
+            /*translateY(0)*/
+            scale(1);
     }
 }
 
 @keyframes taskbar-icon-active-false {
     0% {
-        transform: translateY(0) scale(.8);
+        transform:
+            /*translateY(0)*/
+            scale(.8);
     }
 
     40% {
@@ -806,7 +813,9 @@ body {
     }
 
     100% {
-        transform: translateY(0) scale(1);
+        transform:
+            /*translateY(0)*/
+            scale(1);
     }
 }
 
@@ -911,6 +920,7 @@ body {
     background-color: #000;
     width: 1rem;
     height: 1rem;
+    transition: all .1s ease-in-out;
 }
 
 .start-menu-container * {
@@ -1043,6 +1053,14 @@ body {
 
 .start-menu-pinned-app:hover {
     background: rgba(0, 0, 0, .05);
+}
+
+.start-menu-pinned-app:active .start-menu-pinned-app-icon {
+    transform: scale(.9);
+}
+
+.start-menu-footer-power-button:active:before {
+    transform: scale(.9);
 }
 
 .app-wrapper {
@@ -1831,4 +1849,42 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+.winbows-dev-container {
+    position: fixed;
+    z-index: 999999999;
+    background: rgb(30, 30, 30);
+    top: 0;
+    left: 0;
+    color: #efefef;
+    font-size: 12px;
+    font-family: monospace;
+    border-radius: .75rem;
+    user-select: none;
+    overflow: hidden;
+    max-height: 100vh;
+    height: 100vh;
+}
+
+.winbows-dev-logs div+div:before {
+    content: '';
+    width: 100%;
+    height: 1.5px;
+    display: block;
+    background: rgba(255, 255, 255, .1);
+    position: absolute;
+    top: 0;
+}
+
+.winbows-dev-logs div {
+    position: relative;
+    padding: .25rem;
+}
+
+.winbows-dev-logs {
+    height: 100vh;
+    max-height: 100vh;
+    overflow: auto;
+    padding: .5rem;
 }

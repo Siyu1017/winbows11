@@ -294,8 +294,12 @@
         label: 'WiFi',
         status: 'enabled',
         name: 'wifi',
-        change: () => {
-
+        change: (status) => {
+            if (status == 'enabled') {
+                window.HMGR.enable('NIC');
+            } else {
+                window.HMGR.disable('NIC');
+            }
         }
     }, {
         label: 'Bluetooth',

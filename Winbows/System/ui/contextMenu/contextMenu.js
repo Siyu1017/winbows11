@@ -1461,7 +1461,7 @@ function contextMenu(items, config = {}) {
             itemIcon.innerHTML = icons[item.icon] ? '&#x' + icons[item.icon] + ';' : '';
             itemText.innerText = item.text;
 
-            if (!icons[item.icon]) {
+            if (!icons[item.icon] && item.icon) {
                 itemIcon.style.backgroundImage = 'url(' + item.icon + ')';
                 itemIcon.style.backgroundSize = 'cover';
                 itemIcon.style.backgroundPosition = 'center';

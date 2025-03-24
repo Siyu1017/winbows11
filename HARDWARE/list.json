@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Network Interface Card",
+        "version": 1,
+        "script": "NIC.js",
+        "enable": true,
+        "connection": {
+            "type": "sw",
+            "version": 1
+        }
+    }
+]

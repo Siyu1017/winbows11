@@ -26,17 +26,16 @@
         </div>
     </div>
     <script>
+        window.__fscf = {
+            l: [],
+            t: () => window.__fscf.l.forEach(f => f()),
+            c: g => window.__fscf.l.push(g)
+        }
+    </script>
+    <script>
         var script = document.createElement('script');
         script.src = `./install.js?timestamp=${new Date().getTime()}`;
         document.body.appendChild(script);
-    </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', scope: './' }).then((register) => {
-                register.update();
-                console.log('register success')
-            }, (err) => console.log('register fail:', err));
-        }
     </script>
 </body>
 

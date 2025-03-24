@@ -26,6 +26,51 @@
     const debuggerMode = false;
     const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop'] || getJsonFromURL()['embed']) ? true : false;
 
+    if (getJsonFromURL()['logs'] || getJsonFromURL()['output']) {
+        var devContainer = document.createElement('div');
+        var devLogs = document.createElement('div');
+        var dragging = false;
+        var x = 0, y = 0;
+        devContainer.className = 'winbows-dev-container winui-dark winui-no-background';
+        devLogs.className = 'winbows-dev-logs';
+        devContainer.addEventListener('pointerdown', (e) => {
+            dragging = true;
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            var position = getPosition(devContainer);
+            x = e.pageX - position.x;
+            y = e.pageY - position.y;
+        })
+        window.addEventListener('pointermove', (e) => {
+            if (dragging != true) return;
+            if (e.type.startsWith('touch')) {
+                var touch = e.touches[0] || e.changedTouches[0];
+                e.pageX = touch.pageX;
+                e.pageY = touch.pageY;
+            }
+            var dx = e.pageX - x;
+            var dy = e.pageY - y;
+            devContainer.style.transform = `translate(${dx}px, ${dy}px)`;
+        })
+        window.addEventListener('pointerup', () => {
+            dragging = false;
+        })
+        window.addEventListener('blur', () => {
+            dragging = false;
+        })
+        document.body.appendChild(devContainer);
+        devContainer.appendChild(devLogs);
+
+        window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
+            var el = document.createElement('div');
+            el.innerHTML = `<span style='color:#ff00ff'>[HMGR]</span> ${e.method} <span style='color:#86b7ff'>${e.url}</span> <span style='${e.ok ? 'color:#58ff31' : 'color:red'}'>${e.status}</span>`;
+            devLogs.appendChild(el);
+        })
+    }
+
     var startLoadingTime = Date.now();
 
     // Loading
@@ -579,6 +624,7 @@
         async function runKernel() {
             var files = {
                 kernel: ['Winbows/System/process.js'],
+                animation: ['Winbows/System/animation.js'],
                 ui: ['Winbows/System/ui/build/winui.min.js'],
                 module: ['Winbows/System/modules/main/domtool.js', 'Winbows/System/modules/main/toolbarComponents.js', 'Winbows/System/modules/main/browserWindow.js'],
                 component: [],
@@ -1065,7 +1111,7 @@
                         text: "Sort by",
                         submenu: [{
                             className: "name",
-                            icon: "sort_by_name",
+                            /*icon: "sort_by_name",*/
                             text: "Name",
                             action: () => {
                                 window.System.desktop.update(true, 'name');
@@ -1594,7 +1640,7 @@
                     text: "Sort by",
                     submenu: [{
                         className: "name",
-                        icon: "sort_by_name",
+                        /*icon: "sort_by_name",*/
                         text: "Name",
                         action: () => {
                             window.System.desktop.update(true, 'name');

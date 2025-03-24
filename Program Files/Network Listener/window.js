@@ -642,12 +642,12 @@ class Network {
         this.detailContent.innerHTML = details;
 
         var payloadViewer = new Viewer(request.body);
-        var responseViewer = new Viewer(await request.response.text());
+        var responseViewer = new Viewer(await request.response.clone().text());
         if (this._getType(request.responseHeaders['content-type']) == 'image') {
             responseViewer = {
                 container: document.createElement('img')
             };
-            responseViewer.container.src = URL.createObjectURL(request.response);
+            responseViewer.container.src = URL.createObjectURL(await request.response.clone().blob());
         }
         this.detailContent.querySelector('[data-element="network-payload"]').appendChild(payloadViewer.container);
         this.detailContent.querySelector('[data-element="network-response"]').appendChild(responseViewer.container);
@@ -691,7 +691,7 @@ class Network {
             padding: 2px 6px;">New</span-->`;
             openWith.onclick = async () => {
                 document.body.style.cursor = 'progress';
-                await fs.writeFile(url, new Blob([await request.response.text()], {
+                await fs.writeFile(url, new Blob([await request.response.clone().text()], {
                     type: 'application/json'
                 })).then((result) => {
                     new Process('C:/Program Files/JSON Viewer/viewer.js').start(`const FILE_PATH="${url}";`);
@@ -791,7 +791,8 @@ class Network {
     _getCell(key, value, element, request) {
         if (key == 'url') {
             var url = value;
-            var text = url.substring(url.lastIndexOf('/') + 1).replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+            var text = url.substring(url.lastIndexOf('/') + 1)
+            text = (text.trim().length > 0 ? text : url).replaceAll("<", "&lt;").replaceAll(">", "&gt;");
             var type = 'generic';
             if (request.responseHeaders) {
                 if (request.responseHeaders['content-type']) {
@@ -882,6 +883,7 @@ class Network {
 var networkPanel = new Network(document.body);
 networkPanel.container.style.height = '100%';
 
+/*
 const originalFetch = window.fetch;
 
 window.fetch = function (input, init = {}) {
@@ -993,3 +995,55 @@ Object.defineProperty(xhr, 'send', {
     configurable: false,
     writable: false
 });
+*/
+
+var queue = {};
+
+window.HMGR.on('NIC:REQUEST:SENT', (e) => {
+    var startTime = performance.now();
+    var headers = {};
+    if (e.headers) {
+        e.headers.forEach((header) => {
+            headers[header[0]] = header[1];
+        })
+    }
+    var index = requests.push({
+        type: e.destination == '' ? 'Unknown' : e.destination,
+        url: e.url,
+        method: (e.method || 'GET').toLocaleUpperCase(),
+        body: e.body || null,
+        requestHeaders: headers,
+        startTime: startTime,
+        status: 'pending',
+        trace: getStackTrace()
+    }) - 1;
+    var nid = networkPanel.addRequest(requests[index]);
+    queue[e.id] = { index, nid, startTime }
+})
+
+window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
+    if (queue[e.id]) {
+        var request = queue[e.id];
+        try {
+            const endTime = performance.now();
+            requests[request.index].endTime = endTime;
+            requests[request.index].duration = endTime - request.startTime;
+            requests[request.index].status = 'loaded';
+            requests[request.index].statusCode = e.status;
+            var responseHeaders = {};
+            e.headers.forEach((header) => {
+                responseHeaders[header[0]] = header[1];
+            })
+            requests[request.index].responseHeaders = responseHeaders;
+            requests[request.index].response = new Response(new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new Uint8Array(e.response));
+                    controller.close();
+                },
+            }), {
+                headers: responseHeaders
+            });
+        } catch (e) { console.log(e) };
+        networkPanel.updateRequest(request.nid, requests[request.index])
+    }
+})

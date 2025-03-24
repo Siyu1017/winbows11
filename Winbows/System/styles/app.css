@@ -39,6 +39,7 @@
     padding: 0 .5rem 0;
     gap: .5rem;
     overflow: hidden;
+    width: -webkit-fill-available;
 }
 
 .window-toolbar-icon {

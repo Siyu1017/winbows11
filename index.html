@@ -361,11 +361,77 @@
     </script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none', scope: './' }).then((register) => {
+            var listeners = {};
+
+            window.HMGR = {
+                on: function (eventName, callback) {
+                    if (listeners[eventName]) {
+                        listeners[eventName].push(callback);
+                    } else {
+                        listeners[eventName] = [callback];
+                    }
+                },
+                emit: function (eventName, data) {
+                    if (listeners[eventName]) {
+                        listeners[eventName].forEach(function (callback) {
+                            callback(data);
+                        });
+                    }
+                },
+                off: function (eventName, listener) {
+                    if (listeners[eventName]) {
+                        listeners[eventName] = listeners[eventName].filter(function (l) {
+                            return l !== listener;
+                        });
+                    }
+                },
+                enable: function (hardware) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'ENABLE',
+                        value: hardware.toUpperCase()
+                    });
+                },
+                disable: function (hardware) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'DISABLE',
+                        value: hardware.toUpperCase()
+                    });
+                }
+            };
+
+            navigator.serviceWorker.register('./hmgr.js', { updateViaCache: 'none', scope: './' }).then((register) => {
                 register.update();
                 console.log('register success')
             }, (err) => console.log('register fail:', err));
+
+            navigator.serviceWorker.ready.then((registration) => {
+                navigator.serviceWorker.controller.postMessage({
+                    type: "SETUP",
+                    value: {
+                        location: {
+                            href: location.href,
+                            origin: location.origin,
+                            pathname: location.pathname,
+                            search: location.search,
+                            hash: location.hash,
+                            protocol: location.protocol,
+                            hostname: location.hostname,
+                            port: location.port,
+                            host: location.host
+                        }
+                    }
+                });
+            });
+
+            navigator.serviceWorker.addEventListener("message", (event) => {
+                const message = event.data;
+                if (message.type) {
+                    window.HMGR.emit(message.type, message.value)
+                }
+            });
         }
+
+        fetch('./HARDWARE/list.json').then(res => res.json()).then(res => console.log(res))
     </script>
 </body>
 

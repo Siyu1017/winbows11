@@ -1,6 +1,7 @@
 // sw.js
 const STATIC_NAME = 'winbows11-cache-' + Date.now();
 
+/*
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_NAME).then((cache) => {
@@ -30,7 +31,9 @@ self.addEventListener('activate', (event) => {
     clients.claim();
     console.log('Cache updated.')
 })
+    */
 
+/*
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         (async () => {
@@ -39,3 +42,4 @@ self.addEventListener('fetch', (event) => {
         })()
     )
 })
+    */
