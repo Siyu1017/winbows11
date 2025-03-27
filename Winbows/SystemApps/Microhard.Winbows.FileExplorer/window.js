@@ -51,36 +51,52 @@ style.type = 'text/css';
 style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
 document.head.appendChild(style);
 
+var icons = {
+    folder: await fs.getFileURL('C:/Winbows/icons/folders/folder.ico'),
+    shortcut: await fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico'),
+    drive: await fs.getFileURL('C:/Winbows/icons/devices/drives/Windows 11 Drive Unlocked.ico'),
+    home: await fs.getFileURL(utils.resolvePath('./icons/home.ico')),
+    gallery: await fs.getFileURL(utils.resolvePath('./icons/gallery.ico')),
+    desktop: await fs.getFileURL(utils.resolvePath('./icons/desktop.ico')),
+    downloads: await fs.getFileURL(utils.resolvePath('./icons/downloads.ico')),
+    documents: await fs.getFileURL(utils.resolvePath('./icons/documents.ico')),
+    pictures: await fs.getFileURL(utils.resolvePath('./icons/pictures.ico')),
+    music: await fs.getFileURL(utils.resolvePath('./icons/music.ico')),
+    videos: await fs.getFileURL(utils.resolvePath('./icons/videos.ico')),
+    monitor: await fs.getFileURL(utils.resolvePath('./icons/monitor.ico')),
+    network: await fs.getFileURL(utils.resolvePath('./icons/network.ico')),
+};
+
 async function getIcon(page) {
     switch (page) {
         case 'home':
-            return await fs.getFileURL(utils.resolvePath('./icons/home.ico'));
+            return icons.home;
         case 'gallery':
-            return await fs.getFileURL(utils.resolvePath('./icons/gallery.ico'));
+            return icons.gallery;
         case 'C:/Users/Admin/Desktop':
         case 'desktop':
-            return await fs.getFileURL(utils.resolvePath('./icons/desktop.ico'));
+            return icons.desktop;
         case 'C:/Users/Admin/Downloads':
         case 'donwloads':
-            return await fs.getFileURL(utils.resolvePath('./icons/downloads.ico'));
+            return icons.downloads;
         case 'C:/Users/Admin/Documents':
         case 'documents':
-            return await fs.getFileURL(utils.resolvePath('./icons/documents.ico'));
+            return icons.documents;
         case 'C:/Users/Admin/Pictures':
         case 'pictures':
-            return await fs.getFileURL(utils.resolvePath('./icons/pictures.ico'));
+            return icons.pictures;
         case 'C:/Users/Admin/Music':
         case 'music':
-            return await fs.getFileURL(utils.resolvePath('./icons/music.ico'));
+            return icons.music;
         case 'C:/Users/Admin/Videos':
         case 'videos':
-            return await fs.getFileURL(utils.resolvePath('./icons/videos.ico'));
+            return icons.videos;
         case 'this_pc':
-            return await fs.getFileURL(utils.resolvePath('./icons/monitor.ico'));
+            return icons.monitor;
         case 'network':
-            return await fs.getFileURL(utils.resolvePath('./icons/network.ico'));
+            return icons.network;
         default:
-            return await fs.getFileURL(utils.resolvePath('./icons/folder.ico'));
+            return icons.folder;
     }
 }
 
@@ -934,9 +950,7 @@ async function createTab(page = 'this_pc', active = true) {
         itemIcon.className = 'explorer-viewer-item-icon';
         itemName.className = 'explorer-viewer-item-name';
 
-        fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
-            itemIcon.style.backgroundImage = `url(${url})`;
-        })
+        itemIcon.style.backgroundImage = `url(${icons.folder})`;
         itemName.innerHTML = details.name;
 
         // var hasMouse = matchMedia('(pointer:fine)').matches;
@@ -1016,9 +1030,7 @@ async function createTab(page = 'this_pc', active = true) {
                     window.System.Shell(link.command);
                 })
             })
-            fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
-                itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
-            })
+            itemIcon.style.setProperty('--shortcut-icon', `url(${icons.shortcut})`);
         } else {
             fs.getFileURL(details.type == 'application/winbows-link' ? '' : window.fileIcons.getIcon(path)).then(url => {
                 itemIcon.style.backgroundImage = `url(${url})`;
@@ -1237,9 +1249,7 @@ async function createTab(page = 'this_pc', active = true) {
                 usedSizeBar.className = 'explorer-viewer-disk-used-bar';
                 usedSizeText.className = 'explorer-viewer-disk-used-text';
 
-                fs.getFileURL('C:/Winbows/icons/devices/drives/Windows 11 Drive Unlocked.ico').then(url => {
-                    iconElement.style.backgroundImage = `url(${url})`;
-                })
+                iconElement.style.backgroundImage = `url(${icons.drive})`;
 
                 diskName.innerHTML = disk.toUpperCase() + ':';
 

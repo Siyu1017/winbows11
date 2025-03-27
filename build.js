@@ -60,6 +60,16 @@ var table = [
     'C:/package-lock.json'
 ];
 
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
 walk(__dirname + '/Program Files', function (err, results1) {
     if (err) throw err;
     results1.forEach(function (file, i) {
@@ -80,18 +90,32 @@ walk(__dirname + '/Program Files', function (err, results1) {
             table = table.concat(results3);
 
             (async () => {
+                const buildTime = new Date().getTime();
                 const totalSize = await getDirectorySize(__dirname + '/Program Files') + await getDirectorySize(__dirname + '/Winbows') + await getDirectorySize(__dirname + '/Users');
 
                 const detail = {
-                    size: totalSize,
                     build_id: BUILD_ID,
-                    table: table
+                    build_time: buildTime,
+                    size: totalSize,
+                    table: table,
                 }
 
                 fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
                     if (err) return console.log(err);
                     return ''
                 });
+
+                fs.writeFile(__dirname + '/build-fetch.json', JSON.stringify({
+                    size: totalSize,
+                    build_time: buildTime,
+                    build_id: BUILD_ID
+                }), function (err) {
+                    if (err) return console.log(err);
+                    return ''
+                })
+
+                console.log(`Build ID: ${BUILD_ID}`)
+                console.log(`Total size: ${formatBytes(totalSize)}`)
             })();
         });
     });

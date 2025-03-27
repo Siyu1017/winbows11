@@ -5,7 +5,8 @@ document.documentElement.style = `
 
 browserWindow.setSnappable(false);
 
-document.documentElement.classList.add('winui-light');
+document.documentElement.classList.add('winui');
+document.documentElement.classList.add('winui-no-background');
 
 document.documentElement.querySelectorAll('.window-toolbar-button:not(.close)').forEach(btn => {
     btn.remove();
