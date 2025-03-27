@@ -41,10 +41,11 @@
             background-color: rgba(255, 255, 255, .7);
             backdrop-filter: blur(24px) saturate(1.25);
             padding: 3rem;
-            border-radius: .5rem;
+            border-radius: 1.5rem;
             width: -webkit-fill-available;
             height: -webkit-fill-available;
             display: flex;
+            overflow: hidden;
         }
 
         .confirm-symbol {
@@ -205,6 +206,31 @@
             height: 1.5rem;
             width: 1.5rem;
         }
+
+        @media screen and (max-width: 1024px) {
+            .confirm-symbol {
+                display: none;
+            }
+        }
+
+        @media screen and (max-width: 648px) {
+            .confirm {
+                padding: 0;
+            }
+
+            .confirm-window {
+                padding: 1rem;
+                border-radius: 0;
+            }
+
+            .confirm-buttons {
+                flex-direction: column;
+            }
+
+            .confirm-button {
+                max-width: -webkit-fill-available;
+            }
+        }
     </style>
 </head>
 
@@ -239,6 +265,7 @@
 
             var runWinbows = function () { };
             var scriptURL = `./index.js?timestamp=${new Date().getTime()}`;
+            var latestBuildData = null;
 
             if (!navigator.onLine) {
                 scriptURL = './index.js';
@@ -269,6 +296,7 @@
                     await fetch(`./build-fetch.json?timestamp=${new Date().getTime()}`).then(res => {
                         return res.json();
                     }).then(async data => {
+                        latestBuildData = data;
                         const build_id = data.build_id;
                         if (build_id != window.build_id) {
                             window.needsUpdate = true;
@@ -282,6 +310,19 @@
             if (window.needsUpdate == true && !getJsonFromURL()['embed']) {
                 document.body.style.backgroundImage = 'linear-gradient(transparent, transparent)'
                 document.body.style.transition = 'background-image .2s ease-in-out';
+
+                function formatBytes(bytes, decimals = 2) {
+                    if (bytes === 0) return '0Bytes';
+                    const k = 1024;
+                    const dm = decimals < 0 ? 0 : decimals;
+                    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+                    const i = Math.floor(Math.log(bytes) / Math.log(k));
+                    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + sizes[i];
+                }
+
+                var buildSize = latestBuildData != null ? formatBytes(latestBuildData.size, 0) : '[Failed to get build size]';
+                var predictedInstallationTime = latestBuildData != null ? (Math.ceil((latestBuildData.size / 1024 / 1024 / (navigator.connection ? navigator.connection.downlink : 2)) / 60) + 'minute(s)') : '[Failed to calculate download time]';
 
                 var confirm = document.createElement('div');
                 var confirmWindow = document.createElement('div');
@@ -317,7 +358,7 @@
                 confirmButtons.appendChild(confirmInstall);
 
                 confirmTitle.innerHTML = 'Confirm to install Winbows11?';
-                confirmDescription.innerHTML = "<div>Installing Winbows11 on your device can make it run more smoothly than using the Internet. The size of Winbows11 is about <span class='confirm-highlighted-text'>150MB</span>, and the installation process takes <span class='confirm-highlighted-text'>about 2 minutes</span> to complete. </div><br><div>If you don’t want to install it, you can also just use the Internet to experience Winbows11! </div>";
+                confirmDescription.innerHTML = `<div>Installing Winbows11 on your device can make it run more smoothly than using the Internet. The size of Winbows11 is about <span class='confirm-highlighted-text'>${buildSize}</span>, and the installation process takes <span class='confirm-highlighted-text'>${predictedInstallationTime}</span> to complete. </div><br><div>If you don’t want to install it, you can also just use the Internet to experience Winbows11! </div>`;
                 confirmTip.innerHTML = "<div>If you choose to install, we will save the necessary files for Winbows11 to <a href='https://developer.mozilla.org/zh-TW/docs/Web/API/IndexedDB_API/Using_IndexedDB' in the browser target='_blank' class='confirm-learn-link'>Indexed DB</a>. </div>";
                 confirmCancel.innerHTML = 'Refuse';
                 confirmInstall.innerHTML = 'Install';
