@@ -7,7 +7,9 @@
 
     Object.defineProperty(window.workerModules, 'browserWindow', {
         value: async (path = {}, config = {}, pid) => {
-            console.log(path)
+            if (window.debuggerMode == true) {
+                console.log(path)
+            }
 
             const ICON = await window.Taskbar.createIcon({
                 title: config.title || 'App',
@@ -56,7 +58,9 @@
             var originalTop = utils.getPosition(hostElement).y;
             var originalSnapSide = '';
 
-            console.log(config);
+            if (window.debuggerMode == true) {
+                console.log(config);
+            }
 
             const toolbarMenu = WinUI.contextMenu([])
 
@@ -121,7 +125,10 @@
                 shadowRoot: shadowRoot,
                 pid: pid
             });
-            console.log('opened', windowID)
+
+            if (window.debuggerMode == true) {
+                console.log('opened', windowID)
+            }
 
             hostElement.className = 'browser-window-container active';
             hostElement.addEventListener('pointerdown', (e) => {
@@ -220,13 +227,17 @@
             function updateSize() {
                 originalWidth = hostElement.offsetWidth;
                 originalHeight = hostElement.offsetHeight;
-                console.log('size', originalWidth, originalHeight);
+                if (window.debuggerMode == true) {
+                    console.log('size', originalWidth, originalHeight);
+                }
             }
 
             function updatePosition() {
                 originalLeft = utils.getPosition(hostElement).x;
                 originalTop = utils.getPosition(hostElement).y;
-                console.log('position', originalLeft, originalTop);
+                if (window.debuggerMode == true) {
+                    console.log('position', originalLeft, originalTop);
+                }
             }
 
             Object.keys(resizerConfig).forEach(key => {
@@ -434,7 +445,9 @@
                 windowElement.style.borderRadius = 'revert-layer';
                 maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[1])})`;
 
-                console.log(originalWidth, originalHeight);
+                if (window.debuggerMode == true) {
+                    console.log(originalWidth, originalHeight);
+                }
             }
 
             async function maximizeWindow(animation = true) {
@@ -484,7 +497,9 @@
             }
 
             function close() {
-                console.log('close', windowID)
+                if (window.debuggerMode == true) {
+                    console.log('close', windowID);
+                }
                 ICON.close(windowID);
                 window.System.processes[pid]._exit_Window();
             }

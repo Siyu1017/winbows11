@@ -78,7 +78,9 @@ browserWindow.addEventListener('blur', (e) => {
 
 var viewers = window.System.FileViewers.getViewers(datas.file);
 
-console.log(viewers)
+if (window.debuggerMode == true) {
+    console.log(viewers)
+}
 
 Object.keys(viewers).forEach(viewer => {
     var item = document.createElement('div');
@@ -119,7 +121,9 @@ alwaysButton.addEventListener('click', () => {
     if (extension == '') {
         return;
     }
-    console.log(selected)
+    if (window.debuggerMode == true) {
+        console.log(selected)
+    }
     window.System.FileViewers.setDefaultViewer(extension, selected);
     new Process(viewers[selected].script).start(`const FILE_PATH="${datas.file}";`);
     self = true;

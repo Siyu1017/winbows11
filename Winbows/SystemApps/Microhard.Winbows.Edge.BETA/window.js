@@ -166,7 +166,9 @@ async function createTab(page, active = true) {
         const children = Array.from(container.children);
 
         if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
-            console.error('索引超出範圍');
+            if (window.debuggerMode == true) {
+                console.error('索引超出範圍');
+            }
             return;
         }
 
@@ -182,14 +184,18 @@ async function createTab(page, active = true) {
 
     function moveArrayItem(arr, fromIndex, toIndex) {
         if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
-            console.error('索引超出範圍');
+            if (window.debuggerMode == true) {
+                console.error('索引超出範圍');
+            }
             return;
         }
 
         const item = arr.splice(fromIndex, 1)[0];
         arr.splice(toIndex, 0, item);
 
-        console.log(arr, item)
+        if (window.debuggerMode == true) {
+            console.log(arr, item)
+        }
 
         return arr;
     }
@@ -637,7 +643,9 @@ async function createTab(page, active = true) {
     const host = 'https://winbows11-proxy-api.vercel.app';
 
     async function getPage() {
-        console.log(currentPage);
+        if (window.debuggerMode == true) {
+            console.log(currentPage);
+        }
 
         var isLocalFileURL = isLocalFile(currentPage);
 

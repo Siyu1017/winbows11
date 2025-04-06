@@ -92,7 +92,9 @@
                     window.Winbows.Screen.style.cursor = 'auto';
                     reject('Can not run file.\n' + e.message);
                 }
-                console.log(this.url)
+                if (window.debuggerMode == true) {
+                    console.log(this.url);
+                }
                 this.worker = new Worker(this.url);
                 this.worker.onerror = (e) => {
                     this.exit();
@@ -192,7 +194,9 @@
                 }
                 if (e.data.type == 'function') {
                     if (e.data.name == 'HTML') {
-                        console.log(e.data.target)
+                        if (window.debuggerMode == true) {
+                            console.log(e.data.target);
+                        }
                         this.temp[e.data.target].innerHTML = e.data.html;
                     }
                     if (e.data.name == 'requestAccessWindow') {

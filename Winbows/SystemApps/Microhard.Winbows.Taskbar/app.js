@@ -1,4 +1,7 @@
 (async () => {
+    // load taskview
+    // var taskview = await import(await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.Taskbar/taskview.js'));
+
     var items = {
         start: {
             display: true,
@@ -601,6 +604,15 @@
         })
     })();
 
+    var taskview = {
+        start: () => {
+
+        },
+        exit: () => {
+
+        }
+    }
+
     // Status
     var focused = null;         // For all
     var lastClicked = null;     // For all
@@ -631,7 +643,7 @@
         })
         if (focused) {
             iconRepository[idDatas[focused]]._show(focused);
-        } else if (activeWindows.length > 0) {
+        } else if (activeWindows.length > 0 && iconRepository[idDatas[activeWindows[activeWindows.length - 1]]]) {
             iconRepository[idDatas[activeWindows[activeWindows.length - 1]]].focus([activeWindows[activeWindows.length - 1]]);
         }
     }
@@ -668,7 +680,7 @@
             } else if (name == 'search') {
 
             } else if (name == 'taskview') {
-
+                taskview.start();
             }
         } else {
             if (name == 'start') {
@@ -676,7 +688,7 @@
             } else if (name == 'search') {
 
             } else if (name == 'taskview') {
-
+                taskview.exit();
             }
         }
     }
@@ -955,7 +967,12 @@
                 }
 
                 function close(id) {
-                    if (!registry.hasOwnProperty(id)) return console.log(`WINDOW ID [ ${id} ] NOT FOUND`);
+                    if (!registry.hasOwnProperty(id)) {
+                        if (window.debuggerMode == true) {
+                            console.log(`WINDOW ID [ ${id} ] NOT FOUND`);
+                        }
+                        return;
+                    }
                     item.removeAttribute('data-toggle');
                     if (type != 'item') {
                         const browserWindow = registry[id].browserWindow;
@@ -972,7 +989,9 @@
                             item.classList.add('hide');
                         }
                         lastClicked = owner;
-                        console.log(registry, id)
+                        if (window.debuggerMode == true) {
+                            console.log(registry, id);
+                        }
                         activeWindows = activeWindows.filter(item => item !== id);
                         delete registry[id];
                         delete idDatas[id];
@@ -985,7 +1004,9 @@
                             if (!window.Taskbar.isPinned(owner) && Object.values(registry).length == 0) {
                                 item.remove();
                             }
-                            window.System.processes[pid]._exit_Window();
+                            if (window.System.processes[pid]) {
+                                window.System.processes[pid]._exit_Window();
+                            }
                         }, 300);
                     }
                     triggerEvent('close', {

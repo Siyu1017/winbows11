@@ -23,10 +23,22 @@
         themes: 'Winbows/themes',
         ui: 'Winbows/System/ui'
     }
-    const debuggerMode = false;
-    const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop'] || getJsonFromURL()['embed']) ? true : false;
 
-    if (getJsonFromURL()['logs'] || getJsonFromURL()['output']) {
+    const URLParams = getJsonFromURL();
+    const debuggerMode = false;
+    const devMode = (URLParams['dev'] || URLParams['develop'] || URLParams['embed']) ? true : false;
+
+    fs.writeFile('C:/Winbows/System/.env/location/param.json', new Blob([JSON.stringify(URLParams)], {
+        type: 'application/json'
+    }))
+
+    Object.defineProperty(window, 'debuggerMode', {
+        value: (URLParams['dev'] || URLParams['develop'] || URLParams['logs'] || URLParams['output']) ? true : false,
+        writable: false,
+        configurable: false
+    })
+
+    if (URLParams['logs'] || URLParams['output']) {
         var devContainer = document.createElement('div');
         var devLogs = document.createElement('div');
         var dragging = false;
@@ -602,7 +614,9 @@
             desktop.classList.remove('winui-light', 'winui-dark');
             desktop.classList.add(`winui-${theme}`)
             backgroundImage.style.backgroundImage = `url(${url})`;
-            console.log(theme)
+            if (window.debuggerMode == true) {
+                console.log(theme)
+            }
         }
     }
     window.WinbowsUpdate = () => {
@@ -646,7 +660,9 @@
                     loadedKernels++;
                     kernelLoading.innerHTML = `Loading kernels ( ${loadedKernels} / ${kernelFiles.length} )`;
                     loadingProgressBar.style.width = loadedKernels / kernelFiles.length * 100 + '%';
-                    console.log(loadedKernels)
+                    if (window.debuggerMode == true) {
+                        console.log(loadedKernels)
+                    }
                     if (loadedKernels == kernelFiles.length) {
                         loadingProgressBar.style.width = '100%';
                         loadingText(`Loading assets...`);
@@ -1310,7 +1326,9 @@
         }
 
         async function updateDesktop(force = true, sort = 'default') {
-            console.log('Updating Desktop', '\nForce : ' + force);
+            if (window.debuggerMode == true) {
+                console.log('Updating Desktop', '\nForce : ' + force);
+            }
             fs.readdir('C:/Users/Admin/Desktop').then(async items => {
                 if (items == originalContent && force == false || updating == true) return;
                 originalContent = items;
@@ -1360,7 +1378,9 @@
                                         if (defaultViewer != null) {
                                             new Process(defaultViewer.script).start(`const FILE_PATH="${item.path}";`);
                                         } else {
-                                            console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js')
+                                            if (window.debuggerMode == true) {
+                                                console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js')
+                                            }
                                             new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${item.path}";`);
                                         }
                                     }
@@ -1503,7 +1523,9 @@
             }
 
             function run() {
-                console.log('run', total, files);
+                if (window.debuggerMode == true) {
+                    console.log('run', total, files);
+                }
                 new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
                     fileTransfer++;
                     worker = process.worker;
@@ -1520,7 +1542,9 @@
                         }
                     }
 
-                    console.log(files)
+                    if (window.debuggerMode == true) {
+                        console.log(files)
+                    }
 
                     worker.postMessage({
                         type: 'init',
@@ -1904,12 +1928,16 @@
             }
             var viewers = {};
             Object.keys(window.System.FileViewers.registeredViewers).forEach(viewer => {
-                console.log(window.System.FileViewers.registeredViewers[viewer])
+                if (window.debuggerMode == true) {
+                    console.log(window.System.FileViewers.registeredViewers[viewer])
+                }
                 if (window.System.FileViewers.registeredViewers[viewer].accepts.some(ext => accepted.includes(ext))) {
                     viewers[viewer] = window.System.FileViewers.registeredViewers[viewer];
                 }
             })
-            console.log(file, extension, viewers)
+            if (window.debuggerMode == true) {
+                console.log(file, extension, viewers)
+            }
             return viewers;
         }
     }
@@ -1981,8 +2009,10 @@
             setTimeout(updateDate, leftToUpdateDate);
         }
 
-        console.log('Next update of time :', new Date(Date.now() + leftToUpdateTime))
-        console.log('Next update of date :', new Date(Date.now() + leftToUpdateDate))
+        if (window.debuggerMode == true) {
+            console.log('Next update of time :', new Date(Date.now() + leftToUpdateTime))
+            console.log('Next update of date :', new Date(Date.now() + leftToUpdateDate))
+        }
 
         setTimeout(updateTime, leftToUpdateTime);
         setTimeout(updateDate, leftToUpdateDate);
@@ -2081,7 +2111,7 @@
 
     async function downloadFile(path, responseType = 'blob') {
         if (!path || path.trim().length == 0) return;
-        if (debuggerMode == true) {
+        if (debuggerMode == true || window.debuggerMode == true) {
             // Debugger
             console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
         }
@@ -2107,7 +2137,9 @@
                 return blob;
             }
         }).catch(async err => {
-            console.log(`Failed to fetch file: ${path}`, err);
+            if (window.debuggerMode == true) {
+                console.log(`Failed to fetch file: ${path}`, err);
+            }
             if (responseType == 'text') {
                 return await (await fs.readFile(path)).text();
             } else {
