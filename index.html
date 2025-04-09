@@ -241,6 +241,14 @@
             t: () => window.__fscf.l.forEach(f => f()),
             c: g => window.__fscf.l.push(g)
         }
+
+        function updateScreenSize() {
+            document.querySelector(':root').style.setProperty('--winbows-screen-width', window.innerWidth + 'px');
+            document.querySelector(':root').style.setProperty('--winbows-screen-height', window.innerHeight + 'px');
+        }
+
+        window.addEventListener('resize', updateScreenSize);
+        window.addEventListener('load', updateScreenSize);
     </script>
     <script>
         function getJsonFromURL(url) {
@@ -255,7 +263,8 @@
         }
 
         if (localStorage.getItem('WINBOWS_REQUIRED') == 'REPAIR' && !getJsonFromURL()['embed']) {
-            location.href = `./repair.html?timestamp=${new Date().getTime()}`;
+            var warning = document.createElement("div");
+            // location.href = `./repair.html?timestamp=${new Date().getTime()}`;
         }
 
         ; (async () => {

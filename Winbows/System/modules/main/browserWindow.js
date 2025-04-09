@@ -138,17 +138,13 @@
             var x = (window.innerWidth / 2) - ((config.width ? config.width : 800) / 2);
             var y = ((window.innerHeight - 48) / 2) - ((config.height ? config.height : 600) / 2);
 
-            if (browserWindowPosition[path.caller]) {
+            if (config.x || config.y) {
+                // Taskbar height : 48
+                x = config.x && config.x != 'center' ? parseInt(config.x) : x;
+                y = config.y && config.y != 'center' ? parseInt(config.y) : y;
+            } else if (browserWindowPosition[path.caller]) {
                 x = browserWindowPosition[path.caller][0];
                 y = browserWindowPosition[path.caller][1];
-            }
-
-            if (config.x != undefined) {
-                x = config.x;
-            }
-            if (config.y != undefined) {
-                // Taskbar height : 48
-                y = config.y;
             }
 
             hostElement.style.left = x + 'px';

@@ -6,6 +6,8 @@
     await System.requestAccessWindow('./chooseViewerWindow.js', {
         width: 360,
         height: 540,
+        x: 'center',
+        y: 'center',
         fullscreenable: false,
         resizable: false,
         closable: false,

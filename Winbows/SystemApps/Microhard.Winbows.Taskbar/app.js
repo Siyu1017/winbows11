@@ -91,6 +91,7 @@
     var startMenuSearch = document.createElement('div');
     var startMenuSearchIcon = document.createElement('div');
     var startMenuSearchInput = document.createElement('input');
+    var startMenuApps = document.createElement('div');
     var startMenuPinned = document.createElement('div');
     var startMenuRecommended = document.createElement('div');
     var startMenuFooter = document.createElement('div');
@@ -101,6 +102,7 @@
     startMenuSearch.className = 'start-menu-search';
     startMenuSearchIcon.className = 'start-menu-search-icon';
     startMenuSearchInput.className = 'start-menu-search-input';
+    startMenuApps.className = 'start-menu-apps';
     startMenuPinned.className = 'start-menu-pinned';
     startMenuRecommended.className = 'start-menu-recommended';
     startMenuFooter.className = 'start-menu-footer';
@@ -113,26 +115,30 @@
     startMenuInner.appendChild(startMenuSearch);
     startMenuSearch.appendChild(startMenuSearchIcon);
     startMenuSearch.appendChild(startMenuSearchInput);
-    startMenuInner.appendChild(startMenuPinned);
-    startMenuInner.appendChild(startMenuRecommended);
+    startMenuInner.appendChild(startMenuApps)
+    startMenuApps.appendChild(startMenuPinned);
+    startMenuApps.appendChild(startMenuRecommended);
     startMenu.appendChild(startMenuFooter);
 
     // Pinned
     var pinnedHeader = document.createElement('div');
     var pinnedTitle = document.createElement('div');
     var pinnedExpand = document.createElement('div');
+    var pinnedAppsContainer = document.createElement('div');
     var pinnedApps = document.createElement('div');
 
     pinnedHeader.className = 'start-menu-pinned-header';
     pinnedTitle.className = 'start-menu-pinned-title';
     pinnedExpand.className = 'start-menu-pinned-expand';
+    pinnedAppsContainer.className = 'start-menu-pinned-apps-container';
     pinnedApps.className = 'start-menu-pinned-apps';
 
     pinnedTitle.innerHTML = 'Pinned';
     pinnedExpand.innerHTML = 'All apps'
 
     startMenuPinned.appendChild(pinnedHeader);
-    startMenuPinned.appendChild(pinnedApps);
+    startMenuPinned.appendChild(pinnedAppsContainer)
+    pinnedAppsContainer.appendChild(pinnedApps);
     pinnedHeader.appendChild(pinnedTitle);
     pinnedHeader.appendChild(pinnedExpand);
 
