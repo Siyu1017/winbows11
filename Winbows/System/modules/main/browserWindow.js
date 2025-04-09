@@ -459,7 +459,7 @@
                 hostElement.style.left = '0';
                 hostElement.style.top = '0';
                 // hostElement.style.width = '100vw';
-                // hostElement.style.height = 'calc(100vh - var(--taskbar-height))';
+                // hostElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
 
                 if (animation == true) {
                     hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
@@ -474,7 +474,7 @@
                 }
 
                 windowElement.style.width = '100vw';
-                windowElement.style.height = 'calc(100vh - var(--taskbar-height))';
+                windowElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
                 windowElement.style.borderRadius = '0';
                 maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[2])})`;
             }
@@ -544,12 +544,12 @@
 
             function getSnapSize(side) {
                 var width = '100vw';
-                var height = 'calc(100vh - var(--taskbar-height))';
+                var height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
                 if (side.includes('l') || side.includes('r')) {
                     width = 'calc(100vw / 2)';
                 }
                 if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
-                    height = 'calc((100vh - var(--taskbar-height)) / 2)';
+                    height = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
                 }
                 return {
                     width: width,
@@ -564,7 +564,7 @@
                     left = 'calc(100vw / 2)';
                 }
                 if (side.includes('b')) {
-                    top = 'calc((100vh - var(--taskbar-height)) / 2)';
+                    top = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
                 }
                 return {
                     left: left,
