@@ -607,6 +607,7 @@
         currentBackgroundImage = image;
         localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
         var url = await getFileURL(currentBackgroundImage);
+        document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
         var img = new Image();
         img.src = url;
         img.onload = () => {

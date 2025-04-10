@@ -23,6 +23,8 @@
                 }
             })
 
+            window.System.processes[pid].title = config.title || 'App';
+
             const appWrapper = window.Winbows.AppWrapper;
             const events = {
                 "start": ["mousedown", "touchstart", "pointerdown"],
@@ -209,6 +211,44 @@
             if (config.showOnTop == true) {
                 hostElement.classList.add('show-on-top');
             }
+
+            if (config.mica == true) {
+                /*
+                function generateMicaImage(canvas, bgImageUrl, width = 400, height = 300) {
+                    const ctx = canvas.getContext("2d");
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const img = new Image();
+                    img.crossOrigin = "anonymous";
+                    img.onload = () => {
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        for (let i = 0; i < 3; i++) {
+                            ctx.globalAlpha = 0.5;
+                            ctx.drawImage(canvas, -1, 0, width, height);
+                            ctx.drawImage(canvas, 1, 0, width, height);
+                            ctx.drawImage(canvas, 0, -1, width, height);
+                            ctx.drawImage(canvas, 0, 1, width, height);
+                        }
+
+                        ctx.globalAlpha = 0.2;
+                        ctx.fillStyle = "#ffffff";
+                        ctx.fillRect(0, 0, width, height);
+                        return canvas.toDataURL("image/png");
+                    };
+
+                    img.src = bgImageUrl;
+                }
+
+                var micaCanvas = document.createElement('canvas');
+                micaCanvas.className = 'mica-canvas';
+                shadowRoot.appendChild(micaCanvas);
+
+                generateMicaImage(micaCanvas, await fs.getFileURL(window.getBackgroundImage()), window.innerWidth, window.innerHeight)
+                */
+            }
+
             parent.appendChild(hostElement);
             hostElement.appendChild(resizers);
             hostElement.appendChild(content);
@@ -364,6 +404,7 @@
                 if (!title) return;
                 config.title = title;
                 toolbarTitle.innerHTML = window.utils.replaceHTMLTags(title);
+                window.System.processes[pid].title = config.title || 'App';
                 ICON.changeTitle(windowID, title);
             }
 
@@ -458,7 +499,7 @@
                 hostElement.setAttribute('data-maximized', 'true');
                 hostElement.style.left = '0';
                 hostElement.style.top = '0';
-                // hostElement.style.width = '100vw';
+                // hostElement.style.width = 'var(--winbows-screen-width)';
                 // hostElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
 
                 if (animation == true) {
@@ -473,7 +514,7 @@
                     windowElement.style.transition = 'none';
                 }
 
-                windowElement.style.width = '100vw';
+                windowElement.style.width = 'var(--winbows-screen-width)';
                 windowElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
                 windowElement.style.borderRadius = '0';
                 maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[2])})`;
@@ -543,10 +584,10 @@
             }
 
             function getSnapSize(side) {
-                var width = '100vw';
+                var width = 'var(--winbows-screen-width)';
                 var height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
                 if (side.includes('l') || side.includes('r')) {
-                    width = 'calc(100vw / 2)';
+                    width = 'calc(var(--winbows-screen-width) / 2)';
                 }
                 if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
                     height = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
@@ -561,7 +602,7 @@
                 var left = '0';
                 var top = '0';
                 if (side.includes('r')) {
-                    left = 'calc(100vw / 2)';
+                    left = 'calc(var(--winbows-screen-width) / 2)';
                 }
                 if (side.includes('b')) {
                     top = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
@@ -606,7 +647,7 @@
                 if (toolbarButtons.contains(e.target)) return;
                 var prevent = false;
                 immovableElements.forEach(element => {
-                    if (element == e.target) {
+                    if (element == e.target || element.contains(e.target)) {
                         prevent = true;
                     }
                 })

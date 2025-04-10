@@ -11,24 +11,75 @@ var icons = {
     run: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sidebar-item-icon"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/></svg>',
     users: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sidebar-item-icon"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
 }
+
+var searchContainer = document.createElement('div');
+var searchBox = document.createElement('div');
+var searchIcon = document.createElement('div');
+var searchInput = document.createElement('input');
+
+searchContainer.className = 'search-container';
+searchBox.className = 'search-box';
+searchIcon.className = 'search-icon';
+searchInput.className = 'search-input';
+searchInput.placeholder = 'Search...';
+
+browserWindow.toolbar.appendChild(searchContainer);
+searchContainer.appendChild(searchBox);
+searchBox.appendChild(searchIcon);
+searchBox.appendChild(searchInput);
+
+searchInput.addEventListener('focus', () => {
+    searchBox.classList.add('focused');
+})
+searchInput.addEventListener('blur', () => {
+    searchBox.classList.remove('focused');
+})
+
+browserWindow.setImmovable(searchBox);
+
 var focusedIcon = 'tasks';
 var app = document.createElement('div');
 var sidebar = document.createElement('div');
 var content = document.createElement('div');
 var taskList = document.createElement('div');
 var taskHeader = document.createElement('div');
+var taskListNoMatched = document.createElement('div');
 
 app.className = 'app';
 sidebar.className = 'sidebar';
 content.className = 'content';
 taskList.className = 'tasks';
 taskHeader.className = 'task-header';
+taskListNoMatched.className = 'task';
+taskListNoMatched.innerHTML = 'No matched tasks';
+taskListNoMatched.style.display = 'none';
+taskListNoMatched.style.textAlign = 'center';
+taskListNoMatched.style.pointerEvents = 'none';
+taskListNoMatched.style.userSelect = 'none';
 
 document.body.appendChild(app);
 app.appendChild(sidebar);
 app.appendChild(content);
 content.appendChild(taskHeader);
 content.appendChild(taskList);
+taskList.appendChild(taskListNoMatched);
+
+searchInput.addEventListener('input', (e) => {
+    var mathced = false;
+    Object.values(taskItems).forEach(task => {
+        if (task.title && task.title.toLowerCase().includes(searchInput.value.toLowerCase()) || task.pid && task.pid.toString().includes(searchInput.value)) {
+            mathced = true;
+            task.task.style.display = 'flex';
+        } else {
+            task.task.style.display = 'none';
+        }
+    })
+    if (mathced == false) {
+        taskListNoMatched.style.display = 'block';
+    } else {
+        taskListNoMatched.style.display = 'none';
+    }
+})
 
 document.body.classList.add('winui');
 
@@ -71,6 +122,7 @@ var taskItems = {};
 function createTaskItem(pid) {
     var process = window.System.processes[pid];
     var info = window.appRegistry.getApp(process.path);
+    var title = process.title || 'App';
     var task = document.createElement('div');
     var taskInfo = document.createElement('div');
     var taskIcon = document.createElement('div');
@@ -83,11 +135,18 @@ function createTaskItem(pid) {
     taskName.className = 'task-name';
     taskPid.className = 'task-pid';
 
-    taskName.innerHTML = window.utils.replaceHTMLTags(info.name);
+    taskName.innerHTML = window.utils.replaceHTMLTags(title);
     fs.getFileURL(info.icon).then(url => {
         taskIcon.style.backgroundImage = `url(${url})`;
     })
     taskPid.innerHTML = pid;
+
+    if (title.toLowerCase().includes(searchInput.value.toLowerCase()) || pid.toString().includes(searchInput.value)) {
+        task.style.display = 'flex';
+        taskListNoMatched.style.display = 'none';
+    } else {
+        task.style.display = 'none';
+    }
 
     task.appendChild(taskInfo);
     taskInfo.appendChild(taskIcon);
@@ -130,7 +189,7 @@ function createTaskItem(pid) {
         menu.open(e.pageX, e.pageY, 'left-top');
     })
 
-    taskItems[pid] = { changeIcon, changeName, exit };
+    taskItems[pid] = { title, pid: pid.toString(), task, changeIcon, changeName, exit };
 
     return { changeIcon, changeName, exit };
 }

@@ -423,3 +423,11 @@
     height: .925rem;
     display: block;
 }
+
+.mica-canvas {
+    z-index: -1;
+    display: block;
+    position: absolute;
+    width: -webkit-fill-available;
+    height: -webkit-fill-available;
+}

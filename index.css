@@ -13,6 +13,8 @@
     --taskbar-height: 3rem;
     --winbows-screen-width: 100vw;
     --winbows-screen-height: 100vh;
+    --winbows-mica: rgba(255, 255, 255, .9);
+    --winbows-mica-unfocused: rgba(255, 255, 255, .9);
 }
 
 body {
@@ -461,6 +463,7 @@ body {
     color: #fff;
     cursor: pointer;
     outline: 0;
+    font-family: var(--winbows-font-default);
 }
 
 .screen-lock-signin-button:hover {
@@ -1930,11 +1933,10 @@ body {
 .mica {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: var(--mica) no-repeat fixed center;
+    background: var(--winbows-mica) no-repeat fixed center;
     background-size: cover;
-    background-color: var(--unfocused);
-    --mica: url(blob:http://127.0.0.1:5500/9939ba62-a136-4965-b82a-6c0377a41586);
-    --unfocused: rgba(255, 255, 255, .9);
+    background-color: var(--winbows-mica-unfocused);
     backdrop-filter: blur(120px) saturate(1.5);
     border-radius: .5rem;
+    transform: none !important;
 }

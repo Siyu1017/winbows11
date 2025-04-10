@@ -991,6 +991,7 @@
                         blur(id);
                         // close window
                         browserWindow.classList.remove('active');
+                        browserWindow.style.transform = 'scale(.8)';
                         if (!window.Taskbar.isPinned(owner) && isLast == true) {
                             item.classList.add('hide');
                         }
@@ -1027,6 +1028,7 @@
 
                 function changeTitle(id, title) {
                     registry[id].title = title;
+                    window.System.processes[registry[id].pid].title = title || 'App';
                 }
 
                 function show(id) {
@@ -1132,6 +1134,7 @@
                     triggerEvent('_hide', id);
                 }
 
+                var originalIndex = maxIndex;
                 function updateWindowStatus(obj, type) {
                     try {
                         if (!obj) return;
@@ -1141,12 +1144,18 @@
                                 obj.browserWindow.style.zIndex = maxIndex;
                             }
                         } else if (type == 'show') {
+                            obj.browserWindow.style.zIndex = originalIndex;
                             obj.browserWindow.classList.add('active');
                             obj.browserWindow.style.pointerEvents = 'all';
                         } else if (type == 'hide') {
+                            originalIndex = parseInt(obj.browserWindow.style.zIndex);
                             obj.browserWindow.classList.remove('active');
                             obj.browserWindow.style.pointerEvents = 'none';
-                            // obj.browserWindow.style.setProperty('z-index', '-1', 'important');
+                            setTimeout(() => {
+                                if (status.show == false) {
+                                    obj.browserWindow.style.setProperty('z-index', '-1', 'important');
+                                }
+                            }, 100);
                         } else if (type == 'toggle') {
                             obj.browserWindow.classList.toggle('active');
                         }
