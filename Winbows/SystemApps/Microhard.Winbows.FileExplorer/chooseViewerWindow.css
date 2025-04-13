@@ -1,9 +1,9 @@
 .window {
     width: 360px;
     height: 540px;
-    -webkit-backdrop-filter: saturate(2) blur(60px);
-    backdrop-filter: saturate(2) blur(60px);
-    background: var(--winbows-taskbar-bg);
+    -webkit-backdrop-filter: saturate(2) blur(120px);
+    backdrop-filter: saturate(2) blur(120px);
+    background: rgba(255, 255, 255, .8);
     border: 1.5px solid rgba(0, 0, 0, .1);
 }
 
@@ -33,6 +33,7 @@
     font-size: 1.25rem;
     font-weight: 600;
     word-wrap: break-word;
+    background: rgba(255, 255, 255, 0.2);
 }
 
 .content {
@@ -44,6 +45,8 @@
     transform: translateY(0);
     opacity: 1;
     animation: show-content 200ms ease-in-out 1 forwards;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.2);
 }
 
 @keyframes show-content {
@@ -69,7 +72,7 @@
 
 .viewer.active,
 .viewer:hover {
-    background: #fff;
+    background: rgb(0 0 0 / 5%);
 }
 
 .viewer.active::before {
@@ -103,16 +106,15 @@
     text-align: right;
     position: sticky;
     bottom: 0;
-    margin-top: auto;
     display: flex;
     justify-content: space-between;
-    background: rgb(236 236 236);
+    background: transparent;
     gap: .5rem;
     border-top: 1.5px solid rgba(0, 0, 0, .1);
 }
 
 .footer-button {
-    background: #fff;
+    background: rgb(255 255 255 / 84%);
     border: none;
     padding: .5rem 2rem;
     border-radius: .375rem;
@@ -123,9 +125,10 @@
 }
 
 .footer-button:hover {
-    background: #f8f8f8;
+    background: rgb(255 255 255 / 74%);
 }
 
 .footer-button:disabled {
     pointer-events: none;
+    background: rgb(255 255 255 / 49%);
 }

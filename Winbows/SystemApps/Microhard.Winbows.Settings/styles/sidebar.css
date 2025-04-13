@@ -1,6 +1,6 @@
 .sidebar-container {
     width: 20rem;
-    height: -webkit-fill-available;
+    height: 100%;
     overflow: hidden;
 }
 
@@ -10,7 +10,7 @@
     flex-direction: column;
     gap: 1rem;
     overflow: hidden;
-    height: -webkit-fill-available;
+    height: 100%;
 }
 
 .account {
@@ -31,6 +31,7 @@
     background-repeat: no-repeat;
     background-size: contain;
     border-radius: 50%;
+    border: 1.5px solid rgba(0,0,0,.1);
 }
 
 .account-info {

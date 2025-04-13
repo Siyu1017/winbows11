@@ -2,7 +2,8 @@
     await System.requestAccessWindow('./window.js', {
         x: 120,
         y: 60,
-        title: 'Notepad'
+        title: 'Notepad',
+        mica: true
     });
 
     process.on('message', async function (event) {

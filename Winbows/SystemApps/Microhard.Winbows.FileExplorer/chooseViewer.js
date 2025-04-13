@@ -13,6 +13,7 @@
         closable: false,
         minimizable: false,
         title: 'Open with',
+        mica: true,
         datas: {
             file: FILE_PATH
         }

@@ -1,7 +1,7 @@
 .window {
     backdrop-filter: blur(180px) saturate(4);
     -webkit-backdrop-filter: blur(180px) saturate(4);
-    background: rgb(255 255 255 / 90%);
+    background: rgb(245 244 244 / 94%);
 }
 
 .window-toolbar {
