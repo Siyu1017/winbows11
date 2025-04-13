@@ -1,5 +1,21 @@
 // sw.js
 const STATIC_NAME = 'winbows11-cache-' + Date.now();
+const requiredFiles = [
+    '/fs.js',
+    '/index.html',
+    '/index.js',
+    '/index.css',
+    '/favicon.ico',
+    '/install.css',
+    '/install.js',
+    '/install.html',
+    '/repair.css',
+    '/repair.js',
+    '/repair.html',
+    '/build.json',
+    '/build-fetch.json',
+    '/'
+]
 
 var hardwares = {
     'NIC': {
@@ -55,10 +71,10 @@ self.addEventListener('fetch', (event) => {
                     });
                 });
             });
+            const start = self.location.protocol + '//' + self.location.hostname + (self.location.port ? ':' + self.location.port : '');
             const request = fetch(event.request);
             request.then(res => {
                 var url = event.request.url;
-                var start = self.location.protocol + '//' + self.location.hostname + (self.location.port ? ':' + self.location.port : '');
                 if (url.startsWith(start)) {
                     url = url.replace(start, '')
                 }
@@ -90,7 +106,7 @@ self.addEventListener('fetch', (event) => {
                     })
                 })
             })
-            if (hardwares['NIC'].enabled == true) {
+            if (hardwares['NIC'].enabled == true || requiredFiles.includes(event.url.replace(start, ''))) {
                 return request;
             } else {
                 self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {

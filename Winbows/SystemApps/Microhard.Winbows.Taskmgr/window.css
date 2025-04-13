@@ -1,6 +1,7 @@
 .window {
-    backdrop-filter: blur(120px) saturate(1.5);
-    background: rgba(235, 235, 235, .7);
+    backdrop-filter: blur(180px) saturate(4);
+    -webkit-backdrop-filter: blur(180px) saturate(4);
+    background: rgb(255 255 255 / 90%);
 }
 
 .window-toolbar {
@@ -30,7 +31,7 @@
 }
 
 .search-box {
-    background: rgb(255 255 255 / 30%);
+    background: rgb(255 255 255 / 60%);
     pointer-events: initial;
     display: flex;
     width: 18rem;

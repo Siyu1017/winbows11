@@ -3,7 +3,8 @@
     // eval(await module.text());
 
     await System.requestAccessWindow('./window.js', {
-        mica: true
+        mica: true,
+        tabAnimation: false
     })
 
     // var browserWindow = await new System.browserWindow({

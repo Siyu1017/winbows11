@@ -6,6 +6,7 @@
     z-index: 1;
     background: rgba(255, 255, 255, .7);
     backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
 }
 
 .window-toolbar-title {
@@ -58,6 +59,7 @@
     flex-direction: row;
     background: rgba(255, 255, 255, .7);
     backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
     box-shadow: 0px 8px 24px 8px rgba(0, 0, 0, .08);
     border-radius: 1rem;
     padding: .75rem 1rem;

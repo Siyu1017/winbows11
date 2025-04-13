@@ -3,8 +3,9 @@
 }
 
 .window-toolbar {
-    backdrop-filter: blur(120px) saturate(1.5);
-    background: rgba(235, 235, 235, .7);
+    /* backdrop-filter: blur(180px) saturate(4); */
+    background: transparent;
+    z-index: 9999;
 }
 
 .window-content {
@@ -12,6 +13,7 @@
     -webkit-user-drag: none;
     flex-direction: column;
     display: flex;
+    background: transparent;
 }
 
 .tabview {
@@ -29,7 +31,7 @@
     flex-direction: column;
     width: -webkit-fill-available;
     height: -webkit-fill-available;
-    background: #fff;
+    background: transparent;
 }
 
 .tabview-item.active {
@@ -39,6 +41,8 @@
 .window {
     --border-color: rgb(0, 0, 0, .1);
     --label-color: rgb(132, 132, 132);
+    backdrop-filter: blur(180px) saturate(4);
+    background: rgb(227 227 227 / 88%);
 }
 
 .explorer-viewer-container {
@@ -232,7 +236,7 @@
 }
 
 .explorer-tabstrip-tab.active {
-    --bg: rgb(249 249 249);
+    --bg: rgb(253 253 253 / 67%);
     z-index: 9;
 }
 
@@ -278,6 +282,17 @@
     background: var(--bg);
     content: '';
     bottom: 0;
+}
+
+.explorer-tabstrip-tab.dragging {
+    --bg: rgb(255, 255, 255);
+    border-radius: var(--radius);
+    z-index: 99999;
+}
+
+.explorer-tabstrip-tab.dragging::before,
+.explorer-tabstrip-tab.dragging::after {
+    display: none;
 }
 
 .explorer-tabstrip-tab.active {
@@ -335,7 +350,7 @@
 }
 
 .explorer-tabstrip-tab.active .explorer-tabstrip-tab-close:hover {
-    background: rgb(233, 233, 233);
+    background: rgb(0 0 0 / 8%);
 }
 
 .explorer-tabstrip-tab-close::before {
@@ -390,7 +405,7 @@
 }
 
 .explorer-pathstrip {
-    background: rgb(249, 249, 249);
+    background: rgb(253 253 253 / 67%);
     height: 3rem;
     min-height: 3rem;
     width: 100%;
@@ -434,7 +449,7 @@
 }
 
 .explorer-pathstrip-action:hover {
-    background: rgb(236, 236, 236);
+    background: rgb(0 0 0 / 8%);
 }
 
 .explorer-pathstrip-action.back::before {
@@ -456,7 +471,7 @@
 }
 
 .explorer-pathstrip-path {
-    background: rgb(233, 233, 233);
+    background: rgb(255 255 255);
     width: -webkit-fill-available;
     height: 2rem;
     border-radius: .375rem;
@@ -474,7 +489,7 @@
 }
 
 .explorer-pathstrip-search {
-    background: rgb(233, 233, 233);
+    background: rgb(255 255 255);
     min-width: 12rem;
     border-radius: .375rem;
     border: 0;
@@ -491,6 +506,7 @@
     align-items: center;
     padding: .375rem;
     gap: .375rem;
+    background: #fff;
 }
 
 .explorer-actionbar-group {
@@ -500,7 +516,7 @@
     height: -webkit-fill-available;
 }
 
-.explorer-actionbar-group + .explorer-actionbar-group::before {
+.explorer-actionbar-group+.explorer-actionbar-group::before {
     content: '';
     height: 100%;
     width: 1.25px;
@@ -550,6 +566,7 @@ svg {
     display: flex;
     height: -webkit-fill-available;
     overflow: hidden;
+    background: #fff;
 }
 
 .explorer-sidebar {
@@ -693,6 +710,7 @@ svg {
     -webkit-user-drag: none;
     -webkit-user-select: none;
     justify-content: space-between;
+    background: #fff;
 }
 
 .explorer-footer-left {

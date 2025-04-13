@@ -695,6 +695,10 @@
         }
     }
 
+    function removeStringInRange(str, start, end) {
+        return str.substring(0, start) + str.substring(end);
+    }
+
     var fs = new IDBFS('winbows11', mainDisk);
     await fs.init();
     window.fs = fs;
@@ -709,8 +713,24 @@
         return URL.createObjectURL(blob);
     }
 
-    function removeStringInRange(str, start, end) {
-        return str.substring(0, start) + str.substring(end);
+    window.fs.getFileAsText = async function getFile(path) {
+        if (navigator.onLine != true || window.needsUpdate == false && devMode == false || path.startsWith('C:/Users/Admin/Desktop/')) {
+            return await (await fs.readFile(path)).text();
+        }
+        return fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}`).then(response => {
+            // console.log(response)
+            if (response.ok) {
+                return response.blob();
+            } else {
+                console.warn(`Failed to fetch file: ${path}`);
+            }
+        }).then(async content => {
+            fs.writeFile(path, content);
+            return await content.text();
+        }).catch(async err => {
+            console.warn(`Failed to fetch file: ${path}`, err);
+            return await (await fs.readFile(path)).text();
+        })
     }
 
     window.fs.downloadFile = async function downloadFile(path, responseType = 'blob') {

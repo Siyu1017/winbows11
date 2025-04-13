@@ -1,4 +1,36 @@
-.example::before {
-    content: '\e770';
-    font-family: Segoe Fluent Icons;
+.window {
+    background: rgb(255 255 255 / 90%);
+    -webkit-backdrop-filter: blur(120px) saturate(2);
+    backdrop-filter: blur(120px) saturate(2);
+}
+
+.window-toolbar {
+    background: transparent;
+}
+
+.window-toolbar-info {
+    padding: .25rem;
+    gap: .25rem;
+}
+
+.window-content {
+    background: transparent;
+}
+
+.back-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2rem;
+    border-radius: .375rem;
+}
+
+.back-button:hover {
+    background: rgba(0, 0, 0, .05);
+}
+
+.back-button-icon {
+    width: 1.125rem;
+    height: 1.125rem;
 }

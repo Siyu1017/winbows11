@@ -234,6 +234,7 @@ async function createTab(page = 'this_pc', active = true) {
     var originalPosition = order.indexOf(id);
     var currentPosition = order.indexOf(id);
     var startX = 0;
+    var startY = 0;
     var dragging = false;
     var events = {
         "start": ["mousedown", "touchstart", "pointerdown"],
@@ -287,12 +288,15 @@ async function createTab(page = 'this_pc', active = true) {
         if (e.type.startsWith('touch')) {
             var touch = e.touches[0] || e.changedTouches[0];
             e.pageX = touch.pageX;
+            e.pageY = touch.pageY;
         }
+        tab.classList.add('dragging');
         originalPosition = order.indexOf(id);
         currentPosition = order.indexOf(id);
         tab.style.transition = 'none';
         dragging = true;
         startX = e.pageX;
+        startY = e.pageY;
     }
 
     function dragMove(e) {
@@ -300,12 +304,14 @@ async function createTab(page = 'this_pc', active = true) {
         if (e.type.startsWith('touch')) {
             var touch = e.touches[0] || e.changedTouches[0];
             e.pageX = touch.pageX;
+            e.pageY = touch.pageY;
         }
         var x = e.pageX - startX;
+        var y = e.pageY - startY;
         var unit = tab.offsetWidth + 8;
         var count = Math.round(x / unit);
 
-        tab.style.transform = `translateX(${x}px)`;
+        tab.style.transform = `translate(${x}px, ${y}px)`;
 
         currentPosition = originalPosition + count;
         if (currentPosition > order.length - 1) {
@@ -360,6 +366,7 @@ async function createTab(page = 'this_pc', active = true) {
     function dragEnd() {
         if (dragging == false) return;
         dragging = false;
+        tab.classList.remove('dragging');
         if (currentPosition != originalPosition) {
             moveNodeToIndex(originalPosition, currentPosition, tabStripTabs);
             moveArrayItem(order, originalPosition, currentPosition);

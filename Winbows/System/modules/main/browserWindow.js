@@ -125,7 +125,8 @@
             const windowID = ICON.open({
                 browserWindow: hostElement,
                 shadowRoot: shadowRoot,
-                pid: pid
+                pid: pid,
+                mica: config.mica
             });
 
             if (window.debuggerMode == true) {
@@ -213,6 +214,7 @@
             }
 
             if (config.mica == true) {
+                // hostElement.classList.add('mica');
                 /*
                 function generateMicaImage(canvas, bgImageUrl, width = 400, height = 300) {
                     const ctx = canvas.getContext("2d");
@@ -1033,7 +1035,11 @@
                             var unit = this.tab.offsetWidth + 8;
                             var count = Math.round(x / unit);
 
-                            this.tab.style.transform = `translateX(${x}px)`;
+                            console.log(config.tabAnimation )
+
+                            if (config.tabAnimation != false) {
+                                this.tab.style.transform = `translateX(${x}px)`;
+                            }
 
                             currentPosition = originalPosition + count;
                             if (currentPosition > order.length - 1) {
@@ -1045,7 +1051,9 @@
 
                             if (x > 0) {
                                 Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
-                                    tab.tab.style.transition = 'revert-layer';
+                                    if (config.tabAnimation != false) {
+                                        tab.tab.style.transition = 'revert-layer';
+                                    }
                                     var index = order.indexOf(tab.id);
                                     if (index <= originalPosition + count && index > originalPosition) {
                                         tab.tab.style.transform = 'translateX(calc(-100% - 8px))';
@@ -1055,7 +1063,9 @@
                                 })
                             } else if (x < 0) {
                                 Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
-                                    tab.tab.style.transition = 'revert-layer';
+                                    if (config.tabAnimation != false) {
+                                        tab.tab.style.transition = 'revert-layer';
+                                    }
                                     var index = order.indexOf(tab.id);
                                     if (index >= originalPosition + count && index < originalPosition) {
                                         tab.tab.style.transform = 'translateX(calc(100% + 8px))';

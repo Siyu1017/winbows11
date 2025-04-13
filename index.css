@@ -28,7 +28,7 @@ body {
     --winbows-font-default: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
     --winbows-primary-color: #0067c0;
     --winbows-secondary-color: #000;
-    --winbows-taskbar-bg: rgba(243, 243, 243, .85);
+    --winbows-taskbar-bg: rgb(255 255 255 / 85%);
     --winbows-taskbar-hover-color: rgba(255, 255, 255, .67);
 }
 
@@ -37,11 +37,12 @@ body {
     box-sizing: border-box;
 }
 
-[data-theme="drak"] {
-    --winbows-primary-color: #4cc2ff;
+[data-theme="dark"] {
+    --winbows-primary-color: #1cbdff;
     --winbows-secondary-color: #fff;
     --winbows-taskbar-bg: rgba(32, 32, 32, .75);
     --winbows-taskbar-hover-color: rgba(255, 255, 255, .1);
+    color: #fff;
 }
 
 .overlay {
@@ -509,6 +510,7 @@ body {
     height: calc(100% - 1rem);
     background: transparent;
     backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     pointer-events: none;
     transition: all .1s ease-in-out;
     border-radius: .5rem;
@@ -518,6 +520,7 @@ body {
 .desktop.dragover::before {
     background: rgba(255, 255, 255, .3);
     backdrop-filter: blur(36px);
+    -webkit-backdrop-filter: blur(36px);
     border: 1.5px solid rgba(0, 0, 0, .1);
     box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
     z-index: 1;
@@ -623,8 +626,8 @@ body {
     -webkit-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    -webkit-backdrop-filter: saturate(3) blur(20px);
-    backdrop-filter: saturate(3) blur(20px);
+    -webkit-backdrop-filter: saturate(3) blur(120px);
+    backdrop-filter: saturate(3) blur(120px);
     display: flex;
     align-items: center;
     gap: .25rem;
@@ -632,6 +635,13 @@ body {
     flex-wrap: nowrap;
     -webkit-user-drag: none;
     z-index: 999999999;
+    transition: background .2s ease-in-out, backdrop-filter .2s ease-in-out;
+    border-top: 1.5px solid rgba(0,0,0,.1);
+}
+
+[data-theme="dark"] .taskbar {
+    -webkit-backdrop-filter: saturate(3) blur(80px);
+    backdrop-filter: saturate(3) blur(80px);
 }
 
 .taskbar * {
@@ -871,6 +881,7 @@ body {
 .start-menu-inner {
     background: rgba(255, 255, 255, .9);
     backdrop-filter: saturate(2) blur(32px);
+    -webkit-backdrop-filter: saturate(2) blur(32px);
     height: -webkit-fill-available;
     overflow: hidden;
     display: flex;
@@ -881,6 +892,7 @@ body {
     padding: .45rem 3.5rem;
     background: rgba(252, 252, 252, .9);
     backdrop-filter: saturate(3) blur(32px);
+    -webkit-backdrop-filter: saturate(3) blur(32px);
     border-top: 1.5px solid rgba(0, 0, 0, .1);
     display: flex;
     justify-content: space-between;
@@ -1129,8 +1141,8 @@ body {
 }
 
 .browser-window-container[data-maximized="true"] {
-    width: 100vw;
-    height: calc(var(--winbows-screen-height) - var(--taskbar-height));
+    /*width: 100vw;
+    height: calc(var(--winbows-screen-height) - var(--taskbar-height));*/
     top: 0;
     left: 0;
 }
@@ -1146,7 +1158,8 @@ body {
 
 .browser-window-snap-preview.active {
     background: rgba(255, 255, 255, .3);
-    backdrop-filter: blur(36px);
+    backdrop-filter: blur(120px);
+    -webkit-backdrop-filter: blur(120px);
     border: 1.5px solid rgba(0, 0, 0, .1);
     box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
 }
@@ -1331,6 +1344,7 @@ body {
     z-index: 9;
     pointer-events: auto;
     backdrop-filter: blur(16px) saturate(1.8);
+    -webkit-backdrop-filter: blur(16px) saturate(1.8);
     box-shadow: rgba(99, 99, 99, 0.2) 0px 4px 8px 4px;
 }
 
@@ -1544,6 +1558,7 @@ body {
 
 .control-panel-group {
     backdrop-filter: blur(64px) saturate(1.8);
+    -webkit-backdrop-filter: blur(64px) saturate(1.8);
     background: rgb(242 242 242 / 85%);
     border-radius: .75rem;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
@@ -1553,6 +1568,14 @@ body {
     flex-direction: column;
     overflow: hidden;
     height: fit-content;
+    transition: all .1s ease-in-out;
+}
+
+[data-theme="dark"] .control-panel-group {
+    background: rgb(37 37 37 / 90%);
+    border: 1px solid rgba(0, 0, 0, .2);
+    backdrop-filter: blur(10rem) saturate(2);
+    -webkit-backdrop-filter: blur(10rem) saturate(2);
 }
 
 .control-panel-content {
@@ -1583,6 +1606,10 @@ body {
     cursor: pointer;
 }
 
+[data-theme="dark"] .control-panel-block-button {
+    background: rgb(255 255 255 / 5%);
+}
+
 .control-panel-block-button:active {
     transform: scale(.95);
     transform-origin: center;
@@ -1592,9 +1619,18 @@ body {
     background: rgba(248, 248, 248, .7);
 }
 
+[data-theme="dark"] .control-panel-block-button:hover {
+    background: rgb(255 255 255 / 10%);
+}
+
 .control-panel-block-button.active {
     background: var(--winbows-primary-color);
     color: #fff;
+}
+
+[data-theme="dark"] .control-panel-block-button.active {
+    background: var(--winbows-primary-color);
+    color: #000;
 }
 
 .control-panel-block {
@@ -1715,6 +1751,10 @@ body {
     height: .25rem;
 }
 
+[data-theme="dark"] .control-panel-slider-bar {
+    --slider-thumb-color: rgb(48,48,48);
+}
+
 .control-panel-slider-bar::-webkit-slider-runnable-track {
     width: 100%;
     height: 4px;
@@ -1801,6 +1841,7 @@ body {
 
 .control-sidebar-group {
     backdrop-filter: blur(64px) saturate(1.8);
+    -webkit-backdrop-filter: blur(64px) saturate(1.8);
     background: rgb(242 242 242 / 85%);
     border-radius: .75rem;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
@@ -1937,6 +1978,7 @@ body {
     background-size: cover;
     background-color: var(--winbows-mica-unfocused);
     backdrop-filter: blur(120px) saturate(1.5);
+    -webkit-backdrop-filter: blur(120px) saturate(1.5);
     border-radius: .5rem;
     transform: none !important;
 }

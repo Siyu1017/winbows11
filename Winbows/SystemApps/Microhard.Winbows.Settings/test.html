@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <script>
+        (async () => {
+            const sidebar = await import('./components/sidebar.js').then((module) => module.sidebar());
+            sidebar.init(document.body);
+            sidebar.request('home');
+        })();
+    </script>
+</body>
+
+</html>

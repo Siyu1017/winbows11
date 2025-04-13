@@ -33,6 +33,7 @@
 
 .winui-contextmenu-menu {
     backdrop-filter: var(--contextmenu-backdrop-filter);
+    -webkit-backdrop-filter: var(--contextmenu-backdrop-filter);
     background: var(--contextmenu-bg);
     display: flex;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;

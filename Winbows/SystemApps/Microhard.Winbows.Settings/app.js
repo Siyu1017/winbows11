@@ -1,5 +1,6 @@
 ; (async () => {
     await System.requestAccessWindow('./window.js', {
-        title: 'Settings'
+        title: 'Settings',
+        mica: true
     })
 })()

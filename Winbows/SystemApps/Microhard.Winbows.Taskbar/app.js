@@ -53,7 +53,7 @@
             className: "settings",
             icon: "settings",
             text: "Taskbar Settings",
-            disabled: true,
+            //disabled: true,
             action: () => {
                 window.System.Shell('run settings');
             },
@@ -328,8 +328,12 @@
         label: 'Dark Theme',
         status: 'disabled',
         name: 'dark-theme',
-        change: () => {
-
+        change: (status) => {
+            if (status == 'enabled') {
+                document.body.setAttribute('data-theme', 'dark');
+            } else {
+                document.body.removeAttribute('data-theme');
+            }
         }
     }, {
         label: 'Night Light',
@@ -583,6 +587,9 @@
             }, {
                 name: 'Notepad',
                 app: 'notepad'
+            }, {
+                name: 'Settings',
+                app: 'settings'
             }
         ];
         pinnedList.forEach(pinned => {
@@ -961,6 +968,30 @@
                             if (type != 'item') {
                                 activeWindows.push(id);
                             }
+                            if (obj.mica == true) {
+                                var active = obj.browserWindow.classList.contains('active');
+                                const observer = new MutationObserver((mutationsList) => {
+                                    for (const mutation of mutationsList) {
+                                        if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                            var temp = obj.browserWindow.classList.contains('active');
+                                            if (active != temp) {
+                                                obj.browserWindow.classList.remove('mica');
+                                                active = temp;
+                                            }
+                                            setTimeout(() => {
+                                                if (obj.browserWindow.classList.contains('active')) {
+                                                    obj.browserWindow.classList.add('mica');
+                                                }
+                                            }, 101);
+                                        }
+                                    }
+                                });
+
+                                observer.observe(obj.browserWindow, {
+                                    attributes: true,
+                                    attributeFilter: ['class']
+                                });
+                            }
                         } catch (e) {
                             console.log(e);
                         };
@@ -991,6 +1022,7 @@
                         blur(id);
                         // close window
                         browserWindow.classList.remove('active');
+                        browserWindow.classList.remove('mica');
                         browserWindow.style.transform = 'scale(.8)';
                         if (!window.Taskbar.isPinned(owner) && isLast == true) {
                             item.classList.add('hide');

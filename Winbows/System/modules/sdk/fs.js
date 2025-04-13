@@ -28,6 +28,39 @@ function getJsonFromURL(url) {
     return result;
 }
 
+function parseURL(url = '') {
+    url = url.replaceAll('\\', '/');
+    var disk = ((/([A-Z]{1})(\:\/)/gi).exec(url) || [])[1];
+    var path = url.replace(`${disk}:`, '');
+    return { disk, path };
+}
+
+function resolvePath(path) {
+    var parsedCurrent = parseURL(__dirname);
+    var parsedPath = parseURL(path);
+    if (parsedPath.disk) {
+        return path;
+    }
+    const currentPathDirs = parsedCurrent.path.split('/').filter(dir => dir !== '');
+    const pathDirs = path.split('/').filter(dir => dir !== '');
+
+    const resultPath = [...currentPathDirs];
+
+    for (const dir of pathDirs) {
+        if (dir === '..') {
+            if (resultPath.length > 0) {
+                resultPath.pop();
+            }
+        } else if (dir !== '.') {
+            resultPath.push(dir);
+        }
+    }
+
+    const outputPath = resultPath.join('/');
+
+    return parsedCurrent.disk + ':/' + outputPath;
+}
+
 var listeners = {};
 var triggerEvent = function (event, detail) {
     if (listeners[event]) {
@@ -129,7 +162,7 @@ class IDBFS {
     }
 
     parseURL(url = '') {
-        url = url.replaceAll('\\', '/');
+        url = resolvePath(url.replaceAll('\\', '/'));
         var disk = ((/([A-Z]{1})(\:\/)/gi).exec(url) || [])[1] || this.mainDisk;
         var path = url.replace(`${disk}:/`, '');
         return { disk, path };
@@ -681,15 +714,13 @@ class IDBFS {
 }
 
 var fs = new IDBFS('winbows11', mainDisk);
-await fs.init();
-self.fs = fs;
-self.fs.Cache = {};
-self.fs.getFileExtension = function (file = '') {
+fs.Cache = {};
+fs.getFileExtension = function (file = '') {
     console.warn('%cfs.getFileExtension()%c has been deprecated.\nPlease use %cutils.getFileExtension()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '')
     return self.utils.getFileExtension(file);
 }
 
-self.fs.getFileURL = async function getFileURL(url) {
+fs.getFileURL = async function getFileURL(url) {
     var blob = await fs.downloadFile(url);
     return URL.createObjectURL(blob);
 }
@@ -698,7 +729,29 @@ function removeStringInRange(str, start, end) {
     return str.substring(0, start) + str.substring(end);
 }
 
-self.fs.downloadFile = async function downloadFile(path, responseType = 'blob') {
+fs.getFileAsText = async function getFile(path) {
+    path = resolvePath(path);
+    if (navigator.onLine != true || window.needsUpdate == false && devMode == false || path.startsWith('C:/Users/Admin/Desktop/')) {
+        return await (await fs.readFile(path)).text();
+    }
+    return fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}`).then(response => {
+        // console.log(response)
+        if (response.ok) {
+            return response.blob();
+        } else {
+            console.warn(`Failed to fetch file: ${path}`);
+        }
+    }).then(async content => {
+        fs.writeFile(path, content);
+        return await content.text();
+    }).catch(async err => {
+        console.warn(`Failed to fetch file: ${path}`, err);
+        return await (await fs.readFile(path)).text();
+    })
+}
+
+fs.downloadFile = async function downloadFile(path, responseType = 'blob') {
+    path = resolvePath(path);
     if (!path || path.trim().length == 0) return;
     if (debuggerMode == true) {
         // Debugger
@@ -734,3 +787,5 @@ self.fs.downloadFile = async function downloadFile(path, responseType = 'blob') 
         }
     })
 }
+
+export { fs };

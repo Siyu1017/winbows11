@@ -111,6 +111,7 @@
 
 .window-toolbar {
     backdrop-filter: blur(120px) saturate(1.5);
+    -webkit-backdrop-filter: blur(120px) saturate(1.5);
     background: rgba(235, 235, 235, .7);
 }
 
