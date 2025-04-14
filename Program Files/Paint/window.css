@@ -1,5 +1,87 @@
-.window-toolbar,
+.window {
+    border-radius: .5rem;
+    overflow: hidden;
+    position: relative;
+}
+
+.window-toolbar {
+    background: transparent;
+    position: absolute;
+    pointer-events: all;
+    z-index: 9;
+    overflow: hidden;
+}
+
 .window-content {
+    /* position: absolute; */
+    height: 100%;
+}
+
+.controls-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 9;
+}
+
+.controls {
     background: #fff;
-    color: #000;
+    box-shadow: 0px 2px 16px 4px rgba(0, 0, 0, .1);
+    border-radius: .5rem;
+    padding: .375rem;
+    width: fit-content;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .375rem;
+    pointer-events: all;
+}
+
+.controls,
+.controls * {
+    transition: all .1s ease-in-out;
+}
+
+.controls-group {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .375rem;
+}
+
+.control {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: .375rem;
+    border: 0;
+    outline: 0;
+    background: none;
+}
+
+.control:disabled {
+    opacity: .8;
+    pointer-events: none;
+}
+
+.control:hover {
+    background: rgb(242, 242, 242);
+}
+
+.control.active {
+    background: rgb(229, 229, 229);
+}
+
+.control-icon {
+    width: 1.25rem;
+    height: 1.25rem;
 }

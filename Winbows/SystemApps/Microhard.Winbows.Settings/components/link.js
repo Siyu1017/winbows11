@@ -1,6 +1,4 @@
-import { useRouter } from "../_router.js";
-
-const router = useRouter();
+import { router } from "../_router.js";
 
 export function Link() {
     const link = document.createElement('div');
