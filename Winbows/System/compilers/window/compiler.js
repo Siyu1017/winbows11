@@ -149,6 +149,7 @@ Object.defineProperty(window.Compilers, 'Window', {
             let importStmts = [];
 
             function resolvePath(basePath, relPath) {
+                if (!relPath.startsWith('.')) return relPath;
                 const base = basePath.split('/').slice(0, -1);
                 const parts = relPath.split('/');
                 const resolved = [];
