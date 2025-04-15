@@ -348,7 +348,7 @@
                 }
 
                 var buildSize = latestBuildData != null ? formatBytes(latestBuildData.size, 0) : '[Failed to get build size]';
-                var predictedInstallationTime = latestBuildData != null ? (Math.ceil((latestBuildData.size / 1024 / 1024 / (navigator.connection ? navigator.connection.downlink : 2)) / 60) + 'minute(s)') : '[Failed to calculate download time]';
+                var predictedInstallationTime = latestBuildData != null ? (Math.ceil((69925609 / 1024 / 1024) / ((navigator.connection ? navigator.connection.downlink : 2) / 4) / 60) + 'minute(s)') : '[Failed to calculate download time]';
 
                 var confirm = document.createElement('div');
                 var confirmWindow = document.createElement('div');

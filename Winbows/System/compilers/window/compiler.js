@@ -223,7 +223,7 @@ Object.defineProperty(window.Compilers, 'Window', {
             close: windowObject.close
         });
 
-        content = `export default async function(document, window, self, globalThis, process, System, utils, browserWindow, datas) {const __dirname="${__dirname}",__filename="${__filename}",getStackTrace=()=>{var a;try{throw new Error('');}catch(e){a=e.stack||'';}a=a.split('\\n').map(function(t){return t.trim();});return a.splice(a[0]=='Error'?2:1);};const TOKEN="${token}";\n${content}\n};`
+        content = `export default async function(document, window, self, globalThis, process, System, utils, browserWindow, datas) {const __dirname="${__dirname}",__filename="${__filename}";/*getStackTrace=()=>{var a;try{throw new Error('');}catch(e){a=e.stack||'';}a=a.split('\\n').map(function(t){return t.trim();});return a.splice(a[0]=='Error'?2:1);};*/const TOKEN="${token}";\n${content}\n};`
         content = await asyncReplaceImports(content, path.callee);
 
         content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */` + content;

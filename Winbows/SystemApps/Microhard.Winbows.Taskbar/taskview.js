@@ -1,3 +1,8 @@
-export default class Taskbar {
+export const taskview = {
+    start: () => {
 
+    },
+    exit: () => {
+        
+    }
 }
