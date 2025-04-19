@@ -1,0 +1,53 @@
+.setting-item-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: .5rem 0;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    gap: .875rem;
+    background: rgb(255 255 255 / 70%);
+    border-radius: .5rem;
+    box-shadow: rgb(0 0 0 / 35%) 0px 0px 1px 0px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    transition: all .1s ease-in-out;
+}
+
+.setting-item:hover {
+    background: rgb(255 255 255 / 40%);
+}
+
+.setting-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.setting-item-icon::before {
+    display: block;
+    content: attr(data-icon);
+    font-family: 'Segoe Fluent Icons';
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.setting-item-detail {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.setting-item-title {}
+
+.setting-item-description {
+    font-size: 0.875rem;
+    color: rgb(60, 60, 60);
+    line-height: 1;
+}

@@ -225,8 +225,17 @@ Object.defineProperty(window.Compilers, 'Window', {
 
         content = `export default async function(document, window, self, globalThis, process, System, utils, browserWindow, datas) {const __dirname="${__dirname}",__filename="${__filename}";/*getStackTrace=()=>{var a;try{throw new Error('');}catch(e){a=e.stack||'';}a=a.split('\\n').map(function(t){return t.trim();});return a.splice(a[0]=='Error'?2:1);};*/const TOKEN="${token}";\n${content}\n};`
         content = await asyncReplaceImports(content, path.callee);
-
         content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */` + content;
+
+        windowObject.import = async (url) => {
+            url = resolvePath(url);
+            const content = await asyncReplaceImports(await fs.getFileAsText(url), url);
+            const blob = new Blob([content], { type: 'application/javascript' });
+            const blobURL = URL.createObjectURL(blob);
+            const module = await import(blobURL);
+            //URL.revokeObjectURL(blobURL);
+            return module;
+        }
 
         async function runContentAsModule(content, context) {
             const blob = new Blob([content], { type: 'application/javascript' });

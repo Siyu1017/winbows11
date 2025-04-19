@@ -1,17 +1,17 @@
 import { router } from "./_router.js";
 import { sidebar } from './components/sidebar.js';
-import { pageListItems } from './pages.js';
+import titles from './meta.js';
 
 fs.init();
 
-const styles = ['./window.css', './styles/sidebar.css'];
+const styles = ['./window.css', './styles/sidebar.css', './styles/setting.item.css'];
 const fonts = {
     'Segoe Fluent Icons': 'C:/Winbows/fonts/Segoe Fluent Icons.ttf'
 };
 
 for (let i in Object.keys(fonts)) {
     var key = Object.keys(fonts)[i];
-    var font = new FontFace(key, `url(${await fs.getFileURL(fonts[key])})`);
+    var font = new FontFace(key, `url(${await fs.getFileURL(utils.resolvePath(fonts[key]))})`);
     await font.load();
     window.document.fonts.add(font);
 }
@@ -57,26 +57,52 @@ document.body.appendChild(appSidebar);
 document.body.appendChild(appPage);
 appSidebar.appendChild(sidebarElement);
 
+var pageTitle = document.createElement('div');
+var pageContainer = document.createElement('div');
+pageTitle.className = 'app-page-title';
+pageContainer.className = 'app-page-container';
+appPage.appendChild(pageTitle);
+appPage.appendChild(pageContainer);
+
+function capitalizeFirstLetter(val) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
 router.on('change', async (e) => {
     const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
-    const pageItem = Object.values(pageListItems).filter(item => item.path === path);
-    if (pageItem.length == 0) return;
+    //const pageItem = Object.values(pageListItems).filter(item => item.path === path);
+    //if (pageItem.length == 0) return;
     console.log('change', path);
+    let page = pageContents[path];
     if (!pageContents[path]) {
         if (navbar.contains(backButton)) {
             navbar.replaceChild(loadingSpinner, backButton);
         }
-        const page = await import(await fs.getFileURL(utils.resolvePath(`./pages/` + pageItem[0].page)))
-        pageContents[path] = page.default;
+        try {
+            const module = await browserWindow.import(`./pages/` + path + '.js');
+            pageContents[path] = module.default();
+            page = pageContents[path] || document.createElement('div');
+        } catch (e) {
+            var el = document.createElement('div');
+            el.innerHTML = 'Not found!';
+            page = el;
+            /*
+            if (path != '/404') {
+                return router.replace('/_404');
+            } else {
+                var el = document.createElement('div');
+                el.innerHTML = 'Not found!';
+                page = el;
+            }
+                */
+        }
         if (router.getCurrentRoute() != path) {
             return;
         }
     }
-    const title = document.createElement('div');
-    title.className = 'app-page-title';
-    title.innerHTML = pageItem[0].title;
-    const page = pageContents[path]() || document.createElement('div');
-    appPage.replaceChildren(...[title, page]);
+
+    pageTitle.innerHTML = titles[path] || capitalizeFirstLetter(path.split('/').slice(-1));
+    pageContainer.replaceChildren(...[page]);
     if (navbar.contains(loadingSpinner)) {
         navbar.replaceChild(backButton, loadingSpinner);
     }

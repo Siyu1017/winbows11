@@ -1,12 +1,12 @@
 import { router } from "../_router.js";
 
-export function Link() {
+export function Link(href) {
     const link = document.createElement('div');
     link.addEventListener('click', (e) => {
         e.preventDefault();
-        const href = link.getAttribute('href');
-        if (href) {
-            router.push(href);
+        const route = href || link.getAttribute('href');
+        if (route) {
+            router.push(route);
         }
     })
     return link;

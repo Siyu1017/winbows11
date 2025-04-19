@@ -65,8 +65,8 @@ body {
 
 .overlay.nightlight {
     opacity: 0;
-    background: rgba(255, 0, 0, .5);
-    transition: opacity 2s ease-in-out;
+    background: rgb(117 91 0 / 50%);
+    /* transition: opacity 2s ease-in-out; */
 }
 
 .winui ::-webkit-scrollbar,
@@ -636,7 +636,7 @@ body {
     -webkit-user-drag: none;
     z-index: 999999999;
     transition: background .2s ease-in-out, backdrop-filter .2s ease-in-out;
-    border-top: 1.5px solid rgba(0,0,0,.1);
+    border-top: 1.5px solid rgba(0, 0, 0, .1);
 }
 
 [data-theme="dark"] .taskbar {
@@ -693,11 +693,15 @@ body {
     margin-left: 0 !important;
 }
 
-.taskbar-item:hover,
-.taskbar-item:active,
-.taskbar-item[data-focused="true"] {
+.taskbar-item:not([data-dragging="true"]):hover,
+.taskbar-item:not([data-dragging="true"]):active,
+.taskbar-item[data-focused="true"]:not([data-dragging="true"]) {
     background: var(--winbows-taskbar-hover-color);
     box-shadow: 0 .125rem .125rem 0 rgba(0, 0, 0, .05);
+}
+
+.taskbar-item[data-dragging="true"] {
+    z-index: 999;
 }
 
 .taskbar-item:active {
@@ -716,7 +720,11 @@ body {
     background-size: contain;
 }
 
-.taskbar-item:active .taskbar-icon {
+.taskbar-item[data-dragging="true"] .taskbar-icon {
+    transform: scale(1.2);
+}
+
+.taskbar-item:not([data-dragging="true"]):active .taskbar-icon {
     transform: scale(.85);
 }
 
@@ -724,7 +732,7 @@ body {
     margin-left: .25rem;
 }
 
-.taskbar-item[data-openable="true"]:active .taskbar-icon {
+.taskbar-item[data-openable="true"]:not([data-dragging="true"]):active .taskbar-icon {
     transform: scale(.8);
 }
 
@@ -757,12 +765,16 @@ body {
     background: var(--winbows-primary-color);
 }
 
-.taskbar-item[data-move="right"] {
-    transform: translateX(100%);
+.taskbar-item[data-dragging="true"]::after {
+    width: 0 !important;
 }
 
-.taskbar-item[data-move="left"]::after {
-    transform: translateX(-100%);
+.taskbar-item[data-move="right"] {
+    transform: translateX(100%) !important;
+}
+
+.taskbar-item[data-move="left"] {
+    transform: translateX(-100%) !important;
 }
 
 @keyframes taskbar-icon-show {
@@ -856,15 +868,24 @@ body {
 .start-menu-container {
     position: fixed;
     left: 50%;
-    bottom: calc(var(--taskbar-height) + 1rem);
+    bottom: calc(var(--taskbar-height) + .5rem);
     transform: translateX(-50%) translateY(200%);
     transition: all .4s cubic-bezier(.82, -0.02, .26, 1);
     z-index: 9;
 }
 
+[data-taskbar-align="left"] .start-menu-container {
+    left: .75rem;
+    transform: translateY(200%);
+}
+
 .start-menu-container.active {
     transform: translateX(-50%) translateY(0);
     transition: all .2s cubic-bezier(.59, .96, .67, .96);
+}
+
+[data-taskbar-align="left"] .start-menu-container.active {
+    transform: translateY(0);
 }
 
 .start-menu {
@@ -1583,6 +1604,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
+    overflow: auto;
 }
 
 .control-panel-footer {}
@@ -1752,7 +1774,7 @@ body {
 }
 
 [data-theme="dark"] .control-panel-slider-bar {
-    --slider-thumb-color: rgb(48,48,48);
+    --slider-thumb-color: rgb(48, 48, 48);
 }
 
 .control-panel-slider-bar::-webkit-slider-runnable-track {
@@ -1816,7 +1838,7 @@ body {
 /* Calendar container */
 .control-sidebar-container {
     position: fixed;
-    bottom: calc(var(--taskbar-height) + .5rem);
+    top: .5rem;
     right: .5rem;
     transform: translateX(150%);
     transition: transform .15s cubic-bezier(.69, 0, .95, .93);
@@ -1981,4 +2003,59 @@ body {
     -webkit-backdrop-filter: blur(120px) saturate(1.5);
     border-radius: .5rem;
     transform: none !important;
+}
+
+[data-taskbar-style="floating"] .taskbar {
+    bottom: .5rem;
+    left: .5rem;
+    right: .5rem;
+    width: calc(100% - 1rem);
+    border-radius: .5rem;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    width: fit-content;
+    margin: auto;
+    border: none;
+    gap: .5rem;
+}
+
+[data-taskbar-style="floating"] .taskbar-group {
+    background: var(--winbows-taskbar-bg);
+    -webkit-backdrop-filter: saturate(3) blur(120px);
+    backdrop-filter: saturate(3) blur(120px);
+    transition: background .2s ease-in-out, backdrop-filter .2s ease-in-out;
+    height: -webkit-fill-available;
+    position: static;
+    transform: none;
+    border-radius: .5rem;
+    padding: 0 .375rem;
+}
+
+[data-taskbar-style="floating"] .taskbar-group.controls {
+    padding-right: 0;
+}
+
+[data-taskbar-style="floating"][data-taskbar-align="left"] .taskbar {
+    margin: 0;
+}
+
+[data-taskbar-style="floating"][data-taskbar-align="left"] .taskbar-items {
+    padding-left: 0;
+}
+
+[data-taskbar-style="floating"] .start-menu-container {
+    bottom: calc(var(--taskbar-height) + 1rem);
+}
+
+[data-taskbar-style="floating"] .thumbnail-container {
+    bottom: calc(var(--taskbar-height) + 1rem);
+}
+
+[data-taskbar-style="floating"] .control-panel-container {
+    bottom: calc(var(--taskbar-height) + 1rem);
+}
+
+[data-taskbar-style="floating"] .control-sidebar {
+    height: calc(var(--winbows-screen-height) - var(--taskbar-height) - 1.5rem);
 }

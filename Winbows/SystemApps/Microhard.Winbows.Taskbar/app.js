@@ -250,8 +250,8 @@
     var nightLightOverlay = document.createElement('div');
     brightnessOverlay.className = 'overlay brightness';
     nightLightOverlay.className = 'overlay nightlight';
-    document.body.appendChild(brightnessOverlay);
     document.body.appendChild(nightLightOverlay);
+    document.body.appendChild(brightnessOverlay);
 
     // Controls - Panel Summary
     var controlPanelSummaryWifi = document.createElement('div');
@@ -855,6 +855,8 @@
         thumbnailContainer.innerHTML = '';
     }
 
+    let appIconOrder = [];
+
     Object.defineProperty(window, 'Taskbar', {
         value: {}
     })
@@ -911,6 +913,109 @@
                 itemImage.className = 'taskbar-icon';
                 itemImage.style.backgroundImage = `url(${icon.icon})`;
                 item.appendChild(itemImage);
+
+                if (icon.category != 'item') {
+                    appIconOrder.push({
+                        itemElement: item,
+                        ts: Date.now(),
+                        transformX: 0
+                    });
+
+                    !(() => {
+                        let startX = 0;
+                        let startY = 0;
+                        let pointerDown = false;
+                        let dragging = false;
+                        let lastDX = 0;
+
+                        item.addEventListener('pointerdown', (e) => {
+                            if (e.button != 0) return;
+                            if (e.type.startsWith('touch')) {
+                                var touch = e.touches[0] || e.changedTouches[0];
+                                e.pageX = touch.pageX;
+                                e.pageY = touch.pageY;
+                            }
+                            startX = e.clientX;
+                            startY = e.clientY;
+                            pointerDown = true;
+                            dragging = false;
+                        })
+
+                        window.addEventListener('pointermove', (e) => {
+                            if (!pointerDown) return;
+                            if (e.type.startsWith('touch')) {
+                                var touch = e.touches[0] || e.changedTouches[0];
+                                e.pageX = touch.pageX;
+                                e.pageY = touch.pageY;
+                            }
+                            var dx = e.clientX - startX;
+                            var dy = e.clientY - startY;
+                            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+                                dragging = true;
+                            }
+                            if (dragging == true) {
+                                let index = appIconOrder.findIndex(x => x.itemElement == item);
+                                let di = Math.round(dx / 44);
+                                if (index + Math.ceil(dx / 44) > appIconOrder.length - 1) {
+                                    dx = (appIconOrder.length - 1 - index) * 44;
+                                }
+                                if (index + Math.floor(dx / 44) < 0) {
+                                    dx = -index * 44;
+                                }
+                                di = Math.round(dx / 44);
+                                item.setAttribute('data-dragging', true);
+                                item.style.pointerEvents = 'none';
+                                item.style.transition = 'none';
+                                item.style.transform = `translateX(${appIconOrder[index].transformX + dx}px)`;
+                                console.log(di);
+                                appIconOrder.forEach((item, i) => {
+                                    if (index != i && (di < 0 ? di + index <= i && i < index : di + index >= i && i > index)) {
+                                        item.itemElement.style.transform = `translateX(${item.transformX + (di < 0 ? 44 : -44)}px)`;
+                                    } else if (index != i) {
+                                        item.itemElement.style.transform = `translateX(${item.transformX}px)`;
+                                    }
+                                })
+                                lastDX = dx;
+                            }
+                        })
+
+                        window.addEventListener('pointerup', (e) => {
+                            pointerDown = false;
+                            if (dragging == true) {
+                                dragging = false;
+                                let finalDIndex = Math.round(lastDX / 44);
+                                let finalDX = finalDIndex * 44;
+                                let index = appIconOrder.findIndex(x => x.itemElement == item);
+                                if (index + Math.ceil(lastDX / 44) > appIconOrder.length - 1) {
+                                    lastDX = (appIconOrder.length - 1 - index) * 44;
+                                }
+                                if (index + Math.floor(lastDX / 44) < 0) {
+                                    lastDX = -index * 44;
+                                }
+                                finalDIndex = Math.round(lastDX / 44);
+                                appIconOrder.forEach((item, i) => {
+                                    if (index == i) {
+                                        item.transformX += finalDX;
+
+                                    } else if (finalDIndex < 0 ? finalDIndex + index <= i && i <= index : finalDIndex + index >= i && i > index) {
+                                        item.transformX += finalDIndex < 0 ? 44 : -44;
+                                    }
+                                    item.itemElement.style.transform = `translateX(${item.transformX}px)`;
+                                })
+                                item.style.pointerEvents = 'auto';
+                                item.style.transition = 'revert-layer';
+                                item.removeAttribute('data-dragging');
+                                if (finalDIndex != 0) {
+                                    let obj = appIconOrder[index];
+                                    console.log(obj.itemElement)
+                                    appIconOrder.splice(index, 1);
+                                    appIconOrder.splice(index + finalDIndex, 0, obj);
+                                    console.log(appIconOrder);
+                                }
+                            }
+                        })
+                    })();
+                }
 
                 var properties = {
                     status, type, owner, icon, item, itemImage,
@@ -1026,6 +1131,42 @@
                         browserWindow.style.transform = 'scale(.8)';
                         if (!window.Taskbar.isPinned(owner) && isLast == true) {
                             item.classList.add('hide');
+                            let index = appIconOrder.findIndex(x => x.itemElement == item);
+                            let iconGeneratedTime = appIconOrder[index].ts;
+                            let transformX = appIconOrder[index].transformX;
+                            appIconOrder.splice(index, 1);
+                            console.log(index)
+                            appIconOrder.forEach((item, i) => {
+                                if (iconGeneratedTime < item.ts && index > i) {
+                                    item.transformX += 44;
+                                }
+                                if (iconGeneratedTime > item.ts && index <= i) {
+                                    item.transformX -= 44;
+                                }
+                                item.itemElement.style.transform = `translateX(${item.transformX}px)`;
+                            })
+                            //console.log(appIconOrder)
+                            /*
+                            function hide() {
+                                let start = Date.now();
+                                let fn = t => t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+                                function animate() {
+                                    let d = Date.now() - start;
+                                    if (d > 300) return cancelAnimationFrame(animate);
+                                    let p = d/300;
+                                    if (0 <= p && p <= .5) {
+                                        item.style.transform = `translate3d(${transformX}px,${100*fn(p*2)}%)`;
+                                        item.style.width = `${100*fn(p*2)}%`;
+                                    } else {
+                                        item.style.transform = `translate3d(${transformX}px,100%)`;
+                                        item.style.width = `100%`;
+                                    }
+                                    requestAnimationFrame(animate);
+                                }
+                                animate();
+                            }
+                            hide();
+                            */
                         }
                         lastClicked = owner;
                         if (window.debuggerMode == true) {

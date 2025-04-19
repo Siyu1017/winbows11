@@ -18,7 +18,7 @@ export const router = {
             console.log(routerHistory);
             currentIndex = routerHistory.length - 1;
             emit('change', {
-                path: path,
+                path,
                 type: 'push'
             })
         } else {
@@ -33,8 +33,11 @@ export const router = {
         // 
     },
     replace: (path) => {
-        // router.route = path;
-
+        routerHistory[routerHistory.length - 1] = path;
+        emit('change', {
+            path,
+            type: 'replace'
+        })
     },
     back: () => {
         if (routerHistory.length > 0 && currentIndex > 0) {

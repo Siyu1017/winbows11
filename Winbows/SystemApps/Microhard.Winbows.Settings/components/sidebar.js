@@ -1,7 +1,7 @@
 import { fs } from 'winbows/fs';
 import { Link } from './link.js';
 import { router } from '../_router.js';
-import { pageListItems } from '../pages.js';
+import { sidebarItems } from '../sidebarItems.js';
 
 await fs.init();
 
@@ -59,8 +59,8 @@ function sidebar() {
     search.appendChild(searchInput);
     search.appendChild(searchButton);
 
-    Object.keys(pageListItems).forEach((key) => {
-        var item = pageListItems[key];
+    Object.keys(sidebarItems).forEach((key) => {
+        var item = sidebarItems[key];
         var pageItem = Link();
         var pageIcon = document.createElement('div');
         var pageTitle = document.createElement('div');
@@ -79,13 +79,13 @@ function sidebar() {
         pageItem.appendChild(pageIcon);
         pageItem.appendChild(pageTitle);
         pageList.appendChild(pageItem);
-        pageListItems[key].item = pageItem;
+        sidebarItems[key].item = pageItem;
     })
 
     router.on('change', (e) => {
         const path = e.path;
         console.log(path);
-        Object.values(pageListItems).forEach(item => {
+        Object.values(sidebarItems).forEach(item => {
             if (path.startsWith(item.path) == true) {
                 item.item.classList.add('active');
                 currentPage = path;
