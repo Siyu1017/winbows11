@@ -4,7 +4,7 @@ import titles from './meta.js';
 
 fs.init();
 
-const styles = ['./window.css', './styles/sidebar.css', './styles/setting.item.css'];
+const styles = ['./window.css', './styles/sidebar.css', './styles/setting.item.css', './styles/ui.css'];
 const fonts = {
     'Segoe Fluent Icons': 'C:/Winbows/fonts/Segoe Fluent Icons.ttf'
 };
@@ -83,6 +83,7 @@ router.on('change', async (e) => {
             pageContents[path] = module.default();
             page = pageContents[path] || document.createElement('div');
         } catch (e) {
+            console.log(e);
             var el = document.createElement('div');
             el.innerHTML = 'Not found!';
             page = el;
@@ -108,7 +109,11 @@ router.on('change', async (e) => {
     }
 })
 
-router.push('/home');
+if (pathInApp != '') {
+    router.push(pathInApp);
+} else {
+    router.push('/home');
+}
 
 // const sidebar = await import(await fs.getFileURL(utils.resolvePath('./components/sidebar.js'))).then(module => module.sidebar());
 

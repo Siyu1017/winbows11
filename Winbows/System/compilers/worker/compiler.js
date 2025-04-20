@@ -5,7 +5,7 @@ Object.defineProperty(window.Compilers, 'Worker', {
      * @param {String} token 
      * @returns {Blob} 
      */
-    value: async function (path, token, extra = '') {
+    value: async function (path, token, extra = '', pathInApp = '/') {
         return new Promise(async (resolve, reject) => {
             var file = await window.fs.downloadFile(path);
             var content = await file.text();
@@ -23,7 +23,7 @@ Object.defineProperty(window.Compilers, 'Worker', {
                 }
             }
 
-            content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${directories.join('/')}",__filename="${path}";(()=>{try{const TOKEN="${token}";${moduleContent};}catch(e){console.error(e)}})();try{${extra};${content};}catch(e){process.error(e);}`;
+            content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */const __dirname="${directories.join('/')}",__filename="${path}";(()=>{try{const TOKEN="${token}",pathInApp="${pathInApp}";${moduleContent};}catch(e){console.error(e)}})();try{${extra};${content};}catch(e){process.error(e);}`;
             resolve(new Blob([content], { type: 'application/javascript' }));
         });
     },

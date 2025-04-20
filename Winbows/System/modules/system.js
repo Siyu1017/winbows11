@@ -215,7 +215,8 @@
             type: 'function',
             name: 'requestAccessWindow',
             path: path,
-            config: config
+            config: config,
+            pathInApp: pathInApp
         })
     }
     System.browserWindow = class {

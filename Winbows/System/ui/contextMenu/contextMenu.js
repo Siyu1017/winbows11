@@ -1485,6 +1485,9 @@ function contextMenu(items, config = {}) {
             if (item.type == 'label') {
                 itemElement.className = 'winui-contextmenu-menu-label';
             }
+            if (item.selected == true) {
+                itemElement.classList.add('selected');
+            }
 
             itemElement.addEventListener('pointerover', () => {
                 if (disabled == true || item.type == 'label') return;

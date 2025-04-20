@@ -387,6 +387,7 @@ body {
 .screen-lock-date {
     font-size: 1.25rem;
     padding: .25rem 0;
+    white-space: nowrap;
 }
 
 .screen-lock * {
@@ -488,7 +489,7 @@ body {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    transition: all .2s ease-in-out;
+    transition: background-image .4s ease-in-out;
     background-image: linear-gradient(to right, #fff, #fff);
 }
 
@@ -893,8 +894,8 @@ body {
     overflow: hidden;
     box-shadow: 0 0 8px 4px rgb(0 0 0 / 9%);
     width: 40rem;
-    max-width: calc(100vw - 2rem);
-    height: min(var(--winbows-screen-height) - 2rem - var(--taskbar-height), 45rem);
+    max-width: calc(100vw - 1rem);
+    height: min(var(--winbows-screen-height) - 1rem - var(--taskbar-height), 45rem);
     display: flex;
     flex-direction: column;
 }

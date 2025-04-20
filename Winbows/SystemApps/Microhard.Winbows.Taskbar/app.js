@@ -55,7 +55,7 @@
             text: "Taskbar Settings",
             //disabled: true,
             action: () => {
-                window.System.Shell('run settings');
+                window.System.Shell('run settings:/personalization/taskbar');
             },
         },
     ])
@@ -928,28 +928,34 @@
                         let dragging = false;
                         let lastDX = 0;
 
-                        item.addEventListener('pointerdown', (e) => {
+                        function handleStart(e) {
                             if (e.button != 0) return;
                             if (e.type.startsWith('touch')) {
                                 var touch = e.touches[0] || e.changedTouches[0];
                                 e.pageX = touch.pageX;
                                 e.pageY = touch.pageY;
                             }
-                            startX = e.clientX;
-                            startY = e.clientY;
+                            if (typeof e.cancelable !== "boolean" || e.cancelable) {
+                                e.preventDefault();
+                            }
+                            startX = e.pageX;
+                            startY = e.pageY;
                             pointerDown = true;
                             dragging = false;
-                        })
+                        }
 
-                        window.addEventListener('pointermove', (e) => {
+                        function handleMove(e) {
                             if (!pointerDown) return;
                             if (e.type.startsWith('touch')) {
                                 var touch = e.touches[0] || e.changedTouches[0];
                                 e.pageX = touch.pageX;
                                 e.pageY = touch.pageY;
                             }
-                            var dx = e.clientX - startX;
-                            var dy = e.clientY - startY;
+                            if (typeof e.cancelable !== "boolean" || e.cancelable) {
+                                e.preventDefault();
+                            }
+                            var dx = e.pageX - startX;
+                            var dy = e.pageY - startY;
                             if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
                                 dragging = true;
                             }
@@ -977,9 +983,9 @@
                                 })
                                 lastDX = dx;
                             }
-                        })
+                        }
 
-                        window.addEventListener('pointerup', (e) => {
+                        function handleEnd(e) {
                             pointerDown = false;
                             if (dragging == true) {
                                 dragging = false;
@@ -1013,6 +1019,26 @@
                                     console.log(appIconOrder);
                                 }
                             }
+                        }
+
+                        const events = {
+                            "start": ["mousedown", "touchstart", "pointerdown"],
+                            "move": ["mousemove", "touchmove", "pointermove"],
+                            "end": ["mouseup", "touchend", "pointerup", "blur"]
+                        }
+
+                        events.start.forEach(event => {
+                            item.addEventListener(event, handleStart, {
+                                passive: false
+                            });
+                        })
+                        events.move.forEach(event => {
+                            window.addEventListener(event, handleMove, {
+                                passive: false
+                            });
+                        })
+                        events.end.forEach(event => {
+                            window.addEventListener(event,handleEnd);
                         })
                     })();
                 }

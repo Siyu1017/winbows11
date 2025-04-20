@@ -286,8 +286,20 @@
         return result;
     }
 
+    function isElement(obj) {
+        try {
+            return obj instanceof HTMLElement;
+        }
+        catch (e) {
+            return (typeof obj === "object") &&
+                (obj.nodeType === 1) && (typeof obj.style === "object") &&
+                (typeof obj.ownerDocument === "object");
+        }
+    }
+
     window.utils.getPosition = getPosition;
     window.utils.getJsonFromURL = getJsonFromURL;
+    window.utils.isElement = isElement;
 
     window.fileIcons = {
         getIcon: (path = '') => {
@@ -732,6 +744,7 @@
     window.System.CommandParsers = {
         run: (params) => {
             var file = params[0];
+            var pathInApp = file ? file.split(':').length > 1 ? file.slice(file.split(':')[0].length + 1) : '' : '';
             var config = [...params].slice(1).join(' ') || '';
             if (config != '') {
                 try {
@@ -752,6 +765,7 @@
                     message: message.join('\n')
                 }
             }
+            file = file.split(':')[0];
             if (window.appRegistry.exists(file)) {
                 if (config != '' && window.appRegistry.getInfo(file).configurable) {
                     file = window.appRegistry.getInfo(file).configurable;
@@ -760,7 +774,7 @@
                 }
             }
             var process = new Process(file);
-            process.start(config);
+            process.start(config, pathInApp);
             return {
                 status: 'ok',
                 message: process.id

@@ -3,6 +3,7 @@
         title: 'Info',
         width: 320,
         height: 450,
-        maximizable: false
+        maximizable: false,
+        mica: true
     })
 })()

@@ -16,6 +16,8 @@
     --contextmenu-expand-size: .875rem;
     --contextmenu-maxwidth: 20rem;
     --contextmenu-maxheight: 1.5rem;
+    --contextmenu-item-padding: .375rem .75rem;
+    --contextmenu-label-padding: .375rem .75rem;
 }
 
 .winui-contextmenu-container,
@@ -54,7 +56,6 @@
 .winui-contextmenu-menu-item,
 .winui-contextmenu-menu-label {
     display: flex;
-    padding: .375rem .75rem;
     border-radius: .25rem;
     cursor: default;
     position: relative;
@@ -64,12 +65,33 @@
     max-height: var(--contextmenu-maxheight);
 }
 
+.winui-contextmenu-menu-item {
+    padding: var(--contextmenu-item-padding);
+}
+
+.winui-contextmenu-menu-label {
+    padding: var(--contextmenu-label-padding);
+}
+
 .winui-contextmenu-menu-item.disabled {
     pointer-events: none;
     opacity: .7;
 }
 
-.winui-contextmenu-menu-item:hover {
+.winui-contextmenu-menu-item.selected:before {
+    content: '';
+    background: var(--winbows-primary-color);
+    border-radius: 99px;
+    width: .25rem;
+    height: 50%;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.winui-contextmenu-menu-item:hover,
+.winui-contextmenu-menu-item.selected {
     background: var(--contextmenu-hover);
 }
 

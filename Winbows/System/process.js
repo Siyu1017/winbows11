@@ -79,11 +79,11 @@
             this.temp = {};
             this.windows = [];
         }
-        async start(extra) {
+        async start(extra, pathInApp) {
             return new Promise(async (resolve, reject) => {
                 window.Winbows.Screen.style.cursor = 'progress';
                 try {
-                    await window.Compilers.Worker(this.path, this.token, extra).then(blob => {
+                    await window.Compilers.Worker(this.path, this.token, extra, pathInApp).then(blob => {
                         this.url = URL.createObjectURL(blob);
                     }).catch((e) => {
                         window.Crash(e.message)
@@ -203,7 +203,7 @@
                         var id = getID();
                         var path = e.data.path;
                         var config = e.data.config || {};
-                        await window.Compilers.Window(path, this.token, this.id, this.worker, config);
+                        await window.Compilers.Window(path, this.token, this.id, this.worker, config, e.data.pathInApp);
                         send({
                             response: id
                         })

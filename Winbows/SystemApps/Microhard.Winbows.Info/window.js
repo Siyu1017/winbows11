@@ -44,19 +44,28 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">
 <li style="
     margin: .5rem 0;
-">Process desktop items in batches</li>
+">Mica effect ( Beta )</li>
 <li style="
     margin: .5rem 0;
-">Set a font file as default font</li>
+    text-decoration: underline;
+    cursor: pointer;
+" data-action="run settings" title="Click to open Settings App">Settings App</li>
 <li style="
     margin: .5rem 0;
-">Drop file to desktop or file explorer ( Beta )</li>
+    text-decoration: underline;
+    cursor: pointer;
+" data-action="run settings:/personalization/taskbar" title="Click to open Settings App">Taskbar alignment</li>
 <li style="
     margin: .5rem 0;
-">Right click menu</li>
+    text-decoration: underline;
+    cursor: pointer;
+" data-action="run explorer" title="Click to open File Explorer">Redesign explorer</li>
 <li style="
     margin: .5rem 0;
-">Set an image as background</li>
+">Better mobile experience</li>
+<li style="
+    margin: .5rem 0;
+">Rearrange app icons in the taskbar</li>
 </ul>
 				<div style="
     font-weight: 600;
@@ -81,3 +90,9 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">Learn more on <a href="https://github.com/Siyu1017/winbows11" target="_blank">Github</a>.</div>
 			</div>
             </div>`;
+
+document.querySelectorAll('[data-action]').forEach(el => {
+    el.addEventListener('click', () => {
+        window.System.Shell(el.getAttribute('data-action'))
+    })
+})
