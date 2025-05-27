@@ -2,6 +2,10 @@ import { router } from "./_router.js";
 import { sidebar } from './components/sidebar.js';
 import titles from './meta.js';
 
+document.documentElement.style = `background: rgb(249 249 249 / 94%);-webkit-backdrop-filter: blur(120px) saturate(2);backdrop-filter: blur(120px) saturate(2);`;
+var loadingContainer = document.createElement('div');
+
+
 fs.init();
 
 const styles = ['./window.css', './styles/sidebar.css', './styles/setting.item.css', './styles/ui.css'];
@@ -9,19 +13,29 @@ const fonts = {
     'Segoe Fluent Icons': 'C:/Winbows/fonts/Segoe Fluent Icons.ttf'
 };
 
-for (let i in Object.keys(fonts)) {
-    var key = Object.keys(fonts)[i];
-    var font = new FontFace(key, `url(${await fs.getFileURL(utils.resolvePath(fonts[key]))})`);
-    await font.load();
-    window.document.fonts.add(font);
-}
+const promises = [];
 for (let i in styles) {
-    let style = document.createElement('link');
-    style.rel = 'stylesheet';
-    style.type = 'text/css';
-    style.href = await fs.getFileURL(utils.resolvePath(styles[i]));
-    document.head.appendChild(style);
+    promises.push(new Promise(async (resolve, reject) => {
+        let style = document.createElement('link');
+        style.rel = 'stylesheet';
+        style.type = 'text/css';
+        style.href = await fs.getFileURL(utils.resolvePath(styles[i]));
+        document.head.appendChild(style);
+        resolve();
+    }))
 }
+for (let i in Object.keys(fonts)) {
+    promises.push(new Promise(async (resolve, reject) => {
+        var key = Object.keys(fonts)[i];
+        var font = new FontFace(key, `url(${await fs.getFileURL(utils.resolvePath(fonts[key]))})`);
+        await font.load();
+        window.document.fonts.add(font);
+        resolve();
+    }))
+}
+await Promise.allSettled(promises).then(() => {
+    loadingContainer.remove();
+})
 
 var pageContents = {};
 var navbar = document.createElement('div');
@@ -72,6 +86,9 @@ router.on('change', async (e) => {
     const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
     //const pageItem = Object.values(pageListItems).filter(item => item.path === path);
     //if (pageItem.length == 0) return;
+    if (path == '/') {
+        return router.replace('/home');
+    }
     console.log('change', path);
     let page = pageContents[path];
     if (!pageContents[path]) {
@@ -109,7 +126,7 @@ router.on('change', async (e) => {
     }
 })
 
-if (pathInApp != '') {
+if (pathInApp.length > 0 && typeof pathInApp == "string") {
     router.push(pathInApp);
 } else {
     router.push('/home');

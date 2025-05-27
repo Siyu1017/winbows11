@@ -2,7 +2,12 @@ import { SettingItem } from '../components/setting.item.js';
 
 var settingItems = [
     {
-        icon: '	e75b',
+        icon: 'e91b',
+        title: 'Background',
+        description: 'Background image, color, slideshow',
+        href: '/personalization/background'
+    }, {
+        icon: 'e75b',
         title: 'Taskbar',
         description: 'Taskbar behaviors, system pins',
         href: '/personalization/taskbar'

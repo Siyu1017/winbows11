@@ -17,6 +17,7 @@
     -webkit-user-select: none;
     -webkit-user-drag: none;
     transition: all .1s ease-in-out;
+    justify-content: space-between;
 }
 
 .setting-item:hover {
@@ -51,6 +52,16 @@
     color: rgb(60, 60, 60);
     line-height: 1;
 }
+
+.setting-item-open-icon {
+    margin-left: auto;
+    width: 1.25rem;
+    height: 1.25rem;
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgY2xhc3M9Imx1Y2lkZSBsdWNpZGUtY2hldnJvbi1yaWdodC1pY29uIGx1Y2lkZS1jaGV2cm9uLXJpZ2h0Ij48cGF0aCBkPSJtOSAxOCA2LTYtNi02Ii8+PC9zdmc+);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+} 
 
 .setting-item-collapsible-container {
     border-radius: .5rem;
