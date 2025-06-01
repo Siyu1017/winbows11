@@ -1,5 +1,0 @@
-Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Inspect/1.0.9 Chrome/118.0.5993.159 Electron/27.1.3 Safari/537.36
-/stacktrace.min.js.map
-/?from=%2Fstacktrace.min.js.map
-/stacktrace.min.js.map
-/?from=%2Fstacktrace.min.js.map

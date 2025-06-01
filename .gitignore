@@ -1,4 +1,5 @@
 tests/*
 node_modules/*
 dev/*
+logs/*
 vite.config.js
