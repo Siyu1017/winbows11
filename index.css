@@ -905,10 +905,15 @@ body {
     background: rgba(255, 255, 255, .9);
     backdrop-filter: saturate(2) blur(32px);
     -webkit-backdrop-filter: saturate(2) blur(32px);
-    height: -webkit-fill-available;
-    overflow: hidden;
+    /* height: -webkit-fill-available; */
+    /* overflow: hidden; */
     display: flex;
     flex-direction: column;
+    max-height: calc(100% - 4rem);
+    position: sticky;
+    top: 0;
+    margin-bottom: auto;
+    flex: 1;
 }
 
 .start-menu-footer {
@@ -919,6 +924,11 @@ body {
     border-top: 1.5px solid rgba(0, 0, 0, .1);
     display: flex;
     justify-content: space-between;
+    height: fit-content;
+    min-height: fit-content;
+    position: sticky;
+    bottom: 0;
+    height: 4rem;
 }
 
 .start-menu-footer-profile-avatar {
@@ -1021,8 +1031,9 @@ body {
     position: sticky;
     top: 0;
     overflow: auto;
-    max-height: -webkit-fill-available;
-    flex: 1;
+    /* height: -webkit-fill-available; */
+    /* max-height: -webkit-fill-available; */
+    /* flex: 1; */
 }
 
 .start-menu-pinned-apps-container {
@@ -1033,7 +1044,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    margin-bottom: 2rem;
+    padding-bottom: 2rem;
 }
 
 .start-menu-pinned-header {
@@ -1939,6 +1950,7 @@ body {
     .winbows-loading-warning {
         overflow: hidden;
         padding: 0 1rem;
+        bottom: 1rem;
     }
 
     .winbows-loading-warning-container {

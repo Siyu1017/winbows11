@@ -47,24 +47,28 @@
         devLogs.className = 'winbows-dev-logs';
         devContainer.addEventListener('pointerdown', (e) => {
             dragging = true;
+            let pageX = e.pageX;
+            let pageY = e.pageY;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
+                pageX = touch.pageX;
+                pageY = touch.pageY;
             }
             var position = getPosition(devContainer);
-            x = e.pageX - position.x;
-            y = e.pageY - position.y;
+            x = pageX - position.x;
+            y = pageY - position.y;
         })
         window.addEventListener('pointermove', (e) => {
             if (dragging != true) return;
+            let pageX = e.pageX;
+            let pageY = e.pageY;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
+                pageX = touch.pageX;
+                pageY = touch.pageY;
             }
-            var dx = e.pageX - x;
-            var dy = e.pageY - y;
+            var dx = pageX - x;
+            var dy = pageY - y;
             devContainer.style.transform = `translate(${dx}px, ${dy}px)`;
         })
         window.addEventListener('pointerup', () => {
@@ -682,6 +686,27 @@
                         resolve();
                     }
                 }
+                function errorHandler(msg, func = () => { location.reload(); }) {
+                    var warning = document.createElement('div');
+                    var warningContainer = document.createElement('div');
+                    var warningText = document.createElement('span');
+                    var warningRestart = document.createElement('div');
+
+                    warning.className = 'winbows-loading-warning';
+                    warningContainer.className = 'winbows-loading-warning-container';
+                    warningRestart.className = 'winbows-loading-warning-restart';
+                    warningText.className = 'winbows-loading-warning-text';
+
+                    warningText.innerHTML = msg;
+                    warningRestart.innerHTML = `Restart`;
+                    document.body.appendChild(warning);
+                    warning.appendChild(warningContainer);
+                    warningContainer.appendChild(warningText);
+                    warningContainer.appendChild(warningRestart);
+                    loadingText(msg);
+                    // window.Crash(msg);
+                    warningRestart.addEventListener('click', func);
+                }
                 try {
                     for (let i in kernelFiles) {
                         const path = await fs.getFileURL(mainDisk + ':/' + kernelFiles[i]);
@@ -689,26 +714,7 @@
                             try {
                                 new Function(kernel)();
                             } catch (e) {
-                                var warning = document.createElement('div');
-                                var warningContainer = document.createElement('div');
-                                var warningText = document.createElement('span');
-                                var warningRestart = document.createElement('div');
-
-                                warning.className = 'winbows-loading-warning';
-                                warningContainer.className = 'winbows-loading-warning-container';
-                                warningRestart.className = 'winbows-loading-warning-restart';
-                                warningText.className = 'winbows-loading-warning-text';
-
-                                warningText.innerHTML = `Failed to execute kernel : ${kernelFiles[i]}`;
-                                warningRestart.innerHTML = `Restart`;
-                                document.body.appendChild(warning);
-                                warning.appendChild(warningContainer);
-                                warningContainer.appendChild(warningText);
-                                warningContainer.appendChild(warningRestart);
-                                loadingText(`Failed to execute kernel : ${kernelFiles[i]}`);
-                                // window.Crash(`Failed to execute kernel : ${kernelFiles[i]}`);
-
-                                warningRestart.addEventListener('click', async () => {
+                                errorHandler(`Failed to execute kernel : ${kernelFiles[i]}`, async () => {
                                     try {
                                         fs.rm(mainDisk + ':/' + kernelFiles[i]).then((status) => {
                                             console.log(status);
@@ -719,6 +725,9 @@
                                     }
                                 });
                             }
+                        }).catch(e => {
+                            console.log(e)
+                            errorHandler("Failed to execute kernels, details:" + e);
                         })
                         /*
                         kernel.src = path;
@@ -729,7 +738,8 @@
                         */
                     }
                 } catch (e) {
-                    window.Crash(e);
+                    console.log(e)
+                    errorHandler("Failed to execute kernels, details:" + e);
                 }
             })
         }
@@ -860,24 +870,26 @@
                 // Right click
                 return;
             }
+            let pageX = e.pageX;
+            let pageY = e.pageY;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
+                pageX = touch.pageX;
+                pageY = touch.pageY;
             }
             selecting = true;
 
             // For items
-            startX = e.pageX + desktopItems.scrollLeft;
-            startY = e.pageY;
-            pointerX = e.pageX + desktopItems.scrollLeft;
-            pointerY = e.pageY;
+            startX = pageX + desktopItems.scrollLeft;
+            startY = pageY;
+            pointerX = pageX + desktopItems.scrollLeft;
+            pointerY = pageY;
 
             // For canvas
-            startXInCanvas = e.pageX + desktopItems.scrollLeft;
-            startYInCanvas = e.pageY;
-            pointerXInCanvas = e.pageX + desktopItems.scrollLeft;
-            pointerYInCanvas = e.pageY;
+            startXInCanvas = pageX + desktopItems.scrollLeft;
+            startYInCanvas = pageY;
+            pointerXInCanvas = pageX + desktopItems.scrollLeft;
+            pointerYInCanvas = pageY;
 
             selected = [];
             createdItems.forEach(item => {
@@ -887,15 +899,17 @@
 
         function selectionMove(e) {
             if (selecting == false) return;
+            let pageX = e.pageX;
+            let pageY = e.pageY;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
+                pageX = touch.pageX;
+                pageY = touch.pageY;
             }
-            pointerX = e.pageX + desktopItems.scrollLeft;
-            pointerY = e.pageY;
-            pointerXInCanvas = e.pageX;
-            pointerYInCanvas = e.pageY;
+            pointerX = pageX + desktopItems.scrollLeft;
+            pointerY = pageY;
+            pointerXInCanvas = pageX;
+            pointerYInCanvas = pageY;
 
             render();
 
@@ -1313,14 +1327,16 @@
                 })
                 e.preventDefault();
                 e.stopPropagation();
+                let pageX = e.pageX;
+                let pageY = e.pageY;
                 if (e.type.startsWith('touch')) {
                     var touch = e.touches[0] || e.changedTouches[0];
-                    e.pageX = touch.pageX;
-                    e.pageY = touch.pageY;
+                    pageX = touch.pageX;
+                    pageY = touch.pageY;
                 }
                 menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
                 menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
-                menu.open(e.pageX, e.pageY, 'left-top');
+                menu.open(pageX, pageY, 'left-top');
                 if (utils.getPosition(menu.container).x + menu.container.offsetWidth > window.innerWidth) {
                     menu.container.style.left = 'unset';
                     menu.container.style.right = '4px';
@@ -1702,14 +1718,16 @@
                 }
             ])
             e.preventDefault();
+            let pageX = e.pageX;
+            let pageY = e.pageY;
             if (e.type.startsWith('touch')) {
                 var touch = e.touches[0] || e.changedTouches[0];
-                e.pageX = touch.pageX;
-                e.pageY = touch.pageY;
+                pageX = touch.pageX;
+                pageY = touch.pageY;
             }
             menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
             menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
-            menu.open(e.pageX, e.pageY, 'left-top');
+            menu.open(pageX, pageY, 'left-top');
             if (utils.getPosition(menu.container).x + menu.container.offsetWidth > window.innerWidth) {
                 menu.container.style.left = 'unset';
                 menu.container.style.right = '4px';

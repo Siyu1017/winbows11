@@ -290,7 +290,71 @@
             // location.href = `./repair.html?timestamp=${new Date().getTime()}`;
         }
 
+        function isAppleDeviceType() {
+            const ua = navigator.userAgent;
+            const isTouch = 'ontouchend' in document;
+
+            if (/iPhone/.test(ua)) {
+                return true;    // iPhone
+            }
+            if (/iPad/.test(ua)) {
+                return true;    // iPad
+            }
+            if (/Macintosh/.test(ua) && isTouch) {
+                return true;    // iPad
+            }
+            if (/Macintosh/.test(ua)) {
+                return true;    // Mac
+            }
+            return false;
+        }
+
         ; (async () => {
+            if (isAppleDeviceType() == true) {
+                await (async () => {
+                    return new Promise(resolve => {
+                        var warning = document.createElement("div");
+                        var warningWindow = document.createElement("div");
+                        var warningIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                        var warningTitle = document.createElement("div");
+                        var warningDescription = document.createElement("div");
+                        var warningContinue = document.createElement("button");
+
+                        warning.style = "position:fixed;top:0;left:0;width:100vw;height:var(--winbows-screen-height);display:flex;align-items:center;justify-content:center;background-color:rgba(0,0,0,.5);z-index:99999";
+                        warningWindow.style = "display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px,calc(100vw - 2rem));width: 100%;max-height: min(calc(var(--winbows-screen-height)*80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;";
+
+                        warningIcon.style = "width:5rem;height:5rem;";
+                        warningIcon.setAttribute("viewBox", "0 0 24 24");
+                        warningIcon.setAttribute("fill", "none");
+                        warningIcon.setAttribute("stroke", "#E69264");
+                        warningIcon.setAttribute("stroke-width", "2");
+                        warningIcon.setAttribute("stroke-linecap", "round");
+                        warningIcon.setAttribute("stroke-linejoin", "round");
+                        warningIcon.innerHTML = '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path>';
+
+                        warningTitle.style = "max-width: 80%;word-break: auto-phrase;font-weight: 600;font-size: 1.25rem;margin-top: 1rem;";
+                        warningTitle.innerHTML = "Warning for iPhone/iPad/Mac users";
+                        warningDescription.style = "font-size: .875rem;color: #454545;margin: .375rem;";
+                        warningDescription.innerHTML = "There are a number of known styling issues with Winbows11 on iPhone/iPad/Mac. Until this issue is resolved, we recommend that you use another device to browse this site.";
+
+                        warningContinue.style = "color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.75rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size:.925rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0;border: 0;margin-top: 1rem;";
+                        warningContinue.innerHTML = "Continue to visit Winbows11";
+
+                        warningContinue.addEventListener("click", () => {
+                            warning.remove();
+                            resolve();
+                        });
+
+                        warning.appendChild(warningWindow);
+                        warningWindow.appendChild(warningIcon);
+                        warningWindow.appendChild(warningTitle);
+                        warningWindow.appendChild(warningDescription);
+                        warningWindow.appendChild(warningContinue);
+                        document.body.appendChild(warning);
+                    })
+                })();
+            }
+
             var DIRECTORIES = localStorage.getItem('WINBOWS_DIRECTORIES') || true;
             window.needsUpdate = false;
             window.build_id = localStorage.getItem('WINBOWS_BUILD_ID');
@@ -333,8 +397,43 @@
                         if (build_id != window.build_id) {
                             window.needsUpdate = true;
                         }
-                    }).catch(err => {
-                        window.needsUpdate = false;
+                    }).catch(async err => {
+                        window.needsUpdate = true;
+                        return new Promise(resolve => {
+                            var warning = document.createElement("div");
+                            var warningWindow = document.createElement("div");
+                            var warningIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                            var warningTitle = document.createElement("div");
+                            var warningContinue = document.createElement("button");
+
+                            warning.style = "position:fixed;top:0;left:0;width:100vw;height:var(--winbows-screen-height);display:flex;align-items:center;justify-content:center;background-color:rgba(0,0,0,.5);z-index:99999";
+                            warningWindow.style = "display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px,calc(100vw - 2rem));width: 100%;max-height: min(calc(var(--winbows-screen-height)*80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;";
+
+                            warningIcon.style = "width:5rem;height:5rem;";
+                            warningIcon.setAttribute("viewBox", "0 0 24 24");
+                            warningIcon.setAttribute("fill", "none");
+                            warningIcon.setAttribute("stroke", "#E69264");
+                            warningIcon.setAttribute("stroke-width", "2");
+                            warningIcon.setAttribute("stroke-linecap", "round");
+                            warningIcon.setAttribute("stroke-linejoin", "round");
+                            warningIcon.innerHTML = '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path>';
+
+                            warningTitle.style = "max-width: 80%;word-break: auto-phrase;font-weight: 600;font-size: 1.25rem;margin-top: 1rem;";
+                            warningTitle.innerHTML = "Unable to fetch manifest file";
+                            warningContinue.style = "color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.75rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size:.925rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0;border: 0;margin-top: 1rem;";
+                            warningContinue.innerHTML = "OK";
+
+                            warningContinue.addEventListener("click", () => {
+                                warning.remove();
+                                resolve();
+                            });
+
+                            warning.appendChild(warningWindow);
+                            warningWindow.appendChild(warningIcon);
+                            warningWindow.appendChild(warningTitle);
+                            warningWindow.appendChild(warningContinue);
+                            document.body.appendChild(warning);
+                        })
                     })
                 } catch (e) { }
             }

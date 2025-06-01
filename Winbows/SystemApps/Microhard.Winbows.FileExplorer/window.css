@@ -197,6 +197,7 @@
 .explorer-tabstrip {
     width: -webkit-fill-available;
     height: fit-content;
+    max-height: fit-content;
     min-height: fit-content;
     padding: .375rem;
     padding-right: 2.5rem;

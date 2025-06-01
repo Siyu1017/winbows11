@@ -29,6 +29,7 @@
     width: -webkit-fill-available;
     background: rgb(235 235 235);
     min-height: fit-content;
+    max-height: fit-content;
     display: flex;
     pointer-events: auto;
 }
@@ -190,7 +191,7 @@
 
 .tabview {
     display: block;
-    overflow: hidden;
+    /* overflow: hidden; */
     -webkit-user-drag: none;
     width: -webkit-fill-available;
     height: -webkit-fill-available;
@@ -198,7 +199,7 @@
 
 .tabview-item {
     display: none;
-    overflow: hidden;
+    /* overflow: hidden; */
     -webkit-user-drag: none;
     flex-direction: column;
     width: -webkit-fill-available;

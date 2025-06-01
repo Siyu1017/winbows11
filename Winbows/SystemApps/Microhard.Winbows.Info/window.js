@@ -62,7 +62,7 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 " data-action="run explorer" title="Click to open File Explorer">Redesign explorer</li>
 <li style="
     margin: .5rem 0;
-">Better mobile experience</li>
+">Better mobile experience ( Maybe )</li>
 <li style="
     margin: .5rem 0;
 ">Rearrange app icons in the taskbar</li>

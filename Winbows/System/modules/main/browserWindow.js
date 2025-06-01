@@ -1086,6 +1086,7 @@
                                 Object.values(tabs).forEach(tab => {
                                     tab.tab.style.transition = 'none';
                                     tab.tab.style.transform = 'translateX(0)';
+                                    tab.tab.style['-webkit-transform']
                                     setTimeout(() => {
                                         tab.tab.style.transition = 'revert-layer';
                                     }, 200)
