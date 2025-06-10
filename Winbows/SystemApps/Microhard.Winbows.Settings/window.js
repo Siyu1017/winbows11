@@ -64,12 +64,10 @@ console.log(document)
 
 var appSidebar = document.createElement('div');
 var appPage = document.createElement('div');
-var sidebarElement = sidebar();
 appSidebar.className = 'app-sidebar';
 appPage.className = 'app-page';
 document.body.appendChild(appSidebar);
 document.body.appendChild(appPage);
-appSidebar.appendChild(sidebarElement);
 
 var pageTitle = document.createElement('div');
 var pageContainer = document.createElement('div');
@@ -131,6 +129,9 @@ if (pathInApp.length > 0 && typeof pathInApp == "string") {
 } else {
     router.push('/home');
 }
+
+var sidebarElement = sidebar();
+appSidebar.appendChild(sidebarElement);
 
 // const sidebar = await import(await fs.getFileURL(utils.resolvePath('./components/sidebar.js'))).then(module => module.sidebar());
 

@@ -5,12 +5,6 @@ const fs = require("fs");
 const devices = {};
 
 app.use(express.json());
-app.post("/report", (req, res) => {
-    //fs.writeFile(`./logs/debug/debug-${Date.now()}.txt`, `${JSON.stringify(req.body)}`, function (err) {
-    //    console.log(err);
-    //})
-    res.send();
-})
 
 app.use((req, res, next) => {
     if (!devices[req.headers['user-agent']]) {
@@ -30,5 +24,5 @@ app.use(express.static(__dirname), (req, res, next) => {
 })
 
 app.listen(3000, function () {
-    console.log("Server is running...");
+    console.log("Server is running at http://localhost:3000");
 })

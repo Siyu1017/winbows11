@@ -285,7 +285,7 @@
             return result;
         }
 
-        if (localStorage.getItem('WINBOWS_REQUIRED') == 'REPAIR' && !getJsonFromURL()['embed']) {
+        if (localStorage.getItem('WINBOWS_REQUIRED') === 'REPAIR' && !getJsonFromURL()['embed']) {
             var warning = document.createElement("div");
             // location.href = `./repair.html?timestamp=${new Date().getTime()}`;
         }
@@ -303,14 +303,11 @@
             if (/Macintosh/.test(ua) && isTouch) {
                 return true;    // iPad
             }
-            if (/Macintosh/.test(ua)) {
-                return true;    // Mac
-            }
-            return false;
+            return /Macintosh/.test(ua);
         }
 
         ; (async () => {
-            if (isAppleDeviceType() == true) {
+            if (isAppleDeviceType() === true) {
                 await (async () => {
                     return new Promise(resolve => {
                         var warning = document.createElement("div");
@@ -394,7 +391,7 @@
                     }).then(async data => {
                         latestBuildData = data;
                         const build_id = data.build_id;
-                        if (build_id != window.build_id) {
+                        if (build_id !== window.build_id) {
                             window.needsUpdate = true;
                         }
                     }).catch(async err => {
@@ -529,7 +526,7 @@
                 document.head.querySelector('[data-tag="style-main"]').remove();
             }
             document.head.appendChild(style);
-        } catch (e) { };
+        } catch (e) { }
     </script>
     <script>
         if ('serviceWorker' in navigator) {

@@ -1,0 +1,32 @@
+[
+    {
+        "title": "Desktop",
+        "path": "C:/Users/Admin/Desktop",
+        "icon": "C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico"
+    },
+    {
+        "title": "Downloads",
+        "path": "C:/Users/Admin/Downloads",
+        "icon": "C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/downloads.ico"
+    },
+    {
+        "title": "Documents",
+        "path": "C:/Users/Admin/Documents",
+        "icon": "C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/documents.ico"
+    },
+    {
+        "title": "Pictures",
+        "path": "C:/Users/Admin/Pictures",
+        "icon": "C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/pictures.ico"
+    },
+    {
+        "title": "Music",
+        "path": "C:/Users/Admin/Music",
+        "icon": "C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/music.ico"
+    },
+    {
+        "title": "Videos",
+        "path": "C:/Users/Admin/Videos",
+        "icon": "C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/videos.ico"
+    }
+]

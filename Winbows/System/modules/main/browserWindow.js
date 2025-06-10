@@ -885,7 +885,9 @@
             updatePosition();
             updateSize();
 
-            function useTabview() {
+            function useTabview(config = {
+                icon: true
+            }) {
                 var tabview = document.createElement('div');
                 var tabStrip = document.createElement('div');
                 var tabStripTabs = document.createElement('div');
@@ -899,7 +901,11 @@
                 tabStripCreateButton.className = 'tabview-tabstrip-create-button';
 
                 contentElement.appendChild(tabview);
-                toolbarInfo.replaceChild(tabStrip, toolbarTitle);
+                if (config.icon == false) {
+                    toolbarElement.replaceChild(tabStrip, toolbarInfo);
+                } else {
+                    toolbarInfo.replaceChild(tabStrip, toolbarTitle);
+                }
                 tabStrip.appendChild(tabStripTabs);
                 tabStrip.appendChild(tabStripCreate);
                 tabStripCreate.appendChild(tabStripCreateButton);

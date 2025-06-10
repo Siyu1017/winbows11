@@ -233,11 +233,11 @@
     padding-bottom: 0;
     display: flex;
     flex-direction: row;
-    overflow: hidden;
+    overflow-x: hidden;
 }
 
 .tabview-tabstrip-tabs {
-    height: -webkit-fill-available;
+    /* height: -webkit-fill-available; */
     max-width: calc(100% - 2.875rem);
     display: flex;
     gap: .5rem;

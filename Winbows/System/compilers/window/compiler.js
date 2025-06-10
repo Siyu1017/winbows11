@@ -115,6 +115,10 @@ Object.defineProperty(window.Compilers, 'Window', {
             'winbows/utils': {
                 script: 'C:/Winbows/System/modules/sdk/utils.js',
                 requires: []
+            },
+            'app/router': {
+                script: 'C:/Winbows/System/modules/sdk/router.js',
+                requires: []
             }
         }
 

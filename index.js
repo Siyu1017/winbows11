@@ -38,6 +38,12 @@
         configurable: false
     })
 
+    Object.defineProperty(window, 'fetchMode', {
+        value: (URLParams['dev'] || URLParams['develop'] || URLParams['embed']) ? 'server' : 'local',
+        writable: false,
+        configurable: false
+    })
+
     if (URLParams['logs'] || URLParams['output']) {
         var devContainer = document.createElement('div');
         var devLogs = document.createElement('div');
@@ -2081,6 +2087,10 @@
 
             // Initialize Taskbar
             window.Taskbar.init();
+
+            // For Debugging
+            // Test App For iPhone
+            // new Process("C:/dev/app.iPhoneOS.18.5/app.js").start();
         }
     })
 
