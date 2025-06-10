@@ -1782,7 +1782,7 @@
 
         for (let i = 0; i < defaultShortcuts.length; i++) {
             var content = JSON.stringify(defaultShortcuts[i].content);
-            await fs.writeFile(defaultShortcuts[i].path, new Blob([content], {
+            fs.writeFile(defaultShortcuts[i].path, new Blob([content], {
                 type: 'application/winbows-link'
             }));
         }
