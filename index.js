@@ -1,6 +1,6 @@
 'use strict';
 
-!(async () => {
+!(async function Main() {
     if (!window.fs) {
         // Check if the file system has been initialized
         console.warn('Wait for file system initialization...');
@@ -46,12 +46,27 @@
 
     if (URLParams['logs'] || URLParams['output']) {
         var devContainer = document.createElement('div');
+        var devDragBar = document.createElement('div');
         var devLogs = document.createElement('div');
+        var devResizer = document.createElement('div');
+        var devResizerSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         var dragging = false;
-        var x = 0, y = 0;
+        var x = 8, y = 8, width = window.innerWidth / 2, height = window.innerHeight / 2;
         devContainer.className = 'winbows-dev-container winui-dark winui-no-background';
+        devContainer.style.width = width + 'px';
+        devContainer.style.height = height + 'px';
+        devContainer.style.transform = `translate(${x}px, ${y}px)`;
+        devDragBar.className = 'winbows-dev-dragbar';
+        devLogs.style.maxHeight = height + 'px';
         devLogs.className = 'winbows-dev-logs';
-        devContainer.addEventListener('pointerdown', (e) => {
+        devResizer.className = 'winbows-dev-resizer';
+        devResizerSvg.innerHTML = '<path d="M10 1C10 5 7 10 1 10 1 10 0 10 0 9 0 9 0 8 1 8 5 8 8 5 8 1 8 1 8 0 9 0 9 0 10 0 10 1"></path>';
+        devResizerSvg.setAttribute('viewBox', '-1 -1 12 12');
+        devResizerSvg.setAttribute('width', 11);
+        devResizerSvg.setAttribute('height', 11);
+        devResizerSvg.style = 'stroke: #fff;fill: #fff;width:1rem;height:1rem';
+
+        devDragBar.addEventListener('pointerdown', (e) => {
             dragging = true;
             let pageX = e.pageX;
             let pageY = e.pageY;
@@ -83,14 +98,603 @@
         window.addEventListener('blur', () => {
             dragging = false;
         })
-        document.body.appendChild(devContainer);
-        devContainer.appendChild(devLogs);
 
-        window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
-            var el = document.createElement('div');
-            el.innerHTML = `<span style='color:#ff00ff'>[HMGR]</span> ${e.method} <span style='color:#86b7ff'>${e.url}</span> <span style='${e.ok ? 'color:#58ff31' : 'color:red'}'>${e.status}</span>`;
-            devLogs.appendChild(el);
-        })
+
+
+        !(() => {
+            !(() => {
+                // JSON Viewer
+                'use strict';
+
+                function isJSON(item) {
+                    let value = typeof item !== "string" ? JSON.stringify(item) : item;
+                    try {
+                        value = JSON.parse(value);
+                    } catch (e) {
+                        return false;
+                    }
+
+                    return typeof value === "object" && value !== null;
+                }
+
+                function isObject(obj) {
+                    var type = typeof obj;
+                    return type === 'function' || type === 'object' && !!obj;
+                };
+
+                function expandable(obj) {
+                    if (Array.isArray(obj)) {
+                        if (obj.length > 0) {
+                            return true;
+                        }
+                        return false;
+                    } else if (isObject(obj)) {
+                        if (Object.values(obj).length > 0) {
+                            return true;
+                        }
+                        return false;
+                    } else {
+                        return false;
+                    }
+                }
+
+                function setAttribute(element, value) {
+                    if (expandable(value)) {
+                        element.setAttribute('data-expandable', true);
+                    } else {
+                        element.setAttribute('data-expandable', false);
+                    }
+                }
+
+                function parseJSON(json, self = false) {
+                    try {
+                        if (self == false) {
+                            json = JSON.parse(json);
+                        }
+                        var result = json;
+                        if (Array.isArray(json)) {
+                            result = [];
+                            json.forEach(obj => {
+                                result.push(parseJSON(obj, true))
+                            })
+                            return result;
+                        } else if (isObject(json)) {
+                            result = {};
+                            Object.keys(json).forEach(key => {
+                                result[key] = parseJSON(json[key], true);
+                            })
+                            return result;
+                        } else {
+                            return result;
+                        }
+                    } catch (e) { }
+                }
+
+                function isLargeArray(array) {
+                    if (array.length > 100) {
+                        return true;
+                    }
+                    return false;
+                }
+
+                function getClassName(value) {
+                    var type = typeof value;
+                    switch (type) {
+                        case 'string':
+                            return 'json-viewer-value-string';
+                        case 'number':
+                            return 'json-viewer-value-number';
+                        case 'boolean':
+                            return 'json-viewer-value-symbol';
+                        case 'object':
+                            if (value === null) {
+                                return 'json-viewer-value-empty';
+                            } else if (Array.isArray(value)) {
+                                return 'json-viewer-value-generic';
+                            } else {
+                                return 'json-viewer-value-generic';
+                            }
+                        case 'undefined':
+                            return 'json-viewer-value-empty';
+                        default:
+                            return 'json-viewer-value-generic';
+                    }
+                }
+
+                function getStackTrace() {
+                    var stack;
+
+                    try {
+                        throw new Error('');
+                    } catch (error) {
+                        stack = error.stack || '';
+                    }
+
+                    stack = stack.split('\n').map(function (line) { return line.trim(); });
+                    return stack.splice(stack[0] == 'Error' ? 2 : 1);
+                }
+
+                function getType(value) {
+                    var type = typeof value;
+                    switch (type) {
+                        case 'string':
+                            return 'string';
+                        case 'number':
+                            return 'number';
+                        case 'boolean':
+                            return 'boolean';
+                        case 'object':
+                            if (value === null) {
+                                return 'null';
+                            } else if (Array.isArray(value)) {
+                                return 'array';
+                            } else if (isObject(value)) {
+                                return 'object';
+                            } else {
+                                return 'object?';
+                            }
+                        case 'undefined':
+                            return 'undefined';
+                        default:
+                            return 'unknown';
+                    }
+                }
+
+                function getBracket(value, type) {
+                    if (type == 'array') {
+                        return `[${value}]`;
+                    } else if (type == 'object') {
+                        return `{${value}}`;
+                    } else {
+                        return value;
+                    }
+                }
+
+                var listeners = {};
+
+                class Viewer {
+                    constructor(json) {
+                        this.container = document.createElement('div');
+                        this.path = document.createElement('div');
+                        this.overview = document.createElement('div');
+                        this.overviewExpand = document.createElement('div');
+                        this.overviewContent = document.createElement('div');
+                        this.content = document.createElement('div');
+
+                        this.container.className = 'json-viewer-container';
+                        this.path.className = 'json-viewer-path';
+                        this.overview.className = 'json-viewer-overview';
+                        this.overviewExpand.className = 'json-viewer-expand';
+                        this.overviewContent.className = 'json-viewer-overview-content';
+                        this.content.className = 'json-viewer-content';
+
+                        this.container.appendChild(this.path);
+                        this.container.appendChild(this.overview);
+                        this.container.appendChild(this.content);
+                        this.overview.appendChild(this.overviewExpand);
+                        this.overview.appendChild(this.overviewContent);
+
+                        if (typeof json != 'string') {
+                            try {
+                                json = JSON.stringify(json);
+                            } catch (e) { }
+                        }
+
+                        if (isJSON(json) == false || !json || json == null) {
+                            try {
+                                this.container.innerHTML = json.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+                            } catch (e) {
+                                this.container.innerHTML = json;
+                            }
+                            return this;
+                        }
+
+                        this.json = typeof json != 'string' ? parseJSON(JSON.stringify(json)) : parseJSON(json);
+
+                        setAttribute(this.overview, this.json);
+
+                        var expanded = false;
+                        var appended = false;
+                        /*
+                        Object.keys(parsed).forEach(key1 => {
+                            if (isObject(parsed[key1])) {
+                                parsed[key1].forEach(key2 => {
+                                    if (isObject(parsed[key1][key2])) {
+                                        parsed[key1][key2].forEach(key3 => {
+                                            overviewText += parsed[key1][key2][key3];
+                                        })
+                                    }
+                                })
+                            }
+                        })
+                            */
+
+                        this.overviewContent.innerHTML = expandable(this.json) == true ? this._getOverview(this.json).replaceAll("<", "&lt;").replaceAll(">", "&gt;") : this._formatValue(this.json).replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+
+                        this.overview.addEventListener('click', () => {
+                            expanded = !expanded;
+                            this.overview.setAttribute('data-expand', expanded);
+                            if (appended == false) {
+                                this._getLevel(this.json, this.content);
+                                appended = true;
+                            }
+                        })
+                        this.overview.addEventListener('pointerenter', () => {
+                            this._triggerEvent('pointerChange', {
+                                type: getType(this.json),
+                                levels: [{
+                                    type: getType(this.json),
+                                    key: '…',
+                                    item: this.overview
+                                }],
+                                value: this.json
+                            })
+                        })
+                        return this;
+                    }
+                    on(event, listener) {
+                        if (!listeners[event]) {
+                            listeners[event] = [];
+                        }
+                        listeners[event].push(listener);
+                    }
+                    _triggerEvent(event, details) {
+                        if (listeners[event]) {
+                            listeners[event].forEach(listener => {
+                                listener(details);
+                            })
+                        }
+                    }
+                    _getLevel(level, parent, parentData = {
+                        levels: [],
+                        type: level.type
+                    }) {
+                        const parentLevels = [...parentData.levels];
+
+                        if (getType(level) == 'array') {
+                            if (isLargeArray(level)) {
+                                var groups = level.length % 100 == 0 ? Math.floor(level.length / 100) : Math.floor(level.length / 100) + 1
+                                for (let i = 0; i < groups; i++) {
+                                    (() => {
+                                        var item = document.createElement('div');
+                                        var line = document.createElement('div');
+                                        var next = document.createElement('div');
+                                        var expanded = false;
+                                        var append = false;
+                                        var value = level.slice(i * 100, (i + 1) * 100);
+                                        var type = getClassName(value);
+                                        item.className = 'json-viewer-item';
+                                        line.className = 'json-viewer-line';
+                                        next.className = 'json-viewer-next';
+                                        line.innerHTML = `<div class="json-viewer-expand"></div><div class="json-viewer-key" data-type="large-array"></div><div class="json-viewer-value ${type}">[${i * 100} … ${99 > value.length ? i * 100 + value.length - 1 : i * 100 + 99}]</div>`;
+
+                                        var temp = {};
+                                        Object.keys(value).forEach(key => {
+                                            temp[i * 100 + +key] = value[key];
+                                        })
+                                        value = temp;
+
+                                        line.setAttribute('data-expandable', expandable(value));
+                                        line.setAttribute('data-expand', expanded);
+                                        line.addEventListener('click', () => {
+                                            if (expandable(value) == true) {
+                                                expanded = !expanded;
+                                                line.setAttribute('data-expand', expanded);
+                                                if (append == false) {
+                                                    this._getLevel(value, next, {
+                                                        type: 'array',
+                                                        levels: parentLevels,
+                                                        item: line
+                                                    });
+                                                    append = true;
+                                                }
+                                            }
+                                        })
+                                        line.addEventListener('pointerenter', () => {
+                                            this._triggerEvent('pointerChange', {
+                                                type: 'array',
+                                                levels: parentLevels,
+                                                value: value,
+                                                item: line
+                                            })
+                                        })
+                                        item.appendChild(line);
+                                        item.appendChild(next);
+                                        parent.appendChild(item);
+                                    })();
+                                }
+                                return;
+                            }
+                        }
+                        var temp = level;
+                        level = Object.keys(temp).sort().reduce(
+                            (obj, key) => {
+                                obj[key] = temp[key];
+                                return obj;
+                            },
+                            {}
+                        );
+                        Object.keys(level).forEach(key => {
+                            var item = document.createElement('div');
+                            var line = document.createElement('div');
+                            var next = document.createElement('div');
+                            var expanded = false;
+                            var append = false;
+                            var type = getClassName(level[key]);
+                            item.className = 'json-viewer-item';
+                            line.className = 'json-viewer-line';
+                            next.className = 'json-viewer-next';
+                            line.innerHTML = `<div class="json-viewer-expand"></div><div class="json-viewer-key">${key}</div><div class="json-viewer-value ${type}">${getType(this._formatValue(level[key])) == 'string' ? this._formatValue(level[key]).replaceAll("<", "&lt;").replaceAll(">", "&gt;") : this._formatValue(level[key])}</div>`;
+
+                            line.setAttribute('data-expandable', expandable(level[key]));
+                            line.setAttribute('data-expand', expanded);
+                            line.addEventListener('click', () => {
+                                if (expandable(level[key]) == true) {
+                                    expanded = !expanded;
+                                    line.setAttribute('data-expand', expanded);
+                                    if (append == false) {
+                                        this._getLevel(level[key], next, {
+                                            type: getType(level),
+                                            levels: parentLevels.concat([{
+                                                type: getType(level[key]),
+                                                key: key,
+                                                item: line
+                                            }])
+                                        });
+                                        append = true;
+                                    }
+                                }
+                            })
+                            line.addEventListener('pointerenter', () => {
+                                this._triggerEvent('pointerChange', {
+                                    type: getType(level[key]),
+                                    levels: parentLevels.concat([{
+                                        type: getType(level[key]),
+                                        key: key,
+                                        item: line
+                                    }]),
+                                    value: level[key]
+                                })
+                            })
+                            item.appendChild(line);
+                            item.appendChild(next);
+                            parent.appendChild(item);
+                        })
+                    }
+                    _getOverview(level, current = 0, type) {
+                        if (current > 3) {
+                            return '…';
+                        }
+                        if (!type) {
+                            type = getType(level);
+                        }
+                        var overview = '';
+                        var allow = true;
+                        Object.keys(level).forEach((key, i) => {
+                            if (allow == false) {
+                                return;
+                            }
+                            var itemType = getType(level[key]);
+                            if (itemType == 'array') {
+                                var next = getBracket(this._getOverview(level[key], current + 1, itemType));
+                                if (type == 'array') {
+                                    overview += next;
+                                } else {
+                                    overview += `${key}: ${next}`;
+                                }
+                            } else if (itemType == 'object') {
+                                var next = getBracket(this._getOverview(level[key], current + 1, itemType));
+                                if (type == 'array') {
+                                    overview += next;
+                                } else {
+                                    overview += `${key}: ${next}`;
+                                }
+                            } else {
+                                if (type == 'array') {
+                                    overview += `${this._formatValue(level[key])}`;
+                                } else {
+                                    overview += `${key}: ${this._formatValue(level[key])}`;
+                                }
+                            }
+                            if (Object.keys(level)[i + 1]) {
+                                if (overview.length > 50) {
+                                    overview += ',';
+                                    allow = false;
+                                } else {
+                                    overview += ', ';
+                                }
+                            }
+                            if (overview.length > 50) {
+                                allow = false;
+                            }
+                        })
+                        if (allow == false) {
+                            overview += '…';
+                        }
+                        return getBracket(overview, getType(level));
+                    }
+                    _formatValue(value) {
+                        if (expandable(value)) {
+                            return this._getOverview(value);
+                        }
+                        if (getType(value) === 'string') {
+                            return `\"${value}\"`;
+                        } else if (getType(value) === 'array') {
+                            return '[]';
+                        } else if (getType(value) === 'object') {
+                            return '{}';
+                        } else {
+                            return value;
+                        }
+                    }
+                }
+
+                Viewer.utils = {
+                    isJSON, isObject, isElement, isFinite, isNaN, getType, getClassName
+                }
+
+                window.JSONViewer = Viewer;
+            })();
+            var x = 0, y = 0, dx = 0, dy = 0, dragging = false;
+            devResizer.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                dragging = true;
+                let pageX = e.pageX;
+                let pageY = e.pageY;
+                if (e.type.startsWith('touch')) {
+                    var touch = e.touches[0] || e.changedTouches[0];
+                    pageX = touch.pageX;
+                    pageY = touch.pageY;
+                }
+                x = pageX;
+                y = pageY;
+            })
+            window.addEventListener('pointermove', (e) => {
+                if (dragging != true) return;
+                devContainer.style.userSelect = 'none';
+                e.stopPropagation();
+                let pageX = e.pageX;
+                let pageY = e.pageY;
+                if (e.type.startsWith('touch')) {
+                    var touch = e.touches[0] || e.changedTouches[0];
+                    pageX = touch.pageX;
+                    pageY = touch.pageY;
+                }
+                dx = pageX - x;
+                dy = pageY - y;
+                devContainer.style.width = `${width + dx}px`;
+                devContainer.style.height = `${height + dy}px`;
+                devContainer.style.maxWidth = `${width + dx}px`;
+                devContainer.style.maxHeight = `${height + dy}px`;
+                devLogs.style.maxHeight = `${height + dy}px`;
+            })
+            window.addEventListener('pointerup', () => {
+                if (dragging == false) return;
+                devContainer.style.userSelect = 'unset';
+                dragging = false;
+                width = width + dx;
+                height = height + dy;
+                devContainer.style.width = `${width}px`;
+                devContainer.style.height = `${height}px`;
+                devContainer.style.maxWidth = `${width}px`;
+                devContainer.style.maxHeight = `${height}px`;
+                devLogs.style.maxHeight = `${height}px`;
+                dx = 0;
+                dy = 0;
+            })
+            window.addEventListener('blur', () => {
+                if (dragging == false) return;
+                devContainer.style.userSelect = 'unset';
+                dragging = false;
+                width = width + dx;
+                height = height + dy;
+                devContainer.style.width = `${width}px`;
+                devContainer.style.height = `${height}px`;
+                devContainer.style.maxWidth = `${width}px`;
+                devContainer.style.maxHeight = `${height}px`;
+                devLogs.style.maxHeight = `${height}px`;
+                dx = 0;
+                dy = 0;
+            })
+        })();
+
+        document.body.appendChild(devContainer);
+        devContainer.appendChild(devDragBar);
+        devContainer.appendChild(devLogs);
+        devContainer.appendChild(devResizer);
+        devResizer.appendChild(devResizerSvg);
+
+        if (window.HMGR) {
+            window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
+                var el = document.createElement('div');
+                el.className = 'winbows-dev-log';
+                el.innerHTML = `<span style='color:#ff00ff'>[HMGR]</span> ${e.method} <a style='color:#86b7ff' href='${e.url}' target='_blank'>${e.url}</a> <span style='${e.ok ? 'color:#58ff31' : 'color:red'}'>${e.status}</span>`;
+                devLogs.appendChild(el);
+            })
+        }
+
+        const original = {
+            log: console.log,
+            info: console.info,
+            warn: console.warn,
+            error: console.error
+        };
+
+        function formatArgs(container, args) {
+            let i = 0;
+            while (i < args.length) {
+                const arg = args[i];
+
+                if (typeof arg === 'string' && arg.includes('%c')) {
+                    const parts = arg.split('%c');
+                    for (let j = 0; j < parts.length; j++) {
+                        if (parts[j]) {
+                            const span = document.createElement("span");
+                            span.textContent = parts[j];
+                            span.style.cssText = args[i + j] || "";
+                            container.appendChild(span);
+                        }
+                    }
+                    i += parts.length;
+                } else {
+                    // 普通的參數（非 %c）
+
+                    if (JSONViewer.utils.isJSON(arg)) {
+                        container.appendChild(new JSONViewer(arg).container);
+                    } else {
+                        const span = document.createElement("span");
+                        span.className = JSONViewer.utils.getClassName(arg);
+                        span.textContent = String(arg);
+                        span.style.marginRight = '.25rem';
+                        container.appendChild(span);
+                    }
+                    i++;
+                }
+            }
+
+            return container;
+        }
+
+        console.log = function (...args) {
+            const container = document.createElement("div");
+            container.className = `winbows-dev-log`;
+            container.style.display = "block";
+            formatArgs(container, args);
+            devLogs.appendChild(container);
+            if (window.debuggerMode == true) {
+                original.log.apply(console, args);
+            }
+        }
+        console.info = function (...args) {
+            const container = document.createElement("div");
+            container.className = `winbows-dev-log info`;
+            container.style = "background: rgb(126 174 255 / 21%);color: rgb(160 203 255);font-weight: bold;padding: 4px 6px;border-radius: 4px;";
+            container.style.display = "block";
+            container.style.fontStyle = 'italic';
+            formatArgs(container, args);
+            devLogs.appendChild(container);
+            original.info.apply(console, args);
+        };
+        console.warn = function (...args) {
+            const container = document.createElement("div");
+            container.className = `winbows-dev-log warn`;
+            container.style = "background: rgb(221 190 64 / 21%); color: rgb(255 236 158); font-weight: bold; padding: 4px 6px; border-radius: 4px;";
+            container.style.display = "block";
+            formatArgs(container, args);
+            container.innerHTML += `<div style="">${getStackTrace().join('<br>')}</div>`;
+            devLogs.appendChild(container);
+            original.warn.apply(console, args);
+        };
+        console.error = function (...args) {
+            const container = document.createElement("div");
+            container.className = `winbows-dev-log error`;
+            container.style = "background: rgb(255 106 86 / 21%); color: rgb(255 168 160); font-weight: bold; padding: 4px 6px; border-radius: 4px;";
+            container.style.display = "block";
+            formatArgs(container, args);
+            container.innerHTML += `<div style="">${getStackTrace().join('<br>')}</div>`;
+            devLogs.appendChild(container);
+            original.error.apply(console, args);
+        };
     }
 
     var startLoadingTime = Date.now();
@@ -839,7 +1443,7 @@
     }
 
     // For desktop
-    await (async () => {
+    await (async function Desktop() {
         window.System.desktop = {};
         window.System.desktop.update = updateDesktop;
 
@@ -1818,8 +2422,6 @@
             }
             event.preventDefault();
         });
-
-        return window.System.desktop.update();
     })();
 
     window.System.FileViewers = {
@@ -2076,6 +2678,8 @@
         if (now - startLoadingTime < 1000) {
             await delay(1000 - (now - startLoadingTime));
         }
+
+        window.System.desktop.update();
 
         // await delay(1000);
 

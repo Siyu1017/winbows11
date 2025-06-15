@@ -259,6 +259,9 @@
 
 <body>
     <script>
+        console.log('%cWelcome to Winbows11\n%c%cGithub: Siyu1017/winbows11', 'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;background-image: linear-gradient(to right, rgba(71, 202, 250, 255), rgba(3, 124, 213, 255));-webkit-text-fill-color: #0000;background-clip: text;-webkit-background-clip: text;font-weight: 500;font-size: 4rem;', '', 'background:rgb(24,24,24);color:#fff;border-radius:.5rem;padding: .5rem 1rem;font-size: 1rem;display: inline-block;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;');
+    </script>
+    <script>
         window.__fscf = {
             l: [],
             t: () => window.__fscf.l.forEach(f => f()),
@@ -272,6 +275,80 @@
 
         window.addEventListener('resize', updateScreenSize);
         window.addEventListener('load', updateScreenSize);
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            var listeners = {};
+
+            window.HMGR = {
+                on: function (eventName, callback) {
+                    if (listeners[eventName]) {
+                        listeners[eventName].push(callback);
+                    } else {
+                        listeners[eventName] = [callback];
+                    }
+                },
+                emit: function (eventName, data) {
+                    if (listeners[eventName]) {
+                        listeners[eventName].forEach(function (callback) {
+                            callback(data);
+                        });
+                    }
+                },
+                off: function (eventName, listener) {
+                    if (listeners[eventName]) {
+                        listeners[eventName] = listeners[eventName].filter(function (l) {
+                            return l !== listener;
+                        });
+                    }
+                },
+                enable: function (hardware) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'ENABLE',
+                        value: hardware.toUpperCase()
+                    });
+                },
+                disable: function (hardware) {
+                    navigator.serviceWorker.controller.postMessage({
+                        type: 'DISABLE',
+                        value: hardware.toUpperCase()
+                    });
+                }
+            };
+
+            navigator.serviceWorker.register('./hmgr.js', { updateViaCache: 'none', scope: './' }).then((register) => {
+                register.update();
+                console.log('register success')
+            }, (err) => console.log('register fail:', err));
+
+            navigator.serviceWorker.ready.then((registration) => {
+                navigator.serviceWorker.controller.postMessage({
+                    type: "SETUP",
+                    value: {
+                        location: {
+                            href: location.href,
+                            origin: location.origin,
+                            pathname: location.pathname,
+                            search: location.search,
+                            hash: location.hash,
+                            protocol: location.protocol,
+                            hostname: location.hostname,
+                            port: location.port,
+                            host: location.host
+                        }
+                    }
+                });
+            });
+
+            navigator.serviceWorker.addEventListener("message", (event) => {
+                const message = event.data;
+                if (message.type) {
+                    window.HMGR.emit(message.type, message.value)
+                }
+            });
+        }
+
+        fetch('./HARDWARE/list.json').then(res => res.json()).then(res => console.log(res))
     </script>
     <script>
         function getJsonFromURL(url) {
@@ -306,9 +383,9 @@
             return /Macintosh/.test(ua);
         }
 
-        ; (async () => {
+        ; (async function Start() {
             if (isAppleDeviceType() === true) {
-                await (async () => {
+                await (async function ShowDeviceWarning() {
                     return new Promise(resolve => {
                         var warning = document.createElement("div");
                         var warningWindow = document.createElement("div");
@@ -527,80 +604,6 @@
             }
             document.head.appendChild(style);
         } catch (e) { }
-    </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            var listeners = {};
-
-            window.HMGR = {
-                on: function (eventName, callback) {
-                    if (listeners[eventName]) {
-                        listeners[eventName].push(callback);
-                    } else {
-                        listeners[eventName] = [callback];
-                    }
-                },
-                emit: function (eventName, data) {
-                    if (listeners[eventName]) {
-                        listeners[eventName].forEach(function (callback) {
-                            callback(data);
-                        });
-                    }
-                },
-                off: function (eventName, listener) {
-                    if (listeners[eventName]) {
-                        listeners[eventName] = listeners[eventName].filter(function (l) {
-                            return l !== listener;
-                        });
-                    }
-                },
-                enable: function (hardware) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'ENABLE',
-                        value: hardware.toUpperCase()
-                    });
-                },
-                disable: function (hardware) {
-                    navigator.serviceWorker.controller.postMessage({
-                        type: 'DISABLE',
-                        value: hardware.toUpperCase()
-                    });
-                }
-            };
-
-            navigator.serviceWorker.register('./hmgr.js', { updateViaCache: 'none', scope: './' }).then((register) => {
-                register.update();
-                console.log('register success')
-            }, (err) => console.log('register fail:', err));
-
-            navigator.serviceWorker.ready.then((registration) => {
-                navigator.serviceWorker.controller.postMessage({
-                    type: "SETUP",
-                    value: {
-                        location: {
-                            href: location.href,
-                            origin: location.origin,
-                            pathname: location.pathname,
-                            search: location.search,
-                            hash: location.hash,
-                            protocol: location.protocol,
-                            hostname: location.hostname,
-                            port: location.port,
-                            host: location.host
-                        }
-                    }
-                });
-            });
-
-            navigator.serviceWorker.addEventListener("message", (event) => {
-                const message = event.data;
-                if (message.type) {
-                    window.HMGR.emit(message.type, message.value)
-                }
-            });
-        }
-
-        fetch('./HARDWARE/list.json').then(res => res.json()).then(res => console.log(res))
     </script>
 </body>
 

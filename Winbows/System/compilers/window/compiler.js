@@ -40,7 +40,8 @@ Object.defineProperty(window.Compilers, 'Window', {
                         return selector => { return browserWindow.querySelectorAll(selector) };
                     default:
                         if (target[prop]) {
-                            return Reflect.get(target, prop).bind(document);
+                            const value = Reflect.get(target, prop);
+                            return typeof value === 'function' ? value.bind(document) : value;
                         } else {
                             return undefined;
                         }

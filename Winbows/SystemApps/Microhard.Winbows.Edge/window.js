@@ -470,6 +470,10 @@ async function createTab(page, active = true) {
     text-decoration: underline;
     cursor: pointer;
 ">Visit the Winbows11 author's website</li>
+<li data-href="https://cznull.github.io/vsbm" style="
+    text-decoration: underline;
+    cursor: pointer;
+">Volume shader</li>
     </div>
     <div style="
     font-weight: 600;

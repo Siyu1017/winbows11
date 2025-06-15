@@ -1344,6 +1344,7 @@
                             }
                         } else if (type == 'show') {
                             obj.browserWindow.style.zIndex = originalIndex;
+                            obj.browserWindow.style.visibility = 'visible';
                             obj.browserWindow.classList.add('active');
                             obj.browserWindow.style.pointerEvents = 'all';
                         } else if (type == 'hide') {
@@ -1353,6 +1354,7 @@
                             setTimeout(() => {
                                 if (status.show == false) {
                                     obj.browserWindow.style.setProperty('z-index', '-1', 'important');
+                                    obj.browserWindow.style.setProperty('visibility', 'hidden');
                                 }
                             }, 100);
                         } else if (type == 'toggle') {
