@@ -677,22 +677,26 @@
         };
         console.warn = function (...args) {
             const container = document.createElement("div");
+            const stackTrace = document.createElement("div");
             container.className = `winbows-dev-log warn`;
             container.style = "background: rgb(221 190 64 / 21%); color: rgb(255 236 158); font-weight: bold; padding: 4px 6px; border-radius: 4px;";
             container.style.display = "block";
+            stackTrace.innerHTML = getStackTrace().join('<br>');
             formatArgs(container, args);
-            container.innerHTML += `<div style="">${getStackTrace().join('<br>')}</div>`;
             devLogs.appendChild(container);
+            container.appendChild(stackTrace);
             original.warn.apply(console, args);
         };
         console.error = function (...args) {
             const container = document.createElement("div");
+            const stackTrace = document.createElement("div");
             container.className = `winbows-dev-log error`;
             container.style = "background: rgb(255 106 86 / 21%); color: rgb(255 168 160); font-weight: bold; padding: 4px 6px; border-radius: 4px;";
             container.style.display = "block";
+            stackTrace.innerHTML = getStackTrace().join('<br>');
             formatArgs(container, args);
-            container.innerHTML += `<div style="">${getStackTrace().join('<br>')}</div>`;
             devLogs.appendChild(container);
+            container.appendChild(stackTrace);
             original.error.apply(console, args);
         };
     }

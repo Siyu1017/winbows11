@@ -1171,6 +1171,7 @@ body {
     transform: scale(1);
     opacity: 1;
     pointer-events: all;
+    transition: transform 100ms ease-in-out, opacity 100ms ease-in-out, scale 100ms ease-in-out;
     /* box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1); */
 }
 

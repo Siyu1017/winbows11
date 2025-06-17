@@ -1038,7 +1038,7 @@
                             });
                         })
                         events.end.forEach(event => {
-                            window.addEventListener(event,handleEnd);
+                            window.addEventListener(event, handleEnd);
                         })
                     })();
                 }
@@ -1378,19 +1378,6 @@
                     })
                     taskbarItems.appendChild(item);
                 } else {
-                    item.addEventListener("pointerover", () => {
-                        if (Object.values(registry).length == 0) return;
-                        overThumbnailWindow = true;
-                        showThumbnailWindow(properties);
-                    })
-
-                    item.addEventListener("pointerout", () => {
-                        overThumbnailWindow = false;
-                        setTimeout(() => {
-                            hideThumbnailWindow();
-                        }, 200)
-                    })
-
                     item.setAttribute('data-openable', icon.openable);
                     item.addEventListener('click', (e) => {
                         if (status.opened == false) {
@@ -1415,6 +1402,20 @@
                         }
                         lastClicked = owner;
                     })
+
+                    item.addEventListener("pointerover", () => {
+                        if (Object.values(registry).length == 0) return;
+                        overThumbnailWindow = true;
+                        showThumbnailWindow(properties);
+                    })
+
+                    item.addEventListener("pointerout", () => {
+                        overThumbnailWindow = false;
+                        setTimeout(() => {
+                            hideThumbnailWindow();
+                        }, 200)
+                    })
+
                     taskbarApps.appendChild(item);
                 }
 
