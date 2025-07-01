@@ -57,6 +57,14 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         (async () => {
             const requestID = `req-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+            const fromClientId = event.clientId;
+            let fromClientURL = '[unknown]';
+            if (fromClientId) {
+                const client = await self.clients.get(fromClientId);
+                if (client) {
+                    fromClientURL = client.url;
+                }
+            }
             self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
                 clients.forEach((client) => {
                     client.postMessage({
@@ -66,7 +74,10 @@ self.addEventListener('fetch', (event) => {
                             headers: [...event.request.headers],
                             body: event.request.body,
                             destination: event.request.destination,
-                            id: requestID
+                            id: requestID,
+                            isThisTab: client.id === fromClientId,
+                            fromClientId,
+                            fromClientURL
                         }
                     });
                 });
@@ -99,7 +110,10 @@ self.addEventListener('fetch', (event) => {
                                     body: event.request.body,
                                     response: data,
                                     ok: res.ok,
-                                    id: requestID
+                                    id: requestID,
+                                    isThisTab: client.id === fromClientId,
+                                    fromClientId,
+                                    fromClientURL
                                 }
                             });
                         });
@@ -121,7 +135,10 @@ self.addEventListener('fetch', (event) => {
                                 body: event.request.body,
                                 response: null,
                                 ok: false,
-                                id: requestID
+                                id: requestID,
+                                isThisTab: client.id === fromClientId,
+                                fromClientId,
+                                fromClientURL
                             }
                         });
                     });

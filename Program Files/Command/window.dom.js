@@ -10,21 +10,6 @@ style.type = 'text/css';
 style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
 document.head.appendChild(style);
 
-function canvasClarifier(canvas, ctx, width, height) {
-    const originalSize = {
-        width: (width ? width : canvas.offsetWidth),
-        height: (height ? height : canvas.offsetHeight)
-    }
-    var ratio = window.devicePixelRatio || 1;
-    canvas.width = originalSize.width * ratio;
-    canvas.height = originalSize.height * ratio;
-    ctx.scale(ratio, ratio);
-    if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
-        canvas.style.width = originalSize.width + 'px';
-        canvas.style.height = originalSize.height + 'px';
-    }
-}
-
 function getPosition(element) {
     function offset(el) {
         var rect = el.getBoundingClientRect(),
@@ -34,4 +19,3 @@ function getPosition(element) {
     }
     return { x: offset(element).left, y: offset(element).top };
 }
-

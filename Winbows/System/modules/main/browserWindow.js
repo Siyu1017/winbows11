@@ -5,6 +5,43 @@
     snapPreview.className = 'browser-window-snap-preview';
     window.Winbows.AppWrapper.appendChild(snapPreview);
 
+    function cubicBezier(p1x, p1y, p2x, p2y) {
+        return function (t) {
+            const cx = 3 * p1x;
+            const bx = 3 * (p2x - p1x) - cx;
+            const ax = 1 - cx - bx;
+
+            const cy = 3 * p1y;
+            const by = 3 * (p2y - p1y) - cy;
+            const ay = 1 - cy - by;
+
+            const x = ((ax * t + bx) * t + cx) * t;
+            const y = ((ay * t + by) * t + cy) * t;
+
+            return y;
+        };
+    }
+
+    const animateProfiles = {
+        'window-show': {
+            func: cubicBezier(.04,.73,.16,1),
+            duration: 150
+        },
+        'window-hide': {
+            func: cubicBezier(.77,-0.02,.98,.59),
+            duration: 150
+        },
+        'window-open': {
+            func: cubicBezier(.42, 0, .58, 1),
+            duration: 100
+        },
+        'window-close': {
+            func: cubicBezier(.42, 0, .58, 1),
+            duration: 100
+        }
+    };
+
+
     Object.defineProperty(window.workerModules, 'browserWindow', {
         value: async (path = {}, config = {}, pid) => {
             if (window.debuggerMode == true) {
@@ -32,6 +69,116 @@
                 "end": ["mouseup", "touchend", "pointerup", "blur"]
             }
             const parent = config.showOnTop == true ? window.Winbows.Screen : appWrapper;
+            const { width = 800, height = 600 } = config;
+            const windowData = {
+                width, height,
+                x: (window.innerWidth / 2) - width / 2,
+                y: ((window.innerHeight - 48) / 2) - height / 2
+            }
+            const animateData = {
+                x: windowData.x,
+                y: windowData.y,
+                scaleX: .9,
+                scaleY: .9,
+                opacity: 0,
+                __x: windowData.x,
+                __y: windowData.y,
+                __scaleX: .9,
+                __scaleY: .9,
+                __opacity: 0,
+                __targetTime: Date.now(),
+                __startTime: Date.now(),
+                __isRunning: false,
+                __profile: {
+                    func: cubicBezier(.42, 0, .58, 1),
+                    duration: 100
+                }
+            }
+
+            function decompose2DMatrix(matrixStr) {
+                const match = matrixStr.match(/matrix\(([^)]+)\)/);
+                if (!match) throw new Error("Not a valid 2D matrix");
+
+                const [a, b, c, d, e, f] = match[1].split(',').map(parseFloat);
+
+                const scaleX = Math.sqrt(a * a + b * b);
+                const scaleY = Math.sqrt(c * c + d * d);
+
+                const rotation = Math.atan2(b, a) * (180 / Math.PI);
+
+                const skewX = Math.atan2(a * c + b * d, scaleX * scaleX) * (180 / Math.PI);
+
+                return {
+                    translateX: e,
+                    translateY: f,
+                    scaleX,
+                    scaleY,
+                    rotation,
+                    skewX
+                };
+            }
+
+            function animate(params, profile) {
+                if (profile && typeof profile === 'string' && animateProfiles[profile]) {
+                    animateData.__profile = animateProfiles[profile];
+                }
+                Object.keys(params).forEach(CSSKey => {
+                    if (/[A-z]/gi.test(CSSKey[0])) {
+                        animateData[CSSKey] = params[CSSKey];
+                    }
+                })
+                var cT = getComputedStyle(containerElement).transform;
+                var cO = getComputedStyle(containerElement).opacity;
+                var opacity = Number(cO);
+
+                var x = 0, y = 0, scaleX = 1, scaleY = 1;
+                if (cT.startsWith("matrix(")) {
+                    var transform = decompose2DMatrix(cT);
+                    x = transform.translateX;
+                    y = transform.translateY;
+                    scaleX = transform.scaleX;
+                    scaleY = transform.scaleY;
+                }
+
+                if (params.__from) {
+                    x = params.__from.x || x;
+                    y = params.__from.y || y;
+                    scaleX = params.__from.scaleX || scaleX;
+                    scaleY = params.__from.scaleY || scaleY;
+                    opacity = params.__from.opacity || opacity;
+                }
+
+                animateData.__x = x;
+                animateData.__y = y;
+                animateData.__scaleX = scaleX;
+                animateData.__scaleY = scaleY;
+                animateData.__opacity = opacity;
+                animateData.__targetTime = Date.now() + animateData.__profile.duration;
+
+                if (animateData.__isRunning == false) {
+                    animateRunner();
+                }
+            }
+
+            function animateRunner() {
+                animateData.__isRunning = true;
+                var now = Date.now();
+                var d = animateData.__targetTime - now;
+                var t = 1 - (d / animateData.__profile.duration);
+                var p = animateData.__profile.func(t > 1 ? 1 : t < 0 ? 0 : t);
+
+                containerElement.style.transform = `translate(
+                ${animateData.__x + (animateData.x - animateData.__x) * p}px,
+                ${animateData.__y + (animateData.y - animateData.__y) * p}px
+                ) scale(${animateData.__scaleX + (animateData.scaleX - animateData.__scaleX) * p},${animateData.__scaleY + (animateData.scaleY - animateData.__scaleY) * p})`;
+                containerElement.style.opacity = animateData.__opacity + (animateData.opacity - animateData.__opacity) * p;
+
+                if (now < animateData.__targetTime) {
+                    requestAnimationFrame(animateRunner);
+                } else {
+                    animateData.__isRunning = false;
+                }
+            }
 
             var resizerConfig = {
                 'browser-window-resizer-top': 'vertical',
@@ -45,6 +192,19 @@
             }
             var listeners = {};
 
+            if (config.x || config.y) {
+                // Taskbar height : 48
+                windowData.x = config.x && config.x != 'center' ? parseInt(config.x) : windowData.x;
+                windowData.y = config.y && config.y != 'center' ? parseInt(config.y) : windowData.y;
+            } else if (browserWindowPosition[path.caller]) {
+                // 
+                windowData.x = browserWindowPosition[path.caller][0];
+                windowData.y = browserWindowPosition[path.caller][1];
+                browserWindowPosition[path.caller] = [windowData.x + 20 >= window.innerWidth ? 0 : windowData.x + 20, windowData.y + 20 >= window.innerHeight - 48 ? 0 : windowData.y + 20];
+            }
+
+            var containerElement = document.createElement('div');
+            var micaElement = document.createElement('div');
             var hostElement = document.createElement('div');
             var resizers = document.createElement('div');
             var content = document.createElement('div');
@@ -54,11 +214,10 @@
             var contentElement = document.createElement('div');
 
             var isMaximized = false;
-            var originalWidth = hostElement.offsetWidth;
-            var originalHeight = hostElement.offsetHeight;
-            var originalLeft = utils.getPosition(hostElement).x;
-            var originalTop = utils.getPosition(hostElement).y;
             var originalSnapSide = '';
+
+            containerElement.style.transition = 'none';
+            containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
 
             if (window.debuggerMode == true) {
                 console.log(config);
@@ -71,11 +230,7 @@
 
             toolbarElement.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
-                if (e.type.startsWith('touch')) {
-                    var touch = e.touches[0] || e.changedTouches[0];
-                    e.pageX = touch.pageX;
-                    e.pageY = touch.pageY;
-                }
+                const { x, y } = utils.getPointerPosition(e);
                 toolbarMenu.setItems([
                     {
                         className: "restore",
@@ -91,7 +246,7 @@
                         text: "Minimize",
                         disabled: config.minimizable == false,
                         action: () => {
-                            minimize();
+                            ICON.hide(windowID)
                         },
                     }, {
                         className: "maximize",
@@ -112,7 +267,7 @@
                         },
                     }
                 ]);
-                toolbarMenu.open(e.pageX, e.pageY, 'left-top');
+                toolbarMenu.open(x, y, 'left-top');
             })
 
             new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
@@ -123,37 +278,35 @@
             })
 
             const windowID = ICON.open({
-                browserWindow: hostElement,
+                browserWindow: containerElement,
                 shadowRoot: shadowRoot,
                 pid: pid,
-                mica: config.mica
+                mica: config.mica,
+                update: function (type, icon) {
+
+                }
             });
 
             if (window.debuggerMode == true) {
                 console.log('opened', windowID)
             }
 
-            hostElement.className = 'browser-window-container active';
-            hostElement.addEventListener('pointerdown', (e) => {
+            containerElement.className = 'browser-window-container active';
+            micaElement.className = 'browser-window-mica';
+            hostElement.className = 'browser-window';
+
+            // Outside
+            resizers.className = 'browser-window-resizers';
+            content.className = 'browser-window-content';
+
+            // In shadow root
+            windowElement.className = 'window';
+            toolbarElement.className = 'window-toolbar';
+            contentElement.className = 'window-content';
+
+            containerElement.addEventListener('pointerdown', (e) => {
                 ICON.focus(windowID);
             })
-
-            var x = (window.innerWidth / 2) - ((config.width ? config.width : 800) / 2);
-            var y = ((window.innerHeight - 48) / 2) - ((config.height ? config.height : 600) / 2);
-
-            if (config.x || config.y) {
-                // Taskbar height : 48
-                x = config.x && config.x != 'center' ? parseInt(config.x) : x;
-                y = config.y && config.y != 'center' ? parseInt(config.y) : y;
-            } else if (browserWindowPosition[path.caller]) {
-                x = browserWindowPosition[path.caller][0];
-                y = browserWindowPosition[path.caller][1];
-            }
-
-            hostElement.style.left = x + 'px';
-            hostElement.style.top = y + 'px';
-
-            browserWindowPosition[path.caller] = [x + 20 >= window.innerWidth ? 0 : x + 20, y + 20 >= window.innerHeight - 48 ? 0 : y + 20];
 
             ICON.addEventListener('blur', (e) => {
                 content.style.pointerEvents = '';
@@ -169,6 +322,25 @@
             })
 
             ICON.addEventListener('_show', (id) => {
+                if (id != windowID) return;
+                var x = windowData.x,
+                    y = windowData.y;
+                if (originalSnapSide != '') {
+                    x = 0; y = 0;
+                    if (originalSnapSide.includes('r')) {
+                        x = window.innerWidth / 2;
+                    }
+                    if (originalSnapSide.includes('b')) {
+                        y = (window.innerHeight - 48) / 2;
+                    }
+                }
+                containerElement.style.transition = 'none';
+                animate({
+                    x, y,
+                    scaleX: 1,
+                    scaleY: 1,
+                    opacity: 1
+                }, 'window-show');
                 return;
                 if (id != windowID) return;
                 var iconPosition = window.utils.getPosition(ICON.item);
@@ -181,16 +353,15 @@
             })
 
             ICON.addEventListener('_hide', (id) => {
+                if (id != windowID) return;
+                minimize();
                 return;
                 if (id != windowID) return;
                 var iconPosition = window.utils.getPosition(ICON.item);
-                var originalWidth = originalSnapSide == '' ? hostElement.offsetWidth : originalWidth;
-                var originalHeight = originalSnapSide == '' ? hostElement.offsetHeight : originalHeight;
 
                 hostElement.style.opacity = 1;
                 hostElement.style.transition = `transform 200ms cubic-bezier(.9,.1,.87,.5), opacity 100ms ease-in-out, scale 200ms cubic-bezier(.9,.1,.87,.5)`;
                 hostElement.style.transformOrigin = 'bottom center'//`bottom ${iconPosition.x < window.innerWidth / 2 ? 'left' : iconPosition.x > window.innerWidth / 2 ? 'right' : 'center'}`;
-                hostElement.style.transform = `translate(${iconPosition.x + ICON.item.offsetWidth / 2 - (originalLeft + originalWidth / 2)}px, ${iconPosition.y - (originalTop + originalHeight)}px)`;
                 hostElement.style.scale = 0;
                 setTimeout(function () {
                     if (ICON.status.show == false) {
@@ -200,17 +371,8 @@
                 }, 100)
             })
 
-            // Outside
-            resizers.className = 'browser-window-resizers';
-            content.className = 'browser-window-content';
-
-            // In shadow root
-            windowElement.className = 'window';
-            toolbarElement.className = 'window-toolbar';
-            contentElement.className = 'window-content';
-
             if (config.showOnTop == true) {
-                hostElement.classList.add('show-on-top');
+                containerElement.classList.add('show-on-top');
             }
 
             if (config.mica == true) {
@@ -251,33 +413,50 @@
                 */
             }
 
-            parent.appendChild(hostElement);
+            function updateMica() {
+                if (config.mica == true) {
+                    requestAnimationFrame(() => {
+                        const rect = containerElement.getBoundingClientRect();
+                        micaElement.style.clipPath = `inset(${rect.top + 1}px ${window.innerWidth - rect.right + 1}px ${window.innerHeight - rect.bottom + 1}px ${rect.left + 1}px)`;
+                        micaElement.style.transform = `translate(${-rect.left}px,${-rect.top}px)`;
+                    })
+                }
+            }
+
+            const observer = new ResizeObserver(updateMica);
+            observer.observe(containerElement);
+            window.addEventListener('resize', updateMica)
+
+            parent.appendChild(containerElement);
+            containerElement.appendChild(micaElement);
+            containerElement.appendChild(hostElement);
             hostElement.appendChild(resizers);
             hostElement.appendChild(content);
             shadowRoot.appendChild(windowElement);
             windowElement.appendChild(toolbarElement);
             windowElement.appendChild(contentElement);
 
+            containerElement.style.transition = 'none';
+            animate({
+                x: windowData.x,
+                y: windowData.y,
+                scaleX: 1,
+                scaleY: 1,
+                opacity: 1,
+                __from: {
+                    scaleX: .9,
+                    scaleY: .9,
+                    opacity: 0
+                }
+            }, 'window-open');
+
+            updateMica();
+
             if (config.resizable == false) {
                 resizers.remove();
             }
 
-            function updateSize() {
-                originalWidth = hostElement.offsetWidth;
-                originalHeight = hostElement.offsetHeight;
-                if (window.debuggerMode == true) {
-                    console.log('size', originalWidth, originalHeight);
-                }
-            }
-
-            function updatePosition() {
-                originalLeft = utils.getPosition(hostElement).x;
-                originalTop = utils.getPosition(hostElement).y;
-                if (window.debuggerMode == true) {
-                    console.log('position', originalLeft, originalTop);
-                }
-            }
-
+            // Resizers
             Object.keys(resizerConfig).forEach(key => {
                 var allowed = resizerConfig[key];
                 var pointerDown = false;
@@ -287,25 +466,64 @@
                 var originalSize = {};
                 resizer.className = key;
 
+                function updateSizeAndData(e) {
+                    const position = utils.getPointerPosition(e);
+                    var diffX = position.x - pointerPosition.x;
+                    var diffY = position.y - pointerPosition.y;
+                    var width = originalSize.width;
+                    var height = originalSize.height;
+                    if (allowed == 'vertical') {
+                        diffX = 0;
+                    } else if (allowed == 'horizontal') {
+                        diffY = 0;
+                    }
+                    var translateX = originalPosition.x;
+                    var translateY = originalPosition.y;
+                    // For vertical resize
+                    if (key.search('top') > -1) {
+                        // Fixate bottom
+                        translateY += diffY;
+                        windowElement.style.height = height - diffY + 'px';
+                        windowData.height = height - diffY;
+                    } else if (key.search('bottom') > -1) {
+                        // Fixate top
+                        windowElement.style.height = height + diffY + 'px';
+                        windowData.height = height + diffY;
+                    }
+
+                    // For horizontal resize
+                    if (key.search('left') > -1) {
+                        // Fixate right
+                        translateX += diffX;
+                        windowElement.style.width = width - diffX + 'px';
+                        windowData.width = width - diffX;
+                    } else {
+                        // Fixate left
+                        windowElement.style.width = width + diffX + 'px';
+                        windowData.width = width + diffX;
+                    }
+
+                    windowData.x = translateX;
+                    windowData.y = translateY;
+
+                    containerElement.style.transition = 'none';
+                    containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
+                }
+
                 function handleStartResizing(e) {
                     if (isMaximized == true) return;
-                    if (e.type.startsWith('touch')) {
-                        var touch = e.touches[0] || e.changedTouches[0];
-                        e.pageX = touch.pageX;
-                        e.pageY = touch.pageY;
-                    }
-                    var position = utils.getPosition(hostElement);
-                    pointerPosition = [e.pageX, e.pageY];
+                    pointerPosition = utils.getPointerPosition(e);
                     originalPosition = {
-                        x: position.x,
-                        y: position.y
+                        x: windowData.x,
+                        y: windowData.y
                     }
                     originalSize = {
-                        width: hostElement.offsetWidth,
-                        height: hostElement.offsetHeight
+                        width: windowData.width,
+                        height: windowData.height
                     }
                     appWrapper.classList.add('moving');
                     pointerDown = true;
+                    updateMica();
                 }
 
                 function handleMoveResizing(e) {
@@ -313,48 +531,18 @@
                         try {
                             document.getSelection().removeAllRanges();
                         } catch (e) { };
-                        if (e.type.startsWith('touch')) {
-                            var touch = e.touches[0] || e.changedTouches[0];
-                            e.pageX = touch.pageX;
-                            e.pageY = touch.pageY;
-                        }
-                        var diffX = e.pageX - pointerPosition[0];
-                        var diffY = e.pageY - pointerPosition[1];
-                        var width = originalSize.width;
-                        var height = originalSize.height;
-                        if (allowed == 'vertical') {
-                            diffX = 0;
-                        } else if (allowed == 'horizontal') {
-                            diffY = 0;
-                        }
-                        // For vertical resize
-                        if (key.search('top') > -1) {
-                            // Fixate bottom
-                            hostElement.style.top = originalPosition.y + diffY + 'px';
-                            windowElement.style.height = height - diffY + 'px';
-                        } else if (key.search('bottom') > -1) {
-                            // Fixate top
-                            windowElement.style.height = height + diffY + 'px';
-                        }
-
-                        // For horizontal resize
-                        if (key.search('left') > -1) {
-                            // Fixate right
-                            hostElement.style.left = originalPosition.x + diffX + 'px';
-                            windowElement.style.width = width - diffX + 'px';
-                        } else {
-                            // Fixate left
-                            windowElement.style.width = width + diffX + 'px';
-                        }
+                        updateSizeAndData(e);
+                        updateMica();
                     }
                 }
 
                 function handleEndResizing(e) {
                     if (pointerDown == false) return;
+                    updateSizeAndData(e);
                     pointerDown = false;
                     appWrapper.classList.remove('moving');
-                    updateSize();
-                    updatePosition();
+                    updateMica();
+                    console.log(windowData)
                 }
 
                 events.start.forEach(event => {
@@ -425,7 +613,9 @@
             maximizeButton.className = 'window-toolbar-button';
             closeButton.className = 'window-toolbar-button close';
 
-            minimizeButton.addEventListener('click', minimize);
+            minimizeButton.addEventListener('click', () => {
+                ICON.hide(windowID);
+            });
             closeButton.addEventListener('click', close);
 
             var icons = ['C:/Winbows/icons/controls/minimize.png', 'C:/Winbows/icons/controls/maxmin.png', 'C:/Winbows/icons/controls/maximize.png', 'C:/Winbows/icons/controls/close.png'];
@@ -460,59 +650,47 @@
             toolbarElement.appendChild(toolbarButtons);
 
             async function unmaximizeWindow(animation = true) {
+                originalSnapSide = '';
                 isMaximized = false;
-                hostElement.removeAttribute('data-maximized');
-                hostElement.style.left = originalLeft + 'px';
-                hostElement.style.top = originalTop + 'px';
-                // hostElement.style.width = originalWidth + 'px';
-                // hostElement.style.height = originalHeight + 'px';
+                containerElement.removeAttribute('data-maximized');
+                containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
 
                 if (animation == true) {
-                    hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                    containerElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                     windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                     setTimeout(() => {
-                        hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                        containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                         windowElement.style.transition = 'none';
                     }, 200)
                 } else {
-                    hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                    containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
                 }
 
-                windowElement.style.width = originalWidth + 'px';
-                windowElement.style.height = originalHeight + 'px';
+                windowElement.style.width = windowData.width + 'px';
+                windowElement.style.height = windowData.height + 'px';
                 windowElement.style.borderRadius = 'revert-layer';
                 maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[1])})`;
-
-                if (window.debuggerMode == true) {
-                    console.log(originalWidth, originalHeight);
-                }
+                updateMica()
             }
 
             async function maximizeWindow(animation = true) {
-                /*
-                originalWidth = hostElement.offsetWidth;
-                originalHeight = hostElement.offsetHeight;
-                originalLeft = utils.getPosition(hostElement).x;
-                originalTop = utils.getPosition(hostElement).y;
-                */
-
+                originalSnapSide = 'f';
                 isMaximized = true;
-                hostElement.setAttribute('data-maximized', 'true');
-                hostElement.style.left = '0';
-                hostElement.style.top = '0';
+                containerElement.setAttribute('data-maximized', 'true');
+                containerElement.style.transform = `translate(0px,0px)`;
                 // hostElement.style.width = 'var(--winbows-screen-width)';
                 // hostElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
 
                 if (animation == true) {
-                    hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                    containerElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                     windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                     setTimeout(() => {
-                        hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                        containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                         windowElement.style.transition = 'none';
                     }, 200)
                 } else {
-                    hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                    containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                     windowElement.style.transition = 'none';
                 }
 
@@ -520,6 +698,7 @@
                 windowElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
                 windowElement.style.borderRadius = '0';
                 maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[2])})`;
+                updateMica()
             }
 
 
@@ -532,13 +711,29 @@
             });
 
             function minimize() {
-                ICON.hide(windowID);
+                var position = utils.getPosition(ICON.item);
+                containerElement.style.transition = 'none';
+                animate({
+                    x: position.x - containerElement.offsetWidth * 0.9 / 2,
+                    y: position.y - containerElement.offsetHeight * 0.9 / 2,
+                    scaleX: .1,
+                    scaleY: .1,
+                    opacity: 0
+                }, 'window-hide');
             }
 
             function close() {
                 if (window.debuggerMode == true) {
                     console.log('close', windowID);
                 }
+                containerElement.style.transition = 'none';
+                animate({
+                    x: windowData.x,
+                    y: windowData.y,
+                    scaleX: .9,
+                    scaleY: .9,
+                    opacity: 0
+                }, 'window-close');
                 ICON.close(windowID);
                 window.System.processes[pid]._exit_Window();
             }
@@ -672,7 +867,7 @@
                     pageY = parent.offsetHeight;
                 }
                 pointerDown = true;
-                var position = utils.getPosition(hostElement);
+                var position = utils.getPosition(containerElement);
                 pointerPosition = [pageX, pageY];
                 originalPosition = {
                     x: position.x,
@@ -685,6 +880,7 @@
                     type: e.type,
                     target: e.target
                 })
+                updateMica()
             }
 
             function handleMoveMoving(e) {
@@ -695,13 +891,11 @@
                     if (originalSnapSide != '' || isMaximized == true) {
                         originalSnapSide = '';
                         isMaximized = false;
-                        hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                        containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                         windowElement.style.transition = 'none';
-                        hostElement.removeAttribute('data-maximized');
-                        // hostElement.style.width = originalWidth + 'px';
-                        // hostElement.style.height = originalHeight + 'px';
-                        windowElement.style.width = originalWidth + 'px';
-                        windowElement.style.height = originalHeight + 'px';
+                        containerElement.removeAttribute('data-maximized');
+                        windowElement.style.width = windowData.width + 'px';
+                        windowElement.style.height = windowData.height + 'px';
                         windowElement.style.borderRadius = 'revert-layer';
                         window.fs.getFileURL(icons[1]).then(url => {
                             maximizeImage.style.backgroundImage = `url(${url})`;
@@ -726,24 +920,26 @@
                     }
                     const side = getSnapSide(pageX, pageY);
                     appWrapper.classList.add('moving');
-                    hostElement.style.left = originalPosition.x + pageX - pointerPosition[0] + 'px';
-                    hostElement.style.top = originalPosition.y + pageY - pointerPosition[1] + 'px';
+
+                    containerElement.style.transition = 'none';
+                    containerElement.style.transform = `translate(${originalPosition.x + pageX - pointerPosition[0]}px,${originalPosition.y + pageY - pointerPosition[1]}px)`;
+
                     if (config.snappable == false) {
                         snapSide = '';
                     } else {
                         if (side != '') {
                             snapPreview.style.position = 'fixed';
                             if (!showSnapPreview == true) {
-                                snapPreview.style.width = hostElement.offsetWidth + 'px';
-                                snapPreview.style.height = hostElement.offsetHeight + 'px';
-                                snapPreview.style.left = window.utils.getPosition(hostElement).x + 'px';
-                                snapPreview.style.top = window.utils.getPosition(hostElement).y + 'px';
+                                snapPreview.style.width = containerElement.offsetWidth + 'px';
+                                snapPreview.style.height = containerElement.offsetHeight + 'px';
+                                snapPreview.style.left = window.utils.getPosition(containerElement).x + 'px';
+                                snapPreview.style.top = window.utils.getPosition(containerElement).y + 'px';
                                 snapPreview.classList.add('active');
                             }
                             var size = getSnapPreviewSize(side);
                             var position = getSnapPreviewPosition(side);
                             snapPreview.style.transition = 'all .15s ease-in-out';
-                            snapPreview.style.zIndex = hostElement.style.zIndex || ICON.getMaxZIndex();
+                            snapPreview.style.zIndex = containerElement.style.zIndex || ICON.getMaxZIndex();
                             snapPreview.style.left = position.left + 'px';
                             snapPreview.style.top = position.top + 'px';
                             snapPreview.style.width = size.width + 'px';
@@ -751,10 +947,10 @@
                             showSnapPreview = true;
                         } else {
                             if (showSnapPreview == true) {
-                                snapPreview.style.width = hostElement.offsetWidth + 'px';
-                                snapPreview.style.height = hostElement.offsetHeight + 'px';
-                                snapPreview.style.left = window.utils.getPosition(hostElement).x + 'px';
-                                snapPreview.style.top = window.utils.getPosition(hostElement).y + 'px';
+                                snapPreview.style.width = containerElement.offsetWidth + 'px';
+                                snapPreview.style.height = containerElement.offsetHeight + 'px';
+                                snapPreview.style.left = window.utils.getPosition(containerElement).x + 'px';
+                                snapPreview.style.top = window.utils.getPosition(containerElement).y + 'px';
                                 setTimeout(() => {
                                     if (showSnapPreview == true) return;
                                     snapPreview.style.transition = 'none';
@@ -772,21 +968,18 @@
                         type: e.type,
                         target: e.target
                     })
+                    updateMica()
                 }
             }
 
             function handleEndMoving(e, type = 'user') {
                 if (pointerDown == false) return;
-                if (type == 'user') {
-                    originalWidth = hostElement.offsetWidth;
-                    originalHeight = hostElement.offsetHeight;
-                }
                 pointerDown = false;
                 showSnapPreview = false;
-                snapPreview.style.width = hostElement.offsetWidth + 'px';
-                snapPreview.style.height = hostElement.offsetHeight + 'px';
-                snapPreview.style.left = window.utils.getPosition(hostElement).x + 'px';
-                snapPreview.style.top = window.utils.getPosition(hostElement).y + 'px';
+                snapPreview.style.width = containerElement.offsetWidth + 'px';
+                snapPreview.style.height = containerElement.offsetHeight + 'px';
+                snapPreview.style.left = window.utils.getPosition(containerElement).x + 'px';
+                snapPreview.style.top = window.utils.getPosition(containerElement).y + 'px';
                 setTimeout(() => {
                     snapPreview.style.transition = 'none';
                     snapPreview.classList.remove('active');
@@ -798,13 +991,13 @@
                     }
                     var position = getSnapPosition(snapSide);
                     var size = getSnapSize(snapSide);
-                    hostElement.style.left = position.left;
-                    hostElement.style.top = position.top;
 
-                    hostElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+                    containerElement.style.transform = `translate(${position.left},${position.top})`;
+
+                    containerElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                     windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
                     setTimeout(() => {
-                        hostElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                        containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                         windowElement.style.transition = 'none';
                     }, 200)
 
@@ -812,7 +1005,27 @@
                     windowElement.style.height = size.height;
                     windowElement.style.borderRadius = 0;
                 } else if (type == 'user') {
-                    updatePosition();
+                    let pageX = e.pageX;
+                    let pageY = e.pageY;
+                    if (e.type.startsWith('touch')) {
+                        var touch = e.touches[0] || e.changedTouches[0];
+                        pageX = touch.pageX;
+                        pageY = touch.pageY;
+                    }
+                    if (pageX < 0) {
+                        pageX = 0;
+                    } else if (pageX > window.innerWidth) {
+                        pageX = window.innerWidth;
+                    }
+                    if (pageY < 0) {
+                        pageY = 0;
+                    } else if (pageY > parent.offsetHeight) {
+                        pageY = parent.offsetHeight;
+                    }
+                    windowData.x = originalPosition.x + pageX - pointerPosition[0];
+                    windowData.y = originalPosition.y + pageY - pointerPosition[1];
+                    containerElement.style.transition = 'none';
+                    containerElement.style.transform = `translate(${originalPosition.x + pageX - pointerPosition[0]}px,${originalPosition.y + pageY - pointerPosition[1]}px)`;
                 }
                 originalSnapSide = snapSide;
                 snapSide = '';
@@ -823,6 +1036,7 @@
                     type: e.type,
                     target: e.target
                 })
+                updateMica()
             }
 
             function setSnappable(value) {
@@ -876,14 +1090,11 @@
                 window.addEventListener(event, handleEndMoving);
             })
 
-            hostElement.addEventListener('pointerdown', (e) => {
+            containerElement.addEventListener('pointerdown', (e) => {
                 ICON.focus(windowID);
             })
 
             ICON.focus(windowID);
-
-            updatePosition();
-            updateSize();
 
             function useTabview(config = {
                 icon: true
@@ -1041,7 +1252,7 @@
                             var unit = this.tab.offsetWidth + 8;
                             var count = Math.round(x / unit);
 
-                            console.log(config.tabAnimation )
+                            console.log(config.tabAnimation)
 
                             if (config.tabAnimation != false) {
                                 this.tab.style.transform = `translateX(${x}px)`;
@@ -1172,7 +1383,7 @@
             }
 
             return {
-                shadowRoot, container: hostElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
+                shadowRoot, container: containerElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
                 close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon,
                 setSnappable,
                 useTabview

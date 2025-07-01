@@ -49,7 +49,7 @@
         }
     }
 
-    async function handleError(err, traces) {
+    async function handleError(err, traces) {/*
         var traceHTML = '';
         traces.forEach(trace => {
             traceHTML += `<div style="text-indent:1rem">${trace.replaceAll("'", "\\'").replaceAll('"', '\\"')}</div>`
@@ -67,7 +67,8 @@
             type: 'text/javascript'
         })).then(res => {
             new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
-        })
+        })*/
+       console.error(`ERROR: ${err.message}\n${traces.join('\n')}`)
     }
 
     class Process {

@@ -1,6 +1,6 @@
 'use strict';
 
-!(async function Main() {
+async function Main() {
     if (!window.fs) {
         // Check if the file system has been initialized
         console.warn('Wait for file system initialization...');
@@ -101,8 +101,8 @@
 
 
 
-        !(() => {
-            !(() => {
+        function setupDevOutput() {
+            function initializeJSONViewer() {
                 // JSON Viewer
                 'use strict';
 
@@ -534,7 +534,10 @@
                 }
 
                 window.JSONViewer = Viewer;
-            })();
+            }
+
+            initializeJSONViewer();
+
             var x = 0, y = 0, dx = 0, dy = 0, dragging = false;
             devResizer.addEventListener('pointerdown', (e) => {
                 e.stopPropagation();
@@ -596,7 +599,9 @@
                 dx = 0;
                 dy = 0;
             })
-        })();
+        }
+
+        setupDevOutput();
 
         document.body.appendChild(devContainer);
         devContainer.appendChild(devDragBar);
@@ -607,8 +612,8 @@
         if (window.HMGR) {
             window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
                 var el = document.createElement('div');
-                el.className = 'winbows-dev-log';
-                el.innerHTML = `<span style='color:#ff00ff'>[HMGR]</span> ${e.method} <a style='color:#86b7ff' href='${e.url}' target='_blank'>${e.url}</a> <span style='${e.ok ? 'color:#58ff31' : 'color:red'}'>${e.status}</span>`;
+                el.className = `winbows-dev-log ${e.isThisTab != true ? 'other' : ''}`;
+                el.innerHTML = `${e.isThisTab != true ? `<div>From client [${e.fromClientId || 'UNKNOWN'}]</div>` : ''}<span style='color:#ff00ff'>[HMGR]</span> ${e.method} <a style='color:#86b7ff' href='${e.url}' target='_blank'>${e.url}</a> <span style='${e.ok ? 'color:#58ff31' : 'color:red'}'>${e.status}</span>`;
                 devLogs.appendChild(el);
             })
         }
@@ -681,6 +686,7 @@
             container.className = `winbows-dev-log warn`;
             container.style = "background: rgb(221 190 64 / 21%); color: rgb(255 236 158); font-weight: bold; padding: 4px 6px; border-radius: 4px;";
             container.style.display = "block";
+            stackTrace.style = "padding-left:2rem";
             stackTrace.innerHTML = getStackTrace().join('<br>');
             formatArgs(container, args);
             devLogs.appendChild(container);
@@ -693,6 +699,7 @@
             container.className = `winbows-dev-log error`;
             container.style = "background: rgb(255 106 86 / 21%); color: rgb(255 168 160); font-weight: bold; padding: 4px 6px; border-radius: 4px;";
             container.style.display = "block";
+            stackTrace.style = "padding-left:2rem";
             stackTrace.innerHTML = getStackTrace().join('<br>');
             formatArgs(container, args);
             devLogs.appendChild(container);
@@ -915,9 +922,22 @@
         }
     }
 
+    // Equivalent to pageX/Y
+    function getPointerPosition(e) {
+        let x = e.clientX;
+        let y = e.clientY;
+        if (e.type.startsWith('touch')) {
+            var touch = e.touches[0] || e.changedTouches[0];
+            x = touch.pageX;
+            y = touch.pageY;
+        }
+        return { x: x + window.scrollX, y: y + window.scrollY };
+    }
+
     window.utils.getPosition = getPosition;
     window.utils.getJsonFromURL = getJsonFromURL;
     window.utils.isElement = isElement;
+    window.utils.getPointerPosition = getPointerPosition;
 
     window.fileIcons = {
         getIcon: (path = '') => {
@@ -1269,7 +1289,7 @@
     screenLockSigninButton.innerHTML = window.utils.replaceHTMLTags('Sign In');
 
     // Init kernel files 
-    await (async () => {
+    async function loadKernel() {
         async function runKernel() {
             var files = {
                 kernel: ['Winbows/System/process.js'],
@@ -1359,7 +1379,9 @@
         }
 
         await runKernel();
-    })();
+    }
+
+    await loadKernel();
 
     window.Taskbar.pinApp('C:/Program Files/Command/app.js');
     window.Taskbar.pinApp('C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.js');
@@ -2798,4 +2820,6 @@
             }
         })
     }
-})();
+}
+
+Main();

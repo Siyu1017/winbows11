@@ -44,6 +44,9 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">
 <li style="
     margin: .5rem 0;
+">Window animation</li>
+<li style="
+    margin: .5rem 0;
 ">Mica effect ( Beta )</li>
 <li style="
     margin: .5rem 0;
@@ -63,9 +66,9 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 <li style="
     margin: .5rem 0;
 ">Better mobile experience ( Maybe )</li>
-<li style="
+<!--li style="
     margin: .5rem 0;
-">Rearrange app icons in the taskbar</li>
+">Rearrange app icons in the taskbar</li-->
 </ul>
 				<div style="
     font-weight: 600;

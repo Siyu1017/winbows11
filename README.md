@@ -29,6 +29,7 @@ If you think this project is good, please star this project, thanks!
 
 ## Features
 
+- [x] Window animation
 - [x] Command App
 - [x] Taskbar
 - [x] Start Menu
@@ -47,6 +48,6 @@ If you think this project is good, please star this project, thanks!
 - [x] Process desktop items in batches
 - [ ] Search Menu and Task View
 - [ ] Microhard Store
-- [ ] Settings
+- [x] Settings
 - [ ] Media player
 - [ ] i18n

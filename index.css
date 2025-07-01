@@ -1152,11 +1152,12 @@ body {
 .browser-window-container {
     position: fixed;
     z-index: 1;
-    animation: browser-window-open 100ms ease-in-out 1 none;
+    /*animation: browser-window-open 100ms ease-in-out 1 none;*/
     transform: scale(.9);
     opacity: 0;
     transition: transform 100ms ease-in-out, opacity 100ms ease-in-out, scale 100ms ease-in-out;
     pointer-events: none;
+    /* overflow: hidden; */
 }
 
 .browser-window-container.show-on-top {
@@ -1164,7 +1165,7 @@ body {
 }
 
 .browser-window-container.active.close {
-    animation: browser-window-close 100ms ease-in-out 1 forwards;
+    /*animation: browser-window-close 100ms ease-in-out 1 forwards;*/
 }
 
 .browser-window-container.active {
@@ -2025,7 +2026,7 @@ body {
     margin: auto;
 }
 
-div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info):before {
+div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before {
     content: '';
     width: 100%;
     height: 1.5px;
@@ -2038,12 +2039,27 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info):before {
 .winbows-dev-log {
     position: relative;
     padding: .25rem;
+    white-space: pre-line;
+    word-wrap: break-word;
 }
 
 .winbows-dev-log.warn,
 .winbows-dev-log.error,
-.winbows-dev-log.info {
+.winbows-dev-log.info,
+.winbows-dev-log.other {
     margin: .25rem 0;
+}
+
+.winbows-dev-log.other {
+    background: rgb(126 255 158 / 21%);
+    font-weight: bold;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-style: italic;
+}
+
+.winbows-dev-log.other div {
+    color: rgb(160 255 170);
 }
 
 .winbows-dev-logs {
@@ -2227,7 +2243,7 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info):before {
 }
 
 /* Beta */
-.mica {
+.mica .browser-window-mica {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     background: var(--winbows-mica) no-repeat fixed center;
@@ -2236,7 +2252,15 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info):before {
     backdrop-filter: blur(120px) saturate(1.5);
     -webkit-backdrop-filter: blur(120px) saturate(1.5);
     border-radius: .5rem;
-    transform: none !important;
+    /*transform: none !important;*/
+    width: var(--winbows-screen-width);
+    height: var(--winbows-screen-height);
+    display: block;
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    clip-path: inset(0 0 0 0);
+    pointer-events: none;
 }
 
 [data-taskbar-style="floating"] .taskbar {

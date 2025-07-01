@@ -973,7 +973,7 @@
                                 item.style.pointerEvents = 'none';
                                 item.style.transition = 'none';
                                 item.style.transform = `translateX(${appIconOrder[index].transformX + dx}px)`;
-                                console.log(di);
+                                //console.log(di);
                                 appIconOrder.forEach((item, i) => {
                                     if (index != i && (di < 0 ? di + index <= i && i < index : di + index >= i && i > index)) {
                                         item.itemElement.style.transform = `translateX(${item.transformX + (di < 0 ? 44 : -44)}px)`;
@@ -1106,7 +1106,7 @@
                                         if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                                             var temp = obj.browserWindow.classList.contains('active');
                                             if (active != temp) {
-                                                obj.browserWindow.classList.remove('mica');
+                                                //obj.browserWindow.classList.remove('mica');
                                                 active = temp;
                                             }
                                             setTimeout(() => {
@@ -1153,7 +1153,7 @@
                         blur(id);
                         // close window
                         browserWindow.classList.remove('active');
-                        browserWindow.classList.remove('mica');
+                        //browserWindow.classList.remove('mica');
                         browserWindow.style.transform = 'scale(.8)';
                         if (!window.Taskbar.isPinned(owner) && isLast == true) {
                             item.classList.add('hide');
