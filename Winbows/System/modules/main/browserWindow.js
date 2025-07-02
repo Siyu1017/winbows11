@@ -24,11 +24,11 @@
 
     const animateProfiles = {
         'window-show': {
-            func: cubicBezier(.04,.73,.16,1),
+            func: cubicBezier(.04, .73, .16, 1),
             duration: 150
         },
         'window-hide': {
-            func: cubicBezier(.77,-0.02,.98,.59),
+            func: cubicBezier(.77, -0.02, .98, .59),
             duration: 150
         },
         'window-open': {
@@ -200,8 +200,9 @@
                 // 
                 windowData.x = browserWindowPosition[path.caller][0];
                 windowData.y = browserWindowPosition[path.caller][1];
-                browserWindowPosition[path.caller] = [windowData.x + 20 >= window.innerWidth ? 0 : windowData.x + 20, windowData.y + 20 >= window.innerHeight - 48 ? 0 : windowData.y + 20];
             }
+
+            browserWindowPosition[path.caller] = [windowData.x + 20 >= window.innerWidth ? 0 : windowData.x + 20, windowData.y + 20 >= window.innerHeight - 48 ? 0 : windowData.y + 20];
 
             var containerElement = document.createElement('div');
             var micaElement = document.createElement('div');
@@ -712,12 +713,27 @@
 
             function minimize() {
                 var position = utils.getPosition(ICON.item);
+                var width = containerElement.offsetWidth;
+                var height = containerElement.offsetHeight;
+
                 containerElement.style.transition = 'none';
+
+                var scaleX = 180 / width;
+                var scaleY = 120 / height;
+                var scale = scaleX;
+
+                if (scaleY < scaleX) {
+                    scale = scaleY
+                }
+
+                var windowWidth = width * scale;
+                var windowHeight = height * scale;
+
                 animate({
-                    x: position.x - containerElement.offsetWidth * 0.9 / 2,
-                    y: position.y - containerElement.offsetHeight * 0.9 / 2,
-                    scaleX: .1,
-                    scaleY: .1,
+                    x: position.x - width * (1 - scale) / 2 - windowWidth / 2 + ICON.item.offsetWidth / 2,
+                    y: window.innerHeight - 48 - 8 - height * (1 - scale) / 2 - windowHeight,
+                    scaleX: scale,
+                    scaleY: scale,
                     opacity: 0
                 }, 'window-hide');
             }

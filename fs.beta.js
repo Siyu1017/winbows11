@@ -1,6 +1,5 @@
 // File System
 !(async () => {
-    const mainDisk = 'C';
     const debugMode = false;
     const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop']) ? true : false;
 
@@ -10,17 +9,20 @@
     function parseURL(url = '') { url = url.replaceAll('\\', '/'); var disk = ((/([A-Z]{1})(\:\/)/gi).exec(url) || [])[1] || mainDisk, path = url.replace(`${disk}:/`, ''); return { disk, path }; };
     // --------------------------- Utils --------------------------- //
 
+    var queue = [];
+
     class IDBFS {
-        constructor(dbName) {
+        constructor(dbName='C') {
             this.dbName = dbName;
+            this.version = 1;
         }
         async init() {
             return new Promise((resolve, reject) => {
                 const request = indexedDB.open(this.dbName);
                 request.onupgradeneeded = (event) => {
-                    var db = event.target.result;
-                    var store = db.createObjectStore(this.mainDisk, { keyPath: 'path' });
-                    store.createIndex('path', 'path', { unique: true });
+                    const db = event.target.result;
+                    const store = db.createObjectStore('files', { keyPath: 'key' });
+                    store.createIndex('key', 'key', { unique: true });
                 };
                 request.onsuccess = async (event) => {
                     db = event.target.result;
