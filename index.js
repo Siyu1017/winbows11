@@ -1473,6 +1473,7 @@ async function Main() {
         window.System.desktop = {};
         window.System.desktop.update = updateDesktop;
 
+        // TODO: complete widget api
         // Widget API
         var gridWidth = 96;
         var gridHeight = 96;
@@ -2144,44 +2145,6 @@ async function Main() {
             checked = false;
             dropZone.classList.remove('dragover');
 
-            !(async () => {
-                const items = event.dataTransfer.items;
-                var count = 0;
-
-                for (const item of items) {
-                    console.log('Item:', item.kind, item.type);
-                    if (item.kind === 'string') {
-                        item.getAsString(str => {
-                            console.log(`➡️ [${item.type}]`, str);
-                        });
-                    }
-                }
-
-                for (const item of items) {
-                    if (item.kind === 'file') {
-                        const file = item.getAsFile();
-                        console.log('[file]', file);
-                    } else if (item.kind === 'string' && item.type === 'text/uri-list') {
-                        item.getAsString(str => {
-                            console.log('[string]', str);
-                            // 判斷是否是圖片連結
-                            if (str.startsWith('http') && /\.(jpg|png|jpeg|gif|webp)$/.test(str)) {
-                                fetch(str)
-                                    .then(res => res.blob())
-                                    .then(blob => {
-                                        const url = URL.createObjectURL(blob);
-                                        const img = new Image();
-                                        img.src = url;
-                                        document.body.appendChild(img);
-                                    });
-                            }
-                            count++;
-                            console.log(count)
-                        });
-                    }
-                }
-            })();
-
             if (allowed == false) return;
             allowed == false;
 
@@ -2273,18 +2236,6 @@ async function Main() {
             new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
                 fileTransfer++;
                 worker = process.worker;
-
-                update = () => {
-                    worker.postMessage({
-                        type: 'update',
-                        token: process.token,
-                        current, processed, total, title
-                    });
-                    if (processed == total && processed != 0) {
-                        updateDesktop();
-                        return process.exit();
-                    }
-                }
 
                 if (window.debuggerMode == true) {
                     console.log(results)
