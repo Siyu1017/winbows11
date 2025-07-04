@@ -1,7 +1,7 @@
 ; (async () => {
     await System.requestAccessWindow('./fileTransferWindow.js', {
-        width: 360,
-        height: 540,
+        width: 480,
+        height: 250,
         title: 'File Transfer',
         fullscreenable: false,
         snappable: false,

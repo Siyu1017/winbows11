@@ -77,12 +77,12 @@ function check() {
             var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
             var photoURL = URL.createObjectURL(photoBlob);
             if (!supportedExtensions.includes(photoExtension)) {
-                resolve(chooseFile(`<div>Unsupported file type ( ${photoPath} )</div><br>`));
+                resolve(chooseFile(`<div>Unsupported file type ( ${photoExtension} )</div><br>`));
             } else {
                 resolve();
             }
         } catch (e) {
-            resolve(chooseFile(`<div>Unsupported file type ( ${photoPath} )</div><br>`));
+            resolve(chooseFile(`<div>Unsupported file type ( ${photoExtension} )</div><br>`));
             console.warn(e);
         }
     })

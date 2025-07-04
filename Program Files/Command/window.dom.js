@@ -19,3 +19,23 @@ function getPosition(element) {
     }
     return { x: offset(element).left, y: offset(element).top };
 }
+
+var lines = [
+    {
+        text: `Microhard Winbows [Version ${CMD_VERSION}]`
+    }, {
+        text: `(c) Microhard Corporation. All rights reserved.`
+    }, {
+        text: ``
+    }, {
+        text: `Type "help" for available commands.`
+    }, {
+        text: ``
+    }
+];
+
+var path = 'C:/';
+
+function runCommand(cmd, params, config) {
+
+}

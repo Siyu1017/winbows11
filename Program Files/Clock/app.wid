@@ -1,0 +1,36 @@
+{
+    "widgets": [
+        {
+            "id": "digital-clock",
+            "title": "Digital Clock",
+            "description": "A simple digital clock widget that displays the current time.",
+            "preview": "",
+            "size": [
+                2,
+                2
+            ],
+            "resizable": true,
+            "configurable": {
+                "fields": [
+                    {
+                        "name": "timeFormat",
+                        "type": "select",
+                        "label": "Time Format",
+                        "options": [
+                            {
+                                "value": "12-hour",
+                                "label": "12-Hour"
+                            },
+                            {
+                                "value": "24-hour",
+                                "label": "24-Hour"
+                            }
+                        ],
+                        "default": "24-hour"
+                    }
+                ]
+            }
+        }
+    ],
+    "script": "./widget.js"
+}

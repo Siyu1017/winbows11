@@ -785,7 +785,8 @@
         })
 
         thumbnailCloseButton.addEventListener("click", () => {
-            currentThumbnail.close(id);
+            console.log(currentThumbnail.getRegistry(id))
+            currentThumbnail.getRegistry(id)[id].close();
             thumbnailWindow.remove();
             updateThumbnailPosition();
             if (Object.values(currentThumbnail.getRegistry()).length == 0) {
@@ -1080,6 +1081,7 @@
                                     pid: obj.pid,
                                     browserWindow: obj.browserWindow,
                                     shadowRoot: obj.shadowRoot,
+                                    close: obj.close,
                                     opened: true,
                                     show: true,
                                     focused: true,

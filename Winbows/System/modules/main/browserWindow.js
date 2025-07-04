@@ -41,6 +41,13 @@
         }
     };
 
+    const icons = {
+        close: await fs.getFileURL('C:/Winbows/icons/controls/close.png'),
+        minimize: await fs.getFileURL('C:/Winbows/icons/controls/minimize.png'),
+        maxmin: await fs.getFileURL('C:/Winbows/icons/controls/maxmin.png'),
+        maximize: await fs.getFileURL('C:/Winbows/icons/controls/maximize.png')
+    }
+
 
     Object.defineProperty(window.workerModules, 'browserWindow', {
         value: async (path = {}, config = {}, pid) => {
@@ -283,6 +290,7 @@
                 shadowRoot: shadowRoot,
                 pid: pid,
                 mica: config.mica,
+                close,
                 update: function (type, icon) {
 
                 }
@@ -619,25 +627,23 @@
             });
             closeButton.addEventListener('click', close);
 
-            var icons = ['C:/Winbows/icons/controls/minimize.png', 'C:/Winbows/icons/controls/maxmin.png', 'C:/Winbows/icons/controls/maximize.png', 'C:/Winbows/icons/controls/close.png'];
-
             // var iconStyle = document.createElement('style');
             // iconStyle.innerHTML = `.window{--close-icon:url(${await window.fs.getFileURL(icons[0])});--maximize-icon:url(${await window.fs.getFileURL(icons[1])});--minimize-icon:url(${await window.fs.getFileURL(icons[2])});--maxmin-icon:url(${await window.fs.getFileURL(icons[3])});}`;
             // shadowRoot.appendChild(iconStyle);
 
             var minimizeImage = document.createElement('div');
             minimizeImage.className = 'window-toolbar-button-icon';
-            minimizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[0])}`;
+            minimizeImage.style.backgroundImage = `url(${icons.minimize})`;
             minimizeButton.appendChild(minimizeImage);
 
             var maximizeImage = document.createElement('div');
             maximizeImage.className = 'window-toolbar-button-icon';
-            maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[1])})`;
+            maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
             maximizeButton.appendChild(maximizeImage);
 
             var closeImage = document.createElement('div');
             closeImage.className = 'window-toolbar-button-icon';
-            closeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[3])})`;
+            closeImage.style.backgroundImage = `url(${icons.close})`;
             closeButton.appendChild(closeImage)
 
             toolbarButtons.appendChild(minimizeButton);
@@ -671,7 +677,7 @@
                 windowElement.style.width = windowData.width + 'px';
                 windowElement.style.height = windowData.height + 'px';
                 windowElement.style.borderRadius = 'revert-layer';
-                maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[1])})`;
+                maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
                 updateMica()
             }
 
@@ -698,7 +704,7 @@
                 windowElement.style.width = 'var(--winbows-screen-width)';
                 windowElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
                 windowElement.style.borderRadius = '0';
-                maximizeImage.style.backgroundImage = `url(${await window.fs.getFileURL(icons[2])})`;
+                maximizeImage.style.backgroundImage = `url(${icons.maximize})`;
                 updateMica()
             }
 
@@ -743,9 +749,10 @@
                     console.log('close', windowID);
                 }
                 containerElement.style.transition = 'none';
+                const position = utils.getPosition(containerElement);
                 animate({
-                    x: windowData.x,
-                    y: windowData.y,
+                    x: position.x,
+                    y: position.y,
                     scaleX: .9,
                     scaleY: .9,
                     opacity: 0
@@ -767,6 +774,7 @@
                 closeButton.remove();
             }
 
+            var pointerMoved = false;
             var showSnapPreview = false;
             var snapMargin = 12;
             var pointerDown = false;
@@ -865,13 +873,8 @@
                     }
                 })
                 if (prevent == true) return;
-                let pageX = e.pageX;
-                let pageY = e.pageY;
-                if (e.type.startsWith('touch')) {
-                    var touch = e.touches[0] || e.changedTouches[0];
-                    pageX = touch.pageX;
-                    pageY = touch.pageY;
-                }
+                const pointer = utils.getPointerPosition(e);
+                var pageX = pointer.x, pageY = pointer.y;
                 if (pageX < 0) {
                     pageX = 0;
                 } else if (pageX > window.innerWidth) {
@@ -883,6 +886,7 @@
                     pageY = parent.offsetHeight;
                 }
                 pointerDown = true;
+                pointerMoved = false;
                 var position = utils.getPosition(containerElement);
                 pointerPosition = [pageX, pageY];
                 originalPosition = {
@@ -904,25 +908,21 @@
                     try {
                         document.getSelection().removeAllRanges();
                     } catch (e) { };
-                    if (originalSnapSide != '' || isMaximized == true) {
-                        originalSnapSide = '';
-                        isMaximized = false;
+                    if (originalSnapSide != '' || isMaximized == true || windowElement.offsetWidth != windowData.width || windowElement.offsetHeight != windowElement.offsetHeight) {
                         containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                         windowElement.style.transition = 'none';
                         containerElement.removeAttribute('data-maximized');
                         windowElement.style.width = windowData.width + 'px';
                         windowElement.style.height = windowData.height + 'px';
                         windowElement.style.borderRadius = 'revert-layer';
-                        window.fs.getFileURL(icons[1]).then(url => {
-                            maximizeImage.style.backgroundImage = `url(${url})`;
-                        })
+                        maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
+                        isMaximized = false;
+                        originalSnapSide = '';
                     }
-                    let pageX = e.pageX;
-                    let pageY = e.pageY;
-                    if (e.type.startsWith('touch')) {
-                        var touch = e.touches[0] || e.changedTouches[0];
-                        pageX = touch.pageX;
-                        pageY = touch.pageY;
+                    const pointer = utils.getPointerPosition(e);
+                    var pageX = pointer.x, pageY = pointer.y;
+                    if (pageX != pointerPosition[0] || pageY != pointerPosition[1]) {
+                        pointerMoved = true;
                     }
                     if (pageX < 0) {
                         pageX = 0;
@@ -990,6 +990,9 @@
 
             function handleEndMoving(e, type = 'user') {
                 if (pointerDown == false) return;
+                if (pointerMoved == false) {
+                    return pointerDown = false;
+                }
                 pointerDown = false;
                 showSnapPreview = false;
                 snapPreview.style.width = containerElement.offsetWidth + 'px';

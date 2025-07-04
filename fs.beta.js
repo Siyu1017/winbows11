@@ -12,41 +12,38 @@
     var queue = [];
 
     class IDBFS {
-        constructor(dbName='C') {
-            this.dbName = dbName;
+        constructor() {
             this.version = 1;
+            this.isInitializing = false
         }
         async init() {
+            if (this.isInitializing) return;
+            this.isInitializing = true;
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open(this.dbName);
+                const request = indexedDB.open('WINBOWS_STORAGE');
                 request.onupgradeneeded = (event) => {
+                    console.log('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
                     const db = event.target.result;
                     const store = db.createObjectStore('files', { keyPath: 'key' });
                     store.createIndex('key', 'key', { unique: true });
                 };
                 request.onsuccess = async (event) => {
+                    this.isInitializing = false;
+
                     db = event.target.result;
-                    var mainDiskExist = false;
-                    this.disks.length = 0;
-                    Array.from(event.target.result.objectStoreNames).forEach(async name => {
-                        if (name === this.mainDisk) {
-                            mainDiskExist = true;
-                        }
-                        this.disks.push(name);
-                    });
-                    if (mainDiskExist == false) {
-                        await this.createDisk(mainDiskExist)
-                    }
                     db.onversionchange = function () {
                         db.close();
                     };
-
                     resolve();
                 };
                 request.onerror = (event) => {
+                    this.isInitializing = false;
                     reject(event.target.error);
                 };
             })
+        }
+        async getTransaction(store, permission) {
+
         }
     }
 

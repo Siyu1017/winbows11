@@ -176,7 +176,7 @@ function handleFile(file, path) {
         current = file.name;
         updateItems();
 
-        const filePath = (path ? path + "/" : '') + file.name;
+        const filePath = (path || '') + file.name;
         const reader = new FileReader();
         reader.onload = async function (event) {
             const arrayBuffer = event.target.result;

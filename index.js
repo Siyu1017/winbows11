@@ -1473,6 +1473,26 @@ async function Main() {
         window.System.desktop = {};
         window.System.desktop.update = updateDesktop;
 
+        // Widget API
+        var gridWidth = 96;
+        var gridHeight = 96;
+        var gridGap = 8;
+        var currentPage = 0;
+        var pages = [];
+        var maxRows = ~~((desktopItems.offsetWidth - gridGap * 2) / gridWidth);
+        var maxCols = ~~((desktopItems.offsetHeight - gridGap * 2) / gridHeight);
+        pages[0] = new Map();
+        window.winbowsWidget = class winbowsWidget {
+            constructor(x, y, w, h) {
+                this.x = x;
+                this.y = y;
+                this.width = w;
+                this.height = h;
+                this.container = document.createElement('div');
+                this.container.className = 'desktop-widget';
+            }
+        }
+
         var createdItems = [];
         var originalContent = [];
         var updating = false;
@@ -2118,140 +2138,196 @@ async function Main() {
             dropZone.classList.remove('dragover');
         });
 
-        dropZone.addEventListener('drop', async (event) => {
-            event.preventDefault();
+        dropZone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             checked = false;
             dropZone.classList.remove('dragover');
+
+            !(async () => {
+                const items = event.dataTransfer.items;
+                var count = 0;
+
+                for (const item of items) {
+                    console.log('Item:', item.kind, item.type);
+                    if (item.kind === 'string') {
+                        item.getAsString(str => {
+                            console.log(`➡️ [${item.type}]`, str);
+                        });
+                    }
+                }
+
+                for (const item of items) {
+                    if (item.kind === 'file') {
+                        const file = item.getAsFile();
+                        console.log('[file]', file);
+                    } else if (item.kind === 'string' && item.type === 'text/uri-list') {
+                        item.getAsString(str => {
+                            console.log('[string]', str);
+                            // 判斷是否是圖片連結
+                            if (str.startsWith('http') && /\.(jpg|png|jpeg|gif|webp)$/.test(str)) {
+                                fetch(str)
+                                    .then(res => res.blob())
+                                    .then(blob => {
+                                        const url = URL.createObjectURL(blob);
+                                        const img = new Image();
+                                        img.src = url;
+                                        document.body.appendChild(img);
+                                    });
+                            }
+                            count++;
+                            console.log(count)
+                        });
+                    }
+                }
+            })();
 
             if (allowed == false) return;
             allowed == false;
 
-            const dt = event.dataTransfer;
-            const items = Array.from(dt.items);
+            function hashURL(url) {
+                return crypto.subtle.digest('SHA-256', new TextEncoder().encode(url)).then(buf =>
+                    Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+                );
+            }
 
-            if (items.length == 0) return;
-
+            const items = e.dataTransfer.items;
             var processed = 0;
-            var total = items.length;
             var current = 'Unknown';
             var title = 'Uploading File to Desktop...';
             var worker;
-            var update = () => { };
+            var promises = [];
 
-            var files = [];
-            var allRead = false;
+            for (const item of items) {
+                const entry = item.webkitGetAsEntry?.();
+                if (entry) {
+                    promises.push(readEntryRecursively(entry, ''));
+                } else if (item.kind === 'string' && item.type === 'text/uri-list') {
+                    // URL
+                    promises.push(new Promise((resolve, reject) => {
+                        item.getAsString(async url => {
+                            try {
+                                const res = await fetch(url);
+                                // Try to get the file name from the header
+                                const disposition = res.headers.get('Content-Disposition');
+                                let filename = null;
 
-            for (let i = 0; i < items.length; i++) {
-                const item = items[i].webkitGetAsEntry();
-                if (item) {
-                    if (item.isFile) {
-                        allRead = true;
-                        // console.log('file', i)
-                        await handleFile(item, "");
-                    } else if (item.isDirectory) {
-                        allRead = false;
-                        // console.log('directory', i)
-                        await handleDirectory(item, item.name);
-                    }
+                                if (disposition && disposition.includes('filename=')) {
+                                    const matches = disposition.match(/filename\*=UTF-8''(.+)$|filename="?([^"]+)"?/);
+                                    if (matches) {
+                                        filename = decodeURIComponent(matches[1] || matches[2]);
+                                    }
+                                }
+
+                                // Get it from url
+                                if (!filename) {
+                                    filename = await hashURL(url);
+                                }
+
+                                const blob = await res.blob();
+
+                                return resolve({
+                                    path: '',
+                                    file: new File([blob], filename, {
+                                        type: blob.type,
+                                        lastModified: Date.now()
+                                    })
+                                });
+                            } catch (e) {
+                                return reject(e);
+                            }
+                        })
+                    }));
                 } else {
-                    total--;
+                    // Not a file, directory, or URL
                 }
             }
 
-            function handleFile(fileEntry, path) {
-                return fileEntry.file(file => {
-                    files.push({ file, path });
-                    // console.log(path, files.length, total)
-                    if (files.length == total && allRead == true) {
-                        run();
-                    }
-                })
-            }
+            const results = (await Promise.all(promises)).flat();
+            const total = results.length;
+            console.log(results, total);
 
-            async function handleDirectory(directoryEntry, path) {
-                total--;
+
+            async function readEntryRecursively(entry, path = '') {
                 return new Promise(async (resolve, reject) => {
-                    const reader = directoryEntry.createReader();
-                    const entries = await new Promise((resolve, reject) => {
-                        reader.readEntries(resolve, reject);
-                    });
-                    total += entries.length;
-                    for (const entry of entries) {
-                        if (entry.isFile) {
-                            await handleFile(entry, path);
-                        } else if (entry.isDirectory) {
-                            allRead = false;
-                            await handleDirectory(entry, path + "/" + entry.name);
-                        }
+                    if (entry.isFile) {
+                        entry.file(file => {
+                            resolve({ path: path, file });
+                        });
+                    } else if (entry.isDirectory) {
+                        const reader = entry.createReader();
+                        reader.readEntries(async entries => {
+                            const promises = entries.map(e =>
+                                readEntryRecursively(e, path + entry.name + '/')
+                            );
+                            const results = await Promise.all(promises);
+                            resolve(results.flat());
+                        });
                     }
-                    allRead = true;
-                    resolve();
                 })
             }
 
-            function run() {
-                if (window.debuggerMode == true) {
-                    console.log('run', total, files);
-                }
-                new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
-                    fileTransfer++;
-                    worker = process.worker;
-
-                    update = () => {
-                        worker.postMessage({
-                            type: 'update',
-                            token: process.token,
-                            current, processed, total, title
-                        });
-                        if (processed == total && processed != 0) {
-                            updateDesktop();
-                            return process.exit();
-                        }
-                    }
-
-                    if (window.debuggerMode == true) {
-                        console.log(files)
-                    }
-
-                    worker.postMessage({
-                        type: 'init',
-                        token: process.token
-                    })
-
-                    worker.postMessage({
-                        type: 'transfer',
-                        token: process.token,
-                        files, title,
-                        target: 'C:/Users/Admin/Desktop/'
-                    })
-
-                    worker.addEventListener('message', async (e) => {
-                        if (!e.data.token == process.token) return;
-                        // console.log('MAIN', e.data.type)
-                        if (e.data.type == 'start') {
-                            worker.postMessage({
-                                type: 'init',
-                                token: process.token
-                            })
-                        }
-                        if (e.data.type == 'init') {
-                            // console.log('init')
-                            worker.postMessage({
-                                type: 'transfer',
-                                token: process.token,
-                                files, title,
-                                target: 'C:/Users/Admin/Desktop/'
-                            })
-                        }
-                        if (e.data.type == 'completed') {
-                            fileTransfer--;
-                            updateDesktop();
-                        }
-                    });
-
-                    // process.exit();
-                });
+            if (window.debuggerMode == true) {
+                console.log('run', total, results);
             }
+            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js').start().then(async process => {
+                fileTransfer++;
+                worker = process.worker;
+
+                update = () => {
+                    worker.postMessage({
+                        type: 'update',
+                        token: process.token,
+                        current, processed, total, title
+                    });
+                    if (processed == total && processed != 0) {
+                        updateDesktop();
+                        return process.exit();
+                    }
+                }
+
+                if (window.debuggerMode == true) {
+                    console.log(results)
+                }
+
+                worker.postMessage({
+                    type: 'init',
+                    token: process.token
+                })
+
+                worker.postMessage({
+                    type: 'transfer',
+                    token: process.token,
+                    files: results, title,
+                    target: 'C:/Users/Admin/Desktop/'
+                })
+
+                worker.addEventListener('message', async (e) => {
+                    if (!e.data.token == process.token) return;
+                    // console.log('MAIN', e.data.type)
+                    if (e.data.type == 'start') {
+                        worker.postMessage({
+                            type: 'init',
+                            token: process.token
+                        })
+                    }
+                    if (e.data.type == 'init') {
+                        // console.log('init')
+                        worker.postMessage({
+                            type: 'transfer',
+                            token: process.token,
+                            files: results, title,
+                            target: 'C:/Users/Admin/Desktop/'
+                        })
+                    }
+                    if (e.data.type == 'completed') {
+                        fileTransfer--;
+                        updateDesktop();
+                    }
+                });
+
+                // process.exit();
+            });
         });
 
         /*
@@ -2451,6 +2527,7 @@ async function Main() {
     })();
 
     window.System.FileViewers = {
+        // Deprecated Method : System.FileViewers.viewers
         viewers: {
             '*': '',
             'css': ['code'],
@@ -2477,9 +2554,16 @@ async function Main() {
             'mp4': ['mediaplayer'],
             'webm': ['mediaplayer'],
             'avi': ['mediaplayer'],
-            'mov': ['mediaplayer']
+            'mov': ['mediaplayer'],
+            'link': ['edge']
         },
-        defaultViewers: {},
+        defaultViewers: {
+            'css': 'code',
+            'js': 'code',
+            'html': 'edge',
+            'link': 'edge',
+            'json': 'json-viewewr'
+        },
         registeredViewers: {
             'code': {
                 name: 'Visual Studio Code',
@@ -2499,7 +2583,7 @@ async function Main() {
             'photos': {
                 name: 'Photos',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/viewer.js',
-                accepts: ['png', 'jpg', 'jpeg', 'bmp', 'gif', 'svg', 'ico', 'webp']
+                accepts: ['*']
             },
             'mediaplayer': {
                 name: 'MediaPlayer',
