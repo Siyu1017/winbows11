@@ -2,9 +2,10 @@
     // var module = await fs('downloadFile', 'C:/Winbows/System/modules/html.js');
     // eval(await module.text());
 
-    await System.requestAccessWindow('./window.js', {
+    await System.requestAccessWindow('./window.v2.js', {
         mica: true,
-        tabAnimation: false
+        tabAnimation: false,
+        theme: 'system'
     })
 
     // var browserWindow = await new System.browserWindow({

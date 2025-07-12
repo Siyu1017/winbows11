@@ -122,19 +122,18 @@ Object.defineProperty(window.Compilers, 'Window', {
                 requires: []
             }
         }
+        const moduleCaches = {};
 
         async function processModule(module, path) {
             if (!modules[module]) return;
             const { script, requires } = modules[module];
-            if (!blobURLs[script]) {
+            console.log(path, module);
+            if (!moduleCaches[script]) {
                 let content = await fs.getFileAsText(script);
-                content = `const __dirname="${getDirName(path)}",__filename="${path}";${content}`;
-                const blob = new Blob([content], { type: 'application/javascript' });
-                const blobURL = URL.createObjectURL(blob);
-                blobURLs[script] = blobURL;
-                return blobURL;
+                moduleCaches[script] = content;
+                return URL.createObjectURL(new Blob([`const __dirname="${getDirName(path)}",__filename="${path}";${content}`], { type: 'application/javascript' }));
             } else {
-                return blobURLs[script];
+                return URL.createObjectURL(new Blob([`const __dirname="${getDirName(path)}",__filename="${path}";${moduleCaches[script]}`], { type: 'application/javascript' }));
             }
         }
         async function createModuleURL(path, code) {
@@ -146,6 +145,7 @@ Object.defineProperty(window.Compilers, 'Window', {
             return url;
         }
         async function asyncReplaceImports(code, currentPath) {
+            console.warn('asyncReplaceImports', currentPath)
             // const importRegex = /import\s+(.*?)\s+from\s+['"](.*?)['"]/g;
             const importRegex = /import\s+(?:(.*?)\s+from\s+)?["'](.+?)["'];?/g;
             let result = '';
@@ -234,6 +234,7 @@ Object.defineProperty(window.Compilers, 'Window', {
 
         windowObject.import = async (url) => {
             url = resolvePath(url);
+            console.log('browserWindow.import', url)
             const content = await asyncReplaceImports(await fs.getFileAsText(url), url);
             const blob = new Blob([content], { type: 'application/javascript' });
             const blobURL = URL.createObjectURL(blob);

@@ -1,3 +1,20 @@
+var theme = window.System.theme.get()
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+} else {
+    document.documentElement.classList.remove('winui-dark');
+}
+
+window.System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+    }
+})
+
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';

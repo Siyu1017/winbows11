@@ -26,13 +26,7 @@ var hardwares = {
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(STATIC_NAME).then((cache) => {
-            return cache.addAll([
-                './fs.js',
-                './index.html',
-                './index.js',
-                './index.css',
-                './favicon.ico'
-            ])
+            return cache.addAll(requiredFiles);
         }).then(() => {
             return self.skipWaiting();
         })

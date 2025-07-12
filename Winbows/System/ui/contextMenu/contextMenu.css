@@ -20,6 +20,15 @@
     --contextmenu-label-padding: .375rem .75rem;
 }
 
+[data-theme="dark"] .winui-contextmenu-container {
+    --contextmenu-bg: rgb(30, 30, 30);
+    --contextmenu-color: #fff;
+    --contextmenu-border: 1px solid rgba(255, 255, 255, .08);
+    --contextmenu-hover: rgba(255, 255, 255, .05);
+    --contextmenu-active: rgba(255, 255, 255, .1);
+    --contextmenu-separator-bg: rgba(255, 255, 255, .08);
+}
+
 .winui-contextmenu-container,
 .winui-contextmenu-container * {
     font-family: var(--winbows-font-default);

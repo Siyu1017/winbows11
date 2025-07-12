@@ -16,6 +16,7 @@
         mica: true,
         datas: {
             file: FILE_PATH
-        }
+        },
+        theme: 'system'
     });
 })();

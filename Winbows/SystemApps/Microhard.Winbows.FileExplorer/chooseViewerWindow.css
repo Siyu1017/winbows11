@@ -18,7 +18,7 @@
 }
 
 .window-content {
-    background: none;
+    background: none !important;
 }
 
 .container {
@@ -131,4 +131,37 @@
 .footer-button:disabled {
     pointer-events: none;
     background: rgb(255 255 255 / 49%);
+}
+
+[data-theme="dark"] {
+    -webkit-backdrop-filter: saturate(2) blur(120px);
+    backdrop-filter: saturate(2) blur(120px);
+    border: 1.5px solid rgb(255 255 255 / 10%);
+    background: var(--winbows-taskbar-bg);
+}
+
+[data-theme="dark"] .header,
+[data-theme="dark"] .content {
+    background: none;
+}
+
+[data-theme="dark"] .footer {
+    border-top: 1.5px solid rgb(0 0 0 / 30%);
+    background: rgba(0, 0, 0, .2);
+}
+
+[data-theme="dark"] .footer-button {
+    background: rgb(255 255 255 / 8%);
+    color: #fff;
+    border: 1.5px solid rgb(255 255 255 / 10%);
+}
+
+[data-theme="dark"] .footer-button:disabled {
+    opacity: .7;
+    color: #ccc;
+}
+
+[data-theme="dark"] .viewer.active,
+[data-theme="dark"] .viewer:hover {
+    background: rgb(255 255 255 / 5%);
 }

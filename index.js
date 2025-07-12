@@ -12,6 +12,240 @@ async function Main() {
         console.warn('File system initialized.');
     }
 
+    async function shouldMigrateFromOldDatabase() {
+        if (!indexedDB.databases) return false;
+        const dbs = await indexedDB.databases();
+        return dbs.some(db => db.name === 'winbows11');
+    }
+    const needsToMigrate = await shouldMigrateFromOldDatabase();
+
+    if (needsToMigrate) {
+        console.warn('Needs to migrate from old database...');
+
+        var warning = document.createElement('div');
+        var warningWindow = document.createElement('div');
+        var warningHeader = document.createElement('div');
+        var warningContent = document.createElement('div');
+        var warningFooter = document.createElement('div');
+        var warningMigrateButton = document.createElement('button');
+
+        warningHeader.innerHTML = 'Data migration required';
+        warningContent.innerHTML = `<div>We have recently updated the IDBFS schema and detected that you previously saved files in Winbows. As the previous schema has been deprecated, we need to migrate your files to the new version to prevent potential data loss or unexpected errors.</div>
+        <div>This update replaces the original file path–based storage with a new structure that uses a file table and record IDs, improving access performance and ensuring data consistency.</div>`;
+        warningMigrateButton.innerHTML = 'Continue';
+
+        warning.style = 'position: fixed;top: 0px;left: 0px;width: 100vw;height: var(--winbows-screen-height);display: flex;align-items: center;justify-content: center;background-color: rgba(0, 0, 0, 0.5);z-index: 99999;font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;';
+        warningWindow.style = 'display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem 4rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px, -2rem + 100vw);width: 100%;max-height: min(calc(var(--winbows-screen-height) * 80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;';
+        warningHeader.style = 'font-size: 175%;font-weight: 600;margin: .5rem 0 1.5rem;';
+        warningMigrateButton.style = 'color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 0px;margin-top: 1.5rem;font-family: inherit;font-weight: 600;';
+
+        warning.appendChild(warningWindow);
+        warningWindow.appendChild(warningHeader);
+        warningWindow.appendChild(warningContent);
+        warningWindow.appendChild(warningFooter);
+        warningFooter.appendChild(warningMigrateButton);
+        document.body.appendChild(warning);
+
+        await (function () {
+            return new Promise(resolve => {
+                function evtfn() {
+                    warningWindow.innerHTML = '';
+                    resolve();
+                    warningMigrateButton.removeEventListener('click', evtfn);
+                }
+                warningMigrateButton.addEventListener('click', evtfn);
+            })
+        })();
+
+        await (function () {
+            return new Promise(resolve => {
+                warningWindow.style.padding = '2rem';
+
+                var taskOrder = ['open', 'read', 'migrate', 'delete'];
+                var taskFinished = [];
+                var tasks = {
+                    open: {
+                        text: 'Open old idbfs'
+                    },
+                    read: {
+                        text: 'Read old idbfs'
+                    },
+                    migrate: {
+                        text: 'Migrate files to new idbfs'
+                    },
+                    delete: {
+                        text: 'Delete old idbfs'
+                    }
+                }
+
+                var called = false;
+                function checkIfAllFinished() {
+                    if (taskFinished.every(x => x == true) && called == false) {
+                        called = true;
+                        var button = document.createElement('button');
+                        button.innerHTML = 'Continue';
+                        button.style = 'color: rgb(255, 255, 255);/* margin-bottom: 0.5rem; */padding: 0.625rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 0px;margin-top: 1rem;font-family: inherit;font-weight: 600;';
+                        warningWindow.appendChild(button);
+                        button.addEventListener('click', () => {
+                            warning.remove();
+                            resolve();
+                        })
+                    }
+                }
+
+                var progress = document.createElement('div');
+                var task = document.createElement('div');
+
+                progress.className = 'migrate-progress';
+                task.className = 'migrate-task';
+
+                warningWindow.appendChild(progress);
+                warningWindow.appendChild(task);
+
+                for (const i in taskOrder) {
+                    !(i => {
+                        const key = taskOrder[i];
+
+                        // Progress bar
+                        var progressBar = document.createElement('div');
+                        progressBar.className = 'migrate-progress-bar';
+                        progress.appendChild(progressBar);
+                        tasks[key].progressBar = progressBar;
+
+                        // Task name
+                        var el = document.createElement('div');
+                        el.className = 'migrate-task-item';
+                        el.innerHTML = `<div class="migrate-task-icon"><svg class="migrate-loading-spinner" width="16" height="16" viewBox="0 0 16 16"><circle cx="8px" cy="8px" r="7px"></circle></svg></div><div class="migrate-task-item-text">${tasks[key].text}</div>`;
+                        task.appendChild(el);
+
+                        taskFinished.push(false);
+
+                        tasks[key].taskItem = el;
+                        tasks[key].finished = false;
+                        tasks[key].finish = function () {
+                            if (taskFinished.slice(0, i).every(x => x == true)) {
+                                tasks[key].finished = true;
+                                taskFinished[i] = true;
+                                progressBar.classList.add('fulfilled');
+                                el.classList.add('fulfilled');
+                                checkIfAllFinished();
+                            }
+                        }
+                        tasks[key].update = function (content) {
+                            el.querySelector('.migrate-task-item-text').innerHTML = content;
+                        }
+                    })(i);
+                }
+
+                // Try to open the old database
+                const oldDbRequest = indexedDB.open('winbows11', 1);
+                oldDbRequest.onsuccess = async (event) => {
+                    const db = event.target.result;
+
+                    tasks.open.finish();
+
+                    async function readFromOldDatabase(path) {
+                        return new Promise((resolve, reject) => {
+                            const store = db.transaction('C', 'readonly').objectStore('C');
+                            const req = store.get(path);
+
+                            req.onsuccess = () => {
+                                const entry = req.result;
+                                if (entry) {
+                                    resolve({
+                                        path: `C:/${entry.path}`,
+                                        content: entry.content,
+                                        type: entry.type
+                                    });
+                                } else {
+                                    reject(new Error(`File not found: ${path}`));
+                                }
+                            };
+                            req.onerror = (event) => {
+                                reject(event.target.error);
+                            };
+                        });
+                    }
+
+                    function deleteIDB(name) {
+                        return new Promise((resolve, reject) => {
+                            const request = indexedDB.deleteDatabase(name);
+
+                            request.onsuccess = () => {
+                                console.log(`Database '${name}' deleted successfully.`);
+                                resolve();
+                            };
+
+                            request.onerror = (event) => {
+                                console.warn(`Failed to delete database '${name}':`, event.target.error);
+                                reject(event.target.error);
+                            };
+
+                            request.onblocked = () => {
+                                console.warn(`Deletion of database '${name}' is blocked (likely due to an open tab).`);
+                            };
+                        });
+                    }
+
+                    try {
+                        const store = db.transaction('C', 'readonly').objectStore('C');
+                        const req = store.index('path').getAllKeys();
+
+                        req.onsuccess = async () => {
+                            tasks.read.finish();
+
+                            const keys = req.result;
+                            const all = keys.length;
+                            let completed = 0;
+
+                            // Migrate each key to the new database
+                            for (const key of keys) {
+                                try {
+                                    const entry = await readFromOldDatabase(key);
+                                    if (entry.type === 'directory') {
+                                        if (!fs.exists(entry.path.endsWith('/') ? entry.path : entry.path + '/')) {
+                                            await fs.mkdir(entry.path).catch();
+                                        }
+                                    } else {
+                                        await fs.writeFile(entry.path, entry.content);
+                                    }
+                                    completed++;
+                                    tasks.migrate.update(`Migrated ${completed}/${all}: ${entry.path}`);
+                                } catch (err) {
+                                    console.error(`Failed to migrate ${key}:`, err);
+                                }
+                            }
+                            tasks.migrate.update(`Migrate files to new idbfs ( ${completed}/${all} completed )`);
+                            tasks.migrate.finish();
+                            db.close();
+                            deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
+                            tasks.delete.finish();
+                        };
+                        req.onerror = (event) => {
+                            db.close();
+                            tasks.read.finish();
+                            tasks.migrate.finish();
+                            deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
+                            console.error('Error reading old database:', event.target.error);
+                        };
+                    } catch (e) {
+                        db.close();
+                        tasks.open.finish();
+                        tasks.read.finish();
+                        tasks.migrate.finish();
+                        deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
+                    }
+                };
+                oldDbRequest.onerror = async (event) => {
+                    tasks.open.finish();
+                    tasks.read.finish();
+                    tasks.migrate.finish();
+                    deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
+                }
+            })
+        })();
+    }
+
     Date.prototype.format = function (fmt) { var o = { "M+": this.getMonth() + 1, "d+": this.getDate(), "h+": this.getHours(), "m+": this.getMinutes(), "s+": this.getSeconds(), "q+": Math.floor((this.getMonth() + 3) / 3), "S": this.getMilliseconds() }; if (/(y+)/.test(fmt)) { fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length)); } for (var k in o) { if (new RegExp("(" + k + ")").test(fmt)) { fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length))); } } return fmt; }
 
     const path = {
@@ -865,6 +1099,33 @@ async function Main() {
         getStackTrace
     }
 
+    // Theme 
+    !(function ThemeManager() {
+        var theme = localStorage.getItem('WINBOWS_THEME') || 'light';
+        var listeners = [];
+        window.System.theme = {
+            set: (value) => {
+                theme = value != 'dark' ? 'light' : 'dark';
+                localStorage.setItem('WINBOWS_THEME', theme);
+                if (theme == 'dark') {
+                    document.body.setAttribute('data-theme', 'dark');
+                } else {
+                    document.body.removeAttribute('data-theme');
+                }
+                listeners.forEach(fn => fn(theme));
+            },
+            get: () => {
+                return theme;
+            },
+            onChange: (listener) => {
+                listeners.push(listener);
+            }
+        }
+        if (theme == 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+    })();
+
     // Check updates
     /*
     try {
@@ -951,43 +1212,44 @@ async function Main() {
         registerd: {
             // Default
             '*': 'C:/Winbows/icons/files/generic.ico',
-            'jpg': 'C:/Winbows/icons/files/image.ico',
-            'png': 'C:/Winbows/icons/files/image.ico',
-            'gif': 'C:/Winbows/icons/files/image.ico',
-            'svg': 'C:/Winbows/icons/files/image.ico',
-            'webp': 'C:/Winbows/icons/files/image.ico',
-            'jpeg': 'C:/Winbows/icons/files/image.ico',
-            'ico': 'C:/Winbows/icons/files/image.ico',
-            'bmp': 'C:/Winbows/icons/files/image.ico',
-            'mp3': 'C:/Winbows/icons/files/audio.ico',
-            'wav': 'C:/Winbows/icons/files/audio.ico',
-            'ogg': 'C:/Winbows/icons/files/audio.ico',
-            'mp4': 'C:/Winbows/icons/files/video.ico',
-            'webm': 'C:/Winbows/icons/files/video.ico',
-            'avi': 'C:/Winbows/icons/files/video.ico',
-            'mov': 'C:/Winbows/icons/files/video.ico',
-            'txt': 'C:/Winbows/icons/files/text.ico',
-            'exe': 'C:/Winbows/icons/files/program.ico',
-            'zip': 'C:/Winbows/icons/folders/zip.ico',
-            'ttf': 'C:/Winbows/icons/files/font.ico',
-            'otf': 'C:/Winbows/icons/files/font.ico',
-            'woff': 'C:/Winbows/icons/files/font.ico',
-            'woff2': 'C:/Winbows/icons/files/font.ico',
-            'eot': 'C:/Winbows/icons/files/font.ico',
-            'doc': 'C:/Winbows/icons/files/office/worddocument.ico',
-            'docx': 'C:/Winbows/icons/files/office/worddocument.ico',
-            'xls': 'C:/Winbows/icons/files/office/excelsheet.ico',
-            'xlsx': 'C:/Winbows/icons/files/office/excelsheet.ico',
-            'ppt': 'C:/Winbows/icons/files/office/powerpointopen.ico',
-            'pptx': 'C:/Winbows/icons/files/office/powerpointopen.ico',
+            '.jpg': 'C:/Winbows/icons/files/image.ico',
+            '.png': 'C:/Winbows/icons/files/image.ico',
+            '.gif': 'C:/Winbows/icons/files/image.ico',
+            '.svg': 'C:/Winbows/icons/files/image.ico',
+            '.webp': 'C:/Winbows/icons/files/image.ico',
+            '.jpeg': 'C:/Winbows/icons/files/image.ico',
+            '.ico': 'C:/Winbows/icons/files/image.ico',
+            '.bmp': 'C:/Winbows/icons/files/image.ico',
+            '.mp3': 'C:/Winbows/icons/files/audio.ico',
+            '.wav': 'C:/Winbows/icons/files/audio.ico',
+            '.ogg': 'C:/Winbows/icons/files/audio.ico',
+            '.mp4': 'C:/Winbows/icons/files/video.ico',
+            '.webm': 'C:/Winbows/icons/files/video.ico',
+            '.avi': 'C:/Winbows/icons/files/video.ico',
+            '.mov': 'C:/Winbows/icons/files/video.ico',
+            '.txt': 'C:/Winbows/icons/files/text.ico',
+            '.exe': 'C:/Winbows/icons/files/program.ico',
+            '.zip': 'C:/Winbows/icons/folders/zip.ico',
+            '.ttf': 'C:/Winbows/icons/files/font.ico',
+            '.otf': 'C:/Winbows/icons/files/font.ico',
+            '.woff': 'C:/Winbows/icons/files/font.ico',
+            '.woff2': 'C:/Winbows/icons/files/font.ico',
+            '.eot': 'C:/Winbows/icons/files/font.ico',
+            '.doc': 'C:/Winbows/icons/files/office/worddocument.ico',
+            '.docx': 'C:/Winbows/icons/files/office/worddocument.ico',
+            '.xls': 'C:/Winbows/icons/files/office/excelsheet.ico',
+            '.xlsx': 'C:/Winbows/icons/files/office/excelsheet.ico',
+            '.ppt': 'C:/Winbows/icons/files/office/powerpointopen.ico',
+            '.pptx': 'C:/Winbows/icons/files/office/powerpointopen.ico',
             // Edge
-            'html': 'C:/Winbows/icons/applications/tools/edge.ico',
+            '.html': 'C:/Winbows/icons/applications/tools/edge.ico',
             // VSCode
-            'css': 'C:/Program Files/VSCode/File Icons/css.ico',
-            'js': 'C:/Program Files/VSCode/File Icons/javascript.ico',
-            'json': 'C:/Program Files/VSCode/File Icons/json.ico',
+            '.css': 'C:/Program Files/VSCode/File Icons/css.ico',
+            '.js': 'C:/Program Files/VSCode/File Icons/javascript.ico',
+            '.json': 'C:/Program Files/VSCode/File Icons/json.ico',
             // Winbows script files
-            'wbsf': 'C:/Winbows/icons/files/executable.ico'
+            '.wbsf': 'C:/Winbows/icons/files/executable.ico',
+            '.wexe': 'C:/Winbows/icons/files/program.ico',
         },
         register: (ext, icon) => {
             if (ext == '*') return;
@@ -1000,89 +1262,89 @@ async function Main() {
             'explorer': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/',
                 icon: 'C:/Winbows/icons/folders/explorer.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js',
-                configurable: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/configurable.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wexe',
+                configurable: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/configurable.wexe'
             },
             'edge': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/',
                 icon: 'C:/Winbows/icons/applications/tools/edge.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wexe'
             },
             'edgebeta': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/',
                 icon: 'C:/Winbows/icons/applications/tools/edgebeta.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wexe'
             },
             'store': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/',
                 icon: 'C:/Winbows/icons/applications/novelty/store2.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wexe'
             },
             'cmd': {
                 path: 'C:/Program Files/Command/',
                 icon: 'C:/Winbows/icons/applications/novelty/terminal.ico',
-                script: 'C:/Program Files/Command/app.js'
+                script: 'C:/Program Files/Command/app.wexe'
             },
             'notepad': {
                 path: 'C:/Program Files/Notepad/',
                 icon: 'C:/Winbows/icons/applications/novelty/notepad.ico',
-                script: 'C:/Program Files/Notepad/app.js'
+                script: 'C:/Program Files/Notepad/app.wexe'
             },
             'calculator': {
                 path: 'C:/Program Files/Calculator/',
                 icon: 'C:/Winbows/icons/applications/novelty/calculator.ico',
-                script: 'C:/Program Files/Calculator/app.js'
+                script: 'C:/Program Files/Calculator/app.wexe'
             },
             'paint': {
                 path: 'C:/Program Files/Paint/',
                 icon: 'C:/Winbows/icons/applications/novelty/paint.ico',
-                script: 'C:/Program Files/Paint/app.js'
+                script: 'C:/Program Files/Paint/app.wexe'
             },
             'info': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/',
                 icon: 'C:/Winbows/icons/emblems/info.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/app.js',
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/app.wexe',
                 autoExecute: true
             },
             'code': {
                 path: 'C:/Program Files/VSCode/',
                 icon: 'C:/Winbows/icons/applications/office/code.ico',
-                script: 'C:/Program Files/VSCode/app.js'
+                script: 'C:/Program Files/VSCode/app.wexe'
             },
             'taskmgr': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr',
                 icon: 'C:/Winbows/icons/applications/tools/taskmanager.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr/app.wexe'
             },
             'settings': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings',
                 icon: 'C:/Winbows/icons/applications/tools/settings.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings/app.wexe'
             },
             'fpsmeter': {
                 path: 'C:/Program Files/FPS Meter/',
                 icon: 'C:/Program Files/FPS Meter/favicon.ico',
-                script: 'C:/Program Files/FPS Meter/app.js'
+                script: 'C:/Program Files/FPS Meter/app.wexe'
             },
             'photos': {
                 path: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos',
                 icon: 'C:/Winbows/icons/applications/novelty/photos.ico',
-                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.js'
+                script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.wexe'
             },
             'network-listener': {
                 path: 'C:/Program Files/Network Listener/',
                 icon: 'C:/Winbows/icons/files/program.ico',
-                script: 'C:/Program Files/Network Listener/app.js'
+                script: 'C:/Program Files/Network Listener/app.wexe'
             },
             'json-viewer': {
                 path: 'C:/Program Files/JSON Viewer/',
                 icon: 'C:/Program Files/JSON Viewer/json-viewer.svg',
-                script: 'C:/Program Files/JSON Viewer/app.js'
+                script: 'C:/Program Files/JSON Viewer/app.wexe'
             },
             'notepad': {
                 path: 'C:/Program Files/Notepad/',
                 icon: 'C:/Program Files/Notepad/favicon.ico',
-                script: 'C:/Program Files/Notepad/app.js'
+                script: 'C:/Program Files/Notepad/app.wexe'
             }
         },
         install: () => { },
@@ -1140,7 +1402,7 @@ async function Main() {
     window.utils.getFileExtension = function (file = '') {
         file = window.utils.getFileName(file);
         if (file.indexOf('.') > -1) {
-            return file.split('.').pop();
+            return '.' + file.split('.').pop();
         } else {
             return '';
         }
@@ -1151,31 +1413,31 @@ async function Main() {
     })
 
     const mimeTypes = {
-        'jpg': 'image/jpeg',
-        'jpeg': 'image/jpeg',
-        'png': 'image/png',
-        'gif': 'image/gif',
-        'webp': 'image/webp',
-        'bmp': 'image/bmp',
-        'svg': 'image/svg+xml',
-        'ico': 'image/x-icon',
-        'pdf': 'application/pdf',
-        'txt': 'text/plain',
-        'html': 'text/html',
-        'css': 'text/css',
-        'js': 'application/javascript',
-        'json': 'application/json',
-        'xml': 'application/xml',
-        'zip': 'application/zip',
-        'tar': 'application/x-tar',
-        'gz': 'application/gzip',
-        'mp3': 'audio/mpeg',
-        'wav': 'audio/wav',
-        'ogg': 'audio/ogg',
-        'mp4': 'video/mp4',
-        'webm': 'video/webm',
-        'avi': 'video/x-msvideo',
-        'mov': 'video/quicktime'
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.bmp': 'image/bmp',
+        '.svg': 'image/svg+xml',
+        '.ico': 'image/x-icon',
+        '.pdf': 'application/pdf',
+        '.txt': 'text/plain',
+        '.html': 'text/html',
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.json': 'application/json',
+        '.xml': 'application/xml',
+        '.zip': 'application/zip',
+        '.tar': 'application/x-tar',
+        '.gz': 'application/gzip',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.ogg': 'audio/ogg',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm',
+        '.avi': 'video/x-msvideo',
+        '.mov': 'video/quicktime'
     };
 
     function getMimeType(extension) {
@@ -1250,9 +1512,12 @@ async function Main() {
     }
     window.setBackgroundImage = async (image = '') => {
         if (!image || image == currentBackgroundImage) return;
-        var stats = await fs.stat(image);
+        var stats = fs.stat(image);
         if (stats.exists != true) {
-            image = 'C:/Winbows/bg/img0.jpg';
+            await fs.downloadFile(image).catch(err => {
+                image = 'C:/Winbows/bg/img0.jpg';
+                console.warn(err);
+            });
         }
         currentBackgroundImage = image;
         localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
@@ -1263,7 +1528,8 @@ async function Main() {
         img.onload = () => {
             var theme = utils.getImageTheme(img);
             desktop.classList.remove('winui-light', 'winui-dark');
-            desktop.classList.add(`winui-${theme}`)
+            desktop.classList.add(`winui-${theme}`);
+            System.theme.set(theme);
             backgroundImage.style.backgroundImage = `url(${url})`;
             if (window.debuggerMode == true) {
                 console.log(theme)
@@ -1276,14 +1542,30 @@ async function Main() {
 
     await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
 
-    await fs.mkdir('C:/Users');
-    await fs.mkdir('C:/Users/Admin');
-    await fs.mkdir('C:/Users/Admin/Desktop');
-    await fs.mkdir('C:/Users/Admin/Documents');
-    await fs.mkdir('C:/Users/Admin/Downloads');
-    await fs.mkdir('C:/Users/Admin/Music');
-    await fs.mkdir('C:/Users/Admin/Pictures');
-    await fs.mkdir('C:/Users/Admin/Videos');
+    if (!fs.exists('C:/Users/')) {
+        await fs.mkdir('C:/Users/');
+    }
+    if (!fs.exists('C:/Users/Admin/')) {
+        await fs.mkdir('C:/Users/Admin/');
+    }
+    if (!fs.exists('C:/Users/Admin/Desktop/')) {
+        await fs.mkdir('C:/Users/Admin/Desktop/');
+    }
+    if (!fs.exists('C:/Users/Admin/Documents/')) {
+        await fs.mkdir('C:/Users/Admin/Documents/');
+    }
+    if (!fs.exists('C:/Users/Admin/Downloads/')) {
+        await fs.mkdir('C:/Users/Admin/Downloads/');
+    }
+    if (!fs.exists('C:/Users/Admin/Music/')) {
+        await fs.mkdir('C:/Users/Admin/Music/');
+    }
+    if (!fs.exists('C:/Users/Admin/Pictures/')) {
+        await fs.mkdir('C:/Users/Admin/Pictures/');
+    }
+    if (!fs.exists('C:/Users/Admin/Videos/')) {
+        await fs.mkdir('C:/Users/Admin/Videos/');
+    }
 
     screenLockSigninUsername.innerHTML = window.utils.replaceHTMLTags('Admin');
     screenLockSigninButton.innerHTML = window.utils.replaceHTMLTags('Sign In');
@@ -1383,8 +1665,8 @@ async function Main() {
 
     await loadKernel();
 
-    window.Taskbar.pinApp('C:/Program Files/Command/app.js');
-    window.Taskbar.pinApp('C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.js');
+    window.Taskbar.pinApp('C:/Program Files/Command/app.wexe');
+    //window.Taskbar.pinApp('C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wexe');
     await window.Taskbar.preloadImage();
 
     window.System.CommandParsers = {
@@ -1429,7 +1711,7 @@ async function Main() {
         open: async (params) => {
             var path = params[0];
             path = path.replaceAll('"', '');
-            if (await (fs.exists(path)).exists == true) {
+            if (fs.exists(path) == true) {
                 window.System.Shell(`run explorer --config=PAGE=\"${path}\"`);
             } else {
                 window.open(path, '_blank');
@@ -1478,21 +1760,91 @@ async function Main() {
         var gridWidth = 96;
         var gridHeight = 96;
         var gridGap = 8;
-        var currentPage = 0;
-        var pages = [];
-        var maxRows = ~~((desktopItems.offsetWidth - gridGap * 2) / gridWidth);
-        var maxCols = ~~((desktopItems.offsetHeight - gridGap * 2) / gridHeight);
-        pages[0] = new Map();
-        window.winbowsWidget = class winbowsWidget {
-            constructor(x, y, w, h) {
-                this.x = x;
-                this.y = y;
-                this.width = w;
-                this.height = h;
-                this.container = document.createElement('div');
-                this.container.className = 'desktop-widget';
+        var widgetIdCounter = 0;
+        const maxRows = ~~((desktopItems.offsetWidth - gridGap * 2) / gridWidth);
+        const maxCols = ~~((desktopItems.offsetHeight - gridGap * 2) / gridHeight);
+        const cellMap = new Map();
+        const widgetCells = new Map();
+
+        function canPlace(widget) {
+            for (let dy = 0; dy < widget.h; dy++) {
+                for (let dx = 0; dx < widget.w; dx++) {
+                    const key = `${widget.x + dx},${widget.y + dy}`;
+                    if (cellMap.has(key)) return false;
+                }
             }
+            return true;
         }
+
+        function occupyWidget(widget) {
+            const keys = new Set();
+            for (let dy = 0; dy < widget.h; dy++) {
+                for (let dx = 0; dx < widget.w; dx++) {
+                    const key = `${widget.x + dx},${widget.y + dy}`;
+                    cellMap.set(key, widget.id);
+                    keys.add(key);
+                }
+            }
+            widgetCells.set(widget.id, keys);
+        }
+
+        function clearGrid() {
+            cellMap.clear();
+            widgetCells.clear();
+        }
+
+        function highlightFirstFit(w, h) {
+            for (let y = 0; y <= rows - h; y++) {
+                for (let x = 0; x <= cols - w; x++) {
+                    const widget = { x, y, w, h };
+                    if (canPlace(widget)) {
+                        highlightArea(x, y, w, h);
+                        return;
+                    }
+                }
+            }
+            console.warn('No available space for widget');
+        }
+
+        window.winbowsWidget = function (x, y, w, h) {
+            const id = 'W' + widgetIdCounter++;
+            const widget = { id, x, y, w, h };
+
+            if (!canPlace(widget)) {
+                console.warn('Cannot place widget here. Try again.');
+                return;
+            }
+
+            const container = document.createElement('div');
+            container.className = 'desktop-widget';
+            container.style.transform = `translate(${gridGap * (x + 1) + gridWidth * x}px,${gridGap * (y + 1) + gridHeight * y}px)`;
+            container.style.width = `${gridGap * (w - 1) + gridWidth * w}px`;
+            container.style.height = `${gridGap * (h - 1) + gridHeight * h}px`;
+            desktop.appendChild(container);
+
+            occupyWidget(widget);
+
+            return container;
+        }
+
+        // Test
+        !(() => {
+            return;
+            for (let i = 0; i < 100; i++) {
+                const container = window.winbowsWidget(~~(Math.random() * maxRows), ~~(Math.random() * maxCols), ~~(Math.random() * 3) + 1, ~~(Math.random() * 3) + 1);
+                if (container) {
+                    container.style.background = '#fff';
+                    container.style.display = 'flex';
+                    container.style.alignItems = 'center';
+                    container.style.justifyContent = 'center';
+                    container.style.fontSize = '200%';
+                    container.style.fontWeight = 'bold';
+                    container.innerHTML = 'Test Widget';
+                } else {
+                    console.warn('Failed to create widget')
+                }
+            }
+        })();
 
         var createdItems = [];
         var originalContent = [];
@@ -1855,7 +2207,7 @@ async function Main() {
                             icon: 'open-with',
                             text: "Open with...",
                             action: () => {
-                                new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                                new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
                             }
                         });
                     }
@@ -1873,7 +2225,7 @@ async function Main() {
                         icon: "delete",
                         text: "Delete",
                         action: () => {
-                            fs.rm(path).then(res => {
+                            fs.rm(path, { recursive: true }).then(res => {
                                 window.System.desktop.update();
                             });
                         }
@@ -1903,7 +2255,7 @@ async function Main() {
                             var temp = selected;
                             for (let i = 0; i < temp.length; i++) {
                                 var item = temp[i];
-                                await fs.rm(item.path).then(res => {
+                                await fs.rm(item.path, { recursive: true }).then(res => {
                                     item.remove();
                                 });
                             }
@@ -1941,7 +2293,7 @@ async function Main() {
                                 new Process(path).start();
                             }
                         })
-                    } else if (window.utils.getFileExtension(path) == 'wbsf') {
+                    } else if (window.utils.getFileExtension(path) == '.wbsf') {
                         items.push({
                             icon: 'window-snipping',
                             text: 'Run file',
@@ -1953,7 +2305,7 @@ async function Main() {
                                 })
                             }
                         })
-                    } else if (['ttf', 'otf', 'woff', 'woff2', 'eot'].includes(window.utils.getFileExtension(path))) {
+                    } else if (['.ttf', '.otf', '.woff', '.woff2', '.eot'].includes(window.utils.getFileExtension(path))) {
                         items.push({
                             type: 'separator'
                         })
@@ -2035,10 +2387,12 @@ async function Main() {
                     }
                 }
                 for (let i = 0; i < items.length; i++) {
+                    const stat = fs.stat(items[i]);
                     results.push({
-                        result: await fs.stat(items[i].path),
-                        item: items[i],
-                        name: utils.getFileName(items[i].path)
+                        stat,
+                        path: items[i],
+                        name: fsUtils.basename(items[i]),
+                        content: stat.isFile() ? await fs.readFile(items[i]).catch(err => console.error(err)) : new Blob([])
                     });
                 }
                 if (sort == 'name') {
@@ -2046,38 +2400,37 @@ async function Main() {
                 }
                 for (let i = 0; i < results.length; i++) {
                     ; await (async (i) => {
-                        var { result, item, name } = results[i];
-                        var type = utils.getFileExtension(item.path) == 'link' ? 'shortcut' : result.type == 'directory' ? 'directory' : 'file';
+                        var { stat, path, name, content } = results[i];
+                        var type = utils.getFileExtension(path) == '.link' ? 'shortcut' : stat.isFile() ? 'file' : 'directory';
                         var detail = {};
                         try {
                             if (type == 'shortcut') {
-                                var file = await result.content.text();
-                                detail = JSON.parse(file);
+                                detail = JSON.parse(await content.text());
                             } else if (type == 'directory') {
                                 detail = {
                                     name: name,
-                                    command: `run explorer --config=PAGE=\"${item.path}\"`
+                                    command: `run explorer --config=PAGE=\"${path}\"`
                                 };
                             } else {
                                 detail = {
                                     name: name,
                                     action: () => {
-                                        var defaultViewer = window.System.FileViewers.getDefaultViewer(item.path);
+                                        var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
                                         if (defaultViewer != null) {
-                                            new Process(defaultViewer.script).start(`const FILE_PATH="${item.path}";`);
+                                            new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                                         } else {
                                             if (window.debuggerMode == true) {
-                                                console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js')
+                                                console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe')
                                             }
-                                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${item.path}";`);
+                                            new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
                                         }
                                     }
                                 };
                             }
                         } catch (e) { console.error(e) };
-                        detail.path = item.path;
+                        detail.path = path;
                         detail.type = type;
-                        detail.file = result.content;
+                        detail.file = content;
                         function update() {
                             createdItems[i].update(detail);
                             clearTimeout(update);
@@ -2481,39 +2834,39 @@ async function Main() {
         // Deprecated Method : System.FileViewers.viewers
         viewers: {
             '*': '',
-            'css': ['code'],
-            'js': ['code'],
-            'html': ['code', 'edge'],
-            'txt': ['code'],
-            'jpg': ['mediaplayer', 'edge', 'photos'],
-            'jpeg': ['mediaplayer', 'edge', 'photos'],
-            'png': ['mediaplayer', 'edge', 'photos'],
-            'gif': ['mediaplayer', 'edge', 'photos'],
-            'webp': ['mediaplayer', 'edge', 'photos'],
-            'bmp': ['mediaplayer', 'edge', 'photos'],
-            'svg': ['mediaplayer', 'edge', 'photos'],
-            'ico': ['mediaplayer', 'edge', 'photos'],
-            'pdf': [],
-            'json': ['code'],
-            'xml': ['code'],
-            'zip': [],
-            'tar': [],
-            'gz': [],
-            'mp3': ['mediaplayer'],
-            'wav': ['mediaplayer'],
-            'ogg': ['mediaplayer'],
-            'mp4': ['mediaplayer'],
-            'webm': ['mediaplayer'],
-            'avi': ['mediaplayer'],
-            'mov': ['mediaplayer'],
-            'link': ['edge']
+            '.css': ['code'],
+            '.js': ['code'],
+            '.html': ['code', 'edge'],
+            '.txt': ['code'],
+            '.jpg': ['mediaplayer', 'edge', 'photos'],
+            '.jpeg': ['mediaplayer', 'edge', 'photos'],
+            '.png': ['mediaplayer', 'edge', 'photos'],
+            '.gif': ['mediaplayer', 'edge', 'photos'],
+            '.webp': ['mediaplayer', 'edge', 'photos'],
+            '.bmp': ['mediaplayer', 'edge', 'photos'],
+            '.svg': ['mediaplayer', 'edge', 'photos'],
+            '.ico': ['mediaplayer', 'edge', 'photos'],
+            '.pdf': [],
+            '.json': ['code'],
+            '.xml': ['code'],
+            '.zip': [],
+            '.tar': [],
+            '.gz': [],
+            '.mp3': ['mediaplayer'],
+            '.wav': ['mediaplayer'],
+            '.ogg': ['mediaplayer'],
+            '.mp4': ['mediaplayer'],
+            '.webm': ['mediaplayer'],
+            '.avi': ['mediaplayer'],
+            '.mov': ['mediaplayer'],
+            '.li.nk': ['edge']
         },
         defaultViewers: {
-            'css': 'code',
-            'js': 'code',
-            'html': 'edge',
-            'link': 'edge',
-            'json': 'json-viewewr'
+            '.css': 'code',
+            '.js': 'code',
+            '.html': 'edge',
+            '.link': 'edge',
+            '.json': 'json-viewewr'
         },
         registeredViewers: {
             'code': {
@@ -2524,12 +2877,12 @@ async function Main() {
             'edge': {
                 name: 'Microhard Edge',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/viewer.js',
-                accepts: ['html', 'pdf', 'txt', 'js', 'css', 'png', 'jpg', 'jpeg', 'svg', 'bmp', 'ico', 'webp', 'gif']
+                accepts: ['.html', '.pdf', '.txt', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.bmp', '.ico', '.webp', '.gif']
             },
             'edgebeta': {
                 name: 'Microhard Edge BETA',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/viewer.js',
-                accepts: ['html', 'pdf', 'txt', 'js', 'css', 'png', 'jpg', 'jpeg', 'svg', 'bmp', 'ico', 'webp', 'gif']
+                accepts: ['.html', '.pdf', '.txt', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.bmp', '.ico', '.webp', '.gif']
             },
             'photos': {
                 name: 'Photos',
@@ -2539,12 +2892,12 @@ async function Main() {
             'mediaplayer': {
                 name: 'MediaPlayer',
                 script: 'C:/Winbows/SystemApps/Microhard.Winbows.MediaPlayer/window.js',
-                accepts: ['mp3', 'wav', 'ogg', 'mp4', 'webm', 'avi', 'mov']
+                accepts: ['.mp3', '.wav', '.ogg', '.mp4', '.webm', '.avi', '.mov']
             },
             'json-viewer': {
                 name: 'JSON Viewer',
                 script: 'C:/Program Files/JSON Viewer/viewer.js',
-                accepts: ['json']
+                accepts: ['.json']
             },
             'notepad': {
                 name: 'Notepad',
@@ -2755,7 +3108,8 @@ async function Main() {
 
             // For Debugging
             // Test App For iPhone
-            // new Process("C:/dev/app.iPhoneOS.18.5/app.js").start();
+            // new Process("C:/dev/app.iPhoneOS.18.5/app.wexe").start();
+            // new Process("C:/dev/windowThemeTest/app.wexe").start();
         }
     })
 

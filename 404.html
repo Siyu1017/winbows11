@@ -1,0 +1,44 @@
+<html lang="en" style="--winbows-screen-width: 100vw; --winbows-screen-height:100vh;">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Not Found</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+        }
+
+        button {
+            background-color: #0067c0;
+            color: white;
+            border: none;
+            border-radius: .5rem;
+            padding: .75rem 1.25rem;
+            cursor: pointer;
+            font: inherit;
+            user-select: none;
+        }
+
+        a {
+            color: unset;
+            text-decoration: none;
+        }
+    </style>
+    <script>function updateScreenSize() {
+            document.querySelector(':root').style.setProperty('--winbows-screen-width', window.innerWidth + 'px');
+            document.querySelector(':root').style.setProperty('--winbows-screen-height', window.innerHeight + 'px');
+        }
+        window.addEventListener('resize', updateScreenSize);
+        window.addEventListener('load', updateScreenSize);</script>
+</head>
+
+<body style="width: var(--winbows-screen-width);height: var(--winbows-screen-height);display: flex;align-items: center;margin: 0;">
+    <div style="text-align: center;margin: auto;">
+        <h1 style="margin: 0;">404 - Not Found</h1>
+        <p style="margin-bottom: 2rem;">The page you are looking for does not exist.</p>
+        <button><a href="/">Go back to the homepage</a></button>
+    </div>
+</body>
+
+</html>

@@ -5,15 +5,24 @@
     var items = {
         start: {
             display: true,
-            icon: 'C:/Winbows/icons/applications/tools/start.ico'
+            icon: {
+                light: 'C:/Winbows/icons/applications/tools/start.ico',
+                dark: 'C:/Winbows/icons/applications/tools/start2.ico'
+            }
         },
         search: {
             display: true,
-            icon: 'C:/Winbows/icons/applications/tools/search.ico'
+            icon: {
+                light: 'C:/Winbows/icons/applications/tools/search.ico',
+                dark: 'C:/Winbows/icons/applications/tools/search2.ico'
+            }
         },
         taskview: {
             display: true,
-            icon: 'C:/Winbows/icons/applications/tools/taskview.ico'
+            icon: {
+                light: 'C:/Winbows/icons/applications/tools/taskview.ico',
+                dark: 'C:/Winbows/icons/applications/tools/taskview2.ico'
+            }
         },
         widgets: {
             display: false,
@@ -326,13 +335,13 @@
         }
     }, {
         label: 'Dark Theme',
-        status: 'disabled',
+        status: window.System.theme.get() != 'light' ? 'enabled' : 'disabled',
         name: 'dark-theme',
         change: (status) => {
             if (status == 'enabled') {
-                document.body.setAttribute('data-theme', 'dark');
+                window.System.theme.set('dark');
             } else {
-                document.body.removeAttribute('data-theme');
+                window.System.theme.set('light');
             }
         }
     }, {
@@ -397,7 +406,7 @@
         }
     }]
 
-    quickSettingItems.forEach(item => {
+    quickSettingItems.forEach((item, i) => {
         var quickSettingBlock = document.createElement('div');
         var quickSettingButton = document.createElement('div');
         var quickSettingIcon = document.createElement('div');
@@ -427,6 +436,18 @@
         quickSettingBlock.appendChild(quickSettingButton);
         quickSettingButton.appendChild(quickSettingIcon);
         quickSettingBlock.appendChild(quickSettingLabel);
+        quickSettingItems[i].setStatus = function (value) {
+            status = value == 'disabled' ? 'disabled' : 'enabled';
+            if (status == 'enabled') {
+                quickSettingButton.classList.add('active');
+            } else {
+                quickSettingButton.classList.remove('active');
+            }
+        }
+    })
+
+    window.System.theme.onChange(theme => {
+        quickSettingItems.filter(item => item.name == 'dark-theme')[0].setStatus(theme == 'dark' ? 'enabled' : 'disabled')
     })
 
     quickSettingSliderBars.forEach(item => {
@@ -566,19 +587,16 @@
             }, {
                 name: 'Task Manager',
                 app: 'taskmgr'
-            }, /*{
-                name: 'Settings',
-                app: 'settings'
-            }, */{
+            }, {
                 name: 'FPS Meter',
                 app: 'fpsmeter'
             }, {
                 name: 'Photos',
                 app: 'photos'
-            }, {
+            },/* {
                 name: 'Edge BETA',
                 app: 'edgebeta'
-            }, {
+            },*/ {
                 name: 'Network Listener',
                 app: 'network-listener'
             }, {
@@ -666,10 +684,11 @@
         controlToggleDesktop.addEventListener('click', () => {
             if (activeWindows.length > 0) {
                 temp = activeWindows;
-                activeWindows.forEach(id => {
+                activeWindows.forEach((id) => {
                     try {
                         iconRepository[idDatas[id]].hide(id);
                     } catch (e) {
+                        activeWindows = activeWindows.filter(obj => obj != id);
                         console.log(e);
                     }
                 })
@@ -826,7 +845,7 @@
         cloneNode.style.transform = `scale(${scale})`;
         cloneNode.style.opacity = "1";
         thumbnailView.appendChild(cloneNode);
-
+    
         thumbnailView.style.maxWidth = thumbnailSetting.maxWidth + "px";
         thumbnailView.style.maxHeight = thumbnailSetting.maxHeight + "px";
         thumbnailView.style.width = cloneNode.offsetWidth * scale + "px";
@@ -863,7 +882,7 @@
     })
     Object.defineProperties(window.Taskbar, {
         'pinnedApps': {
-            value: ['C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js', 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.js', 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.js']
+            value: ['C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wexe', 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wexe', 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wexe']
         },
         'pinApp': {
             value: (name) => {
@@ -912,7 +931,14 @@
                 var itemImage = document.createElement('div');
                 item.className = 'taskbar-item';
                 itemImage.className = 'taskbar-icon';
-                itemImage.style.backgroundImage = `url(${icon.icon})`;
+                if (typeof icon.icon === 'string') {
+                    itemImage.style.backgroundImage = `url(${icon.icon})`;
+                } else {
+                    itemImage.style.backgroundImage = `url(${icon.icon[window.System.theme.get()]})`;
+                    window.System.theme.onChange(theme => {
+                        itemImage.style.backgroundImage = `url(${icon.icon[theme]})`;
+                    })
+                }
                 item.appendChild(itemImage);
 
                 if (icon.category != 'item') {
@@ -1431,9 +1457,19 @@
         'preloadImage': {
             value: async () => {
                 await (async () => {
-                    for (let i in Object.values(items)) {
-                        var url = await fs.getFileURL(Object.values(items)[i].icon);
-                        Object.values(items)[i].icon = url;
+                    const itemsArray = Object.values(items);
+                    for (let i in itemsArray) {
+                        const item = itemsArray[i];
+                        const icon = item.icon;
+                        if (typeof icon === 'string') {
+                            var url = await fs.getFileURL(icon);
+                            item.icon = { light: url, dark: url };
+                        } else {
+                            item.icon = {};
+                            for (let j in Object.keys(icon)) {
+                                item.icon[Object.keys(icon)[j]] = await fs.getFileURL(Object.values(icon)[j]);
+                            }
+                        }
                     }
                     return;
                 })();

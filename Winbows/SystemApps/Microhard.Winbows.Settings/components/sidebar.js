@@ -3,7 +3,7 @@ import { Link } from './link.js';
 import { router } from '../_router.js';
 import { sidebarItems } from '../sidebarItems.js';
 
-await fs.init();
+// await fs.init();
 
 function sidebar() {
     var currentPage = 'home';

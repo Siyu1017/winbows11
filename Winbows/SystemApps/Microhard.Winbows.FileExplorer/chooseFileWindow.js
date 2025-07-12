@@ -1,145 +1,133 @@
-var groups = {
-    0: ['home', 'gallery'],
-    1: ['desktop', 'donwloads', 'documents', 'pictures', 'music', 'videos'],
-    2: ['this_pc', 'network'],
+import { fs } from 'winbows/fs';
+
+var theme = window.System.theme.get()
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+} else {
+    document.documentElement.classList.remove('winui-dark');
 }
 
-var pages = ['home', 'gallery', 'desktop', 'donwloads', 'documents', 'pictures', 'music', 'videos', 'this_pc', 'network'];
+window.System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+    }
+})
 
-//browserWindow.container.style.left = '0px';
-//browserWindow.container.style.top = '0px';
+document.body.classList.add('winui');
+document.body.classList.add('winui-no-background');
 
-//browserWindow.toolbar.replaceChild(tabStrip, browserWindow.toolbar.querySelector('.window-toolbar-info'));
-//tabStrip.appendChild(tabStripTabs);
-//tabStrip.appendChild(tabStripCreate);
-//tabStripCreate.appendChild(tabStripCreateButton);
+const styles = ['./window.v2.css', './chooseFileWindow.css', './pages/style.css'];
 
-var style = document.createElement('link');
-style.rel = 'stylesheet';
-style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./chooseFileWindow.css'));
-document.head.appendChild(style);
+const promises = [];
+for (let i in styles) {
+    promises.push(new Promise(async (resolve, reject) => {
+        let style = document.createElement('link');
+        style.rel = 'stylesheet';
+        style.type = 'text/css';
+        style.href = await fs.getFileURL(utils.resolvePath(styles[i]));
+        document.head.appendChild(style);
+        resolve();
+    }))
+}
+await Promise.allSettled(promises);
 
-document.documentElement.classList.add('winui');
+// "null" refers to the group separator
+const caches = {};
+const pageDatas = [
+    {
+        title: 'Home',
+        path: 'pages://home',
+        icon: './icons/home.ico'
+    }, {
+        title: 'Gallery',
+        path: 'pages://gallery',
+        icon: './icons/gallery.ico'
+    }, null, {
+        title: 'Desktop',
+        path: 'C:/Users/Admin/Desktop',
+        icon: './icons/desktop.ico'
+    }, {
+        title: 'Downloads',
+        path: 'C:/Users/Admin/Downloads',
+        icon: './icons/downloads.ico'
+    }, {
+        title: 'Documents',
+        path: 'C:/Users/Admin/Documents',
+        icon: './icons/documents.ico'
+    }, {
+        title: 'Pictures',
+        path: 'C:/Users/Admin/Pictures',
+        icon: './icons/pictures.ico'
+    }, {
+        title: 'Music',
+        path: 'C:/Users/Admin/Music',
+        icon: './icons/music.ico'
+    }, {
+        title: 'Videos',
+        path: 'C:/Users/Admin/Videos',
+        icon: './icons/videos.ico'
+    }, null, {
+        title: 'This PC',
+        path: 'pages://this_pc',
+        icon: './icons/monitor.ico'
+    }, {
+        title: 'Network',
+        path: 'pages://network',
+        icon: './icons/network.ico'
+    }
+];
 
-async function getIcon(page) {
-    switch (page) {
-        case 'home':
-            return await fs.getFileURL(utils.resolvePath('./icons/home.ico'));
-        case 'gallery':
-            return await fs.getFileURL(utils.resolvePath('./icons/gallery.ico'));
-        case 'C:/Users/Admin/Desktop':
-        case 'desktop':
-            return await fs.getFileURL(utils.resolvePath('./icons/desktop.ico'));
-        case 'C:/Users/Admin/Downloads':
-        case 'donwloads':
-            return await fs.getFileURL(utils.resolvePath('./icons/downloads.ico'));
-        case 'C:/Users/Admin/Documents':
-        case 'documents':
-            return await fs.getFileURL(utils.resolvePath('./icons/documents.ico'));
-        case 'C:/Users/Admin/Pictures':
-        case 'pictures':
-            return await fs.getFileURL(utils.resolvePath('./icons/pictures.ico'));
-        case 'C:/Users/Admin/Music':
-        case 'music':
-            return await fs.getFileURL(utils.resolvePath('./icons/music.ico'));
-        case 'C:/Users/Admin/Videos':
-        case 'videos':
-            return await fs.getFileURL(utils.resolvePath('./icons/videos.ico'));
-        case 'this_pc':
-            return await fs.getFileURL(utils.resolvePath('./icons/monitor.ico'));
-        case 'network':
-            return await fs.getFileURL(utils.resolvePath('./icons/network.ico'));
-        default:
-            return await fs.getFileURL(utils.resolvePath('./icons/folder.ico'));
+function capitalizeFirstLetter(val) {
+    return String(val).charAt(0).toUpperCase() + String(val).slice(1);
+}
+
+function hasParentFolder(fullPath) {
+    if (fullPath.startsWith('pages://')) return false;
+    const { path } = fsUtils.parsePath(fullPath);
+    return path.split('/').filter(i => i.trim().length > 0).length > 0;
+}
+
+function getParentPath(fullPath) {
+    const { disk, path } = fsUtils.parsePath(fullPath);
+    const parts = path.split('/').filter(p => p.trim().length > 0);
+    if (parts.length <= 0) return null;
+    parts.pop();
+    return `${disk}:/${parts.join('/')}`;
+}
+
+async function getImageURL(image) {
+    if (caches[image]) {
+        return caches[image]
+    } else {
+        var url = await fs.getFileURL(image);
+        caches[image] = url;
+        return url;
     }
 }
 
-function getHeader(page) {
-    switch (page) {
-        case 'home':
-            return 'Home';
-        case 'gallery':
-            return 'Gallery';
-        case 'desktop':
-        case 'C:/Users/Admin/Desktop':
-            return 'Desktop';
-        case 'C:/Users/Admin/Downloads':
-        case 'donwloads':
-            return 'Downloads';
-        case 'C:/Users/Admin/Documents':
-        case 'documents':
-            return 'Documents';
-        case 'C:/Users/Admin/Pictures':
-        case 'pictures':
-            return 'Pictures';
-        case 'C:/Users/Admin/Music':
-        case 'music':
-            return 'Music';
-        case 'C:/Users/Admin/Videos':
-        case 'videos':
-            return 'Videos';
-        case 'this_pc':
-            return 'This PC';
-        case 'network':
-            return 'Network';
-        default:
-            return page.split('/').slice(-1) == '' ? page : page.split('/').slice(-1);
+function getData(path) {
+    for (let i in pageDatas) {
+        var item = pageDatas[i];
+        if (item != null && item.path == path) {
+            return {
+                title: item.title,
+                icon: item.icon,
+                active: item.active
+            }
+        }
+    }
+    return {
+        title: capitalizeFirstLetter(fsUtils.basename(path)),
+        icon: 'C:/Winbows/icons/folders/folder.ico',
+        active: pageDatas.filter(t => t != null).find(t => t.path == 'pages://this_pc').active
     }
 }
 
-function getPath(page) {
-    switch (page) {
-        case 'home':
-            return null;
-        case 'gallery':
-            return null;
-        case 'desktop':
-            return 'C:/Users/Admin/Desktop';
-        case 'donwloads':
-            return 'C:/Users/Admin/Downloads';
-        case 'documents':
-            return 'C:/Users/Admin/Documents';
-        case 'pictures':
-            return 'C:/Users/Admin/Pictures';
-        case 'music':
-            return 'C:/Users/Admin/Music';
-        case 'videos':
-            return 'C:/Users/Admin/Videos';
-        case 'this_pc':
-            return null;
-        case 'network':
-            return null;
-        default:
-            return page;
-    }
-}
-
-async function getPageStatus(page) {
-    if (pages.includes(page)) {
-        return 'pages';
-    }
-    var status = await fs.exists(page);
-    console.log(status)
-    return status.exists == true ? 'dir' : false;
-}
-
-function pageToPath(page) {
-    return pages.includes(page) ? getPath(page) : page;
-}
-
-function randomID() {
-    var patterns = '0123456789abcdef';
-    var id = '_';
-    for (var i = 0; i < 6; i++) {
-        id += patterns.charAt(Math.floor(Math.random() * patterns.length));
-    }
-    if (tabs[id]) {
-        return randomID();
-    }
-    return id;
-}
-
+// Path
 var pathStrip = document.createElement('div');
 var pathStripActions = document.createElement('div');
 var pathStripActionBack = document.createElement('button');
@@ -176,25 +164,25 @@ pathStripPath.appendChild(pathStripPathText);
 
 pathStripPathProtocol.setAttribute('data-protocol', 'this_pc');
 
-var content = document.createElement('div');
-var sidebar = document.createElement('div');
-var viewerContainer = document.createElement('div');
-var viewer = document.createElement('div');
-var footer = document.createElement('div');
-var footerLeft = document.createElement('div');
-var footerRight = document.createElement('div');
-var footerPageItems = document.createElement('div');
-var footerPageSize = document.createElement('div');
-var footerSelectedItems = document.createElement('div');
-var footerButtonGroup = document.createElement('div');
-var footerButtonCancel = document.createElement('button');
-var footerButtonConfirm = document.createElement('button');
+const actionbar = document.createElement('div');
+const actionbarCreate = document.createElement('div');
+const actionbarCreateButton = document.createElement('button');
+const actionbarQuickActions = document.createElement('div');
+const content = document.createElement('div');
+const sidebar = document.createElement('div');
+const viewerContainer = document.createElement('div');
+//const viewer = document.createElement('div');
+//var viewerContent = document.createElement('div');
+const footer = document.createElement('div');
+const footerLeft = document.createElement('div');
+const footerRight = document.createElement('div');
+const footerPageItems = document.createElement('div');
+const footerPageSize = document.createElement('div');
+const footerSelectedItems = document.createElement('div');
+const footerButtonGroup = document.createElement('div');
+const footerButtonCancel = document.createElement('button');
+const footerButtonConfirm = document.createElement('button');
 
-content.className = 'explorer-content';
-sidebar.className = 'explorer-sidebar';
-viewerContainer.className = 'explorer-viewer-container';
-viewer.className = 'explorer-viewer';
-footer.className = 'explorer-footer';
 footerLeft.className = 'explorer-footer-left';
 footerRight.className = 'explorer-footer-right';
 footerPageItems.className = 'explorer-footer-page-items';
@@ -207,16 +195,6 @@ footerButtonConfirm.className = 'explorer-footer-button confirm';
 footerButtonCancel.innerHTML = 'Cancel';
 footerButtonConfirm.innerHTML = 'Confirm';
 
-document.body.appendChild(pathStrip);
-document.body.appendChild(content);
-document.body.appendChild(footer);
-content.appendChild(sidebar);
-content.appendChild(viewerContainer);
-viewerContainer.appendChild(viewer);
-footer.appendChild(footerButtonGroup);
-footerButtonGroup.appendChild(footerButtonCancel);
-footerButtonGroup.appendChild(footerButtonConfirm);
-
 footerButtonCancel.addEventListener('click', (e) => {
     browserWindow.worker.postMessage({
         type: 'cancel',
@@ -225,108 +203,259 @@ footerButtonCancel.addEventListener('click', (e) => {
     })
 })
 
-var actionButtons = {};
-var viewHistory = [];
-var currentHistory = -1;
-var currentPage = datas.page || 'C:/';
+footerButtonConfirm.addEventListener('click', (e) => {
+    browserWindow.worker.postMessage({
+        type: 'confirm',
+        token: TOKEN,
+        items: selected
+    })
+})
 
-const dropZone = viewerContainer;
+// Selection canvas
+const canvas = document.createElement('canvas');
 
-dropZone.addEventListener('dragover', (event) => {
-    event.preventDefault();
-    dropZone.classList.add('dragover');
-});
+actionbar.className = 'explorer-actionbar';
+actionbarCreate.className = 'explorer-actionbar-group';
+actionbarCreateButton.className = 'explorer-actionbar-button create';
+actionbarQuickActions.className = 'explorer-actionbar-group';
+content.className = 'explorer-content';
+sidebar.className = 'explorer-sidebar';
+viewerContainer.className = 'explorer-viewer-container';
+//viewer.className = 'explorer-viewer';
+//viewerContent.className = 'explorer-viewer-content';
+footer.className = 'explorer-footer';
+footerLeft.className = 'explorer-footer-left';
+footerRight.className = 'explorer-footer-right';
+footerPageItems.className = 'explorer-footer-page-items';
+footerPageSize.className = 'explorer-footer-page-size';
+footerSelectedItems.className = 'explorer-footer-selected-items';
 
-dropZone.addEventListener('dragenter', (event) => {
-    event.preventDefault();
-    dropZone.classList.add('dragover');
-});
+document.body.appendChild(pathStrip);
+document.body.appendChild(actionbar);
+actionbar.appendChild(actionbarCreate);
+actionbar.appendChild(actionbarQuickActions);
+//actionbarCreate.appendChild(actionbarCreateButton);
+document.body.appendChild(content);
+document.body.appendChild(footer);
+content.appendChild(sidebar);
+content.appendChild(viewerContainer);
+//viewerContainer.appendChild(viewer);
+//viewer.appendChild(viewerContent);
 
-dropZone.addEventListener('dragleave', (event) => {
-    event.preventDefault();
-    dropZone.classList.remove('dragover');
-});
+footer.appendChild(footerLeft);
+footer.appendChild(footerRight);
+footerLeft.appendChild(footerPageItems);
+footerLeft.appendChild(footerPageSize);
+footerLeft.appendChild(footerSelectedItems);
+footerRight.appendChild(footerButtonGroup);
+footerButtonGroup.appendChild(footerButtonCancel);
+footerButtonGroup.appendChild(footerButtonConfirm);
 
-dropZone.addEventListener('drop', async (event) => {
-    event.preventDefault();
-    dropZone.classList.remove('dragover');
+setSidebar(true);
 
-    var completed = 0;
-    var total = 0;
-    var target = getPath(currentPage);
+const module = await browserWindow.import('./_router.js');
+const router = module.router;
+let pageContents = {};
 
-    if (target == '') return;
-    if (!target.endsWith('/')) {
-        target += '/';
+async function updatePage(e) {
+    const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
+    //const pageItem = Object.values(pageListItems).filter(item => item.path === path);
+    //if (pageItem.length == 0) return;
+    if (path == '/') {
+        return router.replace('pages://home');
     }
 
-    console.log(currentPage, target)
+    pathStripPathText.innerHTML = path;
 
-    const items = event.dataTransfer.items;
-    total = items.length;
-    for (let i = 0; i < items.length; i++) {
-        const item = items[i].webkitGetAsEntry();
-        if (item) {
-            if (item.isFile) {
-                await handleFile(item, "");
-            } else if (item.isDirectory) {
-                await handleDirectory(item, item.name);
+    if (router.historyIndex <= 0) {
+        pathStripActionBack.disabled = true;
+    } else {
+        pathStripActionBack.disabled = false;
+    }
+    if (router.history.length > 1 && router.historyIndex < router.history.length - 1) {
+        pathStripActionNext.disabled = false;
+    } else {
+        pathStripActionNext.disabled = true;
+    }
+    if (hasParentFolder(path)) {
+        pathStripActionUp.disabled = false;
+    } else {
+        pathStripActionUp.disabled = true;
+    }
+
+    let pageContent = pageContents[path];
+    if (!pageContents[path]) {
+        if (path == 'pages://this_pc') {
+            const itemViewer = document.createElement('div');
+            itemViewer.className = 'explorer-item-viewer';
+            footerPageItems.innerHTML = `${fs.disks.length} Items`;
+            for (var i = 0; i < fs.disks.length; i++) {
+                var disk = fs.disks[i];
+                var stat = fs.stat(disk + ':/');
+                var itemElement = document.createElement('div');
+                var iconElement = document.createElement('div');
+                var infoElement = document.createElement('div');
+                var diskName = document.createElement('div');
+                var totalSizeBar = document.createElement('div');
+                var usedSizeBar = document.createElement('div');
+                var usedSizeText = document.createElement('div');
+
+                itemElement.className = 'explorer-viewer-disk-item';
+                iconElement.className = 'explorer-viewer-disk-icon';
+                infoElement.className = 'explorer-viewer-disk-info';
+                diskName.className = 'explorer-viewer-disk-name';
+                totalSizeBar.className = 'explorer-viewer-disk-total-bar';
+                usedSizeBar.className = 'explorer-viewer-disk-used-bar';
+                usedSizeText.className = 'explorer-viewer-disk-used-text';
+
+                getImageURL('C:/Winbows/icons/devices/drives/Windows 11 Drive Unlocked.ico').then(url => {
+                    iconElement.style.backgroundImage = `url(${url})`;
+                })
+
+                diskName.innerHTML = disk.toUpperCase() + ':';
+
+                itemViewer.appendChild(itemElement);
+                itemElement.appendChild(iconElement);
+                itemElement.appendChild(infoElement);
+                infoElement.appendChild(diskName);
+                infoElement.appendChild(totalSizeBar);
+                totalSizeBar.appendChild(usedSizeBar);
+                infoElement.appendChild(usedSizeText);
+
+                itemElement.addEventListener('click', () => {
+                    router.push(disk + ':/');
+                })
+
+                var size = stat.length;
+
+                navigator.storage.estimate().then(quota => {
+                    usedSizeBar.style.width = size / quota.quota * 100 + '%';
+                    usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
+                })
+
+                footerPageSize.innerHTML = window.utils.formatBytes(size);
+            }
+            pageContent = itemViewer;
+        } else if (path.startsWith('pages://')) {
+            try {
+                const module = await browserWindow.import(`./pages/` + path.replace('pages://', '') + '.js');
+                pageContents[path] = module.default(router);
+                pageContent = pageContents[path] || document.createElement('div');
+            } catch (e) {
+                // Page not found
+                const el = document.createElement('div');
+                el.innerHTML = 'Not found!';
+                el.style = "width: 100%;text-align: center;color: var(--label-color);padding: 1rem;display: block;";
+                pageContent = el;
+                console.warn(e);
+            }
+            if (router.getCurrentRoute() != path) {
+                return;
+            }
+        } else {
+            pageContent = await localPageCrafter(path);
+            if (router.getCurrentRoute() != path) {
+                return;
             }
         }
     }
 
-    async function handleFile(fileEntry, path) {
-        return new Promise((resolve, reject) => {
-            fileEntry.file(file => {
-                const filePath = (path ? path + "/" : '') + file.name;
-                const reader = new FileReader();
-                reader.onload = async function (event) {
-                    const arrayBuffer = event.target.result;
-                    const blob = new Blob([arrayBuffer], { type: file.type });
-                    const fullPath = `${target}${filePath}`;
-                    await fs.writeFile(fullPath, blob).then(() => {
-                        completed++;
-                        console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-                        if (completed == total) {
-                            getPage(currentPage);
-                        }
-                        resolve({
-                            type: 'update',
-                            status: 'ok',
-                            name: file.name,
-                            path: fullPath,
-                            message: '',
-                            size: blob.size,
-                            blob: blob,
-                            completed: completed
-                        });
-                    });
-                };
-                reader.readAsArrayBuffer(file);
-            });
+    try {
+        const pageData = getData(path);
+        pageData.active();
+    } catch (e) { }
+
+    // Remove selected items
+    selected = [];
+
+    if (!path.startsWith('pages://')) {
+        viewerContainer.replaceChildren(...[pageContent, canvas]);
+    } else {
+        viewerContainer.replaceChildren(...[pageContent]);
+    }
+}
+
+router.on('change', updatePage);
+router.on('reload', updatePage);
+
+// Initialize
+router.push(datas.page || 'pages://home');
+
+pathStripActionBack.disabled = true;
+pathStripActionNext.disabled = true;
+pathStripActionUp.disabled = true;
+
+pathStripActionBack.addEventListener('click', () => {
+    router.back();
+})
+
+pathStripActionNext.addEventListener('click', () => {
+    router.forward();
+})
+
+pathStripActionUp.addEventListener('click', () => {
+    const path = router.getCurrentRoute();
+    if (hasParentFolder(router.getCurrentRoute())) {
+        router.push(getParentPath(path));
+    }
+})
+
+pathStripActionRefresh.addEventListener('click', () => {
+    router.reload();
+})
+
+function setSidebar(initialize = false) {
+    if (initialize) {
+        var group = document.createElement('div');
+        group.className = 'explorer-sidebar-group';
+        pageDatas.forEach(async (item, i) => {
+            if (item == null) {
+                sidebar.appendChild(group);
+                group = document.createElement('div');
+                group.className = 'explorer-sidebar-group';
+            } else {
+                var itemElement = document.createElement('div');
+                var itemIcon = document.createElement('div');
+                var itemHeader = document.createElement('div');
+                itemElement.className = 'explorer-sidebar-item';
+                itemIcon.className = 'explorer-sidebar-item-icon';
+                itemHeader.className = 'explorer-sidebar-item-header';
+                itemElement.addEventListener('click', () => {
+                    sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
+                        active.classList.remove('active');
+                    })
+                    // TODO : Set the page of item
+                    //currentPage = item.path;
+                    router.push(item.path);
+                    //addToHistory(currentPage);
+                    //getPage(currentPage);
+                    itemElement.classList.add('active');
+                })
+                group.appendChild(itemElement);
+                itemElement.appendChild(itemIcon);
+                itemElement.appendChild(itemHeader);
+                getImageURL(item.icon).then(url => {
+                    itemIcon.style.backgroundImage = `url(${url})`;
+                })
+                itemHeader.innerHTML = item.title;
+                pageDatas[i].active = function () {
+                    sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
+                        active.classList.remove('active');
+                    })
+                    itemElement.classList.add('active');
+                }
+            }
         })
-    }
-
-    async function handleDirectory(directoryEntry, path) {
-        const reader = directoryEntry.createReader();
-        const entries = await new Promise((resolve, reject) => {
-            reader.readEntries(resolve, reject);
-        });
-        completed++;
-        total += entries.length;
-        for (const entry of entries) {
-            if (entry.isFile) {
-                handleFile(entry, path);
-            } else if (entry.isDirectory) {
-                await handleDirectory(entry, path + "/" + entry.name);
-            }
+        if (group.innerHTML != '') {
+            sidebar.appendChild(group);
         }
     }
-});
+}
 
 var selected = [];
 var createdItems = [];
 
+// Select file / folder
 ; (() => {
     var startXInCanvas = 0;
     var startYInCanvas = 0;
@@ -337,7 +466,6 @@ var createdItems = [];
     var pointerX = 0;
     var pointerY = 0;
     var selecting = false;
-    const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', {
         willReadFrequently: true
     })
@@ -360,6 +488,8 @@ var createdItems = [];
             e.pageX = touch.pageX;
             e.pageY = touch.pageY;
         }
+        var viewer = viewerContainer.querySelector('.explorer-item-viewer');
+        if (!viewer) return;
         selecting = true;
 
         // For items
@@ -382,6 +512,8 @@ var createdItems = [];
 
     function selectionMove(e) {
         if (selecting == false) return;
+        var viewer = viewerContainer.querySelector('.explorer-item-viewer');
+        if (!viewer) return;
         document.getSelection().removeAllRanges();
         if (e.type.startsWith('touch')) {
             var touch = e.touches[0] || e.changedTouches[0];
@@ -419,12 +551,10 @@ var createdItems = [];
                 // Start point in item
                 item.item.classList.add('active');
                 selected.push(item.path);
-                item.setIsSelected(true);
             } else if (position.x >= rectX && position.y >= rectY && position.x + itemWidth <= pointerX && position.y + itemHeight <= pointerY) {
                 // Rect in Selection
                 item.item.classList.add('active');
                 selected.push(item.path);
-                item.setIsSelected(true);
             } else if (!(position.x + itemWidth < rectX ||
                 position.x > rectX + rectWidth ||
                 position.y + itemHeight < rectY ||
@@ -432,10 +562,8 @@ var createdItems = [];
                 // Overlap
                 item.item.classList.add('active');
                 selected.push(item.path);
-                item.setIsSelected(true);
             } else {
                 item.item.classList.remove('active');
-                item.setIsSelected(false);
             }
         })
     }
@@ -447,8 +575,10 @@ var createdItems = [];
 
     function render() {
         window.utils.canvasClarifier(canvas, ctx);
-
         if (selecting == false) return;
+
+        var viewer = viewerContainer.querySelector('.explorer-item-viewer');
+        if (!viewer) return;
 
         var position = window.utils.getPosition(canvas);
 
@@ -479,12 +609,11 @@ var createdItems = [];
         window.addEventListener(event, e => selectionEnd(e))
     })
 
-    viewer.addEventListener('scroll', render);
-
     var resizeObserver = new ResizeObserver(render);
     resizeObserver.observe(viewerContainer);
 })();
 
+// Contextmenu for selected items
 function generateMultipleMenu(e) {
     const selectedItems = selected;
     const menu = WinUI.contextMenu([
@@ -522,7 +651,7 @@ function generateMultipleMenu(e) {
     })
 }
 
-async function createFolderItem(details, path) {
+async function createFolderItem(parent, details, path) {
     var item = document.createElement('div');
     var itemIcon = document.createElement('div');
     var itemName = document.createElement('div');
@@ -532,7 +661,7 @@ async function createFolderItem(details, path) {
     itemIcon.className = 'explorer-viewer-item-icon';
     itemName.className = 'explorer-viewer-item-name';
 
-    fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
+    getImageURL('C:/Winbows/icons/folders/folder.ico').then(url => {
         itemIcon.style.backgroundImage = `url(${url})`;
     })
     itemName.innerHTML = details.name;
@@ -541,17 +670,19 @@ async function createFolderItem(details, path) {
 
     item.addEventListener('click', async () => {
         if (isSelected == false) {
+            selected = [path];
             isSelected = true;
             item.classList.add('active');
-            if (!selected.includes(path)) {
-                selected.push(path);
-            }
-            return;
+        } else {
+            selected = [];
+            isSelected = false;
+            item.classList.remove('active');
         }
-        item.classList.remove('active');
-        currentPage = path;
-        addToHistory(currentPage);
-        getPage(currentPage);
+    })
+
+    item.addEventListener('dblclick', () => {
+        selected = [];
+        router.push(path);
     })
 
     item.addEventListener('contextmenu', async (e) => {
@@ -592,97 +723,74 @@ async function createFolderItem(details, path) {
         })
     })
 
-    function setIsSelected(value) {
-        isSelected = value;
-        item.classList.toggle('active', value);
-    }
-
     createdItems.push({
-        item, path, type: 'folder', details, setIsSelected
+        item, path, type: 'folder', details
     })
 
     item.appendChild(itemIcon);
     item.appendChild(itemName);
-    viewer.appendChild(item);
+    parent.appendChild(item);
     return item;
 }
 
-async function createFileItem(details, path) {
+async function createFileItem(parent, details, path) {
     var item = document.createElement('div');
     var itemIcon = document.createElement('div');
     var itemName = document.createElement('div');
-    var fontExtensions = ['ttf', 'otf', 'woff', 'woff2', 'eot'];
-    var isSelected = false;
+    var fontExtensions = ['.ttf', '.otf', '.woff', '.woff2', '.eot'];
 
     item.className = 'explorer-viewer-item';
     itemIcon.className = 'explorer-viewer-item-icon';
     itemName.className = 'explorer-viewer-item-name';
 
     if (details.type == 'application/winbows-link') {
-        fs.readFile(path).then(async result => {
-            const file = await result.text();
-            const link = JSON.parse(file);
-            itemIcon.style.backgroundImage = `url(${link.icon})`;
-            itemIcon.classList.add('shortcut');
-            itemName.innerHTML = link.name;
-            item.addEventListener('click', (e) => {
-                if (isSelected == false) {
-                    isSelected = true;
-                    item.classList.add('active');
-                    if (!selected.includes(path)) {
-                        selected.push(path);
-                    }
-                    return;
-                }
-                item.classList.remove('active');
-                selected = selected.filter(p => p != path);
-                //window.System.Shell(link.command);
-            })
-        })
-        fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
-            itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
+        fs.getFileAsText(path).then(content => {
+            try {
+                const link = JSON.parse(content);
+                itemIcon.style.backgroundImage = `url(${link.icon})`;
+                itemIcon.classList.add('shortcut');
+                itemName.innerHTML = link.name;
+                getImageURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
+                    itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
+                })
+            } catch (e) {
+                getImageURL(window.fileIcons.getIcon(path)).then(url => {
+                    itemIcon.style.backgroundImage = `url(${url})`;
+                })
+                itemName.innerHTML = fsUtils.basename(path);
+                console.error(`An error occurred while parsing file ( ${path} )`)
+            }
         })
     } else {
-        fs.getFileURL(details.type == 'application/winbows-link' ? '' : window.fileIcons.getIcon(path)).then(url => {
+        getImageURL(window.fileIcons.getIcon(path)).then(url => {
             itemIcon.style.backgroundImage = `url(${url})`;
             if (details.type.startsWith('image/')) {
                 try {
-                    fs.getFileURL(path).then(url => {
+                    getImageURL(path).then(url => {
                         itemIcon.style.backgroundImage = `url(${url})`;
                     })
                 } catch (e) {
-                    console.log('Failed to load image.');
+                    if (window.debuggerMode == true) {
+                        console.log('Failed to load image.');
+                    }
                 }
             }
         })
         itemName.innerHTML = details.name;
-        item.addEventListener('click', () => {
-            if (isSelected == false) {
-                isSelected = true;
-                item.classList.add('active');
-                if (!selected.includes(path)) {
-                    selected.push(path);
-                }
-                return;
-            }
-            item.classList.remove('active');
-            selected = selected.filter(p => p != path);
-            isSelected = false;
-            /*
-            var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
-            if (defaultViewer != null) {
-                new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
-            } else {
-                console.log(utils.resolvePath('./chooseViewer.js'))
-                new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
-            }*/
-        })
     }
 
-    function setIsSelected(value) {
-        isSelected = value;
-        item.classList.toggle('active', value);
-    }
+    var isSelected = false;
+    item.addEventListener('click', () => {
+        if (isSelected == false) {
+            selected = [path];
+            isSelected = true;
+            item.classList.add('active');
+        } else {
+            selected = [];
+            isSelected = false;
+            item.classList.remove('active');
+        }
+    })
 
     item.addEventListener('contextmenu', async (e) => {
         if (selected.length > 1) {
@@ -703,8 +811,10 @@ async function createFileItem(details, path) {
                     if (defaultViewer != null) {
                         new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                     } else {
-                        console.log(utils.resolvePath('./chooseViewer.js'))
-                        new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
+                        if (window.debuggerMode == true) {
+                            console.log('./chooseViewer.wexe')
+                        }
+                        new Process('./chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
                     }
                 }
             }, {
@@ -712,7 +822,7 @@ async function createFileItem(details, path) {
                 className: "open-with",
                 text: "Open with...",
                 action: () => {
-                    new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                    new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
                 }
             }, {
                 icon: "delete",
@@ -733,13 +843,25 @@ async function createFileItem(details, path) {
                     await window.setBackgroundImage(path);
                 }
             })
-        } else if (details.type.search('javascript') > -1) {
+        } else if (details.type.search('javascript') > -1 || window.utils.getFileExtension(path) == '.wexe') {
             items.push({
                 className: "run-as-an-app",
                 icon: 'window-snipping',
                 text: "Run as an application",
                 action: async () => {
                     new Process(path).start();
+                }
+            })
+        } else if (window.utils.getFileExtension(path) == '.wbsf') {
+            items.push({
+                icon: 'window-snipping',
+                text: 'Run file',
+                action: async () => {
+                    const file = await fs.readFile(path);
+                    const script = await file.text();
+                    script.split('\n').filter(t => t.trim().length > 0).forEach(line => {
+                        window.System.Shell(line.trim());
+                    })
                 }
             })
         } else if (fontExtensions.includes(window.utils.getFileExtension(path))) {
@@ -758,7 +880,9 @@ async function createFileItem(details, path) {
                         window.document.body.style.setProperty('--winbows-font-default', fontName);
 
                     } catch (error) {
-                        console.error('Failed to load font', error);
+                        if (window.debuggerMode == true) {
+                            console.error('Failed to load font', error);
+                        }
                     }
                     return;
                 }
@@ -783,282 +907,76 @@ async function createFileItem(details, path) {
     })
 
     createdItems.push({
-        item, path, type: 'file', details, setIsSelected
+        item, path, type: 'file', details
     })
 
     item.appendChild(itemIcon);
     item.appendChild(itemName);
-    viewer.appendChild(item);
+    parent.appendChild(item);
 }
 
-function randomID() {
-    var patterns = '0123456789abcdef';
-    var id = '_0x';
-    for (var i = 0; i < 12; i++) {
-        id += patterns.charAt(Math.floor(Math.random() * patterns.length));
+async function localPageCrafter(path) {
+    path = path.endsWith('/') ? path : path + '/';
+    if (!fs.exists(path)) {
+        const el = document.createElement('span');
+        el.style = "width: 100%;text-align: center;color: var(--label-color);padding: 1rem;display: block;";
+        el.innerHTML = "This folder can not be found.";
+        return el;
     }
-    return id;
-}
+    const res = await fs.readdir(path);
+    const pageStat = fs.stat(path);
+    let dirs = [];
+    let files = [];
+    let stats = {};
 
-var currentID = null;
-
-async function getSize(path) {
-    var items = await fs.readdir(path, true);
-    var size = 0;
-    items.forEach(item => {
-        size += item.size;
-    })
-    return size;
-}
-
-async function getPage(page) {
-    var pageStatus = await getPageStatus(page);
-    if (pageStatus == false) return;
-
-    var targetID = randomID();
-    currentID = targetID;
-
-    selected = [];
-    createdItems = [];
-    viewer.innerHTML = '';
-    viewer.classList.remove('animation');
-
-    // TODO : Add path select and input
-    pathStripPathText.innerHTML = pageToPath(page);
-    update();
-
-    if (pageStatus == null) return;
-
-    footerPageItems.innerHTML = 'Loading...';
-    footerPageSize.innerHTML = '';
-
-    if (page == 'this_pc') {
-        const quota = await navigator.storage.estimate();
-        footerPageItems.innerHTML = `${fs.disks.length} Items`;
-        for (var i = 0; i < fs.disks.length; i++) {
-            var disk = fs.disks[i];
-            var items = await fs.readdir(disk + ':/', true);
-            var itemElement = document.createElement('div');
-            var iconElement = document.createElement('div');
-            var infoElement = document.createElement('div');
-            var diskName = document.createElement('div');
-            var totalSizeBar = document.createElement('div');
-            var usedSizeBar = document.createElement('div');
-            var usedSizeText = document.createElement('div');
-
-            itemElement.className = 'explorer-viewer-disk-item';
-            iconElement.className = 'explorer-viewer-disk-icon';
-            infoElement.className = 'explorer-viewer-disk-info';
-            diskName.className = 'explorer-viewer-disk-name';
-            totalSizeBar.className = 'explorer-viewer-disk-total-bar';
-            usedSizeBar.className = 'explorer-viewer-disk-used-bar';
-            usedSizeText.className = 'explorer-viewer-disk-used-text';
-
-            fs.getFileURL('C:/Winbows/icons/devices/drives/Windows 11 Drive Unlocked.ico').then(url => {
-                iconElement.style.backgroundImage = `url(${url})`;
-            })
-
-            diskName.innerHTML = disk.toUpperCase() + ':';
-
-            viewer.appendChild(itemElement);
-            itemElement.appendChild(iconElement);
-            itemElement.appendChild(infoElement);
-            infoElement.appendChild(diskName);
-            infoElement.appendChild(totalSizeBar);
-            totalSizeBar.appendChild(usedSizeBar);
-            infoElement.appendChild(usedSizeText);
-
-            itemElement.addEventListener('click', () => {
-                addToHistory(disk + ':/');
-                getPage(currentPage);
-            })
-
-            var size = 0;
-            items.forEach(item => {
-                size += item.size;
-                usedSizeBar.style.width = size / quota.quota * 100 + '%';
-                usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
-            })
-
-            footerPageSize.innerHTML = window.utils.formatBytes(size);
+    for (const path of res) {
+        const stat = fs.stat(path);
+        stats[path] = stat;
+        if (stat.isDirectory()) {
+            dirs.push(path);
+        } else {
+            files.push(path);
         }
-        viewer.style.animation = "revert-layer";
-        viewer.classList.add('animation');
-        return;
     }
 
-    await fs.readdir(page).then(async items => {
-        if (targetID != currentID) return;
-        viewer.innerHTML = '';
-        var dirs = [];
-        var files = [];
+    const items = dirs.sort((a, b) => {
+        try {
+            return a.toUpperCase().localeCompare(b.toUpperCase());
+        } catch (e) { };
+    }).concat(files.sort((a, b) => {
+        try {
+            return a.toUpperCase().localeCompare(b.toUpperCase());
+        } catch (e) { };
+    }))
+    footerPageItems.innerHTML = `${items.length} Items`;
+    footerPageSize.innerHTML = window.utils.formatBytes(pageStat.length);
 
-        items.forEach(item => {
-            if (item.type == 'directory') {
-                dirs.push(item);
-            } else {
-                files.push(item);
+    if (items.length == 0) {
+        const el = document.createElement('span');
+        el.style = "width: 100%;text-align: center;color: var(--label-color);padding: 1rem;display: block;";
+        el.innerHTML = "This folder is empty.";
+        return el;
+    }
+
+    const itemViewer = document.createElement('div');
+    itemViewer.className = 'explorer-item-viewer';
+
+    for (let i in items) {
+        const path = items[i];
+        const stat = stats[path]
+        if (stat.isDirectory()) {
+            await createFolderItem(itemViewer, {
+                name: fsUtils.basename(path)
+            }, path)
+        } else {
+            if (window.debuggerMode == true) {
+                console.log(stat.mimeType)
             }
-        })
-        var items = dirs.sort((a, b) => {
-            try {
-                return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
-            } catch (e) { };
-        }).concat(files.sort((a, b) => {
-            try {
-                return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
-            } catch (e) { };
-        }))
-        footerPageItems.innerHTML = `${items.length} Items`;
-        getSize(currentPage).then(size => {
-            footerPageSize.innerHTML = window.utils.formatBytes(size);
-        })
-
-        for (let i in items) {
-            var item = items[i];
-            if (item.type == 'directory') {
-                await createFolderItem({
-                    name: item.path.split('/').slice(-1)
-                }, item.path)
-            } else {
-                console.log(item.mimeType)
-                await createFileItem({
-                    name: item.path.split('/').slice(-1),
-                    type: item.mimeType
-                }, item.path)
-            }
+            await createFileItem(itemViewer, {
+                name: fsUtils.basename(path),
+                type: stat.mimeType
+            }, path)
         }
-        viewer.style.animation = "revert-layer";
-        viewer.classList.add('animation');
-        if (items.length == 0) {
-            viewer.innerHTML = '<span style="width:100%;text-align:center;color:var(--label-color);">This folder is empty.</span>';
-        }
-    });
-    return
+    }
+    return itemViewer;
 }
-
-function setSidebar(initialize = false) {
-    if (initialize) {
-        Object.values(groups).forEach(items => {
-            var group = document.createElement('div');
-            group.className = 'explorer-sidebar-group';
-            sidebar.appendChild(group);
-            items.forEach(async item => {
-                var itemElement = document.createElement('div');
-                var itemIcon = document.createElement('div');
-                var itemHeader = document.createElement('div');
-                itemElement.className = 'explorer-sidebar-item';
-                itemIcon.className = 'explorer-sidebar-item-icon';
-                itemHeader.className = 'explorer-sidebar-item-header';
-                itemElement.addEventListener('click', () => {
-                    sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
-                        active.classList.remove('active');
-                    })
-                    // TODO : Set the page of item
-                    currentPage = getPath(item) || item;
-                    addToHistory(currentPage);
-                    getPage(currentPage);
-                    itemElement.classList.add('active');
-                })
-                group.appendChild(itemElement);
-                itemElement.appendChild(itemIcon);
-                itemElement.appendChild(itemHeader);
-                itemIcon.style.backgroundImage = `url(${await getIcon(item)})`;
-                itemHeader.innerHTML = getHeader(item);
-            })
-        })
-    }
-}
-
-footerButtonConfirm.addEventListener('click', (e) => {
-    browserWindow.worker.postMessage({
-        type: 'confirm',
-        token: TOKEN,
-        items: selected
-    })
-})
-
-function addToHistory(page) {
-    console.log(currentPage, page)
-    if (page != viewHistory[viewHistory.length - 1] || page != currentPage) {
-        viewHistory.splice(currentHistory + 1);
-        viewHistory.push(page);
-        currentHistory = viewHistory.length - 1;
-        currentPage = page;
-
-        pathStripActionNext.disabled = false;
-        pathStripActionBack.disabled = true;
-    }
-}
-
-pathStripActionBack.disabled = true;
-pathStripActionNext.disabled = true;
-pathStripActionUp.disabled = true;
-
-pathStripActionBack.addEventListener('click', () => {
-    if (currentHistory > 0) {
-        currentHistory--;
-        currentPage = viewHistory[currentHistory];
-        getPage(currentPage);
-        pathStripActionNext.disabled = false;
-        if (currentHistory == 0) {
-            pathStripActionBack.disabled = true;
-        }
-    } else {
-        return;
-    }
-})
-
-pathStripActionNext.addEventListener('click', () => {
-    if (currentHistory < viewHistory.length - 1) {
-        currentHistory++;
-        currentPage = viewHistory[currentHistory];
-        getPage(currentPage);
-        pathStripActionBack.disabled = false;
-        if (currentHistory == viewHistory.length - 1) {
-            pathStripActionNext.disabled = true;
-        }
-    } else {
-        return;
-    }
-})
-
-pathStripActionUp.addEventListener('click', () => {
-    var folders = pageToPath(currentPage).split('/');
-    if (folders.length > 2) {
-        currentPage = folders.slice(0, folders.length - 1).join('/');
-    } else {
-        currentPage = folders[0] + '/';
-    }
-    addToHistory(currentPage);
-    getPage(currentPage);
-})
-
-pathStripActionRefresh.addEventListener('click', () => {
-    getPage(currentPage);
-})
-
-function update() {
-    try {
-        if (currentHistory < viewHistory.length - 1) {
-            pathStripActionNext.disabled = false;
-        } else {
-            pathStripActionNext.disabled = true;
-        }
-        if (currentHistory > 0) {
-            pathStripActionBack.disabled = false;
-        } else {
-            pathStripActionBack.disabled = true;
-        }
-        if (pageToPath(currentPage).split('/').slice(-1) != '' && pageToPath(currentPage) != '' || currentPage == '') {
-            pathStripActionUp.disabled = false;
-        } else {
-            pathStripActionUp.disabled = true;
-        }
-    } catch (e) { };
-}
-
-// setSidebar(true);
-getPage(currentPage);
-addToHistory(currentPage);
-focus();

@@ -52,7 +52,7 @@
 
             // Remove Temp Files
             try {
-                fs.rm('C:/Winbows/System/Temp');
+                await fs.rm('C:/Winbows/System/Temp');
             } catch (err) {
                 console.error('Failed to remove temp files:', err);
             }

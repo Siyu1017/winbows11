@@ -28,9 +28,9 @@
     height: 3rem;
     background-position: center;
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size: 3rem;
     border-radius: 50%;
-    border: 1.5px solid rgba(0,0,0,.1);
+    border: 1.5px solid rgba(0, 0, 0, .1);
 }
 
 .account-info {
@@ -49,6 +49,11 @@
     color: var(--winbows-text-color);
 }
 
+[data-theme="dark"] .account:hover,
+[data-theme="dark"] .page-item:hover {
+    background-color: rgb(255 255 255 / 8%);
+}
+
 .search {
     background: #fff;
     border-bottom: 2px solid rgba(0, 0, 0, .2);
@@ -59,11 +64,11 @@
     display: flex;
     align-items: center;
     overflow: hidden;
-    transition: all .1s ease-in-out;
+    /* transition: all .1s ease-in-out; */
 }
 
 .search.focused {
-    border-bottom: 2px solid var(--winbows-primary-color);
+    border-bottom: 2px solid var(--winbows-primary-color) !important;
 }
 
 .search-input {
@@ -73,6 +78,7 @@
     padding: 0 .625rem;
     border: 0;
     outline: 0;
+    background: transparent;
 }
 
 .search-button {
@@ -99,6 +105,23 @@
 .search-icon {
     width: .75rem;
     height: .75rem;
+}
+
+[data-theme="dark"] .search {
+    background: rgb(61 61 61);
+    border-bottom: 2px solid rgb(255 255 255 / 20%);
+}
+
+[data-theme="dark"] .search.focused {
+    background: rgb(71 71 71 / 30%);
+}
+
+[data-theme="dark"] .search-input {
+    color: #fff;
+}
+
+[data-theme="dark"] .search-icon {
+    color: #fff;
 }
 
 .page-list-container {
@@ -147,4 +170,8 @@
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .page-item.active {
+    background-color: rgb(255 255 255 / 6%);
 }

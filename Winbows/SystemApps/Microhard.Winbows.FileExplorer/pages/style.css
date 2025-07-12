@@ -1,0 +1,64 @@
+.home,
+.home * {
+    transition: none;
+}
+
+.home {
+    padding: 1rem 1.5rem;
+    overflow: auto;
+    max-height: inherit;
+    height: inherit;
+    max-width: inherit;
+    width: inherit;
+}
+
+.quickaccess {
+    min-width: fit-content;
+}
+
+.quickaccess-header {
+    font-size: 150%;
+    padding-bottom: 1rem;
+}
+
+.quickaccess-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 15rem);
+    padding: 0;
+    /* gap: .5rem; */
+}
+
+.quickaccess-item {
+    padding: .75rem;
+    display: flex;
+    gap: .75rem;
+    border-radius: .375rem;
+    cursor: default;
+}
+
+.quickaccess-item:hover {
+    background: rgb(0 0 0 / 8%);
+}
+
+.quickaccess-item-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.quickaccess-item-info {}
+
+.quickaccess-item-title {}
+
+.quickaccess-item-location {
+    color: #5f5f5f;
+    font-size: 80%;
+}
+
+[data-theme="dark"] .quickaccess-item:hover {
+    background: rgb(255 255 255 / 4%);
+}

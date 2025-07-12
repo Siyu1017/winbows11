@@ -1058,6 +1058,18 @@
                 updateMica()
             }
 
+            var windowTheme = config.theme == 'system' ? window.System.theme.get() : config.theme == 'dark' ? 'dark' : 'light';
+            windowElement.setAttribute('data-theme', windowTheme);
+
+            function setTheme(theme) {
+                windowTheme = theme == 'dark' ? 'dark' : 'light';
+                windowElement.setAttribute('data-theme', windowTheme);
+            }
+
+            function getTheme(theme) {
+                return windowTheme;
+            }
+
             function setSnappable(value) {
                 config.snappable = value == true;
             }
@@ -1403,7 +1415,7 @@
 
             return {
                 shadowRoot, container: containerElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
-                close, addEventListener, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon,
+                close, addEventListener, setTheme, getTheme, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon,
                 setSnappable,
                 useTabview
             };

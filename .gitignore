@@ -3,3 +3,6 @@ node_modules/*
 dev/*
 logs/*
 vite.config.js
+.vercel
+*.test.js
+*.test.html

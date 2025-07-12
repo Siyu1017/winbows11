@@ -4,6 +4,7 @@
         width: 320,
         height: 450,
         maximizable: false,
-        mica: true
+        mica: true,
+        theme: 'system'
     })
 })()

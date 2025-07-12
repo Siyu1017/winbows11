@@ -8,10 +8,6 @@ browserWindow.setSnappable(false);
 document.documentElement.classList.add('winui');
 document.documentElement.classList.add('winui-no-background');
 
-document.documentElement.querySelectorAll('.window-toolbar-button:not(.close)').forEach(btn => {
-    btn.remove();
-})
-
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
@@ -44,28 +40,29 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">
 <li style="
     margin: .5rem 0;
+">✨New IDBFS✨</li>
+<li style="
+    margin: .5rem 0;
+    
+">Dark theme<br><button style="
+    cursor: pointer;
+    background: #0067c0;
+    padding: .5rem 1rem;
+    border-radius: .5rem;
+    border:0;
+    outline:none;
+    font:inherit;
+    color:#fff;
+    margin-top:.5rem;=
+    width: fit-content;
+    user-select: none;
+    " onclick="setBackgroundImage('C:/Winbows/bg/img19.jpg');">Apply dark theme</button></li>
+<li style="
+    margin: .5rem 0;
 ">Window animation</li>
 <li style="
     margin: .5rem 0;
 ">Mica effect ( Beta )</li>
-<li style="
-    margin: .5rem 0;
-    text-decoration: underline;
-    cursor: pointer;
-" data-action="run settings" title="Click to open Settings App">Settings App</li>
-<li style="
-    margin: .5rem 0;
-    text-decoration: underline;
-    cursor: pointer;
-" data-action="run settings:/personalization/taskbar" title="Click to open Settings App">Taskbar alignment</li>
-<li style="
-    margin: .5rem 0;
-    text-decoration: underline;
-    cursor: pointer;
-" data-action="run explorer" title="Click to open File Explorer">Redesign explorer</li>
-<li style="
-    margin: .5rem 0;
-">Better mobile experience ( Maybe )</li>
 <!--li style="
     margin: .5rem 0;
 ">Rearrange app icons in the taskbar</li-->
@@ -90,7 +87,9 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
     margin-block-start: 1em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
-">Learn more on <a href="https://github.com/Siyu1017/winbows11" target="_blank">Github</a>.</div>
+">Learn more on <a href="https://github.com/Siyu1017/winbows11" target="_blank"style="
+    color: var(--winbows-primary-color);
+">Github</a>.</div>
 			</div>
             </div>`;
 
@@ -98,4 +97,25 @@ document.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {
         window.System.Shell(el.getAttribute('data-action'))
     })
+})
+
+var theme = window.System.theme.get()
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+    document.documentElement.classList.add('dark');
+} else {
+    document.documentElement.classList.remove('winui-dark');
+    document.documentElement.classList.remove('dark');
+}
+
+window.System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+        document.documentElement.classList.remove('dark');
+    }
 })

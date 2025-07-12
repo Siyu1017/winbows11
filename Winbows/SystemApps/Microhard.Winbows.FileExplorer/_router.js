@@ -30,14 +30,18 @@ export const router = {
         }
     },
     reload: () => {
-        // 
+        emit('reload', {
+            path: routerHistory[currentIndex],
+            type: 'reload'
+        })
     },
     replace: (path) => {
-        routerHistory[routerHistory.length - 1] = path;
-        emit('change', {
-            path,
-            type: 'replace'
-        })
+        if (routerHistory.length === 0) {
+            routerHistory.push(path);
+            currentIndex = 0;
+        } else {
+            routerHistory[currentIndex] = path;
+        }
     },
     back: () => {
         if (routerHistory.length > 0 && currentIndex > 0) {
@@ -46,6 +50,15 @@ export const router = {
                 path: routerHistory[currentIndex],
                 type: 'back'
             })
+        }
+    },
+    forward: () => {
+        if (currentIndex < routerHistory.length - 1) {
+            currentIndex++;
+            emit('change', {
+                path: routerHistory[currentIndex],
+                type: 'forward'
+            });
         }
     },
     on: (event, callback) => {
@@ -58,6 +71,10 @@ export const router = {
     getCurrentRoute: () => {
         return routerHistory[currentIndex];
     },
-    ["history"]: routerHistory,
-    ["historyIndex"]: currentIndex
+    get history() {
+        return routerHistory;
+    },
+    get historyIndex() {
+        return currentIndex;
+    }
 }

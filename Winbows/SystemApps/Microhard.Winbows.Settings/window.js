@@ -2,11 +2,26 @@ import { router } from "./_router.js";
 import { sidebar } from './components/sidebar.js';
 import titles from './meta.js';
 
-document.documentElement.style = `background: rgb(249 249 249 / 94%);-webkit-backdrop-filter: blur(120px) saturate(2);backdrop-filter: blur(120px) saturate(2);`;
+var theme = window.System.theme.get();
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+    document.documentElement.style = `background: rgb(36 36 36 / 90%);-webkit-backdrop-filter: blur(240px) saturate(2);backdrop-filter: blur(240px) saturate(2);`
+} else {
+    document.documentElement.classList.remove('winui-dark');
+    document.documentElement.style = `background: rgb(249 249 249 / 94%);-webkit-backdrop-filter: blur(120px) saturate(2);backdrop-filter: blur(120px) saturate(2);`;
+}
+
+window.System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+    }
+})
+
 var loadingContainer = document.createElement('div');
-
-
-fs.init();
 
 const styles = ['./window.css', './styles/sidebar.css', './styles/setting.item.css', './styles/ui.css'];
 const fonts = {
@@ -35,6 +50,7 @@ for (let i in Object.keys(fonts)) {
 }
 await Promise.allSettled(promises).then(() => {
     loadingContainer.remove();
+    document.documentElement.style = '';
 })
 
 var pageContents = {};
@@ -57,7 +73,8 @@ backButton.addEventListener('click', () => {
 document.querySelector('.window-toolbar-info').replaceChild(navbar, document.querySelector('.window-toolbar-icon'));
 navbar.appendChild(backButton);
 
-document.body.classList.add('winui');
+document.documentElement.classList.add('winui');
+document.documentElement.classList.add('winui-no-background');
 browserWindow.setImmovable(backButton);
 
 console.log(document)

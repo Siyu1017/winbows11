@@ -164,11 +164,11 @@ async function getPageStatus(page) {
     if (pages.includes(page)) {
         return 'pages';
     }
-    var status = await fs.exists(page);
+    var status = fs.exists(page.endsWith('/') ? page : page + '/');
     if (window.debuggerMode == true) {
         console.log(status)
     }
-    return status.exists == true ? 'dir' : false;
+    return status == true ? 'dir' : false;
 }
 
 function pageToPath(page) {
@@ -970,7 +970,7 @@ async function createTab(page = 'this_pc', active = true) {
         itemName.className = 'explorer-viewer-item-name';
 
         itemIcon.style.backgroundImage = `url(${icons.folder})`;
-        itemName.innerHTML = details.name;
+        itemName.innerHTML = fsUtils.basename(path);
 
         // var hasMouse = matchMedia('(pointer:fine)').matches;
 
@@ -1032,7 +1032,7 @@ async function createTab(page = 'this_pc', active = true) {
         var item = document.createElement('div');
         var itemIcon = document.createElement('div');
         var itemName = document.createElement('div');
-        var fontExtensions = ['ttf', 'otf', 'woff', 'woff2', 'eot'];
+        var fontExtensions = ['.ttf', '.otf', '.woff', '.woff2', '.eot'];
 
         item.className = 'explorer-viewer-item';
         itemIcon.className = 'explorer-viewer-item-icon';
@@ -1072,9 +1072,9 @@ async function createTab(page = 'this_pc', active = true) {
                     new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                 } else {
                     if (window.debuggerMode == true) {
-                        console.log(utils.resolvePath('./chooseViewer.js'))
+                        console.log(utils.resolvePath('./chooseViewer.wexe'))
                     }
-                    new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
+                    new Process(utils.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
                 }
             })
         }
@@ -1099,9 +1099,9 @@ async function createTab(page = 'this_pc', active = true) {
                             new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                         } else {
                             if (window.debuggerMode == true) {
-                                console.log(utils.resolvePath('./chooseViewer.js'))
+                                console.log(utils.resolvePath('./chooseViewer.wexe'))
                             }
-                            new Process(utils.resolvePath('./chooseViewer.js')).start(`const FILE_PATH="${path}";`);
+                            new Process(utils.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
                         }
                     }
                 }, {
@@ -1109,7 +1109,7 @@ async function createTab(page = 'this_pc', active = true) {
                     className: "open-with",
                     text: "Open with...",
                     action: () => {
-                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.js').start(`const FILE_PATH="${path}";`);
+                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
                     }
                 }, {
                     icon: "delete",
@@ -1139,7 +1139,7 @@ async function createTab(page = 'this_pc', active = true) {
                         new Process(path).start();
                     }
                 })
-            } else if (window.utils.getFileExtension(path) == 'wbsf') {
+            } else if (window.utils.getFileExtension(path) == '.wbsf') {
                 items.push({
                     icon: 'window-snipping',
                     text: 'Run file',
@@ -1259,7 +1259,7 @@ async function createTab(page = 'this_pc', active = true) {
             footerPageItems.innerHTML = `${fs.disks.length} Items`;
             for (var i = 0; i < fs.disks.length; i++) {
                 var disk = fs.disks[i];
-                var items = await fs.readdir(disk + ':/', true);
+                var stat = fs.stat(disk + ':/');
                 var itemElement = document.createElement('div');
                 var iconElement = document.createElement('div');
                 var infoElement = document.createElement('div');
@@ -1293,12 +1293,10 @@ async function createTab(page = 'this_pc', active = true) {
                     getPage(currentPage);
                 })
 
-                var size = 0;
-                items.forEach(item => {
-                    size += item.size;
-                    usedSizeBar.style.width = size / quota.quota * 100 + '%';
-                    usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
-                })
+                var size = stat.length;
+
+                usedSizeBar.style.width = size / quota.quota * 100 + '%';
+                usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
 
                 footerPageSize.innerHTML = window.utils.formatBytes(size);
             }
@@ -1312,14 +1310,17 @@ async function createTab(page = 'this_pc', active = true) {
             viewer.innerHTML = '';
             var dirs = [];
             var files = [];
+            var stats = {};
 
-            items.forEach(item => {
-                if (item.type == 'directory') {
+            for (let item of items) {
+                const stat = fs.stat(item);
+                if (stat.isDirectory()) {
                     dirs.push(item);
                 } else {
                     files.push(item);
                 }
-            })
+                stats[item] = stat;
+            }
             var items = dirs.sort((a, b) => {
                 try {
                     return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
@@ -1335,19 +1336,20 @@ async function createTab(page = 'this_pc', active = true) {
             })
 
             for (let i in items) {
-                var item = items[i];
-                if (item.type == 'directory') {
+                const path = items[i];
+                const stat = stats[path]
+                if (stat.isDirectory()) {
                     await createFolderItem({
-                        name: item.path.split('/').slice(-1)
-                    }, item.path)
+                        name: path.split('/').slice(-1)
+                    }, path)
                 } else {
                     if (window.debuggerMode == true) {
-                        console.log(item.mimeType)
+                        console.log(stat.mimeType)
                     }
                     await createFileItem({
-                        name: item.path.split('/').slice(-1),
-                        type: item.mimeType
-                    }, item.path)
+                        name: path.split('/').slice(-1),
+                        type: stat.mimeType
+                    }, path)
                 }
             }
             viewer.style.animation = "revert-layer";

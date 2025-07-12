@@ -124,6 +124,27 @@ if (datas.page) {
     createTab(datas.page)
 }
 
+var theme = window.System.theme.get()
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+    document.documentElement.classList.add('dark');
+} else {
+    document.documentElement.classList.remove('winui-dark');
+    document.documentElement.classList.remove('dark');
+}
+
+window.System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+        document.documentElement.classList.remove('dark');
+    }
+})
+
 async function createTab(page, active = true) {
     // Initialize tab
     var tab = document.createElement('div');
@@ -499,25 +520,28 @@ async function createTab(page, active = true) {
     async function handleLocalURL() {
         viewerTitle.innerHTML = '';
         viewerList.innerHTML = '';
-        var exists = await fs.exists(currentPage);
+        const stat = fs.stat(currentPage);
         changeHeader(currentPage);
-        if (!exists.exists) {
+        if (!stat.exists) {
             viewerList.innerHTML = 'File not found.';
             showViewer();
         } else {
-            if (exists.type == 'directory') {
+            if (stat.isDirectory()) {
                 viewerTitle.innerHTML = `Index of ${currentPage}`;
                 var items = await fs.readdir(currentPage);
                 var dirs = [];
                 var files = [];
+                var stats = {};
 
-                items.forEach(item => {
-                    if (item.type == 'directory') {
+                for (const item of items) {
+                    const stat = fs.stat(item);
+                    if (stat.isDirectory()) {
                         dirs.push(item);
                     } else {
                         files.push(item);
                     }
-                })
+                    stats[item] = stat;
+                }
                 var items = dirs.sort((a, b) => {
                     try {
                         return a.path.toUpperCase().localeCompare(b.path.toUpperCase());
@@ -536,12 +560,12 @@ async function createTab(page, active = true) {
                     itemIcon.className = 'edge-file-item-icon';
                     itemName.className = 'edge-file-item-name';
 
-                    fs.getFileURL(item.type == 'directory' ? 'C:/Winbows/icons/folders/folder.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
+                    fs.getFileURL(stats[item].isDirectory() ? 'C:/Winbows/icons/folders/folder.ico' : 'C:/Winbows/icons/files/generic.ico').then(url => {
                         itemIcon.style.backgroundImage = `url(${url})`;
                     })
-                    itemName.innerHTML = item.path.split('/').slice(-1) == '' ? item.path : item.path.split('/').slice(-1);
+                    itemName.innerHTML = fsUtils.basename(item);
                     itemElement.addEventListener('click', () => {
-                        currentPage = item.path;
+                        currentPage = item;
                         addToHistory(currentPage);
                         getPage();
                     })
@@ -570,6 +594,7 @@ async function createTab(page, active = true) {
     async function getPage() {
         if (window.debuggerMode == true) {
             console.log(currentPage);
+            console.log(viewHistory, currentHistory);
         }
 
         var isLocalFileURL = isLocalFile(currentPage);
@@ -640,6 +665,8 @@ async function createTab(page, active = true) {
         if (page != viewHistory[viewHistory.length - 1]) {
             viewHistory.splice(currentHistory + 1);
             viewHistory.push(page);
+            currentHistory = viewHistory.length - 1;
+        } else {
             currentHistory = viewHistory.length - 1;
         }
     }

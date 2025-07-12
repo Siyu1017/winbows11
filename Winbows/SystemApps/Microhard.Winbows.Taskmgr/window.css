@@ -50,14 +50,15 @@
 }
 
 .search-icon {
-    background-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNlYXJjaC1pY29uIGx1Y2lkZS1zZWFyY2giPjxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjgiLz48cGF0aCBkPSJtMjEgMjEtNC4zLTQuMyIvPjwvc3ZnPg==);
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: contain;
+    mask-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNlYXJjaC1pY29uIGx1Y2lkZS1zZWFyY2giPjxjaXJjbGUgY3g9IjExIiBjeT0iMTEiIHI9IjgiLz48cGF0aCBkPSJtMjEgMjEtNC4zLTQuMyIvPjwvc3ZnPg==);
+    mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
     width: .875rem;
     height: .875rem;
     z-index: 9;
     margin-bottom: -2px;
+    background: #000;
 }
 
 .search-input {
@@ -187,4 +188,40 @@
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+}
+
+[data-theme="dark"] {
+    backdrop-filter: saturate(6) blur(120px);
+    -webkit-backdrop-filter: saturate(6) blur(120px);
+    background: rgb(36 36 36 / 94%);
+}
+
+[data-theme="dark"] .content,
+[data-theme="dark"] .task-header {
+    background: rgb(24 24 24);
+}
+
+[data-theme="dark"] .window-toolbar,
+[data-theme="dark"] .window-content {
+    background: transparent;
+}
+
+[data-theme="dark"] .search-box {
+    background: rgba(255, 255, 255, .1);
+}
+
+[data-theme="dark"] .search-input {
+    color: #fff;
+}
+
+[data-theme="dark"] .search-icon {
+    background: #fff;
+}
+
+[data-theme="dark"] .sidebar-item.active {
+    background: rgba(255, 255, 255, .1);
+}
+
+[data-theme="dark"] .sidebar-item:hover {
+    background: rgba(255, 255, 255, .06);
 }

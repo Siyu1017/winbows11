@@ -2,8 +2,9 @@
     await System.requestAccessWindow('./chooseFileWindow.js', {
         x: 0,
         y: 0,
+        width: 640,
+        height: 450,
         fullscreenable: false,
-        resizable: false,
         minimizable: false,
         snappable: false,
         title: 'Choose File...'

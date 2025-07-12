@@ -1,775 +1,1060 @@
 // File System
 !(async () => {
-    const mainDisk = 'C';
-    const debuggerMode = !!getJsonFromURL()['debug'] || false;
+    const debugMode = false;
     const devMode = (getJsonFromURL()['dev'] || getJsonFromURL()['develop']) ? true : false;
 
+    // --------------------------- Utils --------------------------- //
     function getStackTrace() {
         var stack;
-
         try {
             throw new Error('');
         } catch (error) {
             stack = error.stack || '';
         }
-
         stack = stack.split('\n').map(function (line) { return line.trim(); });
         return stack.splice(stack[0] == 'Error' ? 2 : 1);
     }
-
-    window.crashed = false;
-    window.Crash = (err) => {
-        if (window.crashed == true) return;
-        window.crashed = true;
-        console.log(err);
-        try {
-            document.body.innerHTML = `<div class="bsod"><div class="bsod-container"><h1 style="font-size: 6rem;margin: 0 0 2rem;font-weight: 300;">:(</h1><div style="font-size:1.375rem">Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you.</div></div>`;
-        } catch (e) {
-            console.error(e);
-        }
-        setTimeout(() => { location.reload() }, 5000);
-        console.log(window.debuggers.getStackTrace());
-        throw new Error('Winbows has been crashed...');
-    }
-
     function getJsonFromURL(url) {
         if (!url) url = location.search;
-        var query = url.substr(1);
-        var result = {};
+        var query = url.substr(1), result = {};
         query.split("&").forEach(function (part) {
             var item = part.split("=");
             result[item[0]] = decodeURIComponent(item[1]);
         });
         return result;
-    }
-
-    var listeners = {};
-    var triggerEvent = function (event, detail) {
-        if (listeners[event]) {
-            listeners[event].forEach(listener => listener(detail));
+    };
+    function computePath(path, currentPath) {
+        const currentPathDirs = currentPath.split('/').filter(dir => dir !== ''),
+            pathDirs = path.split('/').filter(dir => dir !== ''),
+            resultPath = [...currentPathDirs];
+        for (const dir of pathDirs) {
+            if (dir === '..') {
+                if (resultPath.length > 0) { resultPath.pop(); }
+            } else if (dir !== '.') { resultPath.push(dir); }
         }
-    }
-
-    var db = null;
-    var repairWaitingList = [];
-    var repairing = false;
-
-    class IDBFS {
-        constructor(dbName, mainDisk = 'C') {
-            this.dbName = dbName;
-            this.mainDisk = mainDisk;
-            this.disks = [];
-            this.debuggerMode = debuggerMode;
+        return resultPath.join('/');
+    };
+    function removeStringInRange(str, start, end) {
+        return str.substring(0, start) + str.substring(end);
+    };
+    function randomID(count, chars) {
+        var chars = chars || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+            result = '',
+            length = chars.length;
+        for (let i = 0; i < count; i++) {
+            result += chars.charAt(Math.floor(Math.random() * length));
         }
+        return result;
+    };
+    function isBlob(obj) {
+        return Object.prototype.toString.call(obj) === "[object Blob]"
+    };
+    const fsUtils = {
+        sep: '/',
+        normalize(p) {
+            const parts = p.split(/[/\\]+/);
+            const stack = [];
 
-        async init() {
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(this.dbName);
-                request.onupgradeneeded = (event) => {
-                    var db = event.target.result;
-                    var store = db.createObjectStore(this.mainDisk, { keyPath: 'path' });
-                    store.createIndex('path', 'path', { unique: true });
-                };
-                request.onsuccess = async (event) => {
-                    db = event.target.result;
-                    var mainDiskExist = false;
-                    this.disks.length = 0;
-                    Array.from(event.target.result.objectStoreNames).forEach(async name => {
-                        if (name === this.mainDisk) {
-                            mainDiskExist = true;
-                        }
-                        this.disks.push(name);
-                    });
-                    if (mainDiskExist == false) {
-                        await this.createDisk(mainDiskExist)
-                    }
-                    db.onversionchange = function () {
-                        db.close();
-                    };
-
-                    resolve();
-                };
-                request.onerror = (event) => {
-                    reject(event.target.error);
-                };
-            })
-        }
-
-        async createDisk(diskName, config) {
-            if (!db) {
-                await this.init();
-            }
-            if (!db.objectStoreNames.contains(diskName)) {
-                return new Promise((resolve) => {
-                    const request = indexedDB.open(this.dbName, db.version + 1);
-                    request.onupgradeneeded = (event) => {
-                        this.console.log('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
-                        const db = event.target.result;
-                        if (!db.objectStoreNames.contains(diskName)) {
-                            const store = db.createObjectStore(diskName, { keyPath: 'path' });
-                            store.createIndex('path', 'path', { unique: true });
-                        }
-                    };
-                    request.onsuccess = (event) => {
-                        db = event.target.result;
-                        this.disks.push(diskName)
-                        Array.from(event.target.result.objectStoreNames).forEach(async name => {
-
-                        });
-                        resolve(true);
-                    };
-                });
-            }
-        }
-
-        computePath(path, currentPath) {
-            const currentPathDirs = currentPath.split('/').filter(dir => dir !== '');
-            const pathDirs = path.split('/').filter(dir => dir !== '');
-
-            const resultPath = [...currentPathDirs];
-
-            for (const dir of pathDirs) {
-                if (dir === '..') {
-                    if (resultPath.length > 0) {
-                        resultPath.pop();
-                    }
-                } else if (dir !== '.') {
-                    resultPath.push(dir);
-                }
+            for (let part of parts) {
+                if (part === '' || part === '.') continue;
+                if (part === '..') stack.pop();
+                else stack.push(part);
             }
 
-            const outputPath = resultPath.join('/');
+            return (p.startsWith('/') ? '/' : '') + stack.join('/');
+        },
+        join(...args) {
+            return path.normalize(args.join('/'));
+        },
+        resolve(...paths) {
+            let resolved = '';
+            for (let i = paths.length - 1; i >= 0; i--) {
+                const p = paths[i];
+                if (!p) continue;
+                resolved = p + '/' + resolved;
+                if (fsUtils.isAbsolute(p)) break;
+            }
+            return fsUtils.normalize(resolved);
+        },
+        dirname(p) {
+            const normalized = fsUtils.normalize(p);
+            const parts = normalized.split('/');
+            parts.pop();
+            return parts.length > 1 ? parts.join('/') : '/';
+        },
+        basename(p) {
+            return fsUtils.normalize(p).split('/').pop();
+        },
+        extname(p) {
+            const base = fsUtils.basename(p);
+            const dotIndex = base.lastIndexOf('.');
+            return dotIndex > 0 ? base.slice(dotIndex) : '';
+        },
+        isAbsolute(p) {
+            return p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
+        },
+        relative(from, to) {
+            const fromParts = fsUtils.resolve(from).split('/');
+            const toParts = fsUtils.resolve(to).split('/');
 
-            return outputPath;
-        }
+            while (fromParts.length && toParts.length && fromParts[0] === toParts[0]) {
+                fromParts.shift();
+                toParts.shift();
+            }
 
-        parseURL(url = '') {
-            url = url.replaceAll('\\', '/');
-            var disk = ((/([A-Z]{1})(\:\/)/gi).exec(url) || [])[1] || this.mainDisk;
-            var path = url.replace(`${disk}:/`, '');
+            return '../'.repeat(fromParts.length) + toParts.join('/');
+        },
+        parsePath(v) {
+            v = v.replaceAll('\\', '/');
+            var disk = ((/([A-Z]{1})(\:\/)/gi).exec(v) || [])[1] || 'C',
+                path = v.replace(`${disk}:`, '') || '';
             return { disk, path };
         }
+    };
+    // --------------------------- Utils --------------------------- //
 
-        debugger(method, message) {
-            if (this.debuggerMode == true) {
-                console.log('%c[IDBFS DEBUGGER]', 'color: #f670ff', `${method} - ${message}`);
+    const IDBFS = async function (__dirname = "") {
+        function parsePath(v) {
+            if (__dirname != "") {
+                var isdir = v.endsWith('/');
+                v = fsUtils.resolve(__dirname, v);
+                if (isdir) v += '/';
+            }
+            v = v.replaceAll('\\', '/');
+            var disk = ((/([A-Z]{1})(\:\/)/gi).exec(v) || [])[1] || 'C',
+                path = v.replace(`${disk}:`, '') || '';
+            return { disk, path };
+        };
+
+        const types = {
+            dir: 0,
+            file: 1
+        };
+        const dbName = 'WINBOWS_STORAGE';
+        const storeName = 'MAIN';
+        const fileTablePrefix = '$_FILETABLE_';
+        const localStoragePrefix = dbName + '_' + fileTablePrefix;
+        const idLength = 24;
+        const allowedDiskName = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const schemaVersion = 1;
+        const schemaVersionName = dbName + '_' + 'SCHEMA_VERSION';
+
+        let runningTasks = 0;
+        let tasks = [];
+        let updateTimer = null;
+        const maxConcurrent = 10;
+        const updateDelay = 100;
+
+        let listeners = {};
+        let blobURLCaches = {};
+
+        var version = 1;
+        var isInitializing = false;
+        var repairing = false;
+        var now = Date.now();
+        var fileTables = {
+            'C': {
+                '/': {
+                    type: types.dir,
+                    changeTime: now,
+                    createdTime: now,
+                    lastModifiedTime: now,
+                    length: 0,
+                    id: null,
+                    mimeType: null
+                }
+            }
+        };
+        var db;
+
+        // Read from localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            // localStorage item name : "<localStoragePrefix><DiskName>:"
+            if (key.startsWith(localStoragePrefix) && key.length === localStoragePrefix.length + 2) {
+                const disk = key.replace(localStoragePrefix, '').replace(':', '');
+                if (allowedDiskName.indexOf(disk) > -1 && disk.length === 1) {
+                    try {
+                        fileTables[disk] = JSON.parse(localStorage.getItem(key));
+                    } catch (e) {
+                        localStorage.removeItem(key);
+                    }
+                }
             }
         }
 
-        async getTransaction(n, m, p = false) {
-            try {
-                var t = db.transaction(n, m);
-                if (p == true) {
-                    repairWaitingList.forEach(fn => fn());
-                    this.console.log('Successfully repaired idbfs!');
-                    repairing = false;
-                    repairWaitingList = [];
-                }
-                return t;
-            } catch (e) {
-                if (p == false) {
-                    if (repairing == false) {
-                        repairing = true;
-                        await this.init();
-                        this.console.log('Trying to repair idbfs...');
-                        return this.getTransaction(n, m, true);
-                    } else {
-                        return new Promise((resolve, reject) => {
-                            repairWaitingList.push(() => { resolve(db.transaction(n, m)); });
-                        })
-                    }
-                } else if (e.name === 'InvalidStateError' && p == true) {
-                    this.console.log('Failed to repair idbfs.');
-                    window.Crash();
-                }
+        // Save the schema version in localStorage
+        localStorage.setItem(schemaVersionName, schemaVersion);
+
+        // ========================== Output ========================== //
+        function print(...obj) {
+            if (debugMode == true) {
+                console.log.apply(arguments, ['%cIDBFS', 'color:#ff00ff;'].concat(obj))
             }
         }
 
-        async reportError(method, message) {
-            var detectList = ['list', 'open', 'readFile', 'readdir'];
-            if (detectList.includes(method) && window.crashed == false) {
-                var incomplete = false;
-                await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
-                    return res.json();
-                }).then(async data => {
-                    const table = data.table;
-                    for (let i = 0; i < table.length; i++) {
-                        await this.exists(table[i]).then(status => {
-                            if (status.exists == false) {
-                                // Not exist
-                                localStorage.removeItem('WINBOWS_BUILD_ID');
-                                localStorage.removeItem('WINBOWS_DIRECTORIES');
-                                localStorage.setItem('WINBOWS_REQUIRED', 'REPAIR');
-                                console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
-                                incomplete = true;
-                                // location.href = `./install.html?timestamp=${new Date().getTime()}`;
-                            }
-                        })
-                    }
-                }).catch(err => {
-                    if (window.needsUpdate == false) {
-                        localStorage.removeItem('WINBOWS_BUILD_ID');
-                        localStorage.removeItem('WINBOWS_DIRECTORIES');
-                        localStorage.setItem('WINBOWS_REQUIRED', 'REPAIR');
-                        console.log('%cWARNING: THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.', 'background:red;color:#fff;padding:4px 8px;border-radius:4px;');
-                        incomplete = true;
-                        // location.href = `./install.html?timestamp=${new Date().getTime()}`;
-                    }
-                }).finally(async () => {
-                    if (incomplete == false) return;
-                    localStorage.setItem('WINBOWS_REQUIRED', 'REPAIR');
-
-                    var warningWindow = `document.documentElement.innerHTML='<div style="background:red;color:#fff;padding:4px 8px;border-radius:4px;user-select: none;-webkit-user-select: none;-webkit-user-drag: none;">THERE MAY BE AN ISSUE WITH INCOMPLETE RESOURCES.</div>';document.documentElement.style="display: flex;align-items: center;justify-content: center;width: fit-content;height: fit-content;";browserWindow.setMovable(document.documentElement)`;
-                    var warningWindowURL = `C:/Winbows/System/Temp/${[...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}`;
-                    await fs.writeFile(warningWindowURL, new Blob([warningWindow], {
-                        type: 'text/javascript'
-                    })).catch(err => {
-                        window.Crash(err);
-                    })
-                    var warningProcess = `;(async()=>{System.requestAccessWindow('${warningWindowURL}',{title:'WARNING',width:300,height:150,resizable:false});})();`;
-                    var tempFileName = [...Array(32)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-                    fs.writeFile(`C:/Winbows/System/Temp/${tempFileName}`, new Blob([warningProcess], {
-                        type: 'text/javascript'
-                    })).then(res => {
-                        //new Process(`C:/Winbows/System/Temp/${tempFileName}`, 'system').start();
-                    }).catch(err => {
-                        window.Crash(err);
-                    })
-                })
-            }
-        }
-
-        // OK
-        async list(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readonly');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.index('path').getAllKeys() // getAll(IDBKeyRange.only(path));
-                request.onsuccess = (event) => {
-                    const files = event.target.result;
-                    // console.log(files)
-                    // const dirFiles = files.filter((file) => file.startsWith(`${path}/`));
-                    this.debugger('list', `List the contents of disk successfully!`);
-                    resolve(files);
-                    // resolve(dirFiles.map((file) => file.path));
-                };
-                request.onerror = (event) => {
-                    this.debugger('list', `Failed to list the contents of ${url}.`);
-                    this.reportError('list', `Failed to list the contents of ${url}.`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // OK
-        async open(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.get(parsed.path);
-                request.onsuccess = (event) => {
-                    const file = event.target.result;
-                    if (file) {
-                        this.debugger('open', `File "${url}" has been opened successfully!`);
-                        resolve(file);
-                    } else {
-                        this.debugger('open', `Failed to open file "${url}".`);
-                        this.reportError('open', `Failed to open file "${url}".`);
-                        reject(new Error(`File not found: ${url}`));
-                    }
-                };
-                request.onerror = (event) => {
-                    this.reportError('open', `Failed to open file "${url}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // OK
-        async writeFile(url, content) {
-            const parsed = this.parseURL(url);
-            if (!parsed.path) return;
-            if (!await this.exists(url).exists) {
-                var splitted = parsed.path.split('/');
-                for (let i = 0; i < splitted.length; i++) {
-                    var dir = `${parsed.disk}:/${splitted.slice(0, i + 1).join('/')}`;
-                    if (!await this.exists(dir).exists) {
-                        await this.mkdir(dir)
-                    }
-                }
-            }
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.put({ path: parsed.path, content, type: 'file' });
-                request.onsuccess = (event) => {
-                    this.debugger('writeFile', `File "${url}" has been writen successfully!`);
-                    triggerEvent('change', {
-                        path: url
-                    })
-                    resolve(content);
-                };
-                request.onerror = (event) => {
-                    this.debugger('writeFile', `Failed to write file "${url}".`);
-                    this.reportError('writeFile', `Failed to write file "${url}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // OK
-        async readFile(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readonly');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.get(parsed.path);
-                request.onsuccess = (event) => {
-                    const file = event.target.result;
-                    if (file) {
-                        this.debugger('readFile', `Read file "${url}" successfully!`);
-                        resolve(file.content);
-                    } else {
-                        this.debugger('readFile', `Failed to read file "${url}".`);
-                        this.reportError('readFile', `Failed to read file "${url}".`);
-                        reject(`File not found: ${url}`);
-                    }
-                };
-                request.onerror = (event) => {
-                    this.reportError('readFile', `Failed to read file "${url}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // OK
-        async mkdir(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.put({ path: parsed.path, type: 'directory' });
-                request.onsuccess = (event) => {
-                    this.debugger('mkdir', `Directory "${url}" made successfully!`);
-                    triggerEvent('change', {
-                        path: url
-                    })
-                    resolve();
-                };
-                request.onerror = (event) => {
-                    this.debugger('mkdir', `Failed to make directory "${url}".`);
-                    this.reportError('mkdir', `Failed to make directory "${url}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // OK
-        async rm(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const status = await this.exists(url);
-                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
-                const store = transaction.objectStore(parsed.disk);
-                if (status.type == 'file') {
-                    const request = store.delete(parsed.path);
-                    request.onsuccess = async (event) => {
-                        this.debugger('rm', `Removed "${url}" successfully!`);
-                        triggerEvent('change', {
-                            path: url
-                        })
-                        resolve();
-                    };
-                    request.onerror = (event) => {
-                        this.debugger('rm', `Failed to remove "${url}".`);
-                        this.reportError('rm', `Failed to remove "${url}".`);
-                        reject(event.target.error);
-                    };
-                }
-                const request = store.index('path').openCursor();
-                request.onsuccess = async (event) => {
-                    const cursor = event.target.result;
-                    if (cursor) {
-                        const item = cursor.value;
-                        if (item.path.startsWith(`${parsed.path}`)) {
-                            await store.delete(item.path);
-                        }
-                        cursor.continue();
-                    } else {
-                        this.debugger('rm', `Removed "${url}" successfully!`);
-                        triggerEvent('change', {
-                            path: url
-                        })
-                        resolve();
-                    }
-                };
-                request.onerror = (event) => {
-                    this.debugger('rm', `Failed to remove "${url}".`);
-                    this.reportError('rm', `Failed to remove "${url}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        async clear(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const status = await this.exists(url);
-                const transaction = await this.getTransaction(parsed.disk, 'readwrite');
-                const store = transaction.objectStore(parsed.disk);
-                if (status.type == 'directory') {
-                    const request = store.index('path').openCursor();
-                    request.onsuccess = async (event) => {
-                        const cursor = event.target.result;
-                        if (cursor) {
-                            const item = cursor.value;
-                            if (item.path.startsWith(`${parsed.path}/`)) {
-                                await store.delete(item.path);
-                            }
-                            cursor.continue();
-                        } else {
-                            this.debugger('clear', `Cleared "${url}" successfully!`);
-                            triggerEvent('change', {
-                                path: url
-                            })
-                            resolve();
-                        }
-                    };
-                    request.onerror = (event) => {
-                        this.debugger('clear', `Failed to clear "${url}".`);
-                        this.reportError('clear', `Failed to clear "${url}".`);
-                        reject(event.target.error);
-                    };
-                    return;
-                } else {
-                    resolve();
-                }
-            });
-        }
-
-        // OK
-        async mv(from, to) {
-            const parsedFrom = this.parseURL(from);
-            const parsedTo = this.parseURL(to);
-            return new Promise(async (resolve, reject) => {
-                // Read original file
-                const readTransaction = await this.getTransaction(parsedFrom.disk, 'readwrite');
-                const readStore = readTransaction.objectStore(parsedFrom.disk);
-                const readRequest = readStore.get(parsedFrom.path);
-
-                readRequest.onsuccess = async (event) => {
-                    const file = event.target.result;
-                    if (file) {
-                        // Delete the original file
-                        const deleteTransaction = await this.getTransaction(parsedFrom.disk, 'readwrite');
-                        const deleteStore = deleteTransaction.objectStore(parsedFrom.disk);
-                        const deleteRequest = deleteStore.delete(parsedFrom.path);
-
-                        deleteRequest.onsuccess = async (event) => {
-                            file.path = parsedTo.path;
-                            // Put the file to the destination
-                            const putTransaction = await this.getTransaction(parsedTo.disk, 'readwrite');
-                            const putStore = putTransaction.objectStore(parsedTo.disk);
-                            putStore.put(file);
-                            this.debugger('mv', `Moved "${from}" to "${to}" successfully!`);
-                            triggerEvent('change', {
-                                path: url
-                            })
-                            resolve();
-                        }
-
-                        deleteRequest.onerror = (event) => {
-                            this.debugger('mv', `Failed to delete "${from}".`);
-                            this.reportError('mv', `Failed to delete "${from}".`);
-                            reject(event.target.error);
-                        };
-                    } else {
-                        this.debugger('mv', `Failed to move "${from}" to "${to}".`);
-                        this.reportError('mv', `Failed to move "${from}" to "${to}".`);
-                        reject(new Error(`File not found: ${from}`));
-                    }
-                };
-
-                readRequest.onerror = (event) => {
-                    this.reportError('mv', `Failed to move "${from}" to "${to}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        // OK
-        async readdir(url, deep = false) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readonly');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.index('path').openCursor() // getAll(IDBKeyRange.only(path));
-                var dirItems = [];
-                var isRoot = parsed.path == '' || !parsed.path;
-                request.onsuccess = (event) => {
-                    const cursor = event.target.result;
-                    if (cursor) {
-                        var file = cursor.value;
-                        if (!file.content) {
-                            file.content = new Blob();
-                        }
-                        if (deep == true) {
-                            if (isRoot || file.path.startsWith(`${parsed.path}/`)) {
-                                dirItems.push({
-                                    path: parsed.disk + ':/' + file.path,
-                                    type: file.type,
-                                    mimeType: file.content.type,
-                                    size: file.content.size
-                                });
-                            }
-                        } else {
-                            if (isRoot && file.path.split('/').length == 1) {
-                                // Root
-                                dirItems.push({
-                                    path: parsed.disk + ':/' + file.path,
-                                    type: file.type,
-                                    mimeType: file.content.type,
-                                    size: file.content.size
-                                });
-                            } else if (file.path.startsWith(`${parsed.path}/`) && file.path.replace(`${parsed.path}/`, '').indexOf('/') == -1) {
-                                dirItems.push({
-                                    path: parsed.disk + ':/' + file.path,
-                                    type: file.type,
-                                    mimeType: file.content.type,
-                                    size: file.content.size
-                                });
-                            }
-                        }
-                        cursor.continue();
-                    } else {
-                        this.debugger('readdir', `Read directory "${url}" successfully!`);
-                        resolve(dirItems);
-                    }
-                    /*
-                    const dirFiles = files.filter((file) => {
-                        if (deep == true) {
-                            if (parsed.path == '' || !parsed.path) {
-                                return file;
-                            }
-                            return file.startsWith(`${parsed.path}/`);
-                        } else {
-                            if (parsed.path == '' || !parsed.path) {
-                                return file.split('/').length == 1;
-                            }
-                            return file.replace(`${parsed.path}/`, '').split('/').length == 0;
-                        }
-                    });
-                    this.debugger('readdir', `Read directory "${url}" successfully!`);
-                    resolve(dirFiles);
-                    */
-                    // resolve(dirFiles.map((file) => file.path));
-                };
-                request.onerror = (event) => {
-                    this.debugger('readdir', `Failed to read directory "${url}".`);
-                    this.reportError('readdir', `Failed to read directory "${url}".`);
-                    reject(event.target.error);
-                };
-            });
-        }
-
-        async stat(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                const transaction = await this.getTransaction(parsed.disk, 'readonly');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.get(parsed.path);
-                request.onsuccess = (event) => {
-                    const response = event.target.result;
-                    if (response) {
-                        this.debugger('stat', `ok`);
-                        resolve({
-                            isFile: () => response.type == 'file',
-                            isDirectory: () => response.type == 'directory',
-                            size: response.content instanceof Blob ? response.content.size : 0,
-                            content: response.content,
-                            exists: true,
-                            type: response.type
-                        });
-                    } else {
-                        this.debugger('stat', `not found`);
-                        resolve({
-                            isFile: () => false,
-                            isDirectory: () => false,
-                            size: 0,
-                            content: new Blob(),
-                            exists: false,
-                            type: 'unknown'
-                        });
-                    }
-                };
-                request.onerror = (event) => {
-                    this.debugger('stat', `Failed to check if "${url}" exists.`);
-                    this.reportError('stat', `Failed to check if "${url}" exists.`);
-                    reject({
-                        isFile: () => false,
-                        isDirectory: () => false,
-                        size: 0,
-                        content: new Blob(),
-                        exists: false,
-                        type: 'unknown'
-                    });
-                };
-            });
-        }
-
-        async exists(url) {
-            const parsed = this.parseURL(url);
-            return new Promise(async (resolve, reject) => {
-                if (parsed.path == '' || !parsed.path) {
-                    if (this.disks.includes(parsed.disk)) {
-                        resolve({
-                            exists: true,
-                            type: 'directory',
-                            content: new Blob()
-                        });
-                    } else {
-                        resolve({
-                            exists: false,
-                            type: 'undefined',
-                            content: new Blob()
-                        });
-                    }
-                }
-                const transaction = await this.getTransaction(parsed.disk, 'readonly');
-                const store = transaction.objectStore(parsed.disk);
-                const request = store.get(parsed.path);
-                request.onsuccess = (event) => {
-                    const response = event.target.result;
-                    if (response) {
-                        this.debugger('exists', `"${url}" exists!`);
-                        resolve({
-                            exists: true,
-                            type: response.type,
-                            content: response.content
-                        });
-                    } else {
-                        this.debugger('exists', `"${url}" does not exist.`);
-                        resolve({
-                            exists: false,
-                            type: 'undefined',
-                            content: new Blob()
-                        });
-                    }
-                };
-                request.onerror = (event) => {
-                    this.debugger('exists', `Failed to check if "${url}" exists.`);
-                    this.reportError('exists', `Failed to check if "${url}" exists.`);
-                    reject({
-                        exists: event.target.error,
-                        type: 'error',
-                        content: new Blob()
-                    });
-                };
-            });
-        }
-
-        on(event, listener) {
+        // ========================== Event ========================== //
+        function on(event, listener) {
             if (!listeners[event]) {
                 listeners[event] = [];
             }
             listeners[event].push(listener);
         }
 
-        async proxy(method, param, current) {
+        function emit(event, detail) {
+            if (listeners[event]) {
+                listeners[event].forEach(listener => listener(detail));
+            }
+        }
+
+        // ======================== Validators ======================== //
+        async function ensureParentFolders(disk, path) {
+            const parts = path.split('/').filter(i => i.trim().length > 0);
+            parts.pop();
+
+            let currentPath = '/';
+            for (const part of parts) {
+                currentPath += part + '/';
+                if (!fileTables[disk][currentPath]) {
+                    const now = Date.now();
+                    fileTables[disk][currentPath] = {
+                        type: types.dir,
+                        changeTime: now,
+                        createdTime: now,
+                        lastModifiedTime: now,
+                        length: 0,
+                        id: null,
+                        mimeType: null
+                    };
+                }
+            }
+        }
+
+        // =========================== Store =========================== //
+        async function getStore(permission) {
             return new Promise((resolve, reject) => {
-                this[method].apply(this, param).then(response => {
-                    resolve(response);
-                }).catch(error => {
-                    this.reportError('proxy', {
-                        method, param, error
-                    });
-                })
+                tasks.push({ permission, resolve, reject });
+                doTask();
+            })
+        }
+
+        async function doTask() {
+            if (runningTasks >= maxConcurrent) return;
+            if (tasks.length === 0) {
+                if (runningTasks === 0) repairing = false;
+                return;
+            }
+
+            runningTasks++;
+            const task = tasks.shift();
+
+            try {
+                const tx = db.transaction(storeName, task.permission);
+                const store = tx.objectStore(storeName);
+                task.resolve(store);
+
+                tx.oncomplete = () => {
+                    runningTasks--;
+                    doTask();
+                };
+                tx.onerror = () => {
+                    runningTasks--;
+                    task.reject(tx.error);
+                    doTask();
+                };
+
+                if (repairing == true) repairing = false;
+            } catch (e) {
+                runningTasks--;
+                if (repairing == false) {
+                    repairing = true;
+                    await init();
+                    print('Trying to repair idbfs...');
+                    tasks.unshift(task);
+                    return doTask();
+                } else if (e.name === 'InvalidStateError' && repairing == true) {
+                    print('Failed to repair idbfs.');
+                    if (window.Crash) window.Crash();
+                }
+            }
+        }
+
+        async function createStore() {
+            if (!db) {
+                await init();
+            }
+            return new Promise((resolve) => {
+                const request = indexedDB.open(dbName, db.version + 1);
+                request.onupgradeneeded = (event) => {
+                    print('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(storeName)) {
+                        const store = db.createObjectStore(storeName, { keyPath: 'k' });
+                        store.createIndex('k', 'k', { unique: true });
+                    }
+                };
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(true);
+                };
             });
         }
-        console = {
-            log(message) {
-                console.log('%c[IDBFS]', 'color: #f670ff', message);
+
+        function put(store, data) {
+            return new Promise((resolve, reject) => {
+                const req = store.put(data);
+                req.onsuccess = resolve;
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        // ========================= File table ========================= //
+        async function updateFileTable(disk) {
+            localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+            scheduleUpdateFileTable(disk);
+        }
+
+        // For idb
+        function scheduleUpdateFileTable(disk) {
+            if (updateTimer) clearTimeout(updateTimer);
+            updateTimer = setTimeout(async () => {
+                updateTimer = null;
+                try {
+                    getStore('readwrite').then(store => {
+                        store.put({
+                            k: fileTablePrefix + disk + ':',
+                            v: fileTables[disk]
+                        })
+                    })
+                } catch (e) {
+                    console.warn('Failed to update fileTable in IndexedDB:', e);
+                }
+            }, updateDelay);
+        }
+
+        async function deleteBlobsInBatches(disk, paths, batchSize = 100) {
+            for (let i = 0; i < paths.length; i += batchSize) {
+                const batch = paths.slice(i, i + batchSize);
+                const store = await getStore('readwrite');
+
+                await Promise.all(batch.map(path => {
+                    return new Promise((res, rej) => {
+                        const entry = fileTables[disk][path];
+                        if (!entry || entry.type !== types.file) return res();
+
+                        const req = store.delete(entry.id);
+                        req.onsuccess = () => {
+                            // Remove cached url
+                            if (blobURLCaches[disk + ':' + path]) {
+                                delete blobURLCaches[disk + ':' + path];
+                            }
+                            delete fileTables[disk][path];
+                            res();
+                        };
+                        req.onerror = () => {
+                            console.warn(`Failed to delete blob for ${path}:`, req.error);
+                            res();
+                        }
+                    });
+                }));
+                await updateFileTable(disk);
             }
         }
-    }
 
-    function removeStringInRange(str, start, end) {
-        return str.substring(0, start) + str.substring(end);
-    }
+        async function init() {
+            if (isInitializing) return;
+            isInitializing = true;
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName);
+                request.onupgradeneeded = (event) => {
+                    print('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
+                    db = event.target.result;
+                    const store = db.createObjectStore(storeName, { keyPath: 'k' });
+                    store.createIndex('k', 'k', { unique: true });
+                };
+                request.onsuccess = async (event) => {
+                    isInitializing = false;
 
-    var fs = new IDBFS('winbows11', mainDisk);
-    await fs.init();
-    window.fs = fs;
-    window.fs.Cache = {};
-    window.fs.getFileExtension = function (file = '') {
-        console.warn('%cfs.getFileExtension()%c has been deprecated.\nPlease use %cutils.getFileExtension()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '')
-        return window.utils.getFileExtension(file);
-    }
+                    db = event.target.result;
+                    db.onversionchange = function () {
+                        db.close();
+                    };
+                    if (!event.target.result.objectStoreNames.contains(storeName)) {
+                        await createStore();
+                    }
 
-    window.fs.getFileURL = async function getFileURL(url) {
-        var blob = await fs.downloadFile(url);
-        return URL.createObjectURL(blob);
-    }
+                    async function getOrSyncFileTable(disk) {
+                        const key = fileTablePrefix + disk + ':';
+                        const localStorageFT = localStorage.getItem(localStoragePrefix + disk + ':');
+                        return new Promise((resolve, reject) => {
+                            const tx = db.transaction(storeName, 'readwrite')
+                            const store = tx.objectStore(storeName);
+                            const request = store.get(key);
+                            request.onsuccess = async (event) => {
+                                // NOTE: Use the file table in localStorage first
+                                const table = event.target.result;
+                                if (localStorageFT) {
+                                    // Sync the file table in localStorage to the file table in idbfs
+                                    try {
+                                        await put(store, {
+                                            k: key,
+                                            v: JSON.parse(localStorageFT)
+                                        });
+                                    } catch (e) {
+                                        print('Error : Failed to Sync the file table in localStorage to the file table in idbfs\nDetails :', e);
+                                        localStorage.removeItem(localStoragePrefix + disk + ':');
+                                    }
+                                } else if (table && !localStorageFT) {
+                                    // File table doesn't exist in localStorage
+                                    fileTables[disk] = table.v;
+                                    localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+                                } else if (!table && !localStorageFT) {
+                                    // File table doesn't exist in localStorage or idbfs
+                                    localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+                                    await put(store, {
+                                        k: key,
+                                        v: fileTables[disk]
+                                    });
+                                }
+                                resolve();
+                            }
+                            request.onerror = async (event) => {
+                                print(`Warning : Failed to get file table [${fileTablePrefix + disk + ':'}] from idbfs\nDetails :`, event.target.error);
+                                const localStorageFT = localStorage.getItem(localStoragePrefix + disk + ':');
+                                try {
+                                    await put(store, {
+                                        k: fileTablePrefix + disk + ':',
+                                        v: localStorageFT ? JSON.parse(localStorageFT) : fileTables[disk]
+                                    });
+                                } catch (e) {
+                                    print('Error : Failed to write file table to idbfs\nDetails :', e);
+                                }
+                                resolve();
+                            }
+                        })
+                    }
 
-    window.fs.getFileAsText = async function getFile(path) {
-        if (navigator.onLine != true || window.needsUpdate == false && devMode == false || path.startsWith('C:/Users/Admin/Desktop/')) {
-            return await (await fs.readFile(path)).text();
+                    // Try to read the file table
+                    for (const disk of Object.keys(fileTables)) {
+                        await getOrSyncFileTable(disk);
+                    }
+                    resolve();
+                };
+                request.onerror = (event) => {
+                    isInitializing = false;
+                    reject(event.target.error);
+                };
+            })
         }
-        return fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}`).then(response => {
-            // console.log(response)
-            if (response.ok) {
-                return response.blob();
-            } else {
-                console.warn(`Failed to fetch file: ${path}`);
+
+        // ================== Basic File System functions ================== //
+
+        /**
+         * @typedef {Object} CustomError
+         * @property {string} name 
+         * @property {string} message
+         * @property {number} code
+         */
+
+        /**
+         * Check if the specified file / directory path exists
+         * @param {string} fullPath 
+         * @returns {boolean}
+         */
+        function exists(fullPath) {
+            const { disk, path } = parsePath(fullPath);
+            if (!fileTables[disk]) {
+                return false;
             }
-        }).then(async content => {
-            fs.writeFile(path, content);
-            return await content.text();
-        }).catch(async err => {
-            console.warn(`Failed to fetch file: ${path}`, err);
-            return await (await fs.readFile(path)).text();
-        })
-    }
+            return !!fileTables[disk][path];
+        }
 
-    window.fs.downloadFile = async function downloadFile(path, responseType = 'blob') {
-        if (!path || path.trim().length == 0) return;
-        if (debuggerMode == true) {
-            // Debugger
-            console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
-        }
-        if (navigator.onLine != true || window.needsUpdate == false && devMode == false || path.startsWith('C:/Users/Admin/Desktop/')) {
-            return await fs.readFile(path);
-        }
-        // var method = mimeType.startsWith('image') ? 'blob' : 'text';
-        return fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}`).then(response => {
-            // console.log(response)
-            if (response.ok) {
-                return response.blob();
+        /**
+         * Create a directory
+         * @param {string} fullPath 
+         * @returns {Promise} If it failed, reject a {@link CustomError}
+         */
+        async function mkdir(fullPath) {
+            // RULE : directory path should end with '/'
+            const { disk, path: rawPath } = parsePath(fullPath);
+            let path = rawPath.endsWith('/') ? rawPath : rawPath + '/';
+
+            const invalidFolderNamePattern = /[\\\/:\*\?"<>\|]|[\. ]$/;
+            if (invalidFolderNamePattern.test(fsUtils.basename(fullPath)) && path != '/') {
+                // Check if the directory name contains invalid characters
+                throw {
+                    name: 'InvalidName',
+                    message: `Illegal directory name : ${fullPath}`
+                };
+            } else if (!fileTables[disk]) {
+                // Check if the target disk exists
+                throw {
+                    name: 'NotFound',
+                    message: `Invalid path : ${fullPath}`
+                };
+            } /*else if (!checkParentFoldersExist(disk, path)) {
+                // Check if the parent folder exists
+                throw {
+                    name: 'NotFound',
+                    message: `No such file or directory : ${fullPath}`
+                };
+            } */else if (fileTables[disk][path]) {
+                // Check if the directory already exists
+                throw {
+                    name: 'AlreadyExists',
+                    message: `Directory already exists : ${fullPath}`
+                };
             } else {
-                throw new Error(`Failed to fetch file: ${path}`);
+                ensureParentFolders(disk, path);
+                const now = Date.now();
+                fileTables[disk][path] = {
+                    type: types.dir,
+                    changeTime: now,
+                    createdTime: now,
+                    lastModifiedTime: now,
+                    length: 0,
+                    id: null,
+                    mimeType: null
+                }
+                updateFileTable(disk);
+                emit('change', {
+                    path: fullPath
+                })
+                return;
             }
-        }).then(content => {
-            var blob = content;
-            // blob = new Blob([content], { type: mimeType });
-            fs.writeFile(path, blob);
-            // console.log(getSizeString(blob.size));
-            if (responseType == 'text') {
-                return content;
+        }
+
+        /**
+         * Move file or directory
+         * @param {string} srcFullPath 
+         * @param {string} destFullPath 
+         * @param {object} [options]
+         * @param {boolean} [options.overwrite=false]
+         */
+        async function mv(srcFullPath, destFullPath, options = {}) {
+            const { overwrite = false } = options;
+
+            const { disk: srcDisk, path: srcPath } = parsePath(srcFullPath);
+            const { disk: destDisk, path: destPath } = parsePath(destFullPath);
+
+            if (!fileTables[srcDisk] || !fileTables[srcDisk][srcPath]) {
+                throw { name: 'NotFound', message: `Source path not found: ${srcFullPath}` };
+            }
+            if (!fileTables[destDisk]) {
+                throw { name: 'NotFound', message: `Destination disk not found: ${destDisk}` };
+            }
+
+            const srcEntry = fileTables[srcDisk][srcPath];
+            const destExists = !!fileTables[destDisk][destPath];
+
+            if (destExists && !overwrite) {
+                throw { name: 'AlreadyExists', message: `Destination already exists: ${destFullPath}` };
+            }
+
+            await ensureParentFolders(destDisk, destPath);
+
+            if (srcEntry.type === types.file) {
+                const blob = await readFile(srcFullPath);
+                await writeFile(destFullPath, blob);
+                await rm(srcFullPath);
+            } else if (srcEntry.type === types.dir) {
+                const entries = await readdir(srcFullPath, { recursive: true });
+                entries.push(srcFullPath);
+
+                for (const entryPath of entries) {
+                    const relativePath = entryPath.slice(srcFullPath.length);
+                    const targetPath = destFullPath + relativePath;
+
+                    const entry = fileTables[srcDisk][parsePath(entryPath).path];
+                    if (entry.type === types.file) {
+                        const blob = await readFile(entryPath);
+                        await writeFile(targetPath, blob);
+                    } else if (entry.type === types.dir) {
+                        await ensureParentFolders(destDisk, parsePath(targetPath).path);
+                        fileTables[destDisk][parsePath(targetPath).path] = {
+                            ...entry,
+                            createdTime: Date.now(),
+                            lastModifiedTime: Date.now()
+                        };
+                    }
+                }
+
+                await rm(srcFullPath, { recursive: true });
             } else {
+                throw { name: 'InvalidEntry', message: `Unknown entry type at ${srcFullPath}` };
+            }
+
+            updateFileTable(destDisk);
+            updateFileTable(srcDisk);
+        }
+
+        /**
+         * Read a directory
+         * @param {string} fullPath
+         * @param {object} [options]
+         * @param {boolean} [options.recursive=false] Whether to recursively include files in subdirectories
+         * @returns {Promise<string[]>} If it failed, reject a {@link CustomError}
+         */
+        async function readdir(fullPath, options = {}) {
+            const recursive = options.recursive ?? false;
+            const { disk, path: rawPath } = parsePath(fullPath);
+            let path = rawPath.endsWith('/') ? rawPath : rawPath + '/';
+            if (!fileTables[disk]) {
+                throw {
+                    name: 'NotFound',
+                    message: `The disk ( ${disk} ) could not be found`
+                };
+            } else if (!fileTables[disk][path]) {
+                throw {
+                    name: 'NotFound',
+                    message: `The specified directory path ( ${fullPath} ) could not be found`
+                };
+            } else if (fileTables[disk][path].type !== types.dir) {
+                throw {
+                    name: 'InvalidPath',
+                    message: `The specified path ( ${fullPath} ) is not a directory`
+                };
+            }
+            const entries = Object.keys(fileTables[disk])
+                .filter(key => {
+                    if (!key.startsWith(path) || key === path) return false;
+                    if (recursive) return true;
+                    // Non-recursive mode
+                    const subPath = key.slice(path.length);
+                    return subPath.split('/').filter(Boolean).length === 1;
+                })
+                .map(k => `${disk}:${k}`);
+            return entries;
+        }
+
+        /**
+         * Read blob
+         * @param {string} fullPath
+         * @returns {Promise<Blob>} If it failed, reject a {@link CustomError}
+         */
+        async function readFile(fullPath) {
+            const { disk, path } = parsePath(fullPath);
+            if (path == '' || path.endsWith('/') || fsUtils.basename(path) == '') {
+                throw {
+                    name: '',
+                    message: `Invalid path : ${fullPath}`
+                };
+            }
+            if (!fileTables[disk]) {
+                throw {
+                    name: '',
+                    message: `The disk ( ${disk} ) could not be found`
+                };
+            }
+            if (!fileTables[disk][path]) {
+                throw {
+                    name: '',
+                    message: `File not found: ${fullPath}`
+                };
+            }
+            const store = await getStore('readonly')
+
+            return new Promise((resolve, reject) => {
+                const request = store.get(fileTables[disk][path].id);
+                request.onsuccess = async (event) => {
+                    const file = event.target.result;
+                    if (file) {
+                        resolve(file.v);
+                        // Cache blob
+                        if (devMode == false) {
+                            blobURLCaches[fullPath] = URL.createObjectURL(file.v);
+                        }
+                        if (file.v.type && fileTables[disk][path].mimeType != file.v.type) {
+                            fileTables[disk][path].mimeType = file.v.type;
+                            updateFileTable(disk);
+                        }
+                    } else {
+                        reject({
+                            name: 'NotFound',
+                            message: `File not found: ${fullPath}`
+                        });
+                    }
+                }
+                request.onerror = async (event) => {
+                    const err = event.target.error;
+                    reject({
+                        name: err.name,
+                        message: err.message
+                    });
+                }
+            })
+        }
+
+        /**
+         * Remove file or directory
+         * @param {string} fullPath 
+         * @param {object} [options]
+         * @param {boolean} [options.recursive=false]
+         * @param {boolean} [options.force=false]
+         * @returns {Promise} If it failed, reject a {@link CustomError}
+         */
+        async function rm(fullPath, options = {}) {
+            const { recursive = false, force = false } = options;
+            const { disk, path } = parsePath(fullPath);
+            if (!fileTables[disk]) {
+                if (force) return;
+                throw {
+                    name: 'NotFound',
+                    message: `The disk ( ${disk} ) could not be found`
+                };
+            }
+
+            const entry = fileTables[disk][path];
+            if (!entry) {
+                if (force) return;
+                throw {
+                    name: 'NotFound',
+                    message: `The specified path ( ${fullPath} ) could not be found`
+                };
+            }
+            if (entry.type === types.file) {
+                const store = await getStore('readwrite')
+                await new Promise((res, rej) => {
+                    const req = store.delete(entry.id);
+                    req.onsuccess = () => {
+                        // Remove cached url
+                        if (blobURLCaches[disk + ':' + path]) {
+                            delete blobURLCaches[disk + ':' + path];
+                        }
+                        delete fileTables[disk][path];
+                        updateFileTable(disk);
+                        emit('change', {
+                            path: fullPath
+                        });
+                        res();
+                    };
+                    req.onerror = () => rej({
+                        name: req.error.name,
+                        message: req.error.message
+                    });
+                });
+                return;
+            } else if (entry.type === types.dir) {
+                const entries = await readdir(fullPath, { recursive });
+                if (!recursive && entries.length > 0) {
+                    throw {
+                        name: 'DirectoryNotEmpty',
+                        message: `Directory ( ${fullPath} ) is not empty`
+                    };
+                }
+                const pathToRemove = entries.map(e => parsePath(e).path);
+                pathToRemove.push(path);
+
+                await deleteBlobsInBatches(disk, pathToRemove)
+                for (const path of pathToRemove) {
+                    const entry = fileTables[disk][path];
+                    if (entry && entry.type === types.dir) {
+                        delete fileTables[disk][path];
+                    }
+                }
+                updateFileTable(disk);
+                emit('change', {
+                    path: fullPath
+                })
+                return;
+            } else {
+                throw {
+                    name: 'InvalidEntry',
+                    message: `Unknown entry type at ${fullPath}`
+                };
+            }
+        }
+
+        /**
+         * Get the status of the specified path
+         * @param {string} fullPath 
+         * @returns {Object}
+         */
+        function stat(fullPath) {
+            const { disk, path } = parsePath(fullPath);
+            if (!fileTables[disk]) {
+                return {
+                    isFile: () => false,
+                    isDirectory: () => false,
+                    length: 0,
+                    exists: false,
+                    type: null,
+                    changeTime: null,
+                    createdTime: null,
+                    lastModifiedTime: null,
+                    mimeType: null
+                }
+            }
+            const entry = fileTables[disk][path];
+            if (!entry) {
+                return {
+                    isFile: () => false,
+                    isDirectory: () => false,
+                    length: 0,
+                    exists: false,
+                    type: null,
+                    changeTime: null,
+                    createdTime: null,
+                    lastModifiedTime: null,
+                    mimeType: null
+                }
+            }
+
+            var length = entry.length;
+            if (entry.type === types.dir) {
+                Object.keys(fileTables[disk]).filter(t => t.startsWith(path)).forEach(p => {
+                    length += fileTables[disk][p].length;
+                })
+            }
+
+            return {
+                isFile: () => entry.type === types.file,
+                isDirectory: () => entry.type === types.dir,
+                length,
+                exists: true,
+                type: entry.type === types.file ? 'file' : 'directory',
+                changeTime: entry.changeTime,
+                createdTime: entry.createdTime,
+                lastModifiedTime: entry.lastModifiedTime,
+                mimeType: entry.mimeType || ''
+            }
+        }
+
+        /**
+         * Write a blob to the specified path
+         * @param {string} fullPath
+         * @param {Blob} blob 
+         * @returns {Promise} If it failed, reject a {@link CustomError}
+         */
+        async function writeFile(fullPath, blob) {
+            const { disk, path } = parsePath(fullPath);
+            if (!fileTables[disk]) throw {
+                name: 'NotFound',
+                message: `The disk ( ${disk} ) could not be found`
+            };
+            if (fsUtils.basename(path) == '' || path.endsWith('/') || path == '') throw {
+                name: 'InvalidPath',
+                message: `Invalid path : ${fullPath}`
+            };
+            if (!isBlob(blob)) throw {
+                name: 'TypeError',
+                message: `The type of the second parameter provided ( ${Object.prototype.toString.call(blob)} ) is not [object Blob]`
+            };
+            /*if (!checkParentFoldersExist(disk, path)) throw {
+                name: '',
+                message: `No such file or directory : ${fullPath}`
+            };*/
+            ensureParentFolders(disk, path);
+            const id = fileTables[disk][path] ? fileTables[disk][path].id : randomID(idLength);
+            const now = Date.now();
+            const store = await getStore('readwrite');
+            return new Promise((resolve, reject) => {
+                const request = store.put({
+                    k: id,
+                    v: blob
+                })
+                request.onsuccess = async () => {
+                    if (!fileTables[disk][path]) {
+                        fileTables[disk][path] = {
+                            type: types.file,
+                            changeTime: now,
+                            createdTime: now,
+                            lastModifiedTime: now,
+                            length: blob.size,
+                            id,
+                            mimeType: blob.type || ''
+                        };
+                    } else {
+                        if (fileTables[disk][path].type == types.file) {
+                            fileTables[disk][path].changeTime = now;
+                            fileTables[disk][path].lastModifiedTime = now;
+                            fileTables[disk][path].length = blob.size;
+                            fileTables[disk][path].mimeType = blob.type || '';
+                        }
+                    }
+                    updateFileTable(disk);
+                    emit('change', {
+                        path: fullPath
+                    })
+                    // Cache blob
+                    if (devMode == false) {
+                        blobURLCaches[fullPath] = URL.createObjectURL(blob);
+                    }
+                    resolve();
+                }
+                request.onerror = async (event) => {
+                    const err = event.target.error;
+                    reject({
+                        name: err.name,
+                        message: err.message
+                    });
+                }
+            })
+        }
+
+        // =================== Proxy for Web Workers =================== //
+
+        /**
+         * Proxy
+         * @param {string} method 
+         * @param {*} param 
+         * @returns 
+         */
+        async function proxy(method, param) {
+            const availableAPIs = { exists, mkdir, mv, on, readdir, readFile, rm, stat, writeFile };
+            if (Object.keys(availableAPIs).includes(method)) {
+                return availableAPIs[method](...param);
+            }
+        }
+
+        // =================== Convenient functions ==================== //
+
+        /**
+         * Download file to idbfs and returns file content
+         * @param {string} fullPath 
+         * @param {string} [responseType=blob]
+         * @returns {(Blob|string)}
+         */
+        async function downloadFile(fullPath, responseType = 'blob') {
+            if (__dirname != "") {
+                fullPath = fsUtils.resolve(__dirname, fullPath);
+            }
+            if (!fullPath || typeof fullPath !== 'string' || fullPath.trim().length == 0) return;
+            if (debugMode == true) {
+                // Debugger
+                print(getStackTrace(), fullPath);
+            }
+            if (
+                navigator.onLine != true                            // Offline
+                || window.needsUpdate == false && devMode == false  // Installed
+                || fullPath.startsWith('C:/Users/Admin/Desktop/')   // Desktop folder
+            ) {
+                return await readFile(fullPath);
+            }
+            const { disk } = parsePath(fullPath);
+            if (disk != 'C') throw {
+                name: 'InvalidPath',
+                message: ''
+            };
+            return fetch(`./${removeStringInRange(fullPath, 0, fullPath.split(':/').length > 1 ? (fullPath.split(':/')[0].length + 2) : 0)}`).then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    print(`Failed to fetch file: ${fullPath}`);
+                    throw new Error('Fetch failed');
+                }
+            }).then(async blob => {
+                writeFile(fullPath, blob);
+                if (responseType == 'text') {
+                    return await blob.text();
+                } else {
+                    return blob;
+                }
+            }).catch(async err => {
+                print(`Failed to fetch file: ${fullPath}`, err);
+                const blob = await readFile(fullPath);
+                if (responseType == 'text') {
+                    return await blob.text();
+                }
                 return blob;
+            })
+        }
+
+        /**
+         * Get the blob URL of the file
+         * @param {string} fullPath
+         * @returns {string}
+         */
+        async function getFileURL(fullPath) {
+            if (__dirname != "") {
+                fullPath = fsUtils.resolve(__dirname, fullPath);
             }
-        }).catch(async err => {
-            console.log(`Failed to fetch file: ${path}`, err);
-            if (responseType == 'text') {
-                return await (await fs.readFile(path)).text();
-            } else {
-                return await fs.readFile(path);
+            if (blobURLCaches[fullPath] && devMode == false) return blobURLCaches[fullPath];
+            var blob = await downloadFile(fullPath);
+            var blobURL = URL.createObjectURL(blob);
+            if (devMode == false) blobURLCaches[fullPath] = blobURL;
+            return blobURL;
+        }
+
+        /**
+         * Get file content
+         * @param {string} fullPath 
+         * @returns {string}
+         */
+        async function getFileAsText(fullPath) {
+            if (__dirname != "") {
+                fullPath = fsUtils.resolve(__dirname, fullPath);
             }
-        })
+            if (
+                navigator.onLine != true                            // Offline
+                || window.needsUpdate == false && devMode == false  // Installed
+                || fullPath.startsWith('C:/Users/Admin/Desktop/')       // Desktop folder
+            ) {
+                return await (await readFile(fullPath)).text();
+            }
+            const { disk } = parsePath(fullPath);
+            if (disk != 'C') throw {
+                name: 'InvalidPath',
+                message: ''
+            };
+            return fetch(`./${removeStringInRange(fullPath, 0, fullPath.split(':/').length > 1 ? (fullPath.split(':/')[0].length + 2) : 0)}`).then(response => {
+                if (response.ok) {
+                    return response.blob();
+                } else {
+                    print(`Failed to fetch file: ${fullPath}`);
+                }
+            }).then(async blob => {
+                writeFile(fullPath, blob);
+                return await blob.text();
+            }).catch(async err => {
+                print(`Failed to fetch file: ${fullPath}`, err);
+                return await (await readFile(fullPath)).text();
+            })
+        }
+
+        // ==================== Deprecated functions ==================== //
+
+        /**
+         * Get file extension
+         * @param {string} file 
+         * @returns {string}
+         */
+        function getFileExtension(file = '') {
+            console.warn('%cfs.getFileExtension()%c has been deprecated.\nPlease use %cutils.getFileExtension()%c instead', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '', 'font-family:monospace;background:rgb(24,24,24);color:#fff;border-radius:4px;padding:4px 6px;', '');
+            return fsUtils.extname(file);
+        }
+
+        function resolvePath(path) {
+            if (__dirname != "") {
+                var isdir = path.endsWith('/');
+                path = fsUtils.resolve(__dirname, path);
+                if (isdir) path += '/';
+            }
+            return path;
+        }
+
+        await init();
+
+        return {
+            ["disks"]: Object.keys(fileTables),
+            // =================== For main window =================== //
+            exists, mkdir, mv, on, readdir, readFile, rm, stat, writeFile,
+            // =================== For Web Workers =================== //
+            proxy,
+            // ================= Convenient functions ================ //
+            downloadFile, getFileURL, getFileAsText,
+            // ================= Deprecated functions ================ //
+            getFileExtension, resolvePath
+        };
     }
 
+    window.IDBFS = IDBFS;
+    window.fsUtils = fsUtils;
+
+    Object.freeze(window.IDBFS);
+    Object.freeze(window.fsUtils);
+
+    window.fs = await IDBFS();
     Object.freeze(window.fs);
 
     if (window.__fscf) {

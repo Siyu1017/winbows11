@@ -75,11 +75,17 @@
 
 .window-toolbar,
 .window-content {
-    background: none;
+    background: none !important;
 }
 
 .window {
     -webkit-backdrop-filter: saturate(2) blur(60px);
     backdrop-filter: saturate(2) blur(60px);
     background: var(--winbows-taskbar-bg);
+}
+
+.dark {
+    color: rgba(255, 255, 255, .8);
+    backdrop-filter: saturate(6) blur(120px);
+    -webkit-backdrop-filter: saturate(6) blur(120px);
 }

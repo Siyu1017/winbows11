@@ -4,6 +4,17 @@
     backdrop-filter: blur(120px) saturate(2);
 }
 
+[data-theme="dark"] {
+    background: rgb(36 36 36 / 90%);
+    -webkit-backdrop-filter: blur(240px) saturate(2);
+    backdrop-filter: blur(240px) saturate(2);
+}
+
+.window-content,
+.window-toolbar {
+    background: transparent !important;
+}
+
 .window-toolbar {
     background: transparent;
 }
@@ -83,6 +94,10 @@
 .back-button-icon {
     width: 1.125rem;
     height: 1.125rem;
+}
+
+[data-theme="dark"] .back-button:hover {
+    background: rgb(255 255 255 / 5%);
 }
 
 .app-sidebar {}
@@ -167,7 +182,7 @@
     background: rgba(0, 0, 0, 0.06);
 }
 
-.home-network-icon, 
+.home-network-icon,
 .home-update-icon {
     width: 1.5rem;
     height: 1.5rem;
@@ -180,4 +195,14 @@
 
 .home-update-title {
     font-size: 1rem;
+}
+
+[data-theme="dark"] .home-network:hover,
+[data-theme="dark"] .home-update:hover {
+    background: rgb(255 255 255 / 6%);
+}
+
+[data-theme="dark"] .home-network-status,
+[data-theme="dark"] .home-update-time {
+    color: rgb(170 170 170);
 }

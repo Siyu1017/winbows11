@@ -156,17 +156,15 @@ async function writeFile(path, blob, exist = 0) {
         if (exist != 0) {
             pathToCheck = `${path.substring(0, path.length - (extension.length + 1))} (${exist})${extension ? '.' + extension : ''}`;
         }
-        fs.exists(pathToCheck).then(async result => {
-            if (result.exists == false) {
-                console.log(pathToCheck, 'can write');
-                fs.writeFile(pathToCheck, blob).then(() => {
-                    resolve();
-                })
-            } else {
-                console.log(pathToCheck);
-                resolve(writeFile(path, blob, exist+1));
-            }
-        })
+        if (fs.exists(pathToCheck) == false) {
+            console.log(pathToCheck, 'can write');
+            fs.writeFile(pathToCheck, blob).then(() => {
+                resolve();
+            })
+        } else {
+            console.log(pathToCheck);
+            resolve(writeFile(path, blob, exist + 1));
+        }
     });
 }
 

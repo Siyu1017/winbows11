@@ -571,7 +571,7 @@ async function createTab(page, active = true) {
     async function handleLocalURL() {
         viewerTitle.innerHTML = '';
         viewerList.innerHTML = '';
-        var exists = await fs.exists(currentPage);
+        var exists = fs.exists(currentPage);
         changeHeader(currentPage);
         if (!exists.exists) {
             viewerList.innerHTML = 'File not found.';

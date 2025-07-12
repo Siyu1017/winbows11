@@ -8,7 +8,7 @@ function getCategoryString() {
     const file = datas.file;
     const extension = window.utils.getFileExtension(datas.file);
     if (extension != '') {
-        return `.${extension}`;
+        return `${extension}`;
     } else {
         return `[${file.split('/').pop()}]`;
     }
@@ -59,6 +59,23 @@ container.appendChild(footer);
 // moreOption.appendChild(moreOptionLabel);
 footer.appendChild(alwaysButton);
 footer.appendChild(onceButton);
+
+var theme = window.System.theme.get()
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+} else {
+    document.documentElement.classList.remove('winui-dark');
+}
+
+window.System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+    }
+})
 
 var self = false;
 var focus = false;
