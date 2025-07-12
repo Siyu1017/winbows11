@@ -88,7 +88,9 @@ async function Main() {
                         warningWindow.appendChild(button);
                         button.addEventListener('click', () => {
                             warning.remove();
-                            resolve();
+                            location.href='./install.html';
+                            
+                        
                         })
                     }
                 }
