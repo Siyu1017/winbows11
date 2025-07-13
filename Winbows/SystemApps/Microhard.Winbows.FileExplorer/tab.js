@@ -228,7 +228,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         }
 
         let pageContent = pageContents[path];
-        if (!pageContents[path]) {
+        if (path.startsWith('pages://') && !pageContents[path]) {
             if (path == 'pages://this_pc') {
                 const itemViewer = document.createElement('div');
                 itemViewer.className = 'explorer-item-viewer';
@@ -280,7 +280,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     footerPageSize.innerHTML = window.utils.formatBytes(size);
                 }
                 pageContent = itemViewer;
-            } else if (path.startsWith('pages://')) {
+            } else {
                 try {
                     const module = await browserWindow.import(`./pages/` + path.replace('pages://', '') + '.js');
                     pageContents[path] = module.default(router);
@@ -296,11 +296,11 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                 if (router.getCurrentRoute() != path) {
                     return;
                 }
-            } else {
-                pageContent = await localPageCrafter(path);
-                if (router.getCurrentRoute() != path) {
-                    return;
-                }
+            }
+        } else {
+            pageContent = await localPageCrafter(path);
+            if (router.getCurrentRoute() != path) {
+                return;
             }
         }
 
