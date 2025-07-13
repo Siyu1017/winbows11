@@ -57,8 +57,9 @@
                 console.error('Failed to remove temp files:', err);
             }
 
-            var lastTime = Date.now();
-            var startTime = lastTime;
+            var startTime = Date.now();
+
+            var installed = [];
 
             var nameElement = document.createElement('div');
             var timeElement = document.createElement('div');
@@ -79,12 +80,13 @@
             document.querySelector('.install-info').appendChild(lastElement);
 
             function predictTime() {
-                var avarageTime = (Date.now() - lastTime) / 2 / 1000;
-                var lastItems = files.length - index;
-                var seconds = ~~(avarageTime * lastItems);
-                if (lastTime == startTime) {
+                if (installed.length == 0) {
                     return 'Calculating...';
-                } else if (seconds < 60) {
+                }
+                var now = Date.now();
+                var unitTime = (now - startTime) / downloadedSize;
+                var seconds = ~~(unitTime * (size - downloadedSize));
+                if (seconds < 60) {
                     return `${seconds} sencond(s)`;
                 } else if (seconds < 60 * 60) {
                     return `${~~(seconds / 60)} minute(s) and ${seconds % 60} sencond(s)`;
@@ -120,7 +122,6 @@
             }
             setInterval(update, 1000);
             update();
-            var installed = [];
             for (let i in files) {
                 index = i;
                 try {
@@ -135,8 +136,6 @@
                     file.innerHTML = `<span>${files[i].replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</span>`;
                     document.querySelector('.install-detail-installeds').appendChild(file);
                     document.querySelector('.install-details').scrollTop = document.querySelector('.install-detail-installeds').scrollHeight;
-                    duration = Date.now() - startTime;
-                    lastTime = startTime;
                     startTime = Date.now();
                     installed.push(files[i]);
                     localStorage.setItem('WINBOWS_DIRECTORIES', JSON.stringify(installed));
@@ -146,7 +145,7 @@
                     if (installed.length == files.length) {
                         localStorage.setItem('WINBOWS_BUILD_ID', build_id);
                         update();
-                        location.href = './';
+                        //location.href = './';
                     }
                 });
             }

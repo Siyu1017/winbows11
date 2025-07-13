@@ -196,11 +196,6 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     setSidebar(true);
 
-    setTimeout(() => {
-        console.info('TabView');
-        console.info(tab.tabviewItem.classList, '\nsize', tab.tabviewItem.offsetWidth + 'x' + tab.tabviewItem.offsetHeight, '\nwindow', browserWindow.window.offsetWidth + 'x' + browserWindow.window.offsetHeight, '\n', tab.tabviewItem.innerHTML, '\n', sidebar.offsetWidth + 'x' + sidebar.offsetHeight);
-    }, 500)
-
     const module = await browserWindow.import('./_router.js');
     const router = module.router;
     let pageContents = {};

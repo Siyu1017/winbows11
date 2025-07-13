@@ -1011,6 +1011,48 @@ async function Main() {
     }
 
     var startLoadingTime = Date.now();
+    var startIssuesTimeout = 10000;
+    var startedSuccessfully = false;
+    var startIssuesPrompt = null;
+
+    setTimeout(showStartIssuesPrompt, startIssuesTimeout);
+    function setStartStatus(v) {
+        startedSuccessfully = v;
+        if (startIssuesPrompt != null) {
+            startIssuesPrompt.remove();
+        }
+    }
+    function showStartIssuesPrompt() {
+        if (startedSuccessfully == true) return;
+        startIssuesPrompt = document.createElement('div');
+        var promptWindow = document.createElement('div');
+        var title = document.createElement('div');
+        var btnGroup = document.createElement('div');
+        var retryBtn = document.createElement('button');
+        //var optionsBtn = document.createElement('button');
+
+        title.innerHTML = 'Are there any issues during starting?';
+        retryBtn.textContent = 'Retry';
+        //optionsBtn.textContent = 'Options';
+
+        startIssuesPrompt.className = 'winbows-start-issues';
+        promptWindow.className = 'winbows-start-issues-window';
+        title.className = 'winbows-start-issues-title';
+        btnGroup.className = 'winbows-start-issues-button-group';
+        retryBtn.className = 'winbows-start-issues-button';
+        //optionsBtn.className = 'winbows-start-issues-button outline';
+
+        document.body.appendChild(startIssuesPrompt);
+        startIssuesPrompt.appendChild(promptWindow);
+        promptWindow.appendChild(title);
+        promptWindow.appendChild(btnGroup);
+        btnGroup.appendChild(retryBtn);
+        //btnGroup.appendChild(optionsBtn);
+
+        retryBtn.addEventListener('click', (e) => {
+            location.href = './?dev';
+        })
+    }
 
     // Loading
     var loadingContainer = document.createElement('div');
@@ -1589,7 +1631,7 @@ async function Main() {
         }
         currentBackgroundImage = image;
         localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
-        var url = await getFileURL(currentBackgroundImage);
+        var url = await fs.getFileURL(currentBackgroundImage);
         document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
         var img = new Image();
         img.src = url;
@@ -3199,6 +3241,8 @@ async function Main() {
         return;
     })();
 
+    setStartStatus(true);
+
     window.System.triggerEvent('load');
 
     // new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js', 'system').start();
@@ -3227,55 +3271,6 @@ async function Main() {
 
         stack = stack.split('\n').map(function (line) { return line.trim(); });
         return stack.splice(stack[0] == 'Error' ? 2 : 1);
-    }
-
-    // Cache the url
-    async function getFileURL(url) {
-        var blob = await downloadFile(url);
-        return URL.createObjectURL(blob);
-    }
-
-    function removeStringInRange(str, start, end) {
-        return str.substring(0, start) + str.substring(end);
-    }
-
-    async function downloadFile(path, responseType = 'blob') {
-        if (!path || path.trim().length == 0) return;
-        if (debuggerMode == true || window.debuggerMode == true) {
-            // Debugger
-            console.log('%c[DOWNLOAD FILE]', 'color: #f670ff', getStackTrace(), path);
-        }
-        if (navigator.onLine != true || window.needsUpdate == false && devMode == false || path.startsWith('C:/Users/Admin/Desktop/')) {
-            return await fs.readFile(path);
-        }
-        // var method = mimeType.startsWith('image') ? 'blob' : 'text';
-        return fetch(`./${removeStringInRange(path, 0, path.split(':/').length > 1 ? (path.split(':/')[0].length + 2) : 0)}`).then(response => {
-            // console.log(response)
-            if (response.ok) {
-                return response.blob();
-            } else {
-                throw new Error(`Failed to fetch file: ${path}`);
-            }
-        }).then(content => {
-            var blob = content;
-            // blob = new Blob([content], { type: mimeType });
-            fs.writeFile(path, blob);
-            // console.log(getSizeString(blob.size));
-            if (responseType == 'text') {
-                return content;
-            } else {
-                return blob;
-            }
-        }).catch(async err => {
-            if (window.debuggerMode == true) {
-                console.log(`Failed to fetch file: ${path}`, err);
-            }
-            if (responseType == 'text') {
-                return await (await fs.readFile(path)).text();
-            } else {
-                return await fs.readFile(path);
-            }
-        })
     }
 }
 
