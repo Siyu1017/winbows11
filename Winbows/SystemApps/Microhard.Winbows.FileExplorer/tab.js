@@ -302,7 +302,6 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             if (router.getCurrentRoute() != path) {
                 return;
             }
-            console.log(pageContent);
         }
 
         try {
