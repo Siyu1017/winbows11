@@ -136,7 +136,6 @@
                     file.innerHTML = `<span>${files[i].replaceAll("<", "&lt;").replaceAll(">", "&gt;")}</span>`;
                     document.querySelector('.install-detail-installeds').appendChild(file);
                     document.querySelector('.install-details').scrollTop = document.querySelector('.install-detail-installeds').scrollHeight;
-                    startTime = Date.now();
                     installed.push(files[i]);
                     localStorage.setItem('WINBOWS_DIRECTORIES', JSON.stringify(installed));
 
@@ -145,7 +144,7 @@
                     if (installed.length == files.length) {
                         localStorage.setItem('WINBOWS_BUILD_ID', build_id);
                         update();
-                        //location.href = './';
+                        location.href = './';
                     }
                 });
             }
