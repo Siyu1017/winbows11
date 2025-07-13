@@ -571,7 +571,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                 text: "Delete",
                 action: () => {
                     selectedItems.forEach(item => {
-                        fs.rm(item.path).then(() => {
+                        fs.rm(item.path, { recursive: true }).then(() => {
                             item.item.remove();
                         });
                     })
@@ -634,7 +634,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "delete",
                     text: "Delete",
                     action: () => {
-                        fs.rm(path).then(() => {
+                        fs.rm(path, { recursive: true }).then(() => {
                             item.remove();
                         });
                     }
@@ -768,7 +768,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "delete",
                     text: "Delete",
                     action: () => {
-                        fs.rm(path).then(() => {
+                        fs.rm(path, { recursive: true }).then(() => {
                             item.remove();
                         });
                     }
