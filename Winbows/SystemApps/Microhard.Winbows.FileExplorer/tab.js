@@ -201,7 +201,9 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
     let pageContents = {};
 
     async function updatePage(e) {
-        console.log('change', e.path, 'from', tab.id);
+        if (window.debuggerMode == true) {
+            console.log('change', e.path, 'from', tab.id);
+        }
         const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
         //const pageItem = Object.values(pageListItems).filter(item => item.path === path);
         //if (pageItem.length == 0) return;
@@ -867,8 +869,6 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         let dirs = [];
         let files = [];
         let stats = {};
-
-        console.log(res);
 
         for (const path of res) {
             const stat = fs.stat(path);

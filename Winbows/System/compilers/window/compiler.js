@@ -60,7 +60,9 @@ Object.defineProperty(window.Compilers, 'Window', {
                 }
             },
             set: (target, prop, value) => {
-                console.log(prop)
+                if (window.debuggerMode == true) {
+                    console.log(prop);
+                }
                 return undefined;
             }
         })
@@ -127,7 +129,9 @@ Object.defineProperty(window.Compilers, 'Window', {
         async function processModule(module, path) {
             if (!modules[module]) return;
             const { script, requires } = modules[module];
-            console.log(path, module);
+            if (window.debuggerMode == true) {
+                console.log(path, module);
+            }
             if (!moduleCaches[script]) {
                 let content = await fs.getFileAsText(script);
                 moduleCaches[script] = content;
@@ -192,7 +196,9 @@ Object.defineProperty(window.Compilers, 'Window', {
             }
 
             result += code.slice(lastIndex);
-            console.log(currentPath, '\n', importStmts)
+            if (window.debuggerMode == true) {
+                console.log(currentPath, '\n', importStmts);
+            }
             return importStmts.join('') + result;
         }
 
@@ -234,7 +240,9 @@ Object.defineProperty(window.Compilers, 'Window', {
 
         windowObject.import = async (url) => {
             url = resolvePath(url);
-            console.log('browserWindow.import', url)
+            if (window.debuggerMode == true) {
+                console.log('browserWindow.import', url);
+            }
             const content = await asyncReplaceImports(await fs.getFileAsText(url), url);
             const blob = new Blob([content], { type: 'application/javascript' });
             const blobURL = URL.createObjectURL(blob);

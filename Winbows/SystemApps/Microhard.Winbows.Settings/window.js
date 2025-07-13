@@ -104,7 +104,9 @@ router.on('change', async (e) => {
     if (path == '/') {
         return router.replace('/home');
     }
-    console.log('change', path);
+    if (window.debuggerMode == true) {
+        console.log('change', path);
+    }
     let page = pageContents[path];
     if (!pageContents[path]) {
         if (navbar.contains(backButton)) {
