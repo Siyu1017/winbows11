@@ -2581,6 +2581,7 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
 .winbows-start-issues-title {
     font-size: 125%;
     font-weight: 600;
+    color: #000 !important;
 }
 
 .winbows-start-issues-button {
