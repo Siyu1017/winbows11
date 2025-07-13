@@ -48,7 +48,7 @@
 .explorer-viewer-container {
     width: -webkit-fill-available;
     height: -webkit-fill-available;
-    overflow: hidden;
+    overflow: auto;
     position: relative;
 }
 

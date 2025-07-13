@@ -2420,7 +2420,12 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
     transition: all .2s ease-in-out;
 }
 
-.migrate-progress-bar.fulfilled::before {
+.migrate-progress-bar.rejected {
+    --color-1: rgb(255 43 43);
+}
+
+.migrate-progress-bar.fulfilled::before,
+.migrate-progress-bar.rejected::before {
     transform: translateX(0);
 }
 
@@ -2469,7 +2474,8 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
     animation: 2s linear 0s infinite normal none running loading-spinner;
 }
 
-.migrate-task-item.fulfilled .migrate-loading-spinner {
+.migrate-task-item.fulfilled .migrate-loading-spinner,
+.migrate-task-item.rejected .migrate-loading-spinner {
     opacity: 0;
 }
 
@@ -2489,4 +2495,64 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
 .migrate-task-item.fulfilled .migrate-task-icon {
     background: var(--winbows-primary-color);
     border-radius: 50%;
+}
+
+.migrate-task-item.rejected .migrate-task-icon::before {
+    content: '';
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='currentColor' class='size-6'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M6 18 18 6M6 6l12 12' /%3E%3C/svg%3E%0A");
+    mask-size: .875rem;
+    mask-position: center;
+    mask-repeat: no-repeat;
+    width: 1.25rem;
+    height: 1.25rem;
+    background: #fff;
+    display: block;
+    position: absolute;
+}
+
+.migrate-task-item.rejected .migrate-task-icon {
+    background: rgb(255 43 43);
+    border-radius: 50%;
+}
+
+.migrate-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    width: -webkit-fill-available;
+    justify-content: center;
+}
+
+.migrate-button {
+    color: rgb(255, 255, 255);
+    padding: 0.625rem 1.25rem;
+    background: rgb(0, 103, 192);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-drag: none;
+    outline: 0px;
+    border: 1px solid rgb(0, 103, 192);
+    font-family: inherit;
+    font-weight: 600;
+    max-width: 12rem;
+    width: -webkit-fill-available;
+}
+
+.migrate-button.outline {
+    color: rgb(0, 103, 192);
+    background: #fff;
+}
+
+@media screen and (max-width: 648px) {
+    .migrate-buttons {
+        flex-direction: column;
+        width: min(100%, 16rem);
+    }
+
+    .migrate-button {
+        max-width: none;
+    }
 }

@@ -58,23 +58,26 @@ async function Main() {
         })();
 
         await (function () {
-            return new Promise(resolve => {
+            return new Promise(async (resolve, reject) => {
                 warningWindow.style.padding = '2rem';
 
-                var taskOrder = ['open', 'read', 'migrate', 'delete'];
+                var taskOrder = ['fetch', 'open', 'read', 'migrate', 'delete'];
                 var taskFinished = [];
                 var tasks = {
+                    fetch: {
+                        text: 'Fetch manifest'
+                    },
                     open: {
-                        text: 'Open old idbfs'
+                        text: 'Open old IDBFS'
                     },
                     read: {
-                        text: 'Read old idbfs'
+                        text: 'Read old IDBFS'
                     },
                     migrate: {
-                        text: 'Migrate files to new idbfs'
+                        text: 'Migrate files to new IDBFS'
                     },
                     delete: {
-                        text: 'Delete old idbfs'
+                        text: 'Delete old IDBFS'
                     }
                 }
 
@@ -88,9 +91,36 @@ async function Main() {
                         warningWindow.appendChild(button);
                         button.addEventListener('click', () => {
                             warning.remove();
-                            location.href='./install.html';
-                            
-                        
+                            resolve();
+                        })
+                    }
+                }
+
+                var rejected = false;
+                function handleReject() {
+                    if (rejected == false) {
+                        rejected = true;
+                        var buttons = document.createElement('div');
+                        var laterBtn = document.createElement('button');
+                        var retryBtn = document.createElement('button');
+
+                        buttons.className = 'migrate-buttons';
+                        laterBtn.className = 'migrate-button outline';
+                        retryBtn.className = 'migrate-button';
+
+                        laterBtn.innerHTML = 'Migrate later';
+                        retryBtn.innerHTML = 'Retry';
+
+                        warningWindow.appendChild(buttons);
+                        buttons.appendChild(laterBtn);
+                        buttons.appendChild(retryBtn);
+
+                        retryBtn.addEventListener('click', () => {
+                            location.reload();
+                        })
+                        laterBtn.addEventListener('click', () => {
+                            warning.remove();
+                            resolve();
                         })
                     }
                 }
@@ -133,116 +163,152 @@ async function Main() {
                                 checkIfAllFinished();
                             }
                         }
+                        tasks[key].reject = function () {
+                            if (taskFinished.slice(0, i).every(x => x == true)) {
+                                tasks[key].finished = false;
+                                taskFinished[i] = false;
+                                progressBar.classList.add('rejected');
+                                el.classList.add('rejected');
+                                checkIfAllFinished();
+                            }
+                        }
                         tasks[key].update = function (content) {
                             el.querySelector('.migrate-task-item-text').innerHTML = content;
                         }
                     })(i);
                 }
 
-                // Try to open the old database
-                const oldDbRequest = indexedDB.open('winbows11', 1);
-                oldDbRequest.onsuccess = async (event) => {
-                    const db = event.target.result;
+                var updateFiles = null;
+                await fetch(`./build.json?timestamp=${new Date().getTime()}`).then(res => {
+                    return res.json()
+                }).then(data => {
+                    if (data.table) {
+                        updateFiles = data.table;
+                        tasks.fetch.finish();
+                        openDB();
+                    } else {
+                        tasks.fetch.reject();
+                        tasks.fetch.update('Failed to fetch manifest, please try again later.');
+                        handleReject();
+                    }
+                }).catch(err => {
+                    tasks.fetch.reject();
+                    tasks.fetch.update('Failed to fetch manifest, please try again later.');
+                    handleReject();
+                })
 
-                    tasks.open.finish();
+                function openDB() {
+                    // Try to open the old database
+                    const oldDbRequest = indexedDB.open('winbows11', 1);
+                    oldDbRequest.onsuccess = async (event) => {
+                        const db = event.target.result;
 
-                    async function readFromOldDatabase(path) {
-                        return new Promise((resolve, reject) => {
+                        tasks.open.finish();
+
+                        async function readFromOldDatabase(path) {
+                            return new Promise((resolve, reject) => {
+                                const store = db.transaction('C', 'readonly').objectStore('C');
+                                const req = store.get(path);
+
+                                req.onsuccess = () => {
+                                    const entry = req.result;
+                                    if (entry) {
+                                        resolve({
+                                            path: `C:/${entry.path}`,
+                                            content: entry.content,
+                                            type: entry.type
+                                        });
+                                    } else {
+                                        reject(new Error(`File not found: ${path}`));
+                                    }
+                                };
+                                req.onerror = (event) => {
+                                    reject(event.target.error);
+                                };
+                            });
+                        }
+
+                        function deleteIDB(name) {
+                            return new Promise((resolve, reject) => {
+                                const request = indexedDB.deleteDatabase(name);
+
+                                request.onsuccess = () => {
+                                    console.log(`Database '${name}' deleted successfully.`);
+                                    resolve();
+                                };
+
+                                request.onerror = (event) => {
+                                    console.warn(`Failed to delete database '${name}':`, event.target.error);
+                                    reject(event.target.error);
+                                };
+
+                                request.onblocked = () => {
+                                    console.warn(`Deletion of database '${name}' is blocked (likely due to an open tab).`);
+                                };
+                            });
+                        }
+
+                        try {
                             const store = db.transaction('C', 'readonly').objectStore('C');
-                            const req = store.get(path);
+                            const req = store.index('path').getAllKeys();
 
-                            req.onsuccess = () => {
-                                const entry = req.result;
-                                if (entry) {
-                                    resolve({
-                                        path: `C:/${entry.path}`,
-                                        content: entry.content,
-                                        type: entry.type
-                                    });
-                                } else {
-                                    reject(new Error(`File not found: ${path}`));
+                            req.onsuccess = async () => {
+                                tasks.read.finish();
+
+                                const keys = req.result;
+                                const all = keys.length;
+                                let completed = 0;
+                                let skipped = 0;
+
+                                // Migrate each key to the new database
+                                for (const key of keys) {
+                                    try {
+                                        const entry = await readFromOldDatabase(key);
+                                        if (entry.type === 'directory') {
+                                            if (!fs.exists(entry.path.endsWith('/') ? entry.path : entry.path + '/')) {
+                                                await fs.mkdir(entry.path).catch();
+                                            }
+                                        } else {
+                                            if (updateFiles.includes(entry.path)) {
+                                                console.warn(`Skipped file: ${entry.path} (system file)`);
+                                                skipped++;
+                                            } else {
+                                                await fs.writeFile(entry.path, entry.content);
+                                            }
+                                        }
+                                        completed++;
+                                        tasks.migrate.update(`Migrated ${completed}/${all}: ${entry.path} (${skipped} files skipped)`);
+                                    } catch (err) {
+                                        console.error(`Failed to migrate ${key}:`, err);
+                                    }
                                 }
+                                tasks.migrate.update(`Migrated ${completed}/${all} files to new IDBFS (${skipped} files skipped)`);
+                                tasks.migrate.finish();
+                                db.close();
+                                deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
+                                tasks.delete.finish();
                             };
                             req.onerror = (event) => {
-                                reject(event.target.error);
+                                db.close();
+                                tasks.read.finish();
+                                tasks.migrate.finish();
+                                deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
+                                console.error('Error reading old database:', event.target.error);
                             };
-                        });
-                    }
-
-                    function deleteIDB(name) {
-                        return new Promise((resolve, reject) => {
-                            const request = indexedDB.deleteDatabase(name);
-
-                            request.onsuccess = () => {
-                                console.log(`Database '${name}' deleted successfully.`);
-                                resolve();
-                            };
-
-                            request.onerror = (event) => {
-                                console.warn(`Failed to delete database '${name}':`, event.target.error);
-                                reject(event.target.error);
-                            };
-
-                            request.onblocked = () => {
-                                console.warn(`Deletion of database '${name}' is blocked (likely due to an open tab).`);
-                            };
-                        });
-                    }
-
-                    try {
-                        const store = db.transaction('C', 'readonly').objectStore('C');
-                        const req = store.index('path').getAllKeys();
-
-                        req.onsuccess = async () => {
-                            tasks.read.finish();
-
-                            const keys = req.result;
-                            const all = keys.length;
-                            let completed = 0;
-
-                            // Migrate each key to the new database
-                            for (const key of keys) {
-                                try {
-                                    const entry = await readFromOldDatabase(key);
-                                    if (entry.type === 'directory') {
-                                        if (!fs.exists(entry.path.endsWith('/') ? entry.path : entry.path + '/')) {
-                                            await fs.mkdir(entry.path).catch();
-                                        }
-                                    } else {
-                                        await fs.writeFile(entry.path, entry.content);
-                                    }
-                                    completed++;
-                                    tasks.migrate.update(`Migrated ${completed}/${all}: ${entry.path}`);
-                                } catch (err) {
-                                    console.error(`Failed to migrate ${key}:`, err);
-                                }
-                            }
-                            tasks.migrate.update(`Migrate files to new idbfs ( ${completed}/${all} completed )`);
-                            tasks.migrate.finish();
+                        } catch (e) {
                             db.close();
-                            deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
-                            tasks.delete.finish();
-                        };
-                        req.onerror = (event) => {
-                            db.close();
+                            tasks.open.finish();
                             tasks.read.finish();
                             tasks.migrate.finish();
                             deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
-                            console.error('Error reading old database:', event.target.error);
-                        };
-                    } catch (e) {
-                        db.close();
+                        }
+                    };
+                    oldDbRequest.onerror = async (event) => {
                         tasks.open.finish();
                         tasks.read.finish();
                         tasks.migrate.finish();
                         deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
                     }
-                };
-                oldDbRequest.onerror = async (event) => {
-                    tasks.open.finish();
-                    tasks.read.finish();
-                    tasks.migrate.finish();
-                    deleteIDB('winbows11').then(tasks.delete.finish).catch(tasks.delete.finish);
                 }
             })
         })();

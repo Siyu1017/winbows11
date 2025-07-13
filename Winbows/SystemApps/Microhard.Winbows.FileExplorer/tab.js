@@ -196,6 +196,11 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     setSidebar(true);
 
+    setTimeout(() => {
+        console.info('TabView');
+        console.info(tab.tabviewItem.classList, '\nsize', tab.tabviewItem.offsetWidth + 'x' + tab.tabviewItem.offsetHeight, '\nwindow', browserWindow.window.offsetWidth + 'x' + browserWindow.window.offsetHeight, '\n', tab.tabviewItem.innerHTML, '\n', sidebar.offsetWidth + 'x' + sidebar.offsetHeight);
+    }, 500)
+
     const module = await browserWindow.import('./_router.js');
     const router = module.router;
     let pageContents = {};
@@ -753,7 +758,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                             if (window.debuggerMode == true) {
                                 console.log('./chooseViewer.wexe')
                             }
-                            new Process('./chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
+                            new Process(fs.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
                         }
                     }
                 }, {
