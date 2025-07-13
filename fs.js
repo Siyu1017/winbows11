@@ -113,6 +113,329 @@
     };
     // --------------------------- Utils --------------------------- //
 
+    const types = {
+        dir: 0,
+        file: 1
+    };
+    const dbName = 'WINBOWS_STORAGE';
+    const storeName = 'MAIN';
+    const fileTablePrefix = '$_FILETABLE_';
+    const localStoragePrefix = dbName + '_' + fileTablePrefix;
+    const idLength = 24;
+    const allowedDiskName = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const schemaVersion = 1;
+    const schemaVersionName = dbName + '_' + 'SCHEMA_VERSION';
+
+    let runningTasks = 0;
+    let tasks = [];
+    let updateTimer = null;
+    const maxConcurrent = 10;
+    const updateDelay = 100;
+
+    let listeners = {};
+    let blobURLCaches = {};
+
+    var version = 1;
+    var isInitializing = false;
+    var repairing = false;
+    var now = Date.now();
+    var fileTables = {
+        'C': {
+            '/': {
+                type: types.dir,
+                changeTime: now,
+                createdTime: now,
+                lastModifiedTime: now,
+                length: 0,
+                id: null,
+                mimeType: null
+            }
+        }
+    };
+    var db;
+
+    // Read from localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        // localStorage item name : "<localStoragePrefix><DiskName>:"
+        if (key.startsWith(localStoragePrefix) && key.length === localStoragePrefix.length + 2) {
+            const disk = key.replace(localStoragePrefix, '').replace(':', '');
+            if (allowedDiskName.indexOf(disk) > -1 && disk.length === 1) {
+                try {
+                    fileTables[disk] = JSON.parse(localStorage.getItem(key));
+                } catch (e) {
+                    localStorage.removeItem(key);
+                }
+            }
+        }
+    }
+
+    // Save the schema version in localStorage
+    localStorage.setItem(schemaVersionName, schemaVersion);
+
+    // ========================== Output ========================== //
+    function print(...obj) {
+        if (debugMode == true) {
+            console.log.apply(arguments, ['%cIDBFS', 'color:#ff00ff;'].concat(obj))
+        }
+    }
+
+    // ========================== Event ========================== //
+    function on(event, listener) {
+        if (!listeners[event]) {
+            listeners[event] = [];
+        }
+        listeners[event].push(listener);
+    }
+
+    function emit(event, detail) {
+        if (listeners[event]) {
+            listeners[event].forEach(listener => listener(detail));
+        }
+    }
+
+    // ======================== Validators ======================== //
+    async function ensureParentFolders(disk, path) {
+        const parts = path.split('/').filter(i => i.trim().length > 0);
+        parts.pop();
+
+        let currentPath = '/';
+        for (const part of parts) {
+            currentPath += part + '/';
+            if (!fileTables[disk][currentPath]) {
+                const now = Date.now();
+                fileTables[disk][currentPath] = {
+                    type: types.dir,
+                    changeTime: now,
+                    createdTime: now,
+                    lastModifiedTime: now,
+                    length: 0,
+                    id: null,
+                    mimeType: null
+                };
+            }
+        }
+    }
+
+    // =========================== Store =========================== //
+    async function getStore(permission) {
+        return new Promise((resolve, reject) => {
+            tasks.push({ permission, resolve, reject });
+            doTask();
+        })
+    }
+
+    async function doTask() {
+        if (runningTasks >= maxConcurrent) return;
+        if (tasks.length === 0) {
+            if (runningTasks === 0) repairing = false;
+            return;
+        }
+
+        runningTasks++;
+        const task = tasks.shift();
+
+        try {
+            const tx = db.transaction(storeName, task.permission);
+            const store = tx.objectStore(storeName);
+            task.resolve(store);
+
+            tx.oncomplete = () => {
+                runningTasks--;
+                doTask();
+            };
+            tx.onerror = () => {
+                runningTasks--;
+                task.reject(tx.error);
+                doTask();
+            };
+
+            if (repairing == true) repairing = false;
+        } catch (e) {
+            runningTasks--;
+            if (repairing == false) {
+                repairing = true;
+                await init();
+                print('Trying to repair idbfs...');
+                tasks.unshift(task);
+                return doTask();
+            } else if (e.name === 'InvalidStateError' && repairing == true) {
+                print('Failed to repair idbfs.');
+                if (window.Crash) window.Crash();
+            }
+        }
+    }
+
+    async function createStore() {
+        if (!db) {
+            await init();
+        }
+        return new Promise((resolve) => {
+            const request = indexedDB.open(dbName, db.version + 1);
+            request.onupgradeneeded = (event) => {
+                print('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(storeName)) {
+                    const store = db.createObjectStore(storeName, { keyPath: 'k' });
+                    store.createIndex('k', 'k', { unique: true });
+                }
+            };
+            request.onsuccess = (event) => {
+                db = event.target.result;
+                resolve(true);
+            };
+        });
+    }
+
+    function put(store, data) {
+        return new Promise((resolve, reject) => {
+            const req = store.put(data);
+            req.onsuccess = resolve;
+            req.onerror = () => reject(req.error);
+        });
+    }
+
+    // ========================= File table ========================= //
+    async function updateFileTable(disk) {
+        localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+        scheduleUpdateFileTable(disk);
+    }
+
+    // For idb
+    function scheduleUpdateFileTable(disk) {
+        if (updateTimer) clearTimeout(updateTimer);
+        updateTimer = setTimeout(async () => {
+            updateTimer = null;
+            try {
+                getStore('readwrite').then(store => {
+                    store.put({
+                        k: fileTablePrefix + disk + ':',
+                        v: fileTables[disk]
+                    })
+                })
+            } catch (e) {
+                console.warn('Failed to update fileTable in IndexedDB:', e);
+            }
+        }, updateDelay);
+    }
+
+    async function deleteBlobsInBatches(disk, paths, batchSize = 100) {
+        for (let i = 0; i < paths.length; i += batchSize) {
+            const batch = paths.slice(i, i + batchSize);
+            const store = await getStore('readwrite');
+
+            await Promise.all(batch.map(path => {
+                return new Promise((res, rej) => {
+                    const entry = fileTables[disk][path];
+                    if (!entry || entry.type !== types.file) return res();
+
+                    const req = store.delete(entry.id);
+                    req.onsuccess = () => {
+                        // Remove cached url
+                        if (blobURLCaches[disk + ':' + path]) {
+                            delete blobURLCaches[disk + ':' + path];
+                        }
+                        delete fileTables[disk][path];
+                        res();
+                    };
+                    req.onerror = () => {
+                        console.warn(`Failed to delete blob for ${path}:`, req.error);
+                        res();
+                    }
+                });
+            }));
+            await updateFileTable(disk);
+        }
+    }
+
+    async function init() {
+        if (isInitializing) return;
+        isInitializing = true;
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(dbName);
+            request.onupgradeneeded = (event) => {
+                print('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
+                db = event.target.result;
+                const store = db.createObjectStore(storeName, { keyPath: 'k' });
+                store.createIndex('k', 'k', { unique: true });
+            };
+            request.onsuccess = async (event) => {
+                isInitializing = false;
+
+                db = event.target.result;
+                db.onversionchange = function () {
+                    db.close();
+                };
+                if (!event.target.result.objectStoreNames.contains(storeName)) {
+                    await createStore();
+                }
+
+                async function getOrSyncFileTable(disk) {
+                    const key = fileTablePrefix + disk + ':';
+                    const localStorageFT = localStorage.getItem(localStoragePrefix + disk + ':');
+                    return new Promise((resolve, reject) => {
+                        const tx = db.transaction(storeName, 'readwrite')
+                        const store = tx.objectStore(storeName);
+                        const request = store.get(key);
+                        request.onsuccess = async (event) => {
+                            // NOTE: Use the file table in localStorage first
+                            const table = event.target.result;
+                            if (localStorageFT) {
+                                // Sync the file table in localStorage to the file table in idbfs
+                                try {
+                                    await put(store, {
+                                        k: key,
+                                        v: JSON.parse(localStorageFT)
+                                    });
+                                } catch (e) {
+                                    print('Error : Failed to Sync the file table in localStorage to the file table in idbfs\nDetails :', e);
+                                    localStorage.removeItem(localStoragePrefix + disk + ':');
+                                }
+                            } else if (table && !localStorageFT) {
+                                // File table doesn't exist in localStorage
+                                fileTables[disk] = table.v;
+                                localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+                            } else if (!table && !localStorageFT) {
+                                // File table doesn't exist in localStorage or idbfs
+                                localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+                                await put(store, {
+                                    k: key,
+                                    v: fileTables[disk]
+                                });
+                            }
+                            resolve();
+                        }
+                        request.onerror = async (event) => {
+                            print(`Warning : Failed to get file table [${fileTablePrefix + disk + ':'}] from idbfs\nDetails :`, event.target.error);
+                            const localStorageFT = localStorage.getItem(localStoragePrefix + disk + ':');
+                            try {
+                                await put(store, {
+                                    k: fileTablePrefix + disk + ':',
+                                    v: localStorageFT ? JSON.parse(localStorageFT) : fileTables[disk]
+                                });
+                            } catch (e) {
+                                print('Error : Failed to write file table to idbfs\nDetails :', e);
+                            }
+                            resolve();
+                        }
+                    })
+                }
+
+                // Try to read the file table
+                for (const disk of Object.keys(fileTables)) {
+                    await getOrSyncFileTable(disk);
+                }
+                resolve();
+            };
+            request.onerror = (event) => {
+                isInitializing = false;
+                reject(event.target.error);
+            };
+        })
+    }
+
+    await init();
+
     const IDBFS = async function (__dirname = "") {
         function parsePath(v) {
             if (__dirname != "") {
@@ -125,327 +448,6 @@
                 path = v.replace(`${disk}:`, '') || '';
             return { disk, path };
         };
-
-        const types = {
-            dir: 0,
-            file: 1
-        };
-        const dbName = 'WINBOWS_STORAGE';
-        const storeName = 'MAIN';
-        const fileTablePrefix = '$_FILETABLE_';
-        const localStoragePrefix = dbName + '_' + fileTablePrefix;
-        const idLength = 24;
-        const allowedDiskName = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const schemaVersion = 1;
-        const schemaVersionName = dbName + '_' + 'SCHEMA_VERSION';
-
-        let runningTasks = 0;
-        let tasks = [];
-        let updateTimer = null;
-        const maxConcurrent = 10;
-        const updateDelay = 100;
-
-        let listeners = {};
-        let blobURLCaches = {};
-
-        var version = 1;
-        var isInitializing = false;
-        var repairing = false;
-        var now = Date.now();
-        var fileTables = {
-            'C': {
-                '/': {
-                    type: types.dir,
-                    changeTime: now,
-                    createdTime: now,
-                    lastModifiedTime: now,
-                    length: 0,
-                    id: null,
-                    mimeType: null
-                }
-            }
-        };
-        var db;
-
-        // Read from localStorage
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            // localStorage item name : "<localStoragePrefix><DiskName>:"
-            if (key.startsWith(localStoragePrefix) && key.length === localStoragePrefix.length + 2) {
-                const disk = key.replace(localStoragePrefix, '').replace(':', '');
-                if (allowedDiskName.indexOf(disk) > -1 && disk.length === 1) {
-                    try {
-                        fileTables[disk] = JSON.parse(localStorage.getItem(key));
-                    } catch (e) {
-                        localStorage.removeItem(key);
-                    }
-                }
-            }
-        }
-
-        // Save the schema version in localStorage
-        localStorage.setItem(schemaVersionName, schemaVersion);
-
-        // ========================== Output ========================== //
-        function print(...obj) {
-            if (debugMode == true) {
-                console.log.apply(arguments, ['%cIDBFS', 'color:#ff00ff;'].concat(obj))
-            }
-        }
-
-        // ========================== Event ========================== //
-        function on(event, listener) {
-            if (!listeners[event]) {
-                listeners[event] = [];
-            }
-            listeners[event].push(listener);
-        }
-
-        function emit(event, detail) {
-            if (listeners[event]) {
-                listeners[event].forEach(listener => listener(detail));
-            }
-        }
-
-        // ======================== Validators ======================== //
-        async function ensureParentFolders(disk, path) {
-            const parts = path.split('/').filter(i => i.trim().length > 0);
-            parts.pop();
-
-            let currentPath = '/';
-            for (const part of parts) {
-                currentPath += part + '/';
-                if (!fileTables[disk][currentPath]) {
-                    const now = Date.now();
-                    fileTables[disk][currentPath] = {
-                        type: types.dir,
-                        changeTime: now,
-                        createdTime: now,
-                        lastModifiedTime: now,
-                        length: 0,
-                        id: null,
-                        mimeType: null
-                    };
-                }
-            }
-        }
-
-        // =========================== Store =========================== //
-        async function getStore(permission) {
-            return new Promise((resolve, reject) => {
-                tasks.push({ permission, resolve, reject });
-                doTask();
-            })
-        }
-
-        async function doTask() {
-            if (runningTasks >= maxConcurrent) return;
-            if (tasks.length === 0) {
-                if (runningTasks === 0) repairing = false;
-                return;
-            }
-
-            runningTasks++;
-            const task = tasks.shift();
-
-            try {
-                const tx = db.transaction(storeName, task.permission);
-                const store = tx.objectStore(storeName);
-                task.resolve(store);
-
-                tx.oncomplete = () => {
-                    runningTasks--;
-                    doTask();
-                };
-                tx.onerror = () => {
-                    runningTasks--;
-                    task.reject(tx.error);
-                    doTask();
-                };
-
-                if (repairing == true) repairing = false;
-            } catch (e) {
-                runningTasks--;
-                if (repairing == false) {
-                    repairing = true;
-                    await init();
-                    print('Trying to repair idbfs...');
-                    tasks.unshift(task);
-                    return doTask();
-                } else if (e.name === 'InvalidStateError' && repairing == true) {
-                    print('Failed to repair idbfs.');
-                    if (window.Crash) window.Crash();
-                }
-            }
-        }
-
-        async function createStore() {
-            if (!db) {
-                await init();
-            }
-            return new Promise((resolve) => {
-                const request = indexedDB.open(dbName, db.version + 1);
-                request.onupgradeneeded = (event) => {
-                    print('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
-                    const db = event.target.result;
-                    if (!db.objectStoreNames.contains(storeName)) {
-                        const store = db.createObjectStore(storeName, { keyPath: 'k' });
-                        store.createIndex('k', 'k', { unique: true });
-                    }
-                };
-                request.onsuccess = (event) => {
-                    db = event.target.result;
-                    resolve(true);
-                };
-            });
-        }
-
-        function put(store, data) {
-            return new Promise((resolve, reject) => {
-                const req = store.put(data);
-                req.onsuccess = resolve;
-                req.onerror = () => reject(req.error);
-            });
-        }
-
-        // ========================= File table ========================= //
-        async function updateFileTable(disk) {
-            localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
-            scheduleUpdateFileTable(disk);
-        }
-
-        // For idb
-        function scheduleUpdateFileTable(disk) {
-            if (updateTimer) clearTimeout(updateTimer);
-            updateTimer = setTimeout(async () => {
-                updateTimer = null;
-                try {
-                    getStore('readwrite').then(store => {
-                        store.put({
-                            k: fileTablePrefix + disk + ':',
-                            v: fileTables[disk]
-                        })
-                    })
-                } catch (e) {
-                    console.warn('Failed to update fileTable in IndexedDB:', e);
-                }
-            }, updateDelay);
-        }
-
-        async function deleteBlobsInBatches(disk, paths, batchSize = 100) {
-            for (let i = 0; i < paths.length; i += batchSize) {
-                const batch = paths.slice(i, i + batchSize);
-                const store = await getStore('readwrite');
-
-                await Promise.all(batch.map(path => {
-                    return new Promise((res, rej) => {
-                        const entry = fileTables[disk][path];
-                        if (!entry || entry.type !== types.file) return res();
-
-                        const req = store.delete(entry.id);
-                        req.onsuccess = () => {
-                            // Remove cached url
-                            if (blobURLCaches[disk + ':' + path]) {
-                                delete blobURLCaches[disk + ':' + path];
-                            }
-                            delete fileTables[disk][path];
-                            res();
-                        };
-                        req.onerror = () => {
-                            console.warn(`Failed to delete blob for ${path}:`, req.error);
-                            res();
-                        }
-                    });
-                }));
-                await updateFileTable(disk);
-            }
-        }
-
-        async function init() {
-            if (isInitializing) return;
-            isInitializing = true;
-            return new Promise((resolve, reject) => {
-                const request = indexedDB.open(dbName);
-                request.onupgradeneeded = (event) => {
-                    print('Upgrading database to version', event.oldVersion, 'to', event.newVersion);
-                    db = event.target.result;
-                    const store = db.createObjectStore(storeName, { keyPath: 'k' });
-                    store.createIndex('k', 'k', { unique: true });
-                };
-                request.onsuccess = async (event) => {
-                    isInitializing = false;
-
-                    db = event.target.result;
-                    db.onversionchange = function () {
-                        db.close();
-                    };
-                    if (!event.target.result.objectStoreNames.contains(storeName)) {
-                        await createStore();
-                    }
-
-                    async function getOrSyncFileTable(disk) {
-                        const key = fileTablePrefix + disk + ':';
-                        const localStorageFT = localStorage.getItem(localStoragePrefix + disk + ':');
-                        return new Promise((resolve, reject) => {
-                            const tx = db.transaction(storeName, 'readwrite')
-                            const store = tx.objectStore(storeName);
-                            const request = store.get(key);
-                            request.onsuccess = async (event) => {
-                                // NOTE: Use the file table in localStorage first
-                                const table = event.target.result;
-                                if (localStorageFT) {
-                                    // Sync the file table in localStorage to the file table in idbfs
-                                    try {
-                                        await put(store, {
-                                            k: key,
-                                            v: JSON.parse(localStorageFT)
-                                        });
-                                    } catch (e) {
-                                        print('Error : Failed to Sync the file table in localStorage to the file table in idbfs\nDetails :', e);
-                                        localStorage.removeItem(localStoragePrefix + disk + ':');
-                                    }
-                                } else if (table && !localStorageFT) {
-                                    // File table doesn't exist in localStorage
-                                    fileTables[disk] = table.v;
-                                    localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
-                                } else if (!table && !localStorageFT) {
-                                    // File table doesn't exist in localStorage or idbfs
-                                    localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
-                                    await put(store, {
-                                        k: key,
-                                        v: fileTables[disk]
-                                    });
-                                }
-                                resolve();
-                            }
-                            request.onerror = async (event) => {
-                                print(`Warning : Failed to get file table [${fileTablePrefix + disk + ':'}] from idbfs\nDetails :`, event.target.error);
-                                const localStorageFT = localStorage.getItem(localStoragePrefix + disk + ':');
-                                try {
-                                    await put(store, {
-                                        k: fileTablePrefix + disk + ':',
-                                        v: localStorageFT ? JSON.parse(localStorageFT) : fileTables[disk]
-                                    });
-                                } catch (e) {
-                                    print('Error : Failed to write file table to idbfs\nDetails :', e);
-                                }
-                                resolve();
-                            }
-                        })
-                    }
-
-                    // Try to read the file table
-                    for (const disk of Object.keys(fileTables)) {
-                        await getOrSyncFileTable(disk);
-                    }
-                    resolve();
-                };
-                request.onerror = (event) => {
-                    isInitializing = false;
-                    reject(event.target.error);
-                };
-            })
-        }
 
         // ================== Basic File System functions ================== //
 
@@ -1032,8 +1034,6 @@
             }
             return path;
         }
-
-        await init();
 
         return {
             ["disks"]: Object.keys(fileTables),

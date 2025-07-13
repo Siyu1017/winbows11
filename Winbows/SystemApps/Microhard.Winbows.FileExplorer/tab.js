@@ -302,6 +302,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             if (router.getCurrentRoute() != path) {
                 return;
             }
+            console.log(pageContent);
         }
 
         try {
@@ -867,6 +868,8 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         let dirs = [];
         let files = [];
         let stats = {};
+
+        console.log(res);
 
         for (const path of res) {
             const stat = fs.stat(path);
