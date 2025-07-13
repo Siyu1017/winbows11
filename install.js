@@ -85,7 +85,7 @@
                 }
                 var now = Date.now();
                 var unitTime = (now - startTime) / downloadedSize;
-                var seconds = ~~(unitTime * (size - downloadedSize));
+                var seconds = ~~(unitTime * (size - downloadedSize) / 1000);
                 if (seconds < 60) {
                     return `${seconds} sencond(s)`;
                 } else if (seconds < 60 * 60) {
