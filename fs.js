@@ -1036,7 +1036,9 @@
         }
 
         return {
-            ["disks"]: Object.keys(fileTables),
+            get disks() {
+                return Object.keys(fileTables);
+            },
             // =================== For main window =================== //
             exists, mkdir, mv, on, readdir, readFile, rm, stat, writeFile,
             // =================== For Web Workers =================== //
