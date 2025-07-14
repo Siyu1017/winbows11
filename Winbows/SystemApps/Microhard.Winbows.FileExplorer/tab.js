@@ -230,7 +230,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         }
 
         let pageContent = pageContents[path];
-        if (path.startsWith('pages://') && !pageContents[path]) {
+        if (path.startsWith('pages://')) {
             if (path == 'pages://this_pc') {
                 const itemViewer = document.createElement('div');
                 itemViewer.className = 'explorer-item-viewer';
