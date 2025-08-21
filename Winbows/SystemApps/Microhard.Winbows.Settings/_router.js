@@ -15,7 +15,7 @@ export const router = {
         if (path != routerHistory[currentIndex]) {
             routerHistory.splice(currentIndex + 1)
             routerHistory.push(path);
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(routerHistory);
             }
             currentIndex = routerHistory.length - 1;

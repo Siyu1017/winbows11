@@ -17,6 +17,10 @@
     --winbows-mica-unfocused: rgba(255, 255, 255, .9);
 }
 
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
 body {
     margin: 0;
     width: 100vw;
@@ -2077,10 +2081,12 @@ body {
     overflow: hidden;
     max-height: var(--winbows-screen-height);
     height: var(--winbows-screen-height);
+    cursor: default;
 }
 
 .winbows-dev-container *::selection {
-    background: rgba(255, 255, 255, .25);
+    background: rgb(184, 198, 255);
+    color: #000;
 }
 
 .winbows-dev-dragbar {
@@ -2108,12 +2114,13 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
     background: rgba(255, 255, 255, .1);
     position: absolute;
     top: 0;
+    left: 0;
 }
 
 .winbows-dev-log {
     position: relative;
     padding: .25rem;
-    white-space: pre-line;
+    white-space: pre-wrap;
     word-wrap: break-word;
 }
 
@@ -2122,6 +2129,17 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
 .winbows-dev-log.info,
 .winbows-dev-log.other {
     margin: .25rem 0;
+}
+
+.winbows-dev-log-plaintext {}
+
+.winbows-dev-log-plaintext:empty::before {
+    content: ' ';
+    display: block;
+}
+
+.winbows-dev-log-styled {
+    display: inline;
 }
 
 .winbows-dev-log.other {
@@ -2138,7 +2156,6 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
 
 .winbows-dev-logs {
     overflow: auto;
-    padding: .5rem;
     height: calc(100% - 1rem);
     max-width: inherit;
     overflow-x: hidden;
@@ -2153,167 +2170,6 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
     z-index: 99;
     box-sizing: border-box;
     cursor: nwse-resize;
-}
-
-.json-viewer-container {
-    font-family: monospace;
-    --default-color: #E3E2E3;
-    --key-color: #8EACF2;
-    --value-color: #61caff;
-    --close: url("data:image/svg+xml,%3Csvg width='14' height='14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.5 6.65 4.9 2.8v7.7' fill='%23000'/%3E%3C/svg%3E");
-    --open: url("data:image/svg+xml,%3Csvg width='14' height='14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m7 9.45 3.85-5.6h-7.7' fill='%23000'/%3E%3C/svg%3E");
-    color: var(--default-color);
-    line-height: 1;
-    font-size: 100%;
-    cursor: default;
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    height: fit-content;
-    overflow: auto;
-}
-
-.json-viewer-container * {
-    font-size: 100%;
-}
-
-.json-viewer-container *::selection {
-    background: rgba(255, 255, 255, .25);
-}
-
-.json-viewer-overview {
-    display: flex;
-    align-items: center;
-}
-
-.json-viewer-container .json-viewer-overview {
-    font-style: italic;
-}
-
-.json-viewer-key {
-    color: var(--key-color);
-}
-
-.json-viewer-key:not([data-type="large-array"])::after {
-    content: ':';
-    color: var(--default-color);
-}
-
-.json-viewer-value {
-    color: var(--value-color);
-    margin-left: 4px;
-}
-
-.json-viewer-line {
-    display: flex;
-    align-items: center;
-}
-
-[data-expandable="true"] .json-viewer-value {
-    color: var(--default-color);
-}
-
-.json-viewer-expand {
-    mask-size: auto;
-    width: 14px;
-    height: 14px;
-    transition: all .1s ease-in-out;
-    min-width: 14px;
-    min-height: 14px;
-}
-
-.json-viewer-content {
-    padding-left: 12px;
-}
-
-[data-expandable="true"] .json-viewer-expand {
-    mask-image: var(--close);
-}
-
-[data-expand="true"][data-expandable="true"] .json-viewer-expand {
-    /*mask-image: var(--open);*/
-    transform: rotate(90deg);
-}
-
-[data-expand="false"][data-expandable="true"] .json-viewer-expand {
-    mask-image: var(--close);
-}
-
-[data-expandable="true"] .json-viewer-expand {
-    background-color: currentColor;
-}
-
-.json-viewer-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.json-viewer-next {
-    padding-left: 12px;
-    position: relative;
-}
-
-.json-viewer-value-empty {
-    color: #868686;
-}
-
-.json-viewer-value-symbol,
-.json-viewer-value-number {
-    color: #9783F7;
-}
-
-.json-viewer-line[data-expand="true"]~.json-viewer-next,
-.json-viewer-overview[data-expand="true"]~.json-viewer-content {
-    display: block;
-}
-
-.json-viewer-line[data-expand="false"]~.json-viewer-next,
-.json-viewer-overview[data-expand="false"]~.json-viewer-content {
-    display: none;
-}
-
-.json-viewer-overview-content,
-.json-viewer-value,
-.json-viewer-key {
-    white-space: nowrap;
-}
-
-.json-viewer-value-generic {
-    color: var(--default-color);
-}
-
-.json-viewer-overview:hover,
-.json-viewer-line:hover,
-.json-viewer-overview.active,
-.json-viewer-line.active {
-    background: #63636366 !important;
-}
-
-.json-viewer-overview,
-.json-viewer-line {
-    padding: 2px;
-    border-radius: 4px;
-    /*transition: all .1s ease-in-out;*/
-}
-
-.json-viewer-overview::after,
-.json-viewer-next::after {
-    width: 1px;
-    height: calc(100% - 10px);
-    background: #6E6E6E;
-    content: '';
-    display: block;
-    position: absolute;
-    left: 7px;
-    top: 3px;
-    bottom: 7px;
-    pointer-events: none;
-}
-
-.json-viewer-overview::after {
-    top: 19px;
-    height: calc(100% - 26px);
-    bottom: 7px;
 }
 
 /* Beta */
@@ -2465,7 +2321,7 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
 }
 
 .migrate-loading-spinner>circle {
-    stroke: var(--winbows-primary-color);
+    stroke: #0067c0;
     fill: none;
     stroke-width: 2px;
     stroke-linecap: round;
@@ -2493,7 +2349,7 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
 }
 
 .migrate-task-item.fulfilled .migrate-task-icon {
-    background: var(--winbows-primary-color);
+    background: #0067c0;
     border-radius: 50%;
 }
 

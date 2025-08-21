@@ -74,7 +74,7 @@ function sidebar() {
         pageItem.setAttribute('href', item.path);
         pageItem.addEventListener('click', async () => {
             currentPage = item.path;
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(`Navigating to ${item.path}`);
             }
         });
@@ -86,7 +86,7 @@ function sidebar() {
 
     router.on('change', (e) => {
         const path = e.path;
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(path);
         }
         Object.values(sidebarItems).forEach(item => {

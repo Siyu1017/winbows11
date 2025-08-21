@@ -1,0 +1,31 @@
+const shell = new ShellInstance(process);
+
+console.info(ShellInstance, this);
+
+shell.stdout.on('data', dt => {
+    console.log('[STDOUT]', dt);
+})
+shell.stderr.on('data', dt => {
+    console.error('[STDERR]', dt);
+})
+shell.on('dispose', code => {
+    console.log('Shell exited with code:', code)
+})
+
+// Enable execution time display
+await shell.execCommand('set SHOW_EXEC_TIME=1');
+
+// Print the original env variables
+await shell.execCommand('env');
+
+// Display available command
+await shell.execCommand('help');
+
+// Change the pwd to parent directory
+await shell.execCommand('cd ../unknown');
+
+// Display the env variables again
+await shell.execCommand('env');
+
+// Dispose the shell instance
+shell.dispose();

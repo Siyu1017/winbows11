@@ -60,7 +60,7 @@ Object.defineProperty(window.Compilers, 'Window', {
                 }
             },
             set: (target, prop, value) => {
-                if (window.debuggerMode == true) {
+                if (window.modes.debug == true) {
                     console.log(prop);
                 }
                 return undefined;
@@ -129,7 +129,7 @@ Object.defineProperty(window.Compilers, 'Window', {
         async function processModule(module, path) {
             if (!modules[module]) return;
             const { script, requires } = modules[module];
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(path, module);
             }
             if (!moduleCaches[script]) {
@@ -196,7 +196,7 @@ Object.defineProperty(window.Compilers, 'Window', {
             }
 
             result += code.slice(lastIndex);
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(currentPath, '\n', importStmts);
             }
             return importStmts.join('') + result;
@@ -236,11 +236,11 @@ Object.defineProperty(window.Compilers, 'Window', {
 
         content = `export default async function(document, window, self, globalThis, process, System, utils, browserWindow, datas) {const __dirname="${__dirname}",__filename="${__filename}",pathInApp="${pathInApp}";/*getStackTrace=()=>{var a;try{throw new Error('');}catch(e){a=e.stack||'';}a=a.split('\\n').map(function(t){return t.trim();});return a.splice(a[0]=='Error'?2:1);};*/const TOKEN="${token}";\n${content}\n};`
         content = await asyncReplaceImports(content, path.callee);
-        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */` + content;
+        content = `/**\n * Compiled by Winbows11 (c) 2024\n * All rights reserved.\n */\n${content}\n//# sourceURL=${__filename}`;
 
         windowObject.import = async (url) => {
             url = resolvePath(url);
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log('browserWindow.import', url);
             }
             const content = await asyncReplaceImports(await fs.getFileAsText(url), url);

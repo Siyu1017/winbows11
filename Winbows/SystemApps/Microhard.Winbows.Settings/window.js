@@ -104,7 +104,7 @@ router.on('change', async (e) => {
     if (path == '/') {
         return router.replace('/home');
     }
-    if (window.debuggerMode == true) {
+    if (window.modes.debug == true) {
         console.log('change', path);
     }
     let page = pageContents[path];

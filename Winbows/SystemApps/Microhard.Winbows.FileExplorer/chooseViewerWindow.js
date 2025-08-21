@@ -95,7 +95,7 @@ browserWindow.addEventListener('blur', (e) => {
 
 var viewers = window.System.FileViewers.getViewers(datas.file);
 
-if (window.debuggerMode == true) {
+if (window.modes.debug == true) {
     console.log(viewers)
 }
 
@@ -138,7 +138,7 @@ alwaysButton.addEventListener('click', () => {
     if (extension == '') {
         return;
     }
-    if (window.debuggerMode == true) {
+    if (window.modes.debug == true) {
         console.log(selected)
     }
     window.System.FileViewers.setDefaultViewer(extension, selected);

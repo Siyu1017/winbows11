@@ -5,9 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Winbows11 - Install</title>
-    <script src="./fs.js"></script>
     <link rel="icon" href="./favicon.ico">
     <link rel="stylesheet" href="./install.css">
+    <script>
+        window.modes = {
+            dev: false,
+            debug: false
+        };
+    </script>
 </head>
 
 <body>
@@ -32,11 +37,7 @@
             c: g => window.__fscf.l.push(g)
         }
     </script>
-    <script>
-        var script = document.createElement('script');
-        script.src = `./install.js?timestamp=${new Date().getTime()}`;
-        document.body.appendChild(script);
-    </script>
+    <script src="./install.js" type="module"></script>
 </body>
 
 </html>

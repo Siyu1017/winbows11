@@ -51,7 +51,7 @@
 
     Object.defineProperty(window.workerModules, 'browserWindow', {
         value: async (path = {}, config = {}, pid) => {
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(path)
             }
 
@@ -227,7 +227,7 @@
             containerElement.style.transition = 'none';
             containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
 
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(config);
             }
 
@@ -296,7 +296,7 @@
                 }
             });
 
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log('opened', windowID)
             }
 
@@ -745,7 +745,7 @@
             }
 
             function close() {
-                if (window.debuggerMode == true) {
+                if (window.modes.debug == true) {
                     console.log('close', windowID);
                 }
                 containerElement.style.transition = 'none';

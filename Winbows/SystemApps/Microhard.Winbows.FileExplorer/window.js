@@ -73,22 +73,22 @@ async function getIcon(page) {
             return icons.home;
         case 'gallery':
             return icons.gallery;
-        case 'C:/Users/Admin/Desktop':
+        case 'C:/User/Desktop':
         case 'desktop':
             return icons.desktop;
-        case 'C:/Users/Admin/Downloads':
+        case 'C:/User/Downloads':
         case 'donwloads':
             return icons.downloads;
-        case 'C:/Users/Admin/Documents':
+        case 'C:/User/Documents':
         case 'documents':
             return icons.documents;
-        case 'C:/Users/Admin/Pictures':
+        case 'C:/User/Pictures':
         case 'pictures':
             return icons.pictures;
-        case 'C:/Users/Admin/Music':
+        case 'C:/User/Music':
         case 'music':
             return icons.music;
-        case 'C:/Users/Admin/Videos':
+        case 'C:/User/Videos':
         case 'videos':
             return icons.videos;
         case 'this_pc':
@@ -107,21 +107,21 @@ function getHeader(page) {
         case 'gallery':
             return 'Gallery';
         case 'desktop':
-        case 'C:/Users/Admin/Desktop':
+        case 'C:/User/Desktop':
             return 'Desktop';
-        case 'C:/Users/Admin/Downloads':
+        case 'C:/User/Downloads':
         case 'donwloads':
             return 'Downloads';
-        case 'C:/Users/Admin/Documents':
+        case 'C:/User/Documents':
         case 'documents':
             return 'Documents';
-        case 'C:/Users/Admin/Pictures':
+        case 'C:/User/Pictures':
         case 'pictures':
             return 'Pictures';
-        case 'C:/Users/Admin/Music':
+        case 'C:/User/Music':
         case 'music':
             return 'Music';
-        case 'C:/Users/Admin/Videos':
+        case 'C:/User/Videos':
         case 'videos':
             return 'Videos';
         case 'this_pc':
@@ -140,17 +140,17 @@ function getPath(page) {
         case 'gallery':
             return null;
         case 'desktop':
-            return 'C:/Users/Admin/Desktop';
+            return 'C:/User/Desktop';
         case 'donwloads':
-            return 'C:/Users/Admin/Downloads';
+            return 'C:/User/Downloads';
         case 'documents':
-            return 'C:/Users/Admin/Documents';
+            return 'C:/User/Documents';
         case 'pictures':
-            return 'C:/Users/Admin/Pictures';
+            return 'C:/User/Pictures';
         case 'music':
-            return 'C:/Users/Admin/Music';
+            return 'C:/User/Music';
         case 'videos':
-            return 'C:/Users/Admin/Videos';
+            return 'C:/User/Videos';
         case 'this_pc':
             return null;
         case 'network':
@@ -165,7 +165,7 @@ async function getPageStatus(page) {
         return 'pages';
     }
     var status = fs.exists(page.endsWith('/') ? page : page + '/');
-    if (window.debuggerMode == true) {
+    if (window.modes.debug == true) {
         console.log(status)
     }
     return status == true ? 'dir' : false;
@@ -248,7 +248,7 @@ async function createTab(page = 'this_pc', active = true) {
         const children = Array.from(container.children);
 
         if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.error('over range');
             }
             return;
@@ -266,7 +266,7 @@ async function createTab(page = 'this_pc', active = true) {
 
     function moveArrayItem(arr, fromIndex, toIndex) {
         if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.error('over range');
             }
             return;
@@ -275,7 +275,7 @@ async function createTab(page = 'this_pc', active = true) {
         const item = arr.splice(fromIndex, 1)[0];
         arr.splice(toIndex, 0, item);
 
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(arr, item)
         }
 
@@ -557,7 +557,7 @@ async function createTab(page = 'this_pc', active = true) {
             target += '/';
         }
 
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(currentPage, target)
         }
 
@@ -585,7 +585,7 @@ async function createTab(page = 'this_pc', active = true) {
                         const fullPath = `${target}${filePath}`;
                         await fs.writeFile(fullPath, blob).then(() => {
                             completed++;
-                            if (window.debuggerMode == true) {
+                            if (window.modes.debug == true) {
                                 console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
                             }
                             if (completed == total) {
@@ -1059,7 +1059,7 @@ async function createTab(page = 'this_pc', active = true) {
                             itemIcon.style.backgroundImage = `url(${url})`;
                         })
                     } catch (e) {
-                        if (window.debuggerMode == true) {
+                        if (window.modes.debug == true) {
                             console.log('Failed to load image.');
                         }
                     }
@@ -1071,10 +1071,10 @@ async function createTab(page = 'this_pc', active = true) {
                 if (defaultViewer != null) {
                     new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                 } else {
-                    if (window.debuggerMode == true) {
-                        console.log(utils.resolvePath('./chooseViewer.wexe'))
+                    if (window.modes.debug == true) {
+                        console.log(utils.resolvePath('./chooseViewer.wrt'))
                     }
-                    new Process(utils.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
+                    new Process(utils.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
                 }
             })
         }
@@ -1098,10 +1098,10 @@ async function createTab(page = 'this_pc', active = true) {
                         if (defaultViewer != null) {
                             new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                         } else {
-                            if (window.debuggerMode == true) {
-                                console.log(utils.resolvePath('./chooseViewer.wexe'))
+                            if (window.modes.debug == true) {
+                                console.log(utils.resolvePath('./chooseViewer.wrt'))
                             }
-                            new Process(utils.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
+                            new Process(utils.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
                         }
                     }
                 }, {
@@ -1109,7 +1109,7 @@ async function createTab(page = 'this_pc', active = true) {
                     className: "open-with",
                     text: "Open with...",
                     action: () => {
-                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
+                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt').start(`const FILE_PATH="${path}";`);
                     }
                 }, {
                     icon: "delete",
@@ -1167,7 +1167,7 @@ async function createTab(page = 'this_pc', active = true) {
                             window.document.body.style.setProperty('--winbows-font-default', fontName);
 
                         } catch (error) {
-                            if (window.debuggerMode == true) {
+                            if (window.modes.debug == true) {
                                 console.error('Failed to load font', error);
                             }
                         }
@@ -1343,7 +1343,7 @@ async function createTab(page = 'this_pc', active = true) {
                         name: path.split('/').slice(-1)
                     }, path)
                 } else {
-                    if (window.debuggerMode == true) {
+                    if (window.modes.debug == true) {
                         console.log(stat.mimeType)
                     }
                     await createFileItem({
@@ -1395,7 +1395,7 @@ async function createTab(page = 'this_pc', active = true) {
     }
 
     function addToHistory(page) {
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(currentPage, page)
         }
         if (page != viewHistory[viewHistory.length - 1] || page != currentPage) {

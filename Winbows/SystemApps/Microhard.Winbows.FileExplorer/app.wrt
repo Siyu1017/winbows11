@@ -1,0 +1,18 @@
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow();
+    mainWindow.load('./window.v2.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

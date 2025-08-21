@@ -38,8 +38,9 @@ class MultiItemCache {
 	 */
 	constructor(items) {
 		this._items = items;
+		// @ts-expect-error expected - returns the single ItemCacheFacade when passed an array of length 1
 		// eslint-disable-next-line no-constructor-return
-		if (items.length === 1) return /** @type {any} */ (items[0]);
+		if (items.length === 1) return /** @type {ItemCacheFacade} */ (items[0]);
 	}
 
 	/**
@@ -160,7 +161,7 @@ class ItemCacheFacade {
 
 	/**
 	 * @template T
-	 * @param {function(CallbackNormalErrorCache<T>): void} computer function to compute the value if not cached
+	 * @param {(callback: CallbackNormalErrorCache<T>) => void} computer function to compute the value if not cached
 	 * @param {CallbackNormalErrorCache<T>} callback signals when the value is retrieved
 	 * @returns {void}
 	 */
@@ -180,7 +181,7 @@ class ItemCacheFacade {
 
 	/**
 	 * @template T
-	 * @param {function(): Promise<T> | T} computer function to compute the value if not cached
+	 * @param {() => Promise<T> | T} computer function to compute the value if not cached
 	 * @returns {Promise<T>} promise with the data
 	 */
 	async providePromise(computer) {
@@ -310,7 +311,7 @@ class CacheFacade {
 	 * @template T
 	 * @param {string} identifier the cache identifier
 	 * @param {Etag | null} etag the etag
-	 * @param {function(CallbackNormalErrorCache<T>): void} computer function to compute the value if not cached
+	 * @param {(callback: CallbackNormalErrorCache<T>) => void} computer function to compute the value if not cached
 	 * @param {CallbackNormalErrorCache<T>} callback signals when the value is retrieved
 	 * @returns {void}
 	 */
@@ -332,7 +333,7 @@ class CacheFacade {
 	 * @template T
 	 * @param {string} identifier the cache identifier
 	 * @param {Etag | null} etag the etag
-	 * @param {function(): Promise<T> | T} computer function to compute the value if not cached
+	 * @param {() => Promise<T> | T} computer function to compute the value if not cached
 	 * @returns {Promise<T>} promise with the data
 	 */
 	async providePromise(identifier, etag, computer) {

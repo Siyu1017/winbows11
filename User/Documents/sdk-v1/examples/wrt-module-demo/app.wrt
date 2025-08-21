@@ -1,0 +1,19 @@
+const module1 = await requireAsync('./modules/module1.js');
+const myModule = await requireAsync('./modules/myModule.js');
+
+console.log(module1);
+console.log(myModule);
+//myModule.exec();
+myModule.logMessage();
+
+/*setInterval(() => {
+    console.info('setInterval in main')
+}, 10);*/
+
+await(function () {
+    return new Promise(resolve => {
+        setTimeout(resolve, 1000);
+    })
+})();
+
+console.log('Executed!')

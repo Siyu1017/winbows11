@@ -1,2 +1,3 @@
-const fs = await IDBFS(__dirname);
+// Deprecated
+const fs = IDBFS('<anonymous>', __dirname);
 export { fs };

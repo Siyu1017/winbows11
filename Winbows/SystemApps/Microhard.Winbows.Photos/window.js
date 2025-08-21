@@ -49,7 +49,7 @@ function chooseFile(message) {
 
     return new Promise((resolve, reject) => {
         document.querySelector('[data-bind="run"]').addEventListener('click', async function () {
-            var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.wexe').start();
+            var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.wrt').start();
             process.worker.addEventListener('message', (e) => {
                 if (e.data.token != process.token) return;
                 if (e.data.type == 'confirm') {

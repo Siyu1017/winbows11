@@ -1,9 +1,9 @@
 // sw.js
 const STATIC_NAME = 'winbows11-cache-' + Date.now();
 const requiredFiles = [
-    '/fs.js',
     '/index.html',
-    '/index.js',
+    '/Winbows/System/kernel/init.js',
+    '/Winbows/System/kernel/kernel.js',
     '/index.css',
     '/favicon.ico',
     '/install.css',

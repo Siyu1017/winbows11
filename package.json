@@ -1,12 +1,11 @@
 {
   "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
     "clean-webpack-plugin": "^4.0.0",
-    "css-loader": "^7.1.2",
-    "express": "^4.19.2",
-    "path": "^0.12.7",
-    "style-loader": "^4.0.0",
-    "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.95.0"
+    "express": "^5.1.0",
+    "micromatch": "^4.0.8",
+    "xterm": "^5.3.0"
   },
   "name": "winbows11",
   "version": "1.0.0",
@@ -16,9 +15,8 @@
     "test": "tests"
   },
   "scripts": {
-    "setup": "node build.js",
-    "test": "node build.js && node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "setup": "rollup -c && webpack --mode production && node build.cjs"
   },
   "repository": {
     "type": "git",
@@ -38,5 +36,22 @@
   "bugs": {
     "url": "https://github.com/Siyu1017/winbows11/issues"
   },
-  "homepage": "https://github.com/Siyu1017/winbows11#readme"
+  "homepage": "https://github.com/Siyu1017/winbows11#readme",
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "concurrently": "^9.2.0",
+    "css-loader": "^7.1.2",
+    "monaco-editor": "^0.52.2",
+    "path": "^0.12.7",
+    "rollup": "^4.45.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.14",
+    "webpack": "^5.100.1",
+    "webpack-cli": "^6.0.1"
+  }
 }

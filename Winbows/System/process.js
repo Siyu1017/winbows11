@@ -11,7 +11,7 @@
         var id = range[0] + ~~(Math.random() * (range[1] - range[0] + 1));
         Object.keys(window.System.processes).forEach(pid => {
             if (pid == id) {
-                newProcessID(type);
+                return newProcessID(type);
             }
         })
         return id;
@@ -93,7 +93,7 @@
                     window.Winbows.Screen.style.cursor = 'auto';
                     reject('Can not run file.\n' + e.message);
                 }
-                if (window.debuggerMode == true) {
+                if (window.modes.debug == true) {
                     console.log(this.url);
                 }
                 this.worker = new Worker(this.url);
@@ -195,7 +195,7 @@
                 }
                 if (e.data.type == 'function') {
                     if (e.data.name == 'HTML') {
-                        if (window.debuggerMode == true) {
+                        if (window.modes.debug == true) {
                             console.log(e.data.target);
                         }
                         this.temp[e.data.target].innerHTML = e.data.html;

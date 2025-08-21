@@ -1,18 +1,11 @@
+import { IDBFS } from "./src/lib/fs.js";
+
+const fs = new IDBFS();
+
 (async () => {
     var index = 0;
     var name = '';
     var downloadedSize = 0;
-
-    if (!window.fs) {
-        // Check if the file system has been initialized
-        console.warn('Wait for file system initialization...');
-        await (() => {
-            return new Promise((resolve, reject) => {
-                window.__fscf.c(resolve);
-            })
-        })();
-        console.warn('File system initialized.');
-    }
 
     async function downloadFile(path) {
         function removeStringInRange(str, start, end) {

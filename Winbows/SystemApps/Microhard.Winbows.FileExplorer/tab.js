@@ -13,27 +13,27 @@ const pageDatas = [
         icon: './icons/gallery.ico'
     }, null, {
         title: 'Desktop',
-        path: 'C:/Users/Admin/Desktop',
+        path: 'C:/User/Desktop',
         icon: './icons/desktop.ico'
     }, {
         title: 'Downloads',
-        path: 'C:/Users/Admin/Downloads',
+        path: 'C:/User/Downloads',
         icon: './icons/downloads.ico'
     }, {
         title: 'Documents',
-        path: 'C:/Users/Admin/Documents',
+        path: 'C:/User/Documents',
         icon: './icons/documents.ico'
     }, {
         title: 'Pictures',
-        path: 'C:/Users/Admin/Pictures',
+        path: 'C:/User/Pictures',
         icon: './icons/pictures.ico'
     }, {
         title: 'Music',
-        path: 'C:/Users/Admin/Music',
+        path: 'C:/User/Music',
         icon: './icons/music.ico'
     }, {
         title: 'Videos',
-        path: 'C:/Users/Admin/Videos',
+        path: 'C:/User/Videos',
         icon: './icons/videos.ico'
     }, null, {
         title: 'This PC',
@@ -201,7 +201,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
     let pageContents = {};
 
     async function updatePage(e) {
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log('change', e.path, 'from', tab.id);
         }
         const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
@@ -709,7 +709,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                             itemIcon.style.backgroundImage = `url(${url})`;
                         })
                     } catch (e) {
-                        if (window.debuggerMode == true) {
+                        if (window.modes.debug == true) {
                             console.log('Failed to load image.');
                         }
                     }
@@ -717,18 +717,18 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             })
             itemName.innerHTML = details.name;
             item.addEventListener('click', () => {
-                if (['.wexe'].includes(window.utils.getFileExtension(path))) {
-                    new Process(path).start();
+                if (['.wrt'].includes(window.utils.getFileExtension(path))) {
+                    new window.System.WRT().runFile(path);
                     return;
                 }
                 var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
                 if (defaultViewer != null) {
                     new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                 } else {
-                    if (window.debuggerMode == true) {
-                        console.log('./chooseViewer.wexe')
+                    if (window.modes.debug == true) {
+                        console.log('./chooseViewer.wrt')
                     }
-                    new Process(fs.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
+                    new Process(fs.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
                 }
             })
         }
@@ -752,10 +752,10 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         if (defaultViewer != null) {
                             new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                         } else {
-                            if (window.debuggerMode == true) {
-                                console.log('./chooseViewer.wexe')
+                            if (window.modes.debug == true) {
+                                console.log('./chooseViewer.wrt')
                             }
-                            new Process(fs.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
+                            new Process(fs.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
                         }
                     }
                 }, {
@@ -763,7 +763,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "open-with",
                     text: "Open with...",
                     action: () => {
-                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
+                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt').start(`const FILE_PATH="${path}";`);
                     }
                 }, {
                     icon: "delete",
@@ -784,7 +784,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         await window.setBackgroundImage(path);
                     }
                 })
-            } else if (details.type.search('javascript') > -1 || window.utils.getFileExtension(path) == '.wexe') {
+            } else if (details.type.search('javascript') > -1 || window.utils.getFileExtension(path) == '.wrt') {
                 items.push({
                     className: "run-as-an-app",
                     icon: 'window-snipping',
@@ -821,7 +821,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                             window.document.body.style.setProperty('--winbows-font-default', fontName);
 
                         } catch (error) {
-                            if (window.debuggerMode == true) {
+                            if (window.modes.debug == true) {
                                 console.error('Failed to load font', error);
                             }
                         }
@@ -910,7 +910,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     name: fsUtils.basename(path)
                 }, path)
             } else {
-                if (window.debuggerMode == true) {
+                if (window.modes.debug == true) {
                     console.log(stat.mimeType)
                 }
                 await createFileItem(itemViewer, {
@@ -948,7 +948,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             target += '/';
         }
 
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(currentPage, target)
         }
 
@@ -976,7 +976,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         const fullPath = `${target}${filePath}`;
                         await fs.writeFile(fullPath, blob).then(() => {
                             completed++;
-                            if (window.debuggerMode == true) {
+                            if (window.modes.debug == true) {
                                 console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
                             }
                             if (completed == total) {

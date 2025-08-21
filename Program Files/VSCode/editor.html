@@ -395,7 +395,7 @@
 
                 function getLanguage(extension) {
                     switch (extension) {
-                        case 'js':
+                        case 'js', 'wrt':
                             return 'javascript';
                         case 'html':
                             return 'html';
@@ -502,7 +502,7 @@
                             document.getElementById('loading').remove();
 
                             tabHeader.textContent = window.parent.utils.getFileName(filePath);
-                            document.getElementById('language-mode').textContent = window.parent.utils.getFileExtension(filePath).toLocaleUpperCase();
+                            document.getElementById('language-mode').textContent = window.parent.utils.getFileExtension(filePath).replace('.','').toLocaleUpperCase();
 
                             browserWindow.changeTitle(window.parent.utils.getFileName(filePath) + ' - Visual Studio Code');
 

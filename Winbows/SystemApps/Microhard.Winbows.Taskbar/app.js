@@ -882,7 +882,7 @@
     })
     Object.defineProperties(window.Taskbar, {
         'pinnedApps': {
-            value: ['C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wexe', 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wexe', 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wexe']
+            value: ['C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wrt', 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wrt', 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wrt']
         },
         'pinApp': {
             value: (name) => {
@@ -1164,7 +1164,7 @@
 
                 function close(id) {
                     if (!registry.hasOwnProperty(id)) {
-                        if (window.debuggerMode == true) {
+                        if (window.modes.debug == true) {
                             console.log(`WINDOW ID [ ${id} ] NOT FOUND`);
                         }
                         return;
@@ -1223,7 +1223,7 @@
                             */
                         }
                         lastClicked = owner;
-                        if (window.debuggerMode == true) {
+                        if (window.modes.debug == true) {
                             console.log(registry, id);
                         }
                         activeWindows = activeWindows.filter(item => item !== id);

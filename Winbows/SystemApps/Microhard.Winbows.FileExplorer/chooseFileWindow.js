@@ -48,27 +48,27 @@ const pageDatas = [
         icon: './icons/gallery.ico'
     }, null, {
         title: 'Desktop',
-        path: 'C:/Users/Admin/Desktop',
+        path: 'C:/User/Desktop',
         icon: './icons/desktop.ico'
     }, {
         title: 'Downloads',
-        path: 'C:/Users/Admin/Downloads',
+        path: 'C:/User/Downloads',
         icon: './icons/downloads.ico'
     }, {
         title: 'Documents',
-        path: 'C:/Users/Admin/Documents',
+        path: 'C:/User/Documents',
         icon: './icons/documents.ico'
     }, {
         title: 'Pictures',
-        path: 'C:/Users/Admin/Pictures',
+        path: 'C:/User/Pictures',
         icon: './icons/pictures.ico'
     }, {
         title: 'Music',
-        path: 'C:/Users/Admin/Music',
+        path: 'C:/User/Music',
         icon: './icons/music.ico'
     }, {
         title: 'Videos',
-        path: 'C:/Users/Admin/Videos',
+        path: 'C:/User/Videos',
         icon: './icons/videos.ico'
     }, null, {
         title: 'This PC',
@@ -770,7 +770,7 @@ async function createFileItem(parent, details, path) {
                         itemIcon.style.backgroundImage = `url(${url})`;
                     })
                 } catch (e) {
-                    if (window.debuggerMode == true) {
+                    if (window.modes.debug == true) {
                         console.log('Failed to load image.');
                     }
                 }
@@ -811,10 +811,10 @@ async function createFileItem(parent, details, path) {
                     if (defaultViewer != null) {
                         new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                     } else {
-                        if (window.debuggerMode == true) {
-                            console.log('./chooseViewer.wexe')
+                        if (window.modes.debug == true) {
+                            console.log('./chooseViewer.wrt')
                         }
-                        new Process('./chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
+                        new Process('./chooseViewer.wrt').start(`const FILE_PATH="${path}";`);
                     }
                 }
             }, {
@@ -822,7 +822,7 @@ async function createFileItem(parent, details, path) {
                 className: "open-with",
                 text: "Open with...",
                 action: () => {
-                    new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
+                    new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt').start(`const FILE_PATH="${path}";`);
                 }
             }, {
                 icon: "delete",
@@ -843,7 +843,7 @@ async function createFileItem(parent, details, path) {
                     await window.setBackgroundImage(path);
                 }
             })
-        } else if (details.type.search('javascript') > -1 || window.utils.getFileExtension(path) == '.wexe') {
+        } else if (details.type.search('javascript') > -1 || ['.wrt','.wrt'].includes(window.utils.getFileExtension(path))) {
             items.push({
                 className: "run-as-an-app",
                 icon: 'window-snipping',
@@ -880,7 +880,7 @@ async function createFileItem(parent, details, path) {
                         window.document.body.style.setProperty('--winbows-font-default', fontName);
 
                     } catch (error) {
-                        if (window.debuggerMode == true) {
+                        if (window.modes.debug == true) {
                             console.error('Failed to load font', error);
                         }
                     }
@@ -969,7 +969,7 @@ async function localPageCrafter(path) {
                 name: fsUtils.basename(path)
             }, path)
         } else {
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(stat.mimeType)
             }
             await createFileItem(itemViewer, {

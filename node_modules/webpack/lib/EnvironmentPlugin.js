@@ -11,9 +11,11 @@ const WebpackError = require("./WebpackError");
 /** @typedef {import("./Compiler")} Compiler */
 /** @typedef {import("./DefinePlugin").CodeValue} CodeValue */
 
+const PLUGIN_NAME = "EnvironmentPlugin";
+
 class EnvironmentPlugin {
 	/**
-	 * @param {(string | string[] | Record<string, any>)[]} keys keys
+	 * @param {(string | string[] | Record<string, EXPECTED_ANY>)[]} keys keys
 	 */
 	constructor(...keys) {
 		if (keys.length === 1 && Array.isArray(keys[0])) {
@@ -22,7 +24,9 @@ class EnvironmentPlugin {
 			this.defaultValues = {};
 		} else if (keys.length === 1 && keys[0] && typeof keys[0] === "object") {
 			this.keys = Object.keys(keys[0]);
-			this.defaultValues = /** @type {Record<string, any>} */ (keys[0]);
+			this.defaultValues =
+				/** @type {Record<string, EXPECTED_ANY>} */
+				(keys[0]);
 		} else {
 			this.keys = /** @type {string[]} */ (keys);
 			this.defaultValues = {};
@@ -44,9 +48,9 @@ class EnvironmentPlugin {
 					: this.defaultValues[key];
 
 			if (value === undefined) {
-				compiler.hooks.thisCompilation.tap("EnvironmentPlugin", compilation => {
+				compiler.hooks.thisCompilation.tap(PLUGIN_NAME, compilation => {
 					const error = new WebpackError(
-						`EnvironmentPlugin - ${key} environment variable is undefined.\n\n` +
+						`${PLUGIN_NAME} - ${key} environment variable is undefined.\n\n` +
 							"You can pass an object with default values to suppress this warning.\n" +
 							"See https://webpack.js.org/plugins/environment-plugin for example."
 					);
