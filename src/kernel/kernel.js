@@ -9,6 +9,7 @@ import { kernelRuntime, apis } from './kernelRuntime.js';
 import Devtool from './devtool.js';
 import { processes } from './WRT/process.js';
 import { formatBytes } from '../utils.js';
+import "../lib/external/winbows-devtool/dist/index.css";
 
 //window.WinUI = WinUI;
 
