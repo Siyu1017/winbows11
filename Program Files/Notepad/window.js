@@ -1,7 +1,7 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-fs.getFileURL(utils.resolvePath('./window.css')).then(url => {
+fs.getFileURL(path.resolve('./window.css')).then(url => {
     style.href = url;
 });
 document.head.appendChild(style);

@@ -1,25 +1,31 @@
-const path = require('path');
-const webpack = require('webpack');
-const fs = require('fs');
-const TerserPlugin = require('terser-webpack-plugin');
+import path from 'path';
+import webpack from 'webpack'
+import fs from 'fs';
+import TerserPlugin from 'terser-webpack-plugin';
 
 const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
 
-module.exports = [
+export default [
     {
         name: 'kernel',
         entry: './src/kernel/kernel.js',
         output: {
-            path: path.resolve(__dirname, 'Winbows/System/kernel'),
+            path: path.resolve('Winbows/System/kernel'),
             filename: 'kernel.js'
         },
         experiments: {
             topLevelAwait: true, // Enable top-level await support
         },
-        devtool: "source-map",
+        devtool: 'eval',
         module: {
             rules: [
+                /*
+                {
+                    test: /\.ts$/,
+                    use: "ts-loader",
+                    exclude: /node_modules/,
+                },*/
                 {
                     test: /\.css$/,
                     use: [
@@ -32,6 +38,9 @@ module.exports = [
                     ]
                 }
             ]
+        },
+        resolve: {
+            extensions: [".ts", ".js"],
         },
         optimization: {
             minimize: true,

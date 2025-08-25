@@ -1,4 +1,4 @@
-import { EventEmitter } from "./eventEmitter";
+import { EventEmitter } from "./eventEmitter.js";
 
 export class OutputStream extends EventEmitter {
     constructor() {

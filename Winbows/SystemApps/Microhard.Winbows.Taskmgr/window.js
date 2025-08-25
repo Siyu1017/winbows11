@@ -18,7 +18,7 @@ window.System.theme.onChange(theme => {
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 var icons = {

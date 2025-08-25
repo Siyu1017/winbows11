@@ -4,7 +4,7 @@ import * as utils from "../../utils.js";
 import { ShellInstance } from "./shell/shell.js";
 import WinUI from "../../ui/winui.js";
 import builtinPackageData from "../../../User/AppData/Roaming/wrt/wrt_modules/packages.json";
-import * as WApplication from "./WApplication.js";
+import * as WApplication from "./WApplication.v2.js";
 import Devtool from "../../lib/external/winbows-devtool/dist/index.js";
 
 const fs = IDBFS("~WRT");

@@ -7,7 +7,7 @@ Date.prototype.format = function (fmt) { var o = { "M+": this.getMonth() + 1, "d
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 function canvasClarifier(canvas, ctx, width, height) {

@@ -1,6 +1,7 @@
-import utils from "../../ui/utils";
-import WinUI from "../../ui/winui";
-import { apis } from "../kernelRuntime";
+import { apis } from "../kernelRuntime.js";
+import * as utils from "../../utils.js";
+import WinUI from "../../ui/winui.js";
+import { on } from "./taskbar.js";
 
 const { fs } = apis;
 
@@ -120,9 +121,17 @@ footerPowerButton.addEventListener('click', (e) => {
     powerMenu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
     powerMenu.open(position.x, window.innerHeight - position.y, 'left-bottom');
 })
-["mousedown", "touchstart", "pointerdown"].forEach(event => {
-    window.addEventListener(event, (e) => {
-        if (powerMenu.container.contains(e.target)) return;
+
+on('pointerdown', (e) => {
+    if (!powerMenu.container.contains(e.target)) {
         powerMenu.close();
-    })
+    }
 })
+
+on('pointerdown', (e) => {
+    if (!iconRepository.start) return;
+    if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || powerMenu.container.contains(e.target)) return;
+    startMenuContainer.classList.remove('active');
+})
+
+export default startMenuContainer;

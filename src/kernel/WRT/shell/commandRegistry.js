@@ -1,7 +1,7 @@
-import { fsUtils } from "../../../lib/fs";
-import { parseKeyValueArgs } from "../../../utils";
-import { tasklist } from "../kernel";
-import { terminalTable } from "./utils";
+import { fsUtils } from "../../../lib/fs.js";
+import { parseKeyValueArgs } from "../../../utils.js";
+import { tasklist } from "../kernel.js";
+import { terminalTable } from "./utils.js";
 
 class CommandRegistry {
     constructor() {

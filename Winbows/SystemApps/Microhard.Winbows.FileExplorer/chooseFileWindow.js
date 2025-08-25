@@ -28,7 +28,7 @@ for (let i in styles) {
         let style = document.createElement('link');
         style.rel = 'stylesheet';
         style.type = 'text/css';
-        style.href = await fs.getFileURL(utils.resolvePath(styles[i]));
+        style.href = await fs.getFileURL(path.resolve(styles[i]));
         document.head.appendChild(style);
         resolve();
     }))

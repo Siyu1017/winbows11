@@ -1,7 +1,7 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./chooseViewerWindow.css'));
+style.href = await fs.getFileURL(path.resolve('./chooseViewerWindow.css'));
 document.head.appendChild(style);
 
 function getCategoryString() {

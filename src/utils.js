@@ -143,3 +143,64 @@ export function formatBytes(bytes, decimals = 2) {
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
+
+export function loadImage(url) {
+    return new Promise(async (resolve, reject) => {
+        var img = new Image();
+        img.onload = async () => {
+            return resolve();
+        }
+        img.onerror = async (err) => {
+            return reject(err);
+        }
+        img.src = url;
+    })
+}
+
+export function canvasClarifier(canvas, ctx, width, height) {
+    const originalSize = {
+        width: (width ? width : canvas.offsetWidth),
+        height: (height ? height : canvas.offsetHeight)
+    }
+    var ratio = window.devicePixelRatio || 1;
+    canvas.width = originalSize.width * ratio;
+    canvas.height = originalSize.height * ratio;
+    ctx.scale(ratio, ratio);
+    if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
+        canvas.style.width = originalSize.width + 'px';
+        canvas.style.height = originalSize.height + 'px';
+    }
+}
+
+export function getImageTheme(img) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+
+    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+    const pixels = imageData.data;
+
+    let totalBrightness = 0;
+
+    for (let i = 0; i < pixels.length; i += 4) {
+        const r = pixels[i];
+        const g = pixels[i + 1];
+        const b = pixels[i + 2];
+
+        const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+        totalBrightness += brightness;
+    }
+
+    const averageBrightness = totalBrightness / (img.width * img.height);
+
+    const threshold = 128;
+    if (averageBrightness > threshold) {
+        return 'light';
+    } else {
+        return 'dark';
+    }
+}

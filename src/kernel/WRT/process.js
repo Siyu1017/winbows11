@@ -1,7 +1,7 @@
-import { fsUtils } from "../../lib/fs";
-import { InputStream } from "./utils/inputStream";
-import { OutputStream } from "./utils/outputStream";
-import { EventEmitter } from "./utils/eventEmitter";
+import { fsUtils } from "../../lib/fs.js";
+import { InputStream } from "./utils/inputStream.js";
+import { OutputStream } from "./utils/outputStream.js";
+import { EventEmitter } from "./utils/eventEmitter.js";
 
 function createNextTick() {
     const queue = [];

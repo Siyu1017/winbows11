@@ -37,7 +37,7 @@ style.rel = 'stylesheet';
 style.type = 'text/css';
 document.head.appendChild(style);
 
-fs.getFileURL(utils.resolvePath('./fileTransferWindow.css')).then(url => {
+fs.getFileURL(path.resolve('./fileTransferWindow.css')).then(url => {
     style.href = url;
 });
 

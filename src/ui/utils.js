@@ -1,6 +1,4 @@
-var utils = {};
-
-utils.getPosition = function getPosition(element) {
+function getPosition(element) {
     function offset(el) {
         var rect = el.getBoundingClientRect(),
             scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
@@ -10,4 +8,4 @@ utils.getPosition = function getPosition(element) {
     return { x: offset(element).left, y: offset(element).top };
 }
 
-export default utils;
+export { getPosition };

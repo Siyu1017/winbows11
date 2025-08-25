@@ -1125,16 +1125,17 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
     /**
      * Get the blob URL of the file
      * @param {string} fullPath
-     * @returns {string}
+     * @returns {Promise<string>}
      */
     async function getFileURL(fullPath) {
         if (__dirname != "") {
             fullPath = fsUtils.resolve(__dirname, fullPath);
         }
         if (blobURLCaches[fullPath] && window.modes.dev == false) return blobURLCaches[fullPath];
-        var blob = await downloadFile(fullPath);
         try {
-            var blobURL = URL.createObjectURL(blob);
+            const blob = await downloadFile(fullPath);
+            if (!blob) return '';
+            const blobURL = URL.createObjectURL(blob);
             if (window.modes.dev == false) blobURLCaches[fullPath] = blobURL;
             return blobURL;
         } catch (e) {

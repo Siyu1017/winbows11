@@ -48,23 +48,23 @@ browserWindow.addEventListener('dragstart', (e) => {
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 var icons = {
     folder: await fs.getFileURL('C:/Winbows/icons/folders/folder.ico'),
     shortcut: await fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico'),
     drive: await fs.getFileURL('C:/Winbows/icons/devices/drives/Windows 11 Drive Unlocked.ico'),
-    home: await fs.getFileURL(utils.resolvePath('./icons/home.ico')),
-    gallery: await fs.getFileURL(utils.resolvePath('./icons/gallery.ico')),
-    desktop: await fs.getFileURL(utils.resolvePath('./icons/desktop.ico')),
-    downloads: await fs.getFileURL(utils.resolvePath('./icons/downloads.ico')),
-    documents: await fs.getFileURL(utils.resolvePath('./icons/documents.ico')),
-    pictures: await fs.getFileURL(utils.resolvePath('./icons/pictures.ico')),
-    music: await fs.getFileURL(utils.resolvePath('./icons/music.ico')),
-    videos: await fs.getFileURL(utils.resolvePath('./icons/videos.ico')),
-    monitor: await fs.getFileURL(utils.resolvePath('./icons/monitor.ico')),
-    network: await fs.getFileURL(utils.resolvePath('./icons/network.ico')),
+    home: await fs.getFileURL(path.resolve('./icons/home.ico')),
+    gallery: await fs.getFileURL(path.resolve('./icons/gallery.ico')),
+    desktop: await fs.getFileURL(path.resolve('./icons/desktop.ico')),
+    downloads: await fs.getFileURL(path.resolve('./icons/downloads.ico')),
+    documents: await fs.getFileURL(path.resolve('./icons/documents.ico')),
+    pictures: await fs.getFileURL(path.resolve('./icons/pictures.ico')),
+    music: await fs.getFileURL(path.resolve('./icons/music.ico')),
+    videos: await fs.getFileURL(path.resolve('./icons/videos.ico')),
+    monitor: await fs.getFileURL(path.resolve('./icons/monitor.ico')),
+    network: await fs.getFileURL(path.resolve('./icons/network.ico')),
 };
 
 async function getIcon(page) {
@@ -737,7 +737,7 @@ async function createTab(page = 'this_pc', active = true) {
         var path = pageToPath(currentPage);
         var menu = WinUI.contextMenu([
             {
-                icon: await fs.getFileURL(utils.resolvePath('./icons/folder.ico')),
+                icon: await fs.getFileURL(path.resolve('./icons/folder.ico')),
                 text: "Folder",
                 action: async () => {
                     await fs.mkdir(path + (path.endsWith('/') ? '' : '/') + 'folder').then(() => {
@@ -1072,9 +1072,9 @@ async function createTab(page = 'this_pc', active = true) {
                     new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                 } else {
                     if (window.modes.debug == true) {
-                        console.log(utils.resolvePath('./chooseViewer.wrt'))
+                        console.log(path.resolve('./chooseViewer.wrt'))
                     }
-                    new Process(utils.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
+                    new Process(path.resolve('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
                 }
             })
         }
@@ -1099,9 +1099,9 @@ async function createTab(page = 'this_pc', active = true) {
                             new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                         } else {
                             if (window.modes.debug == true) {
-                                console.log(utils.resolvePath('./chooseViewer.wrt'))
+                                console.log(path.resolve('./chooseViewer.wrt'))
                             }
-                            new Process(utils.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
+                            new Process(path.resolve('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
                         }
                     }
                 }, {

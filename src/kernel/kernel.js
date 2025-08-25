@@ -1,15 +1,16 @@
+import { root, desktop, desktopItems, backgroundImage } from './viewport.js';
 import { fsUtils } from '../lib/fs.js';
 import WinUI from '../ui/winui.js';
 import { WRT } from './WRT/kernel.js';
 import { commandRegistry } from './WRT/shell/commandRegistry.js';
-import BrowserWindow from './browserWindow.js';
-import Taskbar from './taskbar.js';
-import { setWinbows } from './WRT/WApplication.js';
+//import BrowserWindow from './browserWindow.js';
+import { setWinbows } from './WRT/WApplication.v2.js';
 import { kernelRuntime, apis } from './kernelRuntime.js';
-import Devtool from './devtool.js';
+import Devtool from './devtool/main.js';
 import { processes } from './WRT/process.js';
-import { formatBytes } from '../utils.js';
-import "../lib/external/winbows-devtool/dist/index.css";
+import * as utils from '../utils.js';
+import taskbar from './taskbar/index.js';
+import "./lockScreen.js"
 
 //window.WinUI = WinUI;
 
@@ -57,9 +58,9 @@ window.kernelRuntime = kernelRuntime;
                 theme = value != 'dark' ? 'light' : 'dark';
                 localStorage.setItem('WINBOWS_THEME', theme);
                 if (theme == 'dark') {
-                    document.body.setAttribute('data-theme', 'dark');
+                    root.setAttribute('data-theme', 'dark');
                 } else {
-                    document.body.removeAttribute('data-theme');
+                    root.removeAttribute('data-theme');
                 }
                 listeners.forEach(fn => fn(theme));
             },
@@ -71,22 +72,12 @@ window.kernelRuntime = kernelRuntime;
             }
         }
         if (theme == 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
+            root.setAttribute('data-theme', 'dark');
         }
     })();
 })();
 
 window.workerModules = {};
-window.utils = {};
-window.debuggers = {
-    getStackTrace
-}
-window.utils.getPosition = getPosition;
-window.utils.getJsonFromURL = getJsonFromURL;
-window.utils.isElement = isElement;
-window.utils.getPointerPosition = getPointerPosition;
-
-Date.prototype.format = function (fmt) { var o = { "M+": this.getMonth() + 1, "d+": this.getDate(), "h+": this.getHours(), "m+": this.getMinutes(), "s+": this.getSeconds(), "q+": Math.floor((this.getMonth() + 3) / 3), "S": this.getMilliseconds() }; if (/(y+)/.test(fmt)) { fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length)); } for (var k in o) { if (new RegExp("(" + k + ")").test(fmt)) { fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length))); } } return fmt; }
 
 // Migration
 async function shouldMigrateFromOldDatabase() {
@@ -104,23 +95,30 @@ if (needsToMigrate) {
     var warningContent = document.createElement('div');
     var warningFooter = document.createElement('div');
     var warningMigrateButton = document.createElement('button');
+    var warningSkipButton = document.createElement('button');
 
     warningHeader.innerHTML = 'Data migration required';
     warningContent.innerHTML = `<div>We have recently updated the IDBFS schema and detected that you previously saved files in Winbows. As the previous schema has been deprecated, we need to migrate your files to the new version to prevent potential data loss or unexpected errors.</div>
-        <div>This update replaces the original file path–based storage with a new structure that uses a file table and record IDs, improving access performance and ensuring data consistency.</div>`;
+        <div>This update replaces the original file path-based storage with a new structure that uses a file table and record IDs, improving access performance and ensuring data consistency.</div>`;
+    warningSkipButton.innerHTML = 'Skip';
     warningMigrateButton.innerHTML = 'Continue';
 
     warning.style = 'position: fixed;top: 0px;left: 0px;width: 100vw;height: var(--winbows-screen-height);display: flex;align-items: center;justify-content: center;background-color: rgba(0, 0, 0, 0.5);z-index: 99999;font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;color:#000;';
     warningWindow.style = 'display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem 4rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px, -2rem + 100vw);width: 100%;max-height: min(calc(var(--winbows-screen-height) * 80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;';
     warningHeader.style = 'font-size: 175%;font-weight: 600;margin: .5rem 0 1.5rem;';
-    warningMigrateButton.style = 'color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 0px;margin-top: 1.5rem;font-family: inherit;font-weight: 600;';
+    warningFooter.style = 'display: flex;gap: .5rem;';
+    warningSkipButton.style = 'color: rgb(0, 103, 192);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 1px solid rgb(0, 103, 192);margin-top: 1.5rem;font-family: inherit;font-weight: 600;min-width: 8rem;background: #fff;'
+    warningMigrateButton.style = 'color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 1px solid rgb(0, 103, 192);margin-top: 1.5rem;font-family: inherit;font-weight: 600;min-width: 8rem;';
 
     warning.appendChild(warningWindow);
     warningWindow.appendChild(warningHeader);
     warningWindow.appendChild(warningContent);
     warningWindow.appendChild(warningFooter);
+    warningFooter.appendChild(warningSkipButton);
     warningFooter.appendChild(warningMigrateButton);
     document.body.appendChild(warning);
+
+    let doMigration = true;
 
     await (function () {
         return new Promise(resolve => {
@@ -130,11 +128,21 @@ if (needsToMigrate) {
                 warningMigrateButton.removeEventListener('click', evtfn);
             }
             warningMigrateButton.addEventListener('click', evtfn);
+
+            function skipFn() {
+                doMigration = false;
+                warning.remove();
+                resolve();
+                warningSkipButton.removeEventListener('click', skipFn);
+            }
+            warningSkipButton.addEventListener('click', skipFn);
         })
     })();
 
     await (function () {
         return new Promise(async (resolve, reject) => {
+            if (doMigration == false) return resolve();
+
             warningWindow.style.padding = '2rem';
 
             var taskOrder = ['fetch', 'open', 'read', 'migrate', 'delete'];
@@ -390,103 +398,38 @@ if (needsToMigrate) {
     })();
 }
 
-const URLParams = getJsonFromURL();
-fs.writeFile('C:/Winbows/System/.env/location/param.json', new Blob([JSON.stringify(URLParams)], {
-    type: 'application/json'
-}))
+try {
+    const URLParams = getJsonFromURL();
+    fs.writeFile('C:/Winbows/System/.env/location/param.json', new Blob([JSON.stringify(URLParams)], {
+        type: 'application/json'
+    }))
 
-if (URLParams['debug']) {
+    if (URLParams['debug']) {
 
-}
-
-// Simple console
-if (URLParams['logs'] || URLParams['output']) {
-
-}
-
-!(function () {
-    Devtool();
-    const el = document.createElement('div');
-    el.style = `background: #0000004f;color: #fff;position: fixed;right: .5rem;top: .5rem;z-index: 999999999;border-radius: .375rem;padding: .25rem .5rem;pointer-events: none;backdrop-filter:blur(1rem);-webkit-backdrop-filter:blur(1rem);`;
-    document.body.appendChild(el);
-
-    let prevTime = Date.now(),
-        frames = 0;
-    var interval = 1000;
-    var scale = 1000 / interval;
-    // var time1 = Date.now();
-    requestAnimationFrame(function loop() {
-        const time = Date.now();
-        frames++;
-        if (time > prevTime + interval) {
-            let fps = Math.round((frames * scale * interval) / (time - prevTime));
-
-            el.style.fontFamily = 'monospace';
-            el.style.fontSize = '14px';
-            el.innerHTML = `${formatBytes(performance.memory.usedJSHeapSize)} / ${formatBytes(performance.memory.totalJSHeapSize)} ( ${((performance.memory.usedJSHeapSize / performance.memory.totalJSHeapSize) * 100).toFixed(0)}% ), FPS : ${fps}`;
-
-            prevTime = time;
-            frames = 0;
-        }
-        requestAnimationFrame(loop);
-    });
-})();
-
-
-var startLoadingTime = Date.now();
-var startIssuesTimeout = 10000;
-var startedSuccessfully = false;
-var startIssuesPrompt = null;
-
-setTimeout(showStartIssuesPrompt, startIssuesTimeout);
-function setStartStatus(v) {
-    startedSuccessfully = v;
-    if (startIssuesPrompt != null) {
-        startIssuesPrompt.remove();
     }
+
+    // Simple console
+    if (URLParams['logs'] || URLParams['output']) {
+
+    }
+} catch (e) {
+    console.error(e);
 }
-function showStartIssuesPrompt() {
-    if (startedSuccessfully == true) return;
-    startIssuesPrompt = document.createElement('div');
-    var promptWindow = document.createElement('div');
-    var title = document.createElement('div');
-    var btnGroup = document.createElement('div');
-    var retryBtn = document.createElement('button');
-    //var optionsBtn = document.createElement('button');
 
-    title.innerHTML = 'Are there any issues during starting?';
-    retryBtn.textContent = 'Retry';
-    //optionsBtn.textContent = 'Options';
+Devtool();
 
-    startIssuesPrompt.className = 'winbows-start-issues';
-    promptWindow.className = 'winbows-start-issues-window';
-    title.className = 'winbows-start-issues-title';
-    btnGroup.className = 'winbows-start-issues-button-group';
-    retryBtn.className = 'winbows-start-issues-button';
-    //optionsBtn.className = 'winbows-start-issues-button outline';
-
-    document.body.appendChild(startIssuesPrompt);
-    startIssuesPrompt.appendChild(promptWindow);
-    promptWindow.appendChild(title);
-    promptWindow.appendChild(btnGroup);
-    btnGroup.appendChild(retryBtn);
-    //btnGroup.appendChild(optionsBtn);
-
-    retryBtn.addEventListener('click', (e) => {
-        location.href = './?dev&install';
-    })
-}
+const startLoadingTime = Date.now();
 
 // Loading
-var loadingContainer = document.createElement('div');
-var loadingImage = document.createElement('div');
-var loadingSpinner = window.modes.dev == true || window.needsUpdate == true ? document.createElement('div') : document.createElementNS("http://www.w3.org/2000/svg", "svg");
-var loadingTextContainer = document.createElement('div');
-var loadingTextShadowTop = document.createElement('div');
-var loadingTextShadowBottom = document.createElement('div');
-var loadingTextStrip = document.createElement('div');
-var loadingProgress = document.createElement('div');
-var loadingProgressBar = document.createElement('div');
+const loadingContainer = document.createElement('div');
+const loadingImage = document.createElement('div');
+const loadingSpinner = window.modes.dev == true || window.needsUpdate == true ? document.createElement('div') : document.createElementNS("http://www.w3.org/2000/svg", "svg");
+const loadingTextContainer = document.createElement('div');
+const loadingTextShadowTop = document.createElement('div');
+const loadingTextShadowBottom = document.createElement('div');
+const loadingTextStrip = document.createElement('div');
+const loadingProgress = document.createElement('div');
+const loadingProgressBar = document.createElement('div');
 
 loadingContainer.className = 'winbows-loading active';
 loadingImage.className = 'winbows-loading-image';
@@ -495,10 +438,10 @@ loadingTextShadowTop.className = 'winbows-loading-text-shadow-top';
 loadingTextShadowBottom.className = 'winbows-loading-text-shadow-bottom';
 loadingTextStrip.className = 'winbows-loading-text-strip';
 loadingContainer.appendChild(loadingImage);
-document.body.appendChild(loadingContainer);
+root.appendChild(loadingContainer);
 
 function loadingText(content) {
-    var loadingText = document.createElement('div');
+    const loadingText = document.createElement('div');
     loadingText.textContent = content;
     loadingText.className = 'winbows-loading-text';
     loadingTextStrip.appendChild(loadingText);
@@ -527,93 +470,27 @@ if (window.modes.dev == false && window.needsUpdate == false) {
     loadingProgress.appendChild(loadingProgressBar);
 }
 
+try {
+    fs.getFileURL('C:/Winbows/icons/applications/tools/start.ico').then(url => {
+        loadingImage.style.backgroundImage = `url(${url})`;
+    })
+} catch (e) {
+    console.error(e);
+}
+
 loadingText('Starting Winbows11...');
 
+let progress = 0;
+const updateProgressId = setInterval(function () {
+    progress += Math.random() * 1 + 0.2;
+    if (progress > 90) progress = 90;
+    loadingProgressBar.style.width = progress + '%';
+}, 200);
+
 // Lock panel
-var screenLockContainer = document.createElement('div');
-var screenLock = document.createElement('div');
-var screenLockBackground = document.createElement('div');
-var screenLockMain = document.createElement('div');
-var screenLockSignin = document.createElement('div');
 
-screenLockContainer.className = 'screen-lock-container active';
-screenLock.className = 'screen-lock';
-screenLockBackground.className = 'screen-lock-background';
-screenLockMain.className = 'screen-lock-main';
-screenLockSignin.className = 'screen-lock-signin';
-
-document.body.appendChild(screenLockContainer);
-screenLockContainer.appendChild(screenLock);
-screenLock.appendChild(screenLockBackground);
-screenLock.appendChild(screenLockMain);
-screenLock.appendChild(screenLockSignin);
-
-// Clock on lock panel
-var screenLockTime = document.createElement('div');
-var screenLockDate = document.createElement('div');
-
-screenLockTime.className = 'screen-lock-time';
-screenLockDate.className = 'screen-lock-date';
-
-screenLockMain.appendChild(screenLockTime);
-screenLockMain.appendChild(screenLockDate);
-
-// Signin panel
-var screenLockSigninAvatar = document.createElement('div');
-var screenLockSigninUsername = document.createElement('div');
-var screenLockSigninButton = document.createElement('button');
-
-screenLockSigninAvatar.className = 'screen-lock-signin-avatar';
-screenLockSigninUsername.className = 'screen-lock-signin-username';
-screenLockSigninButton.className = 'screen-lock-signin-button';
-
-screenLockSignin.appendChild(screenLockSigninAvatar);
-screenLockSignin.appendChild(screenLockSigninUsername);
-screenLockSignin.appendChild(screenLockSigninButton);
-
-// Screen of winbows
-var screen = document.createElement('div');
-var background = document.createElement('div');
-var backgroundImage = document.createElement('div');
-var appWrapper = document.createElement('div');
-
-screen.className = 'screen';
-background.className = 'background';
-backgroundImage.className = 'background-image';
-appWrapper.className = 'app-wrapper';
-
-document.body.appendChild(screen);
-screen.appendChild(background);
-screen.appendChild(appWrapper);
-background.appendChild(backgroundImage);
-
-// Desktop 
-var desktop = document.createElement('div');
-var desktopItems = document.createElement('div');
-
-desktop.className = 'desktop winui-no-background';
-desktopItems.className = 'desktop-items';
-
-appWrapper.appendChild(desktop);
-desktop.appendChild(desktopItems);
 
 // Functions
-window.mainDisk = 'C';
-
-/**
- * Find the distance of an element from the upper left corner of the document
- * @param {Element} element 
- * @returns {Object}
- */
-function getPosition(element) {
-    function offset(el) {
-        var rect = el.getBoundingClientRect(),
-            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
-            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
-    }
-    return { x: offset(element).left, y: offset(element).top };
-}
 
 function getJsonFromURL(url) {
     if (!url) url = location.search;
@@ -626,32 +503,10 @@ function getJsonFromURL(url) {
     return result;
 }
 
-function isElement(obj) {
-    try {
-        return obj instanceof HTMLElement;
-    }
-    catch (e) {
-        return (typeof obj === "object") &&
-            (obj.nodeType === 1) && (typeof obj.style === "object") &&
-            (typeof obj.ownerDocument === "object");
-    }
-}
-
-// Equivalent to pageX/Y
-function getPointerPosition(e) {
-    let x = e.clientX;
-    let y = e.clientY;
-    if (e.type.startsWith('touch')) {
-        var touch = e.touches[0] || e.changedTouches[0];
-        x = touch.pageX;
-        y = touch.pageY;
-    }
-    return { x: x + window.scrollX, y: y + window.scrollY };
-}
 
 window.fileIcons = {
     getIcon: (path = '') => {
-        var ext = utils.getFileExtension(path);
+        const ext = fsUtils.extname(path);
         if (window.fileIcons.registerd[ext]) {
             return window.fileIcons.registerd[ext];
         } else {
@@ -833,30 +688,9 @@ window.appRegistry = {
 }
 
 window.Winbows = {};
-window.Winbows.Screen = screen;
-window.Winbows.AppWrapper = appWrapper;
-window.Winbows.ShowLockScreen = () => {
-    screenLock.classList.remove('signin');
-    screenLockContainer.classList.add('active');
-}
 
 window.Components = {};
 window.Compilers = {};
-
-window.utils.replaceHTMLTags = (content = '') => {
-    return content.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
-}
-window.utils.getFileName = (path = '') => {
-    return path.split('/').slice(-1)[0];
-}
-window.utils.getFileExtension = function (file = '') {
-    file = window.utils.getFileName(file);
-    if (file.indexOf('.') > -1) {
-        return '.' + file.split('.').pop();
-    } else {
-        return '';
-    }
-}
 
 window.addEventListener('contextmenu', (e) => {
     e.preventDefault();
@@ -892,67 +726,6 @@ const mimeTypes = {
 
 function getMimeType(extension) {
     return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
-}
-
-window.utils.getMimeType = getMimeType;
-
-window.loadImage = loadImage;
-
-// Loading images
-try {
-    loadingImage.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/applications/tools/start.ico')})`;
-    screenLockSigninAvatar.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/icons/user.png')})`;
-    screenLockBackground.style.backgroundImage = `url(${await fs.getFileURL('C:/Winbows/bg/img100.jpg')})`;
-} catch (e) {
-    console.error('Error loading image:', e);
-}
-
-window.utils.getImageTheme = function getImageTheme(img) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    ctx.drawImage(img, 0, 0, img.width, img.height);
-
-    const imageData = ctx.getImageData(0, 0, img.width, img.height);
-    const pixels = imageData.data;
-
-    let totalBrightness = 0;
-
-    for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
-
-        const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-        totalBrightness += brightness;
-    }
-
-    const averageBrightness = totalBrightness / (img.width * img.height);
-
-    const threshold = 128;
-    if (averageBrightness > threshold) {
-        return 'light';
-    } else {
-        return 'dark';
-    }
-}
-
-window.utils.canvasClarifier = function canvasClarifier(canvas, ctx, width, height) {
-    const originalSize = {
-        width: (width ? width : canvas.offsetWidth),
-        height: (height ? height : canvas.offsetHeight)
-    }
-    var ratio = window.devicePixelRatio || 1;
-    canvas.width = originalSize.width * ratio;
-    canvas.height = originalSize.height * ratio;
-    ctx.scale(ratio, ratio);
-    if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
-        canvas.style.width = originalSize.width + 'px';
-        canvas.style.height = originalSize.height + 'px';
-    }
 }
 
 var currentBackgroundImage;
@@ -992,1565 +765,53 @@ window.WinbowsUpdate = () => {
 
 await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
 
-if (!fs.exists('C:/User/')) {
-    await fs.mkdir('C:/User/');
-}
-if (!fs.exists('C:/User/Desktop/')) {
-    await fs.mkdir('C:/User/Desktop/');
-}
-if (!fs.exists('C:/User/Documents/')) {
-    await fs.mkdir('C:/User/Documents/');
-}
-if (!fs.exists('C:/User/Downloads/')) {
-    await fs.mkdir('C:/User/Downloads/');
-}
-if (!fs.exists('C:/User/Music/')) {
-    await fs.mkdir('C:/User/Music/');
-}
-if (!fs.exists('C:/User/Pictures/')) {
-    await fs.mkdir('C:/User/Pictures/');
-}
-if (!fs.exists('C:/User/Videos/')) {
-    await fs.mkdir('C:/User/Videos/');
-}
-if (!fs.exists('C:/User/AppData/')) {
-    await fs.mkdir('C:/User/AppData/');
-}
-if (!fs.exists('C:/User/AppData/Local/')) {
-    await fs.mkdir('C:/User/AppData/Local/');
-}
-if (!fs.exists('C:/User/AppData/Local/Temp/')) {
-    await fs.mkdir('C:/User/AppData/Local/Temp/');
-}
-
-screenLockSigninUsername.innerHTML = window.utils.replaceHTMLTags('Admin');
-screenLockSigninButton.innerHTML = window.utils.replaceHTMLTags('Sign In');
-
-await (async () => {
-    var browserWindowPosition = {};
-
-    const snapPreview = document.createElement('div');
-    snapPreview.className = 'browser-window-snap-preview';
-    window.Winbows.AppWrapper.appendChild(snapPreview);
-
-    function cubicBezier(p1x, p1y, p2x, p2y) {
-        return function (t) {
-            const cx = 3 * p1x;
-            const bx = 3 * (p2x - p1x) - cx;
-            const ax = 1 - cx - bx;
-
-            const cy = 3 * p1y;
-            const by = 3 * (p2y - p1y) - cy;
-            const ay = 1 - cy - by;
-
-            const x = ((ax * t + bx) * t + cx) * t;
-            const y = ((ay * t + by) * t + cy) * t;
-
-            return y;
-        };
+try {
+    if (!fs.exists('C:/User/')) {
+        await fs.mkdir('C:/User/');
     }
-
-    const animateProfiles = {
-        'window-show': {
-            func: cubicBezier(.04, .73, .16, 1),
-            duration: 150
-        },
-        'window-hide': {
-            func: cubicBezier(.77, -0.02, .98, .59),
-            duration: 150
-        },
-        'window-open': {
-            func: cubicBezier(.42, 0, .58, 1),
-            duration: 100
-        },
-        'window-close': {
-            func: cubicBezier(.42, 0, .58, 1),
-            duration: 100
-        }
-    };
-
-    const icons = {
-        close: await fs.getFileURL('C:/Winbows/icons/controls/close.png'),
-        minimize: await fs.getFileURL('C:/Winbows/icons/controls/minimize.png'),
-        maxmin: await fs.getFileURL('C:/Winbows/icons/controls/maxmin.png'),
-        maximize: await fs.getFileURL('C:/Winbows/icons/controls/maximize.png')
+    if (!fs.exists('C:/User/Desktop/')) {
+        await fs.mkdir('C:/User/Desktop/');
     }
-
-    window.System.createBrowserWindow = async function createBrowserWindow(path = {}, config = {}, pid) {
-        console.log('creating window')
-        const ICON = await window.Taskbar.createIcon({
-            title: config.title || 'App',
-            name: path.caller,
-            icon: await fs.getFileURL(window.appRegistry.getIcon(path.callee)),
-            openable: true,
-            category: 'app',
-            status: {
-                active: true,
-                opened: true
-            }
-        })
-
-        window.System.processes[pid].title = config.title || 'App';
-
-        const appWrapper = window.Winbows.AppWrapper;
-        const events = {
-            "start": ["mousedown", "touchstart", "pointerdown"],
-            "move": ["mousemove", "touchmove", "pointermove"],
-            "end": ["mouseup", "touchend", "pointerup", "blur"]
-        }
-        const parent = config.showOnTop == true ? window.Winbows.Screen : appWrapper;
-        const { width = 800, height = 600 } = config;
-        const windowData = {
-            width, height,
-            x: (window.innerWidth / 2) - width / 2,
-            y: ((window.innerHeight - 48) / 2) - height / 2
-        }
-        const animateData = {
-            x: windowData.x,
-            y: windowData.y,
-            scaleX: .9,
-            scaleY: .9,
-            opacity: 0,
-            __x: windowData.x,
-            __y: windowData.y,
-            __scaleX: .9,
-            __scaleY: .9,
-            __opacity: 0,
-            __targetTime: Date.now(),
-            __startTime: Date.now(),
-            __isRunning: false,
-            __profile: {
-                func: cubicBezier(.42, 0, .58, 1),
-                duration: 100
-            }
-        }
-
-        function decompose2DMatrix(matrixStr) {
-            const match = matrixStr.match(/matrix\(([^)]+)\)/);
-            if (!match) throw new Error("Not a valid 2D matrix");
-
-            const [a, b, c, d, e, f] = match[1].split(',').map(parseFloat);
-
-            const scaleX = Math.sqrt(a * a + b * b);
-            const scaleY = Math.sqrt(c * c + d * d);
-
-            const rotation = Math.atan2(b, a) * (180 / Math.PI);
-
-            const skewX = Math.atan2(a * c + b * d, scaleX * scaleX) * (180 / Math.PI);
-
-            return {
-                translateX: e,
-                translateY: f,
-                scaleX,
-                scaleY,
-                rotation,
-                skewX
-            };
-        }
-
-        function animate(params, profile) {
-            if (profile && typeof profile === 'string' && animateProfiles[profile]) {
-                animateData.__profile = animateProfiles[profile];
-            }
-            Object.keys(params).forEach(CSSKey => {
-                if (/[A-z]/gi.test(CSSKey[0])) {
-                    animateData[CSSKey] = params[CSSKey];
-                }
-            })
-            var cT = getComputedStyle(containerElement).transform;
-            var cO = getComputedStyle(containerElement).opacity;
-            var opacity = Number(cO);
-
-            var x = 0, y = 0, scaleX = 1, scaleY = 1;
-            if (cT.startsWith("matrix(")) {
-                var transform = decompose2DMatrix(cT);
-                x = transform.translateX;
-                y = transform.translateY;
-                scaleX = transform.scaleX;
-                scaleY = transform.scaleY;
-            }
-
-            if (params.__from) {
-                x = params.__from.x || x;
-                y = params.__from.y || y;
-                scaleX = params.__from.scaleX || scaleX;
-                scaleY = params.__from.scaleY || scaleY;
-                opacity = params.__from.opacity || opacity;
-            }
-
-            animateData.__x = x;
-            animateData.__y = y;
-            animateData.__scaleX = scaleX;
-            animateData.__scaleY = scaleY;
-            animateData.__opacity = opacity;
-            animateData.__targetTime = Date.now() + animateData.__profile.duration;
-
-            if (animateData.__isRunning == false) {
-                animateRunner();
-            }
-        }
-
-        function animateRunner() {
-            animateData.__isRunning = true;
-            var now = Date.now();
-            var d = animateData.__targetTime - now;
-            var t = 1 - (d / animateData.__profile.duration);
-            var p = animateData.__profile.func(t > 1 ? 1 : t < 0 ? 0 : t);
-
-            containerElement.style.transform = `translate(
-                ${animateData.__x + (animateData.x - animateData.__x) * p}px,
-                ${animateData.__y + (animateData.y - animateData.__y) * p}px
-                ) scale(${animateData.__scaleX + (animateData.scaleX - animateData.__scaleX) * p},${animateData.__scaleY + (animateData.scaleY - animateData.__scaleY) * p})`;
-            containerElement.style.opacity = animateData.__opacity + (animateData.opacity - animateData.__opacity) * p;
-
-            if (now < animateData.__targetTime) {
-                requestAnimationFrame(animateRunner);
-            } else {
-                animateData.__isRunning = false;
-            }
-        }
-
-        var resizerConfig = {
-            'browser-window-resizer-top': 'vertical',
-            'browser-window-resizer-bottom': 'vertical',
-            'browser-window-resizer-left': 'horizontal',
-            'browser-window-resizer-right': 'horizontal',
-            'browser-window-resizer-right-top': 'both',
-            'browser-window-resizer-right-bottom': 'both',
-            'browser-window-resizer-left-bottom': 'both',
-            'browser-window-resizer-left-top': 'both'
-        }
-        var listeners = {};
-
-        if (config.x || config.y) {
-            // Taskbar height : 48
-            windowData.x = config.x && config.x != 'center' ? parseInt(config.x) : windowData.x;
-            windowData.y = config.y && config.y != 'center' ? parseInt(config.y) : windowData.y;
-        } else if (browserWindowPosition[path.caller]) {
-            // 
-            windowData.x = browserWindowPosition[path.caller][0];
-            windowData.y = browserWindowPosition[path.caller][1];
-        }
-
-        browserWindowPosition[path.caller] = [windowData.x + 20 >= window.innerWidth ? 0 : windowData.x + 20, windowData.y + 20 >= window.innerHeight - 48 ? 0 : windowData.y + 20];
-
-        var containerElement = document.createElement('div');
-        var micaElement = document.createElement('div');
-        var hostElement = document.createElement('div');
-        var resizers = document.createElement('div');
-        var content = document.createElement('div');
-        var shadowRoot = content.attachShadow({ mode: 'open' });
-        var windowElement = document.createElement('div');
-        var toolbarElement = document.createElement('div');
-        var contentElement = document.createElement('div');
-
-        var isMaximized = false;
-        var originalSnapSide = '';
-
-        containerElement.style.transition = 'none';
-        containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
-
-        if (window.modes.debug == true) {
-            console.log(config);
-        }
-
-        const toolbarMenu = WinUI.contextMenu([])
-
-        toolbarMenu.container.style.setProperty('--contextmenu-icon-size', '.58rem');
-        toolbarMenu.container.style.setProperty('--contextmenu-expand-size', '.58rem');
-
-        toolbarElement.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const { x, y } = utils.getPointerPosition(e);
-            toolbarMenu.setItems([
-                {
-                    className: "restore",
-                    icon: "chrome-restore",
-                    text: "Restore",
-                    disabled: !isMaximized == true,
-                    action: () => {
-                        unmaximizeWindow();
-                    }
-                }, {
-                    className: "minimize",
-                    icon: "chrome-minimize",
-                    text: "Minimize",
-                    disabled: config.minimizable == false,
-                    action: () => {
-                        ICON.hide(windowID)
-                    },
-                }, {
-                    className: "maximize",
-                    icon: "chrome-maximize",
-                    text: "Maximize",
-                    disabled: !(isMaximized == false && !config.maximizable == false),
-                    action: () => {
-                        maximizeWindow();
-                    },
-                }, {
-                    type: "separator"
-                }, {
-                    className: "close",
-                    icon: "chrome-close",
-                    text: "Close",
-                    action: () => {
-                        close();
-                    },
-                }
-            ]);
-            toolbarMenu.open(x, y, 'left-top');
-        })
-
-        new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
-            window.addEventListener(event, (e) => {
-                if (toolbarMenu.container.contains(e.target)) return;
-                toolbarMenu.close();
-            })
-        })
-
-        const windowID = ICON.open({
-            browserWindow: containerElement,
-            shadowRoot: shadowRoot,
-            pid: pid,
-            mica: config.mica,
-            close,
-            update: function (type, icon) {
-
-            }
-        });
-
-        if (window.modes.debug == true) {
-            console.log('opened', windowID)
-        }
-
-        containerElement.className = 'browser-window-container active';
-        micaElement.className = 'browser-window-mica';
-        hostElement.className = 'browser-window';
-
-        // Outside
-        resizers.className = 'browser-window-resizers';
-        content.className = 'browser-window-content';
-
-        // In shadow root
-        windowElement.className = 'window';
-        toolbarElement.className = 'window-toolbar';
-        contentElement.className = 'window-content';
-
-        containerElement.addEventListener('pointerdown', (e) => {
-            ICON.focus(windowID);
-        })
-
-        ICON.addEventListener('blur', (e) => {
-            content.style.pointerEvents = '';
-            triggerEvent('blur', {})
-        })
-
-        ICON.addEventListener('focus', (e) => {
-            if (e.id != windowID) {
-                return content.style.pointerEvents = '';
-            }
-            content.style.pointerEvents = 'unset';
-            triggerEvent('focus', {});
-        })
-
-        ICON.addEventListener('_show', (id) => {
-            if (id != windowID) return;
-            var x = windowData.x,
-                y = windowData.y;
-            if (originalSnapSide != '') {
-                x = 0; y = 0;
-                if (originalSnapSide.includes('r')) {
-                    x = window.innerWidth / 2;
-                }
-                if (originalSnapSide.includes('b')) {
-                    y = (window.innerHeight - 48) / 2;
-                }
-            }
-            containerElement.style.transition = 'none';
-            animate({
-                x, y,
-                scaleX: 1,
-                scaleY: 1,
-                opacity: 1
-            }, 'window-show');
-            return;
-            if (id != windowID) return;
-            var iconPosition = window.utils.getPosition(ICON.item);
-
-            hostElement.style.transition = 'transform 200ms ease, opacity 100ms ease-in-out, scale 200ms ease';
-            hostElement.style.opacity = 1;
-            hostElement.style.transformOrigin = 'bottom center'//`bottom ${iconPosition.x < window.innerWidth / 2 ? 'left' : iconPosition.x > window.innerWidth / 2 ? 'right' : 'center'}`;
-            hostElement.style.transform = `translate(0, 0)`;
-            hostElement.style.scale = 'revert-layer';
-        })
-
-        ICON.addEventListener('_hide', (id) => {
-            if (id != windowID) return;
-            minimize();
-            return;
-            if (id != windowID) return;
-            var iconPosition = window.utils.getPosition(ICON.item);
-
-            hostElement.style.opacity = 1;
-            hostElement.style.transition = `transform 200ms cubic-bezier(.9,.1,.87,.5), opacity 100ms ease-in-out, scale 200ms cubic-bezier(.9,.1,.87,.5)`;
-            hostElement.style.transformOrigin = 'bottom center'//`bottom ${iconPosition.x < window.innerWidth / 2 ? 'left' : iconPosition.x > window.innerWidth / 2 ? 'right' : 'center'}`;
-            hostElement.style.scale = 0;
-            setTimeout(function () {
-                if (ICON.status.show == false) {
-                    hostElement.style.opacity = 0;
-                }
-                clearTimeout(this);
-            }, 100)
-        })
-
-        if (config.showOnTop == true) {
-            containerElement.classList.add('show-on-top');
-        }
-
-        if (config.mica == true) {
-            // hostElement.classList.add('mica');
-            /*
-            function generateMicaImage(canvas, bgImageUrl, width = 400, height = 300) {
-                const ctx = canvas.getContext("2d");
-                canvas.width = width;
-                canvas.height = height;
-    
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => {
-                    ctx.drawImage(img, 0, 0, width, height);
-    
-                    for (let i = 0; i < 3; i++) {
-                        ctx.globalAlpha = 0.5;
-                        ctx.drawImage(canvas, -1, 0, width, height);
-                        ctx.drawImage(canvas, 1, 0, width, height);
-                        ctx.drawImage(canvas, 0, -1, width, height);
-                        ctx.drawImage(canvas, 0, 1, width, height);
-                    }
-    
-                    ctx.globalAlpha = 0.2;
-                    ctx.fillStyle = "#ffffff";
-                    ctx.fillRect(0, 0, width, height);
-                    return canvas.toDataURL("image/png");
-                };
-    
-                img.src = bgImageUrl;
-            }
-    
-            var micaCanvas = document.createElement('canvas');
-            micaCanvas.className = 'mica-canvas';
-            shadowRoot.appendChild(micaCanvas);
-    
-            generateMicaImage(micaCanvas, await fs.getFileURL(window.getBackgroundImage()), window.innerWidth, window.innerHeight)
-            */
-        }
-
-        function updateMica() {
-            if (config.mica == true) {
-                requestAnimationFrame(() => {
-                    const rect = containerElement.getBoundingClientRect();
-                    micaElement.style.clipPath = `inset(${rect.top + 1}px ${window.innerWidth - rect.right + 1}px ${window.innerHeight - rect.bottom + 1}px ${rect.left + 1}px)`;
-                    micaElement.style.transform = `translate(${-rect.left}px,${-rect.top}px)`;
-                })
-            }
-        }
-
-        const observer = new ResizeObserver(updateMica);
-        observer.observe(containerElement);
-        window.addEventListener('resize', updateMica)
-
-        parent.appendChild(containerElement);
-        containerElement.appendChild(micaElement);
-        containerElement.appendChild(hostElement);
-        hostElement.appendChild(resizers);
-        hostElement.appendChild(content);
-        shadowRoot.appendChild(windowElement);
-        windowElement.appendChild(toolbarElement);
-        windowElement.appendChild(contentElement);
-
-        containerElement.style.transition = 'none';
-        animate({
-            x: windowData.x,
-            y: windowData.y,
-            scaleX: 1,
-            scaleY: 1,
-            opacity: 1,
-            __from: {
-                scaleX: .9,
-                scaleY: .9,
-                opacity: 0
-            }
-        }, 'window-open');
-
-        updateMica();
-
-        if (config.resizable == false) {
-            resizers.remove();
-        }
-
-        // Resizers
-        Object.keys(resizerConfig).forEach(key => {
-            var allowed = resizerConfig[key];
-            var pointerDown = false;
-            var pointerPosition = [];
-            var resizer = document.createElement('div');
-            var originalPosition = {};
-            var originalSize = {};
-            resizer.className = key;
-
-            function updateSizeAndData(e) {
-                const position = utils.getPointerPosition(e);
-                var diffX = position.x - pointerPosition.x;
-                var diffY = position.y - pointerPosition.y;
-                var width = originalSize.width;
-                var height = originalSize.height;
-                if (allowed == 'vertical') {
-                    diffX = 0;
-                } else if (allowed == 'horizontal') {
-                    diffY = 0;
-                }
-                var translateX = originalPosition.x;
-                var translateY = originalPosition.y;
-                // For vertical resize
-                if (key.search('top') > -1) {
-                    // Fixate bottom
-                    translateY += diffY;
-                    windowElement.style.height = height - diffY + 'px';
-                    windowData.height = height - diffY;
-                } else if (key.search('bottom') > -1) {
-                    // Fixate top
-                    windowElement.style.height = height + diffY + 'px';
-                    windowData.height = height + diffY;
-                }
-
-                // For horizontal resize
-                if (key.search('left') > -1) {
-                    // Fixate right
-                    translateX += diffX;
-                    windowElement.style.width = width - diffX + 'px';
-                    windowData.width = width - diffX;
-                } else {
-                    // Fixate left
-                    windowElement.style.width = width + diffX + 'px';
-                    windowData.width = width + diffX;
-                }
-
-                windowData.x = translateX;
-                windowData.y = translateY;
-
-                containerElement.style.transition = 'none';
-                containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
-            }
-
-            function handleStartResizing(e) {
-                if (isMaximized == true) return;
-                pointerPosition = utils.getPointerPosition(e);
-                originalPosition = {
-                    x: windowData.x,
-                    y: windowData.y
-                }
-                originalSize = {
-                    width: windowData.width,
-                    height: windowData.height
-                }
-                appWrapper.classList.add('moving');
-                pointerDown = true;
-                updateMica();
-            }
-
-            function handleMoveResizing(e) {
-                if (pointerDown == true) {
-                    try {
-                        document.getSelection().removeAllRanges();
-                    } catch (e) { };
-                    updateSizeAndData(e);
-                    updateMica();
-                }
-            }
-
-            function handleEndResizing(e) {
-                if (pointerDown == false) return;
-                updateSizeAndData(e);
-                pointerDown = false;
-                appWrapper.classList.remove('moving');
-                updateMica();
-                console.log(windowData)
-            }
-
-            events.start.forEach(event => {
-                resizer.addEventListener(event, handleStartResizing);
-            })
-            events.move.forEach(event => {
-                window.addEventListener(event, handleMoveResizing);
-            })
-            events.end.forEach(event => {
-                window.addEventListener(event, handleEndResizing);
-            })
-
-            resizers.appendChild(resizer);
-        })
-
-        // Default toolbar
-        var toolbarInfo = document.createElement('div');
-        var toolbarIcon = document.createElement('div');
-        var toolbarTitle = document.createElement('div');
-        var toolbarButtons = document.createElement('div');
-
-        toolbarInfo.className = 'window-toolbar-info';
-        toolbarIcon.className = 'window-toolbar-icon';
-        toolbarTitle.className = 'window-toolbar-title';
-        toolbarButtons.className = 'window-toolbar-buttons';
-
-        var icon = config.icon || window.appRegistry.getIcon(path.callee);
-        var title = config.title || 'App';
-
-        toolbarTitle.innerHTML = window.utils.replaceHTMLTags(title);
-
-        await (async () => {
-            var url = URL.createObjectURL(await window.fs.downloadFile('C:/Winbows/System/styles/app.css'));
-            var style = document.createElement('link');
-            style.rel = 'stylesheet';
-            style.type = 'text/css';
-            style.href = url;
-            shadowRoot.appendChild(style);
-            return;
-        })();
-
-        (async () => {
-            var url = await window.fs.getFileURL(icon);
-            await loadImage(url);
-            toolbarIcon.style.backgroundImage = `url(${url})`;
-        })();
-
-        function changeTitle(title = '') {
-            if (!title) return;
-            config.title = title;
-            toolbarTitle.innerHTML = window.utils.replaceHTMLTags(title);
-            window.System.processes[pid].title = config.title || 'App';
-            ICON.changeTitle(windowID, title);
-        }
-
-        function changeIcon(url = '') {
-            if (!url) return;
-            config.icon = url;
-            toolbarIcon.style.backgroundImage = `url(${url})`;
-            ICON.changeIcon(windowID, url);
-        }
-
-        var minimizeButton = document.createElement('div');
-        var maximizeButton = document.createElement('div');
-        var closeButton = document.createElement('div');
-
-        minimizeButton.className = 'window-toolbar-button';
-        maximizeButton.className = 'window-toolbar-button';
-        closeButton.className = 'window-toolbar-button close';
-
-        minimizeButton.addEventListener('click', () => {
-            ICON.hide(windowID);
-        });
-        closeButton.addEventListener('click', close);
-
-        // var iconStyle = document.createElement('style');
-        // iconStyle.innerHTML = `.window{--close-icon:url(${await window.fs.getFileURL(icons[0])});--maximize-icon:url(${await window.fs.getFileURL(icons[1])});--minimize-icon:url(${await window.fs.getFileURL(icons[2])});--maxmin-icon:url(${await window.fs.getFileURL(icons[3])});}`;
-        // shadowRoot.appendChild(iconStyle);
-
-        var minimizeImage = document.createElement('div');
-        minimizeImage.className = 'window-toolbar-button-icon';
-        minimizeImage.style.backgroundImage = `url(${icons.minimize})`;
-        minimizeButton.appendChild(minimizeImage);
-
-        var maximizeImage = document.createElement('div');
-        maximizeImage.className = 'window-toolbar-button-icon';
-        maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
-        maximizeButton.appendChild(maximizeImage);
-
-        var closeImage = document.createElement('div');
-        closeImage.className = 'window-toolbar-button-icon';
-        closeImage.style.backgroundImage = `url(${icons.close})`;
-        closeButton.appendChild(closeImage)
-
-        toolbarButtons.appendChild(minimizeButton);
-        toolbarButtons.appendChild(maximizeButton);
-        toolbarButtons.appendChild(closeButton);
-
-        toolbarInfo.appendChild(toolbarIcon);
-        toolbarInfo.appendChild(toolbarTitle);
-
-        toolbarElement.appendChild(toolbarInfo);
-        toolbarElement.appendChild(toolbarButtons);
-
-        async function unmaximizeWindow(animation = true) {
-            originalSnapSide = '';
-            isMaximized = false;
-            containerElement.removeAttribute('data-maximized');
-            containerElement.style.transform = `translate(${windowData.x}px,${windowData.y}px)`;
-
-            if (animation == true) {
-                containerElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-                windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-                setTimeout(() => {
-                    containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                    windowElement.style.transition = 'none';
-                }, 200)
-            } else {
-                containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                windowElement.style.transition = 'none';
-            }
-
-            windowElement.style.width = windowData.width + 'px';
-            windowElement.style.height = windowData.height + 'px';
-            windowElement.style.borderRadius = 'revert-layer';
-            maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
-            updateMica()
-        }
-
-        async function maximizeWindow(animation = true) {
-            originalSnapSide = 'f';
-            isMaximized = true;
-            containerElement.setAttribute('data-maximized', 'true');
-            containerElement.style.transform = `translate(0px,0px)`;
-            // hostElement.style.width = 'var(--winbows-screen-width)';
-            // hostElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
-
-            if (animation == true) {
-                containerElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-                windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-                setTimeout(() => {
-                    containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                    windowElement.style.transition = 'none';
-                }, 200)
-            } else {
-                containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                windowElement.style.transition = 'none';
-            }
-
-            windowElement.style.width = 'var(--winbows-screen-width)';
-            windowElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
-            windowElement.style.borderRadius = '0';
-            maximizeImage.style.backgroundImage = `url(${icons.maximize})`;
-            updateMica()
-        }
-
-
-        maximizeButton.addEventListener('click', () => {
-            if (isMaximized == false) {
-                maximizeWindow();
-            } else {
-                unmaximizeWindow();
-            }
-        });
-
-        function minimize() {
-            var position = utils.getPosition(ICON.item);
-            var width = containerElement.offsetWidth;
-            var height = containerElement.offsetHeight;
-
-            containerElement.style.transition = 'none';
-
-            var scaleX = 180 / width;
-            var scaleY = 120 / height;
-            var scale = scaleX;
-
-            if (scaleY < scaleX) {
-                scale = scaleY
-            }
-
-            var windowWidth = width * scale;
-            var windowHeight = height * scale;
-
-            animate({
-                x: position.x - width * (1 - scale) / 2 - windowWidth / 2 + ICON.item.offsetWidth / 2,
-                y: window.innerHeight - 48 - 8 - height * (1 - scale) / 2 - windowHeight,
-                scaleX: scale,
-                scaleY: scale,
-                opacity: 0
-            }, 'window-hide');
-        }
-
-        function close() {
-            if (window.modes.debug == true) {
-                console.log('close', windowID);
-            }
-            containerElement.style.transition = 'none';
-            const position = utils.getPosition(containerElement);
-            animate({
-                x: position.x,
-                y: position.y,
-                scaleX: .9,
-                scaleY: .9,
-                opacity: 0
-            }, 'window-close');
-            ICON.close(windowID);
-            window.System.processes[pid]._exit_Window();
-        }
-
-        if (config.fullscreenable == false) {
-            maximizeButton.remove();
-        }
-        if (config.minimizable == false) {
-            minimizeButton.remove();
-        }
-        if (config.maximizable == false) {
-            maximizeButton.remove();
-        }
-        if (config.closable == false) {
-            closeButton.remove();
-        }
-
-        var pointerMoved = false;
-        var showSnapPreview = false;
-        var snapMargin = 12;
-        var pointerDown = false;
-        var pointerPosition = [];
-        var originalPosition = {};
-        var immovableElements = [];
-        var snapSide = '';
-
-        function getSnapSide(x, y) {
-            var side = '';
-            if (y >= appWrapper.offsetHeight - snapMargin) {
-                side += 'b';
-            } else if (y <= snapMargin) {
-                side += 't';
-            }
-            if (x >= appWrapper.offsetWidth - snapMargin) {
-                side += 'r';
-            } else if (x <= snapMargin) {
-                side += 'l';
-            }
-            if (side.length == 1) {
-                side += 'f';
-            }
-            if (side.includes('b') && side.includes('f')) {
-                return '';
-            }
-            return side;
-        }
-
-        function getSnapSize(side) {
-            var width = 'var(--winbows-screen-width)';
-            var height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
-            if (side.includes('l') || side.includes('r')) {
-                width = 'calc(var(--winbows-screen-width) / 2)';
-            }
-            if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
-                height = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
-            }
-            return {
-                width: width,
-                height: height
-            }
-        }
-
-        function getSnapPosition(side) {
-            var left = '0';
-            var top = '0';
-            if (side.includes('r')) {
-                left = 'calc(var(--winbows-screen-width) / 2)';
-            }
-            if (side.includes('b')) {
-                top = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
-            }
-            return {
-                left: left,
-                top: top
-            }
-        }
-
-        function getSnapPreviewSize(side) {
-            var width = appWrapper.offsetWidth - snapMargin * 2;
-            var height = appWrapper.offsetHeight - snapMargin * 2;
-            if (side.includes('l') || side.includes('r')) {
-                width = appWrapper.offsetWidth / 2 - snapMargin * 2;
-            }
-            if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
-                height = appWrapper.offsetHeight / 2 - snapMargin * 2;
-            }
-            return {
-                width: width,
-                height: height
-            }
-        }
-
-        function getSnapPreviewPosition(side) {
-            var left = snapMargin;
-            var top = snapMargin;
-            if (side.includes('r')) {
-                left = appWrapper.offsetWidth / 2 + snapMargin;
-            }
-            if (side.includes('b')) {
-                top = appWrapper.offsetHeight / 2 + snapMargin;
-            }
-            return {
-                left: left,
-                top: top
-            }
-        }
-
-        function handleStartMoving(e) {
-            if (toolbarButtons.contains(e.target)) return;
-            var prevent = false;
-            immovableElements.forEach(element => {
-                if (element == e.target || element.contains(e.target)) {
-                    prevent = true;
-                }
-            })
-            if (prevent == true) return;
-            const pointer = utils.getPointerPosition(e);
-            var pageX = pointer.x, pageY = pointer.y;
-            if (pageX < 0) {
-                pageX = 0;
-            } else if (pageX > window.innerWidth) {
-                pageX = window.innerWidth;
-            }
-            if (pageY < 0) {
-                pageY = 0;
-            } else if (pageY > parent.offsetHeight) {
-                pageY = parent.offsetHeight;
-            }
-            pointerDown = true;
-            pointerMoved = false;
-            var position = utils.getPosition(containerElement);
-            pointerPosition = [pageX, pageY];
-            originalPosition = {
-                x: position.x,
-                y: position.y
-            }
-            triggerEvent('dragstart', {
-                preventDefault: () => {
-                    handleEndMoving({}, 'preventDefault');
-                },
-                type: e.type,
-                target: e.target
-            })
-            updateMica()
-        }
-
-        function handleMoveMoving(e) {
-            if (pointerDown) {
-                try {
-                    document.getSelection().removeAllRanges();
-                } catch (e) { };
-                if (originalSnapSide != '' || isMaximized == true || windowElement.offsetWidth != windowData.width || windowElement.offsetHeight != windowElement.offsetHeight) {
-                    containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                    windowElement.style.transition = 'none';
-                    containerElement.removeAttribute('data-maximized');
-                    windowElement.style.width = windowData.width + 'px';
-                    windowElement.style.height = windowData.height + 'px';
-                    windowElement.style.borderRadius = 'revert-layer';
-                    maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
-                    isMaximized = false;
-                    originalSnapSide = '';
-                }
-                const pointer = utils.getPointerPosition(e);
-                var pageX = pointer.x, pageY = pointer.y;
-                if (pageX != pointerPosition[0] || pageY != pointerPosition[1]) {
-                    pointerMoved = true;
-                }
-                if (pageX < 0) {
-                    pageX = 0;
-                } else if (pageX > window.innerWidth) {
-                    pageX = window.innerWidth;
-                }
-                if (pageY < 0) {
-                    pageY = 0;
-                } else if (pageY > parent.offsetHeight) {
-                    pageY = parent.offsetHeight;
-                }
-                const side = getSnapSide(pageX, pageY);
-                appWrapper.classList.add('moving');
-
-                containerElement.style.transition = 'none';
-                containerElement.style.transform = `translate(${originalPosition.x + pageX - pointerPosition[0]}px,${originalPosition.y + pageY - pointerPosition[1]}px)`;
-
-                if (config.snappable == false) {
-                    snapSide = '';
-                } else {
-                    if (side != '') {
-                        snapPreview.style.position = 'fixed';
-                        if (!showSnapPreview == true) {
-                            snapPreview.style.width = containerElement.offsetWidth + 'px';
-                            snapPreview.style.height = containerElement.offsetHeight + 'px';
-                            snapPreview.style.left = window.utils.getPosition(containerElement).x + 'px';
-                            snapPreview.style.top = window.utils.getPosition(containerElement).y + 'px';
-                            snapPreview.classList.add('active');
-                        }
-                        var size = getSnapPreviewSize(side);
-                        var position = getSnapPreviewPosition(side);
-                        snapPreview.style.transition = 'all .15s ease-in-out';
-                        snapPreview.style.zIndex = containerElement.style.zIndex || ICON.getMaxZIndex();
-                        snapPreview.style.left = position.left + 'px';
-                        snapPreview.style.top = position.top + 'px';
-                        snapPreview.style.width = size.width + 'px';
-                        snapPreview.style.height = size.height + 'px';
-                        showSnapPreview = true;
-                    } else {
-                        if (showSnapPreview == true) {
-                            snapPreview.style.width = containerElement.offsetWidth + 'px';
-                            snapPreview.style.height = containerElement.offsetHeight + 'px';
-                            snapPreview.style.left = window.utils.getPosition(containerElement).x + 'px';
-                            snapPreview.style.top = window.utils.getPosition(containerElement).y + 'px';
-                            setTimeout(() => {
-                                if (showSnapPreview == true) return;
-                                snapPreview.style.transition = 'none';
-                                snapPreview.classList.remove('active');
-                            }, 150)
-                        }
-                        showSnapPreview = false;
-                    }
-                    snapSide = side;
-                }
-                triggerEvent('dragging', {
-                    preventDefault: () => {
-                        handleEndMoving({}, 'preventDefault');
-                    },
-                    type: e.type,
-                    target: e.target
-                })
-                updateMica()
-            }
-        }
-
-        function handleEndMoving(e, type = 'user') {
-            if (pointerDown == false) return;
-            if (pointerMoved == false) {
-                return pointerDown = false;
-            }
-            pointerDown = false;
-            showSnapPreview = false;
-            snapPreview.style.width = containerElement.offsetWidth + 'px';
-            snapPreview.style.height = containerElement.offsetHeight + 'px';
-            snapPreview.style.left = window.utils.getPosition(containerElement).x + 'px';
-            snapPreview.style.top = window.utils.getPosition(containerElement).y + 'px';
-            setTimeout(() => {
-                snapPreview.style.transition = 'none';
-                snapPreview.classList.remove('active');
-            }, 150)
-            appWrapper.classList.remove('moving');
-            if (snapSide != '') {
-                if (snapSide.includes('t') && snapSide.includes('f')) {
-                    maximizeWindow();
-                }
-                var position = getSnapPosition(snapSide);
-                var size = getSnapSize(snapSide);
-
-                containerElement.style.transform = `translate(${position.left},${position.top})`;
-
-                containerElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-                windowElement.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-                setTimeout(() => {
-                    containerElement.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                    windowElement.style.transition = 'none';
-                }, 200)
-
-                windowElement.style.width = size.width;
-                windowElement.style.height = size.height;
-                windowElement.style.borderRadius = 0;
-            } else if (type == 'user') {
-                let pageX = e.pageX;
-                let pageY = e.pageY;
-                if (e.type.startsWith('touch')) {
-                    var touch = e.touches[0] || e.changedTouches[0];
-                    pageX = touch.pageX;
-                    pageY = touch.pageY;
-                }
-                if (pageX < 0) {
-                    pageX = 0;
-                } else if (pageX > window.innerWidth) {
-                    pageX = window.innerWidth;
-                }
-                if (pageY < 0) {
-                    pageY = 0;
-                } else if (pageY > parent.offsetHeight) {
-                    pageY = parent.offsetHeight;
-                }
-                windowData.x = originalPosition.x + pageX - pointerPosition[0];
-                windowData.y = originalPosition.y + pageY - pointerPosition[1];
-                containerElement.style.transition = 'none';
-                containerElement.style.transform = `translate(${originalPosition.x + pageX - pointerPosition[0]}px,${originalPosition.y + pageY - pointerPosition[1]}px)`;
-            }
-            originalSnapSide = snapSide;
-            snapSide = '';
-            triggerEvent('dragend', {
-                preventDefault: () => {
-
-                },
-                type: e.type,
-                target: e.target
-            })
-            updateMica()
-        }
-
-        var windowTheme = config.theme == 'system' ? window.System.theme.get() : config.theme == 'dark' ? 'dark' : 'light';
-        windowElement.setAttribute('data-theme', windowTheme);
-
-        function setTheme(theme) {
-            windowTheme = theme == 'dark' ? 'dark' : 'light';
-            windowElement.setAttribute('data-theme', windowTheme);
-        }
-
-        function getTheme(theme) {
-            return windowTheme;
-        }
-
-        function setSnappable(value) {
-            config.snappable = value == true;
-        }
-
-        function setMovable(element) {
-            events.start.forEach(event => {
-                element.addEventListener(event, handleStartMoving);
-            })
-        }
-
-        function unsetMovable(element) {
-            events.start.forEach(event => {
-                element.removeEventListener(event, handleStartMoving);
-            })
-        }
-
-        function setImmovable(element) {
-            if (!immovableElements.includes(element)) {
-                immovableElements.push(element);
-            }
-        }
-
-        function unsetImmovable(element) {
-            if (immovableElements.includes(element)) {
-                immovableElements.splice(immovableElements.indexOf(element), 1);
-            }
-        }
-
-        function triggerEvent(event, details) {
-            if (listeners.hasOwnProperty(event)) {
-                listeners[event].forEach(listener => listener(details));
-            }
-        }
-
-        function addEventListener(event, listener) {
-            if (!listeners.hasOwnProperty(event)) {
-                listeners[event] = [];
-            }
-            listeners[event].push(listener);
-        }
-
-        events.start.forEach(event => {
-            toolbarElement.addEventListener(event, handleStartMoving);
-        })
-        events.move.forEach(event => {
-            window.addEventListener(event, handleMoveMoving);
-        })
-        events.end.forEach(event => {
-            window.addEventListener(event, handleEndMoving);
-        })
-
-        containerElement.addEventListener('pointerdown', (e) => {
-            ICON.focus(windowID);
-        })
-
-        ICON.focus(windowID);
-
-        function useTabview(config = {
-            icon: true
-        }) {
-            var tabview = document.createElement('div');
-            var tabStrip = document.createElement('div');
-            var tabStripTabs = document.createElement('div');
-            var tabStripCreate = document.createElement('div');
-            var tabStripCreateButton = document.createElement('button');
-
-            tabview.className = 'tabview';
-            tabStrip.className = 'tabview-tabstrip';
-            tabStripTabs.className = 'tabview-tabstrip-tabs';
-            tabStripCreate.className = 'tabview-tabstrip-create';
-            tabStripCreateButton.className = 'tabview-tabstrip-create-button';
-
-            contentElement.appendChild(tabview);
-            if (config.icon == false) {
-                toolbarElement.replaceChild(tabStrip, toolbarInfo);
-            } else {
-                toolbarInfo.replaceChild(tabStrip, toolbarTitle);
-            }
-            tabStrip.appendChild(tabStripTabs);
-            tabStrip.appendChild(tabStripCreate);
-            tabStripCreate.appendChild(tabStripCreateButton);
-
-            tabStripCreateButton.addEventListener('click', async () => {
-                triggerEvent('requestCreateTab', {
-                    active: true,
-                    target: tabStripCreateButton
-                })
-            })
-
-            addEventListener('dragstart', (e) => {
-                if (e.target == tabStripCreateButton || tabStripTabs.contains(e.target)) {
-                    e.preventDefault();
-                }
-            })
-
-            var order = [];
-            var tabs = {};
-            var listeners = {};
-
-            function randomID() {
-                var patterns = '0123456789abcdef';
-                var id = '_';
-                for (var i = 0; i < 6; i++) {
-                    id += patterns.charAt(Math.floor(Math.random() * patterns.length));
-                }
-                if (tabs[id]) {
-                    return randomID();
-                }
-                return id;
-            }
-
-            function on(event, listener) {
-                if (!listeners[event]) {
-                    listeners[event] = []
-                }
-                listeners[event].push(listener);
-            }
-
-            function triggerEvent(event, detail) {
-                if (listeners[event]) {
-                    listeners[event].forEach(listener => listener(detail));
-                }
-            }
-
-            class Tab {
-                constructor(config = {
-                    active: true,
-                    icon: true
-                }) {
-                    // Initialize tab
-                    this.tab = document.createElement('div');
-                    this.tabInfo = document.createElement('div');
-                    this.tabIcon = document.createElement('div');
-                    this.tabHeader = document.createElement('div');
-                    this.tabClose = document.createElement('div');
-                    this.tabviewItem = document.createElement('div');
-
-                    this.id = randomID();
-                    order.push(this.id);
-
-                    this.tab.className = 'tabview-tabstrip-tab';
-                    this.tabInfo.className = 'tabview-tabstrip-tab-info';
-                    this.tabIcon.className = 'tabview-tabstrip-tab-icon';
-                    this.tabHeader.className = 'tabview-tabstrip-tab-header';
-                    this.tabClose.className = 'tabview-tabstrip-tab-close';
-                    this.tabviewItem.className = 'tabview-item';
-
-                    var originalPosition = order.indexOf(this.id);
-                    var currentPosition = order.indexOf(this.id);
-                    var startX = 0;
-                    var dragging = false;
-                    var events = {
-                        "start": ["mousedown", "touchstart", "pointerdown"],
-                        "move": ["mousemove", "touchmove", "pointermove"],
-                        "end": ["mouseup", "touchend", "pointerup", "blur"]
-                    }
-
-                    tabs[this.id] = this;
-
-                    function moveNodeToIndex(nodeIndex, targetIndex, container) {
-                        const children = Array.from(container.children);
-                        if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
-                            // console.error('over range');
-                            return;
-                        }
-                        const nodeToMove = children[nodeIndex];
-                        if (targetIndex === children.length - 1) {
-                            container.appendChild(nodeToMove);
-                        } else if (targetIndex < nodeIndex) {
-                            container.insertBefore(nodeToMove, children[targetIndex]);
-                        } else {
-                            container.insertBefore(nodeToMove, children[targetIndex + 1]);
-                        }
-                    }
-
-                    function moveArrayItem(arr, fromIndex, toIndex) {
-                        if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
-                            // console.error('over range');
-                            return;
-                        }
-                        const item = arr.splice(fromIndex, 1)[0];
-                        arr.splice(toIndex, 0, item);
-                        // console.log(arr, item)
-                        return arr;
-                    }
-
-                    var dragStart = (e) => {
-                        if (this.tabClose.contains(e.target)) return;
-                        this.focus();
-                        if (e.type.startsWith('touch')) {
-                            var touch = e.touches[0] || e.changedTouches[0];
-                            e.pageX = touch.pageX;
-                        }
-                        originalPosition = order.indexOf(this.id);
-                        currentPosition = order.indexOf(this.id);
-                        this.tab.style.transition = 'none';
-                        dragging = true;
-                        startX = e.pageX;
-                    }
-
-                    var dragMove = (e) => {
-                        if (!dragging) return;
-                        try {
-                            document.getSelection().removeAllRanges();
-                        } catch (e) { };
-                        if (e.type.startsWith('touch')) {
-                            var touch = e.touches[0] || e.changedTouches[0];
-                            e.pageX = touch.pageX;
-                        }
-                        var x = e.pageX - startX;
-                        var unit = this.tab.offsetWidth + 8;
-                        var count = Math.round(x / unit);
-
-                        console.log(config.tabAnimation)
-
-                        if (config.tabAnimation != false) {
-                            this.tab.style.transform = `translateX(${x}px)`;
-                        }
-
-                        currentPosition = originalPosition + count;
-                        if (currentPosition > order.length - 1) {
-                            currentPosition = order.length - 1;
-                        } else if (currentPosition < 0) {
-                            currentPosition = 0;
-                        }
-                        count = currentPosition - originalPosition;
-
-                        if (x > 0) {
-                            Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
-                                if (config.tabAnimation != false) {
-                                    tab.tab.style.transition = 'revert-layer';
-                                }
-                                var index = order.indexOf(tab.id);
-                                if (index <= originalPosition + count && index > originalPosition) {
-                                    tab.tab.style.transform = 'translateX(calc(-100% - 8px))';
-                                } else {
-                                    tab.tab.style.transform = '';
-                                }
-                            })
-                        } else if (x < 0) {
-                            Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
-                                if (config.tabAnimation != false) {
-                                    tab.tab.style.transition = 'revert-layer';
-                                }
-                                var index = order.indexOf(tab.id);
-                                if (index >= originalPosition + count && index < originalPosition) {
-                                    tab.tab.style.transform = 'translateX(calc(100% + 8px))';
-                                } else {
-                                    tab.tab.style.transform = '';
-                                }
-                            })
-                        }
-                    }
-
-                    var dragEnd = () => {
-                        if (dragging == false) return;
-                        dragging = false;
-                        if (currentPosition != originalPosition) {
-                            moveNodeToIndex(originalPosition, currentPosition, tabStripTabs);
-                            moveArrayItem(order, originalPosition, currentPosition);
-                            originalPosition = currentPosition;
-                            Object.values(tabs).forEach(tab => {
-                                tab.tab.style.transition = 'none';
-                                tab.tab.style.transform = 'translateX(0)';
-                                tab.tab.style['-webkit-transform']
-                                setTimeout(() => {
-                                    tab.tab.style.transition = 'revert-layer';
-                                }, 200)
-                            })
-                        } else {
-                            this.tab.style.transition = 'revert-layer';
-                            this.tab.style.transform = '';
-                        }
-                    }
-
-                    events.start.forEach(event => {
-                        this.tab.addEventListener(event, dragStart);
-                    })
-                    events.move.forEach(event => {
-                        window.addEventListener(event, dragMove);
-                    })
-                    events.end.forEach(event => {
-                        window.addEventListener(event, dragEnd);
-                    })
-
-                    this.tabClose.addEventListener('click', () => {
-                        this.close()
-                    });
-
-                    this.tab.appendChild(this.tabInfo);
-                    this.tab.appendChild(this.tabClose);
-                    this.tabInfo.appendChild(this.tabIcon);
-                    this.tabInfo.appendChild(this.tabHeader);
-                    tabStripTabs.appendChild(this.tab);
-                    tabview.appendChild(this.tabviewItem);
-
-                    if (config.active != false) {
-                        this.focus();
-                    }
-                    if (config.icon == false) {
-                        this.tabIcon.remove();
-                    }
-                }
-                getContainer() {
-                    return this.tabviewItem;
-                }
-                focus() {
-                    Object.values(tabs).forEach(tab => {
-                        tab.blur();
-                    })
-                    this.tab.classList.add('active');
-                    this.tabviewItem.classList.add('active');
-                }
-                changeHeader(header) {
-                    this.tabHeader.innerHTML = header;
-                }
-                changeIcon(icon) {
-                    this.tabIcon.style.backgroundImage = `url(${icon})`;
-                }
-                close() {
-                    this.tab.remove();
-                    this.tabviewItem.remove();
-                    var index = order.indexOf(this.id);
-                    delete tabs[this.id];
-                    order.splice(index, 1);
-                    if (Object.keys(tabs).length == 0) {
-                        return close();
-                    } else if (order[index]) {
-                        return tabs[order[index]].focus();
-                    } else if (order[index - 1]) {
-                        return tabs[order[index - 1]].focus();
-                    } else {
-                        return tabs[order[0]].focus();
-                    }
-                }
-                blur() {
-                    this.tab.classList.remove('active');
-                    this.tabviewItem.classList.remove('active');
-                }
-            }
-            return { Tab, on };
-        }
-
-        return {
-            shadowRoot, container: containerElement, window: windowElement, toolbar: toolbarElement, content: contentElement,
-            close, addEventListener, setTheme, getTheme, setMovable, unsetMovable, setImmovable, unsetImmovable, changeTitle, changeIcon,
-            setSnappable,
-            useTabview
-        };
+    if (!fs.exists('C:/User/Documents/')) {
+        await fs.mkdir('C:/User/Documents/');
     }
-    return;
-})();
-
-// Init kernel files 
-async function loadKernel() {
-    async function runKernel() {
-        var files = {
-            //kernel: ['Winbows/System/process.js'],
-            animation: [/*'Winbows/System/animation.js'*/],
-            //ui: ['Winbows/System/ui/winui.min.js'],
-            //module: [/*'Winbows/System/modules/main/domtool.js', 'Winbows/System/modules/main/toolbarComponents.js',*/ 'Winbows/System/modules/main/browserWindow.js'],
-            component: [],
-            //taskbar: ['Winbows/SystemApps/Microhard.Winbows.Taskbar/app.js'],
-            //compiler: ['Winbows/System/compilers/worker/compiler.js', 'Winbows/System/compilers/window/compiler.js']
-        }
-        return new Promise(async (resolve, reject) => {
-            var kernelFiles = [];
-            Object.values(files).forEach(category => {
-                kernelFiles = kernelFiles.concat(category);
-            })
-            var loadedKernels = 0;
-            var kernelLoading = loadingText(`Loading kernels ( ${loadedKernels} / ${kernelFiles.length} )`);
-            window.loadedKernel = () => {
-                loadedKernels++;
-                kernelLoading.innerHTML = `Loading kernels ( ${loadedKernels} / ${kernelFiles.length} )`;
-                loadingProgressBar.style.width = loadedKernels / kernelFiles.length * 100 + '%';
-                if (window.modes.debug == true) {
-                    console.log(loadedKernels)
-                }
-                if (loadedKernels == kernelFiles.length) {
-                    loadingProgressBar.style.width = '100%';
-                    loadingText(`Loading assets...`);
-                    resolve();
-                }
-            }
-            function errorHandler(msg, func = () => { location.reload(); }) {
-                var warning = document.createElement('div');
-                var warningContainer = document.createElement('div');
-                var warningText = document.createElement('span');
-                var warningRestart = document.createElement('div');
-
-                warning.className = 'winbows-loading-warning';
-                warningContainer.className = 'winbows-loading-warning-container';
-                warningRestart.className = 'winbows-loading-warning-restart';
-                warningText.className = 'winbows-loading-warning-text';
-
-                warningText.innerHTML = msg;
-                warningRestart.innerHTML = `Restart`;
-                document.body.appendChild(warning);
-                warning.appendChild(warningContainer);
-                warningContainer.appendChild(warningText);
-                warningContainer.appendChild(warningRestart);
-                loadingText(msg);
-                // window.Crash(msg);
-                warningRestart.addEventListener('click', func);
-            }
-            try {
-                for (let i in kernelFiles) {
-                    const path = await fs.getFileURL(mainDisk + ':/' + kernelFiles[i]);
-                    fetch(path).then(res => res.text()).then((kernel) => {
-                        try {
-                            new Function(kernel)();
-                        } catch (e) {
-                            errorHandler(`Failed to execute kernel : ${kernelFiles[i]}`, async () => {
-                                try {
-                                    fs.rm(mainDisk + ':/' + kernelFiles[i]).then((status) => {
-                                        console.log(status);
-                                        location.reload();
-                                    });
-                                } catch (e) {
-                                    window.Crash(e);
-                                }
-                            });
-                        }
-                    }).catch(e => {
-                        console.log(e)
-                        errorHandler("Failed to execute kernels, details:" + e);
-                    })
-                    /*
-                    kernel.src = path;
-                    kernel.onload = () => {
-                        kernel.remove();
-                    }
-                    document.head.appendChild(kernel);
-                    */
-                }
-            } catch (e) {
-                console.log(e)
-                errorHandler("Failed to execute kernels, details:" + e);
-            }
-        })
+    if (!fs.exists('C:/User/Downloads/')) {
+        await fs.mkdir('C:/User/Downloads/');
     }
-
-    await runKernel();
+    if (!fs.exists('C:/User/Music/')) {
+        await fs.mkdir('C:/User/Music/');
+    }
+    if (!fs.exists('C:/User/Pictures/')) {
+        await fs.mkdir('C:/User/Pictures/');
+    }
+    if (!fs.exists('C:/User/Videos/')) {
+        await fs.mkdir('C:/User/Videos/');
+    }
+    if (!fs.exists('C:/User/AppData/')) {
+        await fs.mkdir('C:/User/AppData/');
+    }
+    if (!fs.exists('C:/User/AppData/Local/')) {
+        await fs.mkdir('C:/User/AppData/Local/');
+    }
+    if (!fs.exists('C:/User/AppData/Local/Temp/')) {
+        await fs.mkdir('C:/User/AppData/Local/Temp/');
+    }
+} catch (e) {
+    console.error(e);
 }
 
-// await loadKernel(); // skip
 
-await BrowserWindow();
+
+//await BrowserWindow();
+/*
 const taskbar = await Taskbar();
 Winbows.Screen.appendChild(taskbar.taskbar);
-window.Winbows.Screen.appendChild(taskbar.startMenuContainer);
+window.Winbows.Screen.appendChild(taskbar.startMenuContainer);*/
 
-window.Taskbar.pinApp('C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/app.wrt');
+taskbar.pinApp('C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/app.wrt');
 //window.Taskbar.pinApp('C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wrt');
-await window.Taskbar.preloadImage();
+await taskbar.preloadImage();
 
-setWinbows(window.Winbows);
 
 window.System.CommandParsers = {
     run: (params) => {
@@ -3176,7 +1437,7 @@ await (async function Desktop() {
                             new Process(path).start();
                         }
                     })
-                } else if (window.utils.getFileExtension(path) == '.wbsf') {
+                } else if (fsUtils.extname(path) == '.wbsf') {
                     items.push({
                         icon: 'window-snipping',
                         text: 'Run file',
@@ -3188,7 +1449,7 @@ await (async function Desktop() {
                             })
                         }
                     })
-                } else if (['.ttf', '.otf', '.woff', '.woff2', '.eot'].includes(window.utils.getFileExtension(path))) {
+                } else if (['.ttf', '.otf', '.woff', '.woff2', '.eot'].includes(fsUtils.extname(path))) {
                     items.push({
                         type: 'separator'
                     })
@@ -3204,7 +1465,7 @@ await (async function Desktop() {
                                 await myFont.load();
 
                                 window.document.fonts.add(myFont);
-                                window.document.body.style.setProperty('--winbows-font-default', fontName);
+                                root.style.setProperty('--winbows-font-default', fontName);
 
                             } catch (error) {
                                 console.error('Failed to load font', error);
@@ -3284,7 +1545,7 @@ await (async function Desktop() {
             for (let i = 0; i < results.length; i++) {
                 ; await (async (i) => {
                     var { stat, path, name, content } = results[i];
-                    var type = utils.getFileExtension(path) == '.link' ? 'shortcut' : stat.isFile() ? 'file' : 'directory';
+                    var type = fsUtils.extname(path) == '.link' ? 'shortcut' : stat.isFile() ? 'file' : 'directory';
                     var detail = {};
                     try {
                         if (type == 'shortcut') {
@@ -3850,7 +2111,7 @@ window.System.FileViewers = {
         localStorage.setItem('WINBOWS_SYSTEM_FV_DEFAULT_VIEWERS', JSON.stringify(window.System.FileViewers.defaultViewers));
     },
     getDefaultViewer: (file = '') => {
-        var extension = window.utils.getFileExtension(file).toLowerCase();
+        var extension = fsUtils.extname(file).toLowerCase();
         var viewer = window.System.FileViewers.defaultViewers[extension];
         if (!viewer) {
             return null;
@@ -3859,7 +2120,7 @@ window.System.FileViewers = {
         }
     },
     getViewers: (file = '') => {
-        var extension = window.utils.getFileExtension(file).toLowerCase();
+        var extension = fsUtils.extname(file).toLowerCase();
         var accepted = ['*', extension];
         if (extension == '') {
             accepted = ['*'];
@@ -3902,86 +2163,17 @@ function delay(ms) {
 
 window.delay = delay;
 
-function loadImage(url) {
-    return new Promise(async (resolve, reject) => {
-        var img = new Image();
-        img.onload = async () => {
-            return resolve();
-        }
-        img.onerror = async (err) => {
-            return reject(err);
-        }
-        img.src = url;
-    })
-}
-
 window.System.addEventListener('load', async (e) => {
     // Initialize screen lock 
     var init = true;
-    var now = new Date();
-    var leftToUpdateTime = (60 - now.getSeconds()) * 1000;
-    var leftToUpdateDate = (((24 - now.getHours()) * 60 * 60) - (now.getMinutes() * 60) - now.getSeconds()) * 1000;
 
-    screenLockTime.innerHTML = now.format("hh") < 13 ? now.format("hh:mm") : new Date(now.getTime() - 12 * 1000 * 60 * 60).format("hh:mm");
-    screenLockDate.innerHTML = now.toLocaleDateString(void 0, {
-        weekday: "long",
-        month: "long",
-        day: "numeric"
-    })
-
-    function updateTime() {
-        var now = new Date();
-        var leftToUpdateTime = (60 - now.getSeconds()) * 1000;
-        screenLockTime.innerHTML = now.format("hh") < 13 ? now.format("hh:mm") : new Date(now.getTime() - 12 * 1000 * 60 * 60).format("hh:mm");
-        setTimeout(updateTime, leftToUpdateTime);
-    }
-
-    function updateDate() {
-        var now = new Date();
-        var leftToUpdateDate = (((24 - now.getHours()) * 60 * 60) - ((60 - now.getMinutes()) * 60) - now.getSeconds()) * 1000;
-        screenLockDate.innerHTML = now.toLocaleDateString(void 0, {
-            weekday: "long",
-            month: "long",
-            day: "numeric"
-        })
-        setTimeout(updateDate, leftToUpdateDate);
-    }
-
-    if (window.modes.debug == true) {
-        console.log('Next update of time :', new Date(Date.now() + leftToUpdateTime))
-        console.log('Next update of date :', new Date(Date.now() + leftToUpdateDate))
-    }
-
-    setTimeout(updateTime, leftToUpdateTime);
-    setTimeout(updateDate, leftToUpdateDate);
-
-    screenLockMain.addEventListener('click', () => {
-        screenLock.classList.add('signin');
-    })
-
-    screenLockSigninButton.addEventListener('click', () => {
-        screenLockContainer.classList.remove('active');
-        screenLock.classList.remove('signin');
-        if (init == true) {
-            initTaskbar();
-            init = false;
-
-            kernelRuntime.runCode('await(()=>{return new Promise(_=>{})})();', {
-                __filename: 'C:/Winbows/System/kernel/kernel.js',
-                __dirname: 'C:/Winbows/System/kernel/'
-            })
-            kernelRuntime.process.title = 'System';
-
-            var command = getJsonFromURL()['command'];
-            if (command) {
-                ShellInstance.execCommand(command);
-            }
-        }
-    })
-
+    const now = Date.now();
     if (now - startLoadingTime < 1000) {
         await delay(1000 - (now - startLoadingTime));
     }
+
+    clearInterval(updateProgressId);
+    loadingProgressBar.style.width = '100%';
 
     window.System.desktop.update();
 
@@ -4068,24 +2260,5 @@ await (async () => {
     return;
 })();
 
-setStartStatus(true);
 
 window.System.triggerEvent('load');
-
-// new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.js', 'system').start();
-// new Process('C:/Winbows/SystemApps/Microhard.Winbows.Test/app.js', 'system').start();
-
-window.utils.formatBytes = formatBytes;
-
-function getStackTrace() {
-    var stack;
-
-    try {
-        throw new Error('');
-    } catch (error) {
-        stack = error.stack || '';
-    }
-
-    stack = stack.split('\n').map(function (line) { return line.trim(); });
-    return stack.splice(stack[0] == 'Error' ? 2 : 1);
-}

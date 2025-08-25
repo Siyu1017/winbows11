@@ -1,0 +1,23 @@
+.devtool-performance-monitor {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+}
+
+.devtool-performance-monitor-item {}
+
+.devtool-performance-monitor-header {
+    display: flex;
+    justify-content: space-between;
+    user-select: none;
+    -webkit-user-select: none;
+    padding-bottom: .375rem;
+    font-size: .875rem;
+}
+
+.devtool-performance-monitor-canvas {
+    width: 100%;
+    height: 96px;
+    border: 1px solid #ffffff35;
+}

@@ -34,7 +34,7 @@ for (let i in styles) {
         let style = document.createElement('link');
         style.rel = 'stylesheet';
         style.type = 'text/css';
-        style.href = await fs.getFileURL(utils.resolvePath(styles[i]));
+        style.href = await fs.getFileURL(path.resolve(styles[i]));
         document.head.appendChild(style);
         resolve();
     }))
@@ -42,7 +42,7 @@ for (let i in styles) {
 for (let i in Object.keys(fonts)) {
     promises.push(new Promise(async (resolve, reject) => {
         var key = Object.keys(fonts)[i];
-        var font = new FontFace(key, `url(${await fs.getFileURL(utils.resolvePath(fonts[key]))})`);
+        var font = new FontFace(key, `url(${await fs.getFileURL(path.resolve(fonts[key]))})`);
         await font.load();
         window.document.fonts.add(font);
         resolve();
@@ -152,13 +152,13 @@ if (pathInApp.length > 0 && typeof pathInApp == "string") {
 var sidebarElement = sidebar();
 appSidebar.appendChild(sidebarElement);
 
-// const sidebar = await import(await fs.getFileURL(utils.resolvePath('./components/sidebar.js'))).then(module => module.sidebar());
+// const sidebar = await import(await fs.getFileURL(path.resolve('./components/sidebar.js'))).then(module => module.sidebar());
 
 // const app = browserWindow.useFrameWork('pages@latest');
-// const router = app.useRouter(utils.resolvePath('./pages'));
+// const router = app.useRouter(path.resolve('./pages'));
 
 // router.on('change', async (page, details) => {
-//     app.render([utils.resolvePath('./components/sidebar.js'), page]);
+//     app.render([path.resolve('./components/sidebar.js'), page]);
 // })
 
 // app.listen(3000, () => {

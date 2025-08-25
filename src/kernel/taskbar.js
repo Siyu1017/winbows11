@@ -1,7 +1,7 @@
-import { IDBFS } from "../lib/fs";
-import WinUI from "../ui/winui";
-import { WRT } from "./WRT/kernel";
-import * as utils from "../utils";
+import { IDBFS } from "../lib/fs.js";
+import WinUI from "../ui/winui.js";
+import { WRT } from "./WRT/kernel.js";
+import * as utils from "../utils.js";
 
 const fs = IDBFS("C:/Winbows/System/kernel/kernel.js");
 

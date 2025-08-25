@@ -72,6 +72,8 @@ if ('serviceWorker' in navigator) {
     });
 };
 
+Date.prototype.format = function (fmt) { var o = { "M+": this.getMonth() + 1, "d+": this.getDate(), "h+": this.getHours(), "m+": this.getMinutes(), "s+": this.getSeconds(), "q+": Math.floor((this.getMonth() + 3) / 3), "S": this.getMilliseconds() }; if (/(y+)/.test(fmt)) { fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length)); } for (var k in o) { if (new RegExp("(" + k + ")").test(fmt)) { fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length))); } } return fmt; }
+
 // Screen size to css variable
 function updateScreenSize() {
     document.querySelector(':root').style.setProperty('--winbows-screen-width', window.innerWidth + 'px');
@@ -213,10 +215,49 @@ Object.defineProperty(window.modes, 'dev', {
     const scriptEl = document.createElement('script');
     let latestBuildData = null;
 
+    let showed = false;
+    function showErrorWindow(e) {
+        if (showed == true) return;
+        showed = true;
+        const error = document.createElement('div');
+        const errorWindow = document.createElement('div');
+        const errorHeader = document.createElement('div');
+        const errorContent = document.createElement('div');
+        const errorFooter = document.createElement('div');
+        const errorCloseButton = document.createElement('button');
+
+        errorHeader.innerHTML = 'An error occurred while loading Winbows11';
+        errorContent.innerHTML = e.message;
+        errorCloseButton.innerHTML = 'Close';
+
+        error.style = 'position: fixed;top: 0px;left: 0px;width: 100vw;height: var(--winbows-screen-height);display: flex;align-items: center;justify-content: center;background-color: rgba(0, 0, 0, 0.5);z-index: 99999;font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;color:#000;';
+        errorWindow.style = 'display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem 4rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px, -2rem + 100vw);width: 100%;max-height: min(calc(var(--winbows-screen-height) * 80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;';
+        errorHeader.style = 'font-size: 175%;font-weight: 600;margin: .5rem 0 1.5rem;';
+        errorFooter.style = 'display: flex;gap: .5rem;';
+        errorCloseButton.style = 'color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 1px solid rgb(0, 103, 192);margin-top: 1.5rem;font-family: inherit;font-weight: 600;min-width: 8rem;';
+
+        error.appendChild(errorWindow);
+        errorWindow.appendChild(errorHeader);
+        errorWindow.appendChild(errorContent);
+        errorWindow.appendChild(errorFooter);
+        errorFooter.appendChild(errorCloseButton);
+        document.body.appendChild(error);
+
+        errorCloseButton.addEventListener('click', () => {
+            error.remove();
+        })
+    }
+
+    scriptEl.onerror = showErrorWindow;
+
     if (!navigator.onLine) {
         if (System.rom.exists('KERNEL.js')) {
             scriptEl.textContent = System.rom.read('KERNEL.js');
-            document.head.appendChild(scriptEl);
+            try {
+                document.head.appendChild(scriptEl);
+            } catch (e) {
+                showErrorWindow(e);
+            }
         } else {
             console.error('Failed to read KERNEL.js from ROM.');
         }
@@ -227,7 +268,9 @@ Object.defineProperty(window.modes, 'dev', {
             scriptEl.textContent = kernelContent;
 
             System.rom.write('KERNEL.js', kernelContent);
-        } catch (e) { console.log(e); }
+        } catch (e) {
+            showErrorWindow(e);
+        }
 
         if (localBuildId != buildId && !getJsonFromURL()['embed']) {
             // needs to update
@@ -288,8 +331,8 @@ Object.defineProperty(window.modes, 'dev', {
             confirmButtons.appendChild(confirmCancel);
             confirmButtons.appendChild(confirmInstall);
 
-            confirmTitle.innerHTML = 'Confirm to install Winbows11?';
-            confirmDescription.innerHTML = `<div>Installing Winbows11 on your device can make it run more smoothly than using the Internet. The size of Winbows11 is about <span class='confirm-highlighted-text'>${buildSize}</span>, and the installation process takes <span class='confirm-highlighted-text'>${predictedInstallationTime}</span> to complete. </div><br><div>If you don’t want to install it, you can also just use the Internet to experience Winbows11! </div>`;
+            confirmTitle.innerHTML = 'Install Winbows11 in your browser?';
+            confirmDescription.innerHTML = `<div>Installing Winbows11 in the browser can make it run more smoothly than using the internet. Its size is about <span class='confirm-highlighted-text'>${buildSize}</span>, and the installation is expected to take around <span class='confirm-highlighted-text'>${predictedInstallationTime}</span>.</div><br><div>If you don't want to install it, you can also just use the Internet to experience Winbows11! </div>`;
             confirmTip.innerHTML = "<div>If you choose to install, we will save the necessary files for Winbows11 to <a href='https://developer.mozilla.org/zh-TW/docs/Web/API/IndexedDB_API/Using_IndexedDB' in the browser target='_blank' class='confirm-learn-link'>Indexed DB</a>. </div>";
             confirmCancel.innerHTML = 'Refuse';
             confirmInstall.innerHTML = 'Install';
@@ -309,13 +352,21 @@ Object.defineProperty(window.modes, 'dev', {
                 confirmCancel.classList.add('loading');
                 confirmCancel.innerHTML = '<svg class="winbows-loading-spinner" width="48" height="48" viewBox="0 0 16 16"><circle cx="8px" cy="8px" r="7px"></circle></svg>';
                 confirmCancel.disabled = true;
-                document.head.appendChild(scriptEl);
+                try {
+                    document.head.appendChild(scriptEl);
+                } catch (e) {
+                    showErrorWindow(e);
+                }
             })
             confirmInstall.addEventListener('click', () => {
                 location.href = `./install.html?timestamp=${new Date().getTime()}`;
             })
         } else {
-            document.head.appendChild(scriptEl);
+            try {
+                document.head.appendChild(scriptEl);
+            } catch (e) {
+                showErrorWindow(e);
+            }
         }
     }
 })();

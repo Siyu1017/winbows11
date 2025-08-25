@@ -1,7 +1,7 @@
-import { fsUtils } from "../../lib/fs";
-import WinUI from "../../ui/winui";
-import { WRT } from "./kernel";
-import * as utils from "../../utils";
+import WinUI from "../../ui/winui.js";
+import { WRT } from "./kernel.js";
+import * as utils from "../../utils.js";
+import { IDBFS, fsUtils } from "../../lib/fs.js";
 
 const fs = IDBFS("~WRT");
 
@@ -256,6 +256,7 @@ async function BrowserWindow(path, ctx) {
                     text: "Minimize",
                     disabled: config.minimizable == false,
                     action: () => {
+                        minimize();
                         // update icon status
                     },
                 }, {
@@ -517,7 +518,6 @@ async function BrowserWindow(path, ctx) {
 
         (async () => {
             var url = await fs.getFileURL(icon);
-            await loadImage(url);
             toolbarIcon.style.backgroundImage = `url(${url})`;
         })();
 
@@ -1398,8 +1398,10 @@ async function BrowserWindow(path, ctx) {
 
     createBrowserWindow.prototype._ = '';
 
-    return { create: createBrowserWindow, setPromise: (rs, rj) => {
-        resolve = rs;
-        reject = rj;
-    }};
+    return {
+        create: createBrowserWindow, setPromise: (rs, rj) => {
+            resolve = rs;
+            reject = rj;
+        }
+    };
 }

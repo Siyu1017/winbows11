@@ -1,26 +1,14 @@
-const express = require("express");
-const app = express();
-const fs = require("fs");
+import express from "express";
+import { fileURLToPath } from "url";
+import path from "path";
 
-const devices = {};
+const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(express.json());
-
-app.use((req, res, next) => {
-    if (!devices[req.headers['user-agent']]) {
-        devices[req.headers['user-agent']] = [];
-    }
-    devices[req.headers['user-agent']].push(req.url);
-    fs.writeFile(`./logs/devices/${btoa(req.headers['user-agent'])}.txt`, `${req.headers['user-agent']}\n${devices[req.headers['user-agent']].join('\n')}`, function (err) {
-        if (err) {
-            console.log(err)
-        }
-    })
-    next();
-})
-
 app.use(express.static(__dirname), (req, res, next) => {
-    res.status(404).sendFile(__dirname + '/404.html');
+    res.status(404).sendFile('/404.html', { root: __dirname });
 })
 
 app.listen(3000, function () {

@@ -1,11 +1,11 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 ; (async () => {
-    var editor = await fs.getFileURL(utils.resolvePath('./editor.html'));
+    var editor = await fs.getFileURL(path.resolve('./editor.html'));
     var filePath = datas.file || 'C:/Program Files/VSCode/window.js';
     var fileBlob = await fs.readFile(filePath);
     var fileType = fileBlob.type;

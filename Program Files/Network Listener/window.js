@@ -9,7 +9,7 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 var requests = [];
@@ -653,7 +653,7 @@ class Network {
         this.detailContent.querySelector('[data-element="network-response"]').appendChild(responseViewer.container);
 
         if (payloadViewer.isJson == true) {
-            var url = utils.resolvePath(`./saved/payloads/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
+            var url = path.resolve(`./saved/payloads/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
             var openWith = document.createElement('button');
             openWith.className = 'btn';
             openWith.innerHTML = `Open with JSON Viewer<!--span style="font-size: 12px;
@@ -677,7 +677,7 @@ class Network {
             this.detailContent.querySelector('[data-element="network-payload"]').appendChild(openWith);
         }
         if (responseViewer.isJson == true) {
-            var url = utils.resolvePath(`./saved/responses/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
+            var url = path.resolve(`./saved/responses/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
             var openWith = document.createElement('button');
             openWith.className = 'btn';
             openWith.innerHTML = `Open with JSON Viewer<!--span style="font-size: 12px;
