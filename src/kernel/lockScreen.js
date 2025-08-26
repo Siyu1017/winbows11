@@ -101,13 +101,14 @@ screenLockMain.addEventListener('click', () => {
     screenLock.classList.add('signin');
 })
 
+let initFn = () => { };
 screenLockSigninButton.addEventListener('click', () => {
     screenLockContainer.classList.remove('active');
     screenLock.classList.remove('signin');
     if (init == true) {
         // initTaskbar();
         init = false;
-
+        initFn();
         /*
         kernelRuntime.runCode('await(()=>{return new Promise(_=>{})})();', {
             __filename: 'C:/Winbows/System/kernel/kernel.js',
@@ -121,3 +122,7 @@ screenLockSigninButton.addEventListener('click', () => {
         }*/
     }
 })
+
+export function setInitFn(fn) {
+    initFn = fn;
+}

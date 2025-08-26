@@ -3,6 +3,8 @@
     display: flex;
     flex-direction: column;
     gap: .75rem;
+    overflow: auto;
+    height: inherit;
 }
 
 .devtool-performance-monitor-item {}

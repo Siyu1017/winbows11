@@ -1,7 +1,9 @@
 import { fsUtils } from "../../../lib/fs.js";
 import { parseKeyValueArgs } from "../../../utils.js";
 import { tasklist } from "../kernel.js";
-import { terminalTable } from "./utils.js";
+import { parseURI, terminalTable } from "./utils.js";
+import { appRegistry } from "../../appRegistry.js";
+import { WRT } from "../kernel.js";
 
 class CommandRegistry {
     constructor() {
@@ -279,8 +281,32 @@ commandRegistry.register('tasklist', (_, shell) => {
     return true;
 })
 
-commandRegistry.register('taskkill', ({ args}, shell) => {
-    
+commandRegistry.register('taskkill', ({ args }, shell) => {
+
+})
+
+commandRegistry.register('start', async ({ args, shell }) => {
+    const uri = parseURI(args[0]);
+    if (!uri.scheme) {
+        shell.stderr.write(`Invalid URI: ${args[0]}\n`);
+        return false;
+    }
+
+    const app = appRegistry.getInfo(uri.scheme);
+    if (!app || !app.script) {
+        shell.stderr.write(`Can not found file ${uri.scheme}.\n`);
+        return false;
+    }
+
+    try {
+        const wrt = new WRT();
+        const result = await wrt.runFile(app.script);
+        shell.stdout.write(result.evaluation + '\n');
+        return true;
+    } catch (e) {
+        shell.stderr.write(e.message + '\n');
+        return false;
+    }
 })
 
 // Set env key

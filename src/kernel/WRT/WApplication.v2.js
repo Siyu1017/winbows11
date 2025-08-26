@@ -4,6 +4,8 @@ import * as utils from "../../utils.js";
 import { IDBFS, fsUtils } from "../../lib/fs.js";
 import { EventEmitter } from "./utils/eventEmitter.js";
 import { appWrapper, screenElement } from "../viewport.js";
+import { appRegistry } from "../appRegistry.js";
+import { System } from "../system.js";
 
 const fs = IDBFS("~WRT");
 
@@ -31,7 +33,7 @@ function cubicBezier(p1x, p1y, p2x, p2y) {
 }
 
 function getMaxZIndex() {
-    return String(99999);
+    return String(0);
 }
 
 const events = {
@@ -187,8 +189,6 @@ export function createBrowserWindow(config = {
     theme: 'light',
     width: 800,
     height: 600,
-    x,
-    y,
     icon: '',
     title: 'App',
 }) {
@@ -395,7 +395,7 @@ export function createBrowserWindow(config = {
                     width: width,
                     height: height
                 }
-                AppWrapper.classList.add('moving');
+                appWrapper.classList.add('moving');
                 pointerDown = true;
                 if (mica == true) {
                     updateMica();
@@ -418,7 +418,7 @@ export function createBrowserWindow(config = {
                 if (pointerDown == false) return;
                 updateSizeAndData(e);
                 pointerDown = false;
-                AppWrapper.classList.remove('moving');
+                appWrapper.classList.remove('moving');
                 if (mica == true) {
                     updateMica();
                 }
@@ -472,7 +472,7 @@ export function createBrowserWindow(config = {
     closeImage.className = 'window-toolbar-button-icon';
 
     // Load icon image
-    fs.getFileURL(icon || window.appRegistry.getIcon(''))
+    fs.getFileURL(icon || appRegistry.getIcon(''))
         .then(url => {
             toolbarIcon.style.backgroundImage = `url(${url})`;
         });
@@ -573,7 +573,7 @@ export function createBrowserWindow(config = {
         closeButton.remove();
     }
 
-    let windowTheme = theme == 'system' ? window.System.theme.get() : theme == 'dark' ? 'dark' : 'light';
+    let windowTheme = theme == 'system' ? System.theme.get() : theme == 'dark' ? 'dark' : 'light';
     browserWindow.window.setAttribute('data-theme', windowTheme);
 
     events.start.forEach(event => {
@@ -664,12 +664,12 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
 
     function getSnapSide(x, y) {
         let side = '';
-        if (y >= AppWrapper.offsetHeight - snapMargin) {
+        if (y >= appWrapper.offsetHeight - snapMargin) {
             side += 'b';
         } else if (y <= snapMargin) {
             side += 't';
         }
-        if (x >= AppWrapper.offsetWidth - snapMargin) {
+        if (x >= appWrapper.offsetWidth - snapMargin) {
             side += 'r';
         } else if (x <= snapMargin) {
             side += 'l';
@@ -684,13 +684,13 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
     }
 
     function getSnapSize(side) {
-        var width = 'var(--winbows-screen-width)';
-        var height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
+        var width = 'var(--viewport-width)';
+        var height = 'calc(var(--viewport-height) - var(--taskbar-height))';
         if (side.includes('l') || side.includes('r')) {
-            width = 'calc(var(--winbows-screen-width) / 2)';
+            width = 'calc(var(--viewport-width) / 2)';
         }
         if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
-            height = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
+            height = 'calc((var(--viewport-height) - var(--taskbar-height)) / 2)';
         }
         return {
             width: width,
@@ -702,10 +702,10 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
         var left = '0';
         var top = '0';
         if (side.includes('r')) {
-            left = 'calc(var(--winbows-screen-width) / 2)';
+            left = 'calc(var(--viewport-width) / 2)';
         }
         if (side.includes('b')) {
-            top = 'calc((var(--winbows-screen-height) - var(--taskbar-height)) / 2)';
+            top = 'calc((var(--viewport-height) - var(--taskbar-height)) / 2)';
         }
         return {
             left: left,
@@ -714,13 +714,13 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
     }
 
     function getSnapPreviewSize(side) {
-        var width = AppWrapper.offsetWidth - snapMargin * 2;
-        var height = AppWrapper.offsetHeight - snapMargin * 2;
+        var width = appWrapper.offsetWidth - snapMargin * 2;
+        var height = appWrapper.offsetHeight - snapMargin * 2;
         if (side.includes('l') || side.includes('r')) {
-            width = AppWrapper.offsetWidth / 2 - snapMargin * 2;
+            width = appWrapper.offsetWidth / 2 - snapMargin * 2;
         }
         if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
-            height = AppWrapper.offsetHeight / 2 - snapMargin * 2;
+            height = appWrapper.offsetHeight / 2 - snapMargin * 2;
         }
         return {
             width: width,
@@ -732,10 +732,10 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
         var left = snapMargin;
         var top = snapMargin;
         if (side.includes('r')) {
-            left = AppWrapper.offsetWidth / 2 + snapMargin;
+            left = appWrapper.offsetWidth / 2 + snapMargin;
         }
         if (side.includes('b')) {
-            top = AppWrapper.offsetHeight / 2 + snapMargin;
+            top = appWrapper.offsetHeight / 2 + snapMargin;
         }
         return {
             left: left,
@@ -812,7 +812,7 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
                 pageY = window.innerHeight;
             }
             const side = getSnapSide(pageX, pageY);
-            AppWrapper.classList.add('moving');
+            appWrapper.classList.add('moving');
 
             container.style.transition = 'none';
             container.style.transform = `translate(${originalPosition.x + pageX - pointerPosition[0]}px,${originalPosition.y + pageY - pointerPosition[1]}px)`;
@@ -880,7 +880,7 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
             snapPreview.style.transition = 'none';
             snapPreview.classList.remove('active');
         }, 150)
-        AppWrapper.classList.remove('moving');
+        appWrapper.classList.remove('moving');
         if (snapSide != '') {
             if (snapSide.includes('t') && snapSide.includes('f')) {
                 maximizeWindow();
@@ -1006,8 +1006,8 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
         isMaximized = true;
         container.setAttribute('data-maximized', 'true');
         container.style.transform = `translate(0px,0px)`;
-        // hostElement.style.width = 'var(--winbows-screen-width)';
-        // hostElement.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
+        // hostElement.style.width = 'var(--viewport-width)';
+        // hostElement.style.height = 'calc(var(--viewport-height) - var(--taskbar-height))';
 
         if (animation == true) {
             container.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
@@ -1021,8 +1021,8 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
             browserWindow.window.style.transition = 'none';
         }
 
-        browserWindow.window.style.width = 'var(--winbows-screen-width)';
-        browserWindow.window.style.height = 'calc(var(--winbows-screen-height) - var(--taskbar-height))';
+        browserWindow.window.style.width = 'var(--viewport-width)';
+        browserWindow.window.style.height = 'calc(var(--viewport-height) - var(--taskbar-height))';
         browserWindow.window.style.borderRadius = '0';
         maximizeImage.style.backgroundImage = `url(${icons.maximize})`;
         updateMica()

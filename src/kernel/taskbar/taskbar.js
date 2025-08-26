@@ -1,6 +1,9 @@
 import { EventEmitter } from "../WRT/utils/eventEmitter.js";
 import WinUI from "../../ui/winui.js";
+import * as utils from "../../utils.js";
+import { apis } from "../kernelRuntime.js";
 
+const { ShellInstance, process } = apis;
 const eventEmitter = new EventEmitter();
 
 function on(...args) {
@@ -21,7 +24,11 @@ const taskbarMenu = WinUI.contextMenu([
         icon: "diagnostic",
         text: "Task Manager",
         action: () => {
-            window.System.Shell('run taskmgr');
+            new ShellInstance(process).execCommand('taskmgr').then(res => {
+                console.log(res);
+            }).catch(e => {
+                console.error(e);
+            })
         }
     }, {
         type: "separator"
@@ -30,7 +37,11 @@ const taskbarMenu = WinUI.contextMenu([
         icon: "settings",
         text: "Taskbar Settings",
         action: () => {
-            window.System.Shell('run settings:/personalization/taskbar');
+            new ShellInstance(process).execCommand('start settings://personalization/taskbar').then(res => {
+                console.log(res);
+            }).catch(e => {
+                console.error(e);
+            })
         },
     },
 ])

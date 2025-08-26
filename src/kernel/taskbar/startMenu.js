@@ -129,7 +129,6 @@ on('pointerdown', (e) => {
 })
 
 on('pointerdown', (e) => {
-    if (!iconRepository.start) return;
     if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || powerMenu.container.contains(e.target)) return;
     startMenuContainer.classList.remove('active');
 })

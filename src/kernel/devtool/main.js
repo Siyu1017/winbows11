@@ -38,12 +38,6 @@ export default function Devtool() {
         content: performanceMonitor.container,
         closable: false
     })
-    const processesTab = tabview.add({
-        id: 'processes',
-        title: 'Processes',
-        content: document.createElement('div'),
-        closable: false
-    })
     const storageTab = tabview.add({
         id: 'storage',
         title: 'Storage',

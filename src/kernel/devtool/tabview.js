@@ -42,11 +42,31 @@ export class Tabview extends EventEmitter {
         this.tabsContainer.appendChild(this.slider);
         this.container.appendChild(this.itemContainer);
 
+        this.tabsContainer.addEventListener("wheel", (e) => {
+            e.preventDefault(); // prevent vertical scroll
+            this.tabsContainer.scrollLeft += e.deltaY; // scroll horizontally instead
+            this._updateTabsScroll();
+        });
+
         const observer = new ResizeObserver(() => {
             this.width = container.offsetWidth;
             this.tabsContainer.style.width = `${this.width}px`;
+            this._updateTabsScroll();
         });
         observer.observe(container);
+    }
+    _updateTabsScroll() {
+        if (this.tabsContainer.scrollWidth > this.tabsContainer.clientWidth) {
+            if (this.tabsContainer.scrollLeft == 0) {
+                this.tabsContainer.style.maskImage = `linear-gradient(to right,black 90%,transparent)`;
+            } else if (this.tabsContainer.scrollLeft + 1 >= this.tabsContainer.scrollWidth - this.tabsContainer.clientWidth) {
+                this.tabsContainer.style.maskImage = `linear-gradient(to right,transparent,black 10%)`;
+            } else {
+                this.tabsContainer.style.maskImage = `linear-gradient(to right,transparent,black 10%,black 90%,transparent)`;
+            }
+        } else {
+            this.tabsContainer.style.maskImage = `none`;
+        }
     }
     add(tab) {
         const title = tab?.title ?? `Tab${this.tabs.length + 1}`;
@@ -67,6 +87,7 @@ export class Tabview extends EventEmitter {
         itemEl.appendChild(tab.content);
         this.itemContainer.appendChild(itemEl);
 
+        this._updateTabsScroll();
 
         const onSelect = () => {
             if (this.selected == id) return;

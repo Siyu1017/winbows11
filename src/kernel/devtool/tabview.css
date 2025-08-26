@@ -12,13 +12,21 @@
     user-select: none;
     -webkit-user-select: none;
     -webkit-user-drag: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overflow-y: hidden;
+    white-space: nowrap;
+    transition: mask-image .1s ease-in-out;
+}
+
+.devtool-tabview-tabs-container::-webkit-scrollbar-thumb,
+.devtool-tabview-tabs-container::-webkit-scrollbar-track,
+.devtool-tabview-tabs-container::-webkit-scrollbar {
+    display: none;
 }
 
 .devtool-tabview-tabs {
     height: inherit;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    overflow-y: hidden;
 }
 
 .devtool-tabview-tab {
@@ -64,7 +72,7 @@
 .devtool-tabview-item {
     display: none;
     width: 100%;
-    height: -webkit-fill-available;
+    height: 100%;
 }
 
 .devtool-tabview-item.active {

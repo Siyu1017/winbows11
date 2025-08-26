@@ -6,6 +6,7 @@ import { OutputStream } from "../utils/outputStream.js";
 import { EventEmitter } from "../utils/eventEmitter.js";
 import { generateEnv } from "../process.js";
 import { WRT } from "../kernel.js";
+import { appRegistry } from "../../appRegistry.js";
 
 const reservedEnvKeys = Object.keys(generateEnv());
 const _queue = new WeakMap();
@@ -122,10 +123,32 @@ export class ShellInstance extends EventEmitter {
                     }
                 }
 
+                const app = appRegistry.getInfo(cmdName);
+                if (app && app.script) {
+                    const wrt = new WRT(WRT.defaultCwd);
+
+                    try {
+                        const result = await wrt.runFile(app.script);
+                        if (result.evaluation != null) {
+                            this.stdout.write(result.evaluation + '\n');
+                        }
+
+                        if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
+                            const end = performance.now();
+                            this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
+                        }
+                        resolve(result);
+                    } catch (err) {
+                        this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
+                        reject(err);
+                    }
+                    continue;
+                }
+
                 if (!handler) {
                     const err = `'${cmdName}' is not recognized as an internal or external command, operable program or batch file.\n`;
                     this.stderr.write(err);
-                    resolve(err);
+                    reject(err);
                     continue;
                 }
 
