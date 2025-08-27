@@ -1,3 +1,6 @@
+document.body.innerHTML = '';
+document.body.style.background = 'transparent';
+
 // Root element
 const root = document.createElement('div');
 root.className = 'root';
