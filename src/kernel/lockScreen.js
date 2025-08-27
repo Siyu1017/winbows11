@@ -15,7 +15,6 @@ screenLockBackground.className = 'screen-lock-background';
 screenLockMain.className = 'screen-lock-main';
 screenLockSignin.className = 'screen-lock-signin';
 
-root.appendChild(screenLockContainer);
 screenLockContainer.appendChild(screenLock);
 screenLock.appendChild(screenLockBackground);
 screenLock.appendChild(screenLockMain);
@@ -52,8 +51,15 @@ try {
     fs.getFileURL('C:/Winbows/icons/user.png').then(url => {
         screenLockSigninAvatar.style.backgroundImage = `url(${url})`;
     })
-    fs.getFileURL('C:/Winbows/bg/img100.jpg').then(url => {
-        screenLockBackground.style.backgroundImage = `url(${url})`;
+    await fs.getFileURL('C:/Winbows/bg/img100.jpg').then(url => {
+        if (!url) {
+            screenLockBackground.style.backgroundImage = 'linear-gradient(to right, #000)';
+        } else {
+            screenLockBackground.style.backgroundImage = `url(${url})`;
+        }
+    }).catch(err => {
+        screenLockBackground.style.backgroundImage = 'linear-gradient(to right, #000)';
+        console.error(err);
     })
 } catch (e) {
     console.error('Error loading image:', e);
@@ -123,6 +129,11 @@ screenLockSigninButton.addEventListener('click', () => {
     }
 })
 
-export function setInitFn(fn) {
+function setInitFn(fn) {
     initFn = fn;
+}
+
+export {
+    screenLockContainer,
+    setInitFn
 }

@@ -1,91 +1,127 @@
+import { getScheme } from "./WRT/shell/utils.js";
+import { fsUtils } from "../lib/fs.js";
+
+function generateAppSeed({ appName, basePath, contentPath }) {
+    let seed = null;
+
+    const nAppName = getScheme(appName);
+    const nBasePath = fsUtils.normalize(basePath || '');
+    const nContentPath = fsUtils.normalize(contentPath || '');
+
+    if (nAppName) {
+        seed = nAppName;
+        if (nBasePath) seed += '|' + nBasePath;
+    } else if (nBasePath) {
+        seed = nBasePath;
+    } else if (nContentPath) {
+        seed = nContentPath;
+    } else {
+        seed = 'tmp-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    return seed;
+}
+
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return 'app-' + Math.abs(hash).toString(36);
+}
+
+function generateAppId({ appName, basePath, contentPath }) {
+    const seed = generateAppSeed({ appName, basePath, contentPath });
+    return simpleHash(seed);
+}
+
+const defaultData = {
+
+}
 const appRegistry = {
     apps: {
         'explorer': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/',
             icon: 'C:/Winbows/icons/folders/explorer.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wrt',
-            configurable: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/configurable.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wrt',
+            configScript: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/configurable.wrt'
         },
         'edge': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/',
             icon: 'C:/Winbows/icons/applications/tools/edge.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wrt'
         },
         'edgebeta': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/',
             icon: 'C:/Winbows/icons/applications/tools/edgebeta.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wrt'
         },
         'store': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/',
             icon: 'C:/Winbows/icons/applications/novelty/store2.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wrt'
         },
         'cmd': {
-            path: 'C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/',
+            basePath: 'C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/',
             icon: 'C:/Winbows/icons/applications/novelty/terminal.ico',
-            script: 'C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/app.wrt'
+            entryScript: 'C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/app.wrt'
         },
         'notepad': {
-            path: 'C:/Program Files/Notepad/',
+            basePath: 'C:/Program Files/Notepad/',
             icon: 'C:/Winbows/icons/applications/novelty/notepad.ico',
-            script: 'C:/Program Files/Notepad/app.wrt'
+            entryScript: 'C:/Program Files/Notepad/app.wrt'
         },
         'calculator': {
-            path: 'C:/Program Files/Calculator/',
+            basePath: 'C:/Program Files/Calculator/',
             icon: 'C:/Winbows/icons/applications/novelty/calculator.ico',
-            script: 'C:/Program Files/Calculator/app.wrt'
+            entryScript: 'C:/Program Files/Calculator/app.wrt'
         },
         'paint': {
-            path: 'C:/Program Files/Paint/',
+            basePath: 'C:/Program Files/Paint/',
             icon: 'C:/Winbows/icons/applications/novelty/paint.ico',
-            script: 'C:/Program Files/Paint/app.wrt'
+            entryScript: 'C:/Program Files/Paint/app.wrt'
         },
         'info': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/',
             icon: 'C:/Winbows/icons/emblems/info.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/app.wrt',
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.Info/app.wrt',
             autoExecute: true
         },
         'code': {
-            path: 'C:/Program Files/VSCode/',
+            basePath: 'C:/Program Files/VSCode/',
             icon: 'C:/Winbows/icons/applications/office/code.ico',
-            script: 'C:/Program Files/VSCode/app.wrt'
+            entryScript: 'C:/Program Files/VSCode/app.wrt'
         },
         'taskmgr': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr',
             icon: 'C:/Winbows/icons/applications/tools/taskmanager.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr/app.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.Taskmgr/app.wrt'
         },
         'settings': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings',
             icon: 'C:/Winbows/icons/applications/tools/settings.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings/app.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.Settings/app.wrt'
         },
         'fpsmeter': {
-            path: 'C:/Program Files/FPS Meter/',
+            basePath: 'C:/Program Files/FPS Meter/',
             icon: 'C:/Program Files/FPS Meter/favicon.ico',
-            script: 'C:/Program Files/FPS Meter/app.wrt'
+            entryScript: 'C:/Program Files/FPS Meter/app.wrt'
         },
         'photos': {
-            path: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos',
+            basePath: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos',
             icon: 'C:/Winbows/icons/applications/novelty/photos.ico',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.wrt'
+            entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.wrt'
         },
         'network-listener': {
-            path: 'C:/Program Files/Network Listener/',
+            basePath: 'C:/Program Files/Network Listener/',
             icon: 'C:/Winbows/icons/files/program.ico',
-            script: 'C:/Program Files/Network Listener/app.wrt'
+            entryScript: 'C:/Program Files/Network Listener/app.wrt'
         },
         'json-viewer': {
-            path: 'C:/Program Files/JSON Viewer/',
+            basePath: 'C:/Program Files/JSON Viewer/',
             icon: 'C:/Program Files/JSON Viewer/json-viewer.svg',
-            script: 'C:/Program Files/JSON Viewer/app.wrt'
-        },
-        'notepad': {
-            path: 'C:/Program Files/Notepad/',
-            icon: 'C:/Program Files/Notepad/favicon.ico',
-            script: 'C:/Program Files/Notepad/app.wrt'
+            entryScript: 'C:/Program Files/JSON Viewer/app.wrt'
         }
     },
     install: () => { },
@@ -98,29 +134,23 @@ const appRegistry = {
         return appRegistry.apps[name];
     },
     getIcon: (path) => {
-        var icon = 'C:/Winbows/icons/files/program.ico';
-        Object.values(appRegistry.apps).forEach(app => {
-            // console.log(app.path, app.icon);
-            if (path.startsWith(app.path)) {
-                icon = app.icon || 'C:/Winbows/icons/files/program.ico';
-            }
-        })
-        return icon;
+        const app = Object.values(appRegistry.apps).find(a => path.startsWith(a.basePath));
+        return app?.icon || 'C:/Winbows/icons/files/program.ico';
     },
     getApp: (path) => {
-        var app = {};
-        Object.values(appRegistry.apps).forEach((current, i) => {
-            // console.log(current.path);
-            if (path.startsWith(current.path)) {
-                app = current;
-                app.name = Object.keys(appRegistry.apps)[i];
-            }
-        })
-        return app;
+        const keys = Object.keys(appRegistry.apps);
+        const app = Object.values(appRegistry.apps).find(a => path.startsWith(a.basePath));
+        if (!app) return {};
+        return { ...app, name: keys.find(k => appRegistry.apps[k] === app) };
     },
-    exists: (name) => {
-        return !!appRegistry.apps[name] || appRegistry.getApp(name) != {};
-    }
+    exists: (name) => !!appRegistry.apps[name] || Object.keys(appRegistry.apps).some(k => appRegistry.apps[k].path === name)
 }
+
+// Initialize
+Object.keys(appRegistry.apps).forEach(appName => {
+    const app = appRegistry.apps[appName];
+    if (!app.appId) app.appId = generateAppId(appName, app.basePath, app.entryScript);
+    if (!app.appName) app.appName = appName;
+})
 
 export { appRegistry };

@@ -4,9 +4,11 @@ import { commandRegistry } from './WRT/shell/commandRegistry.js';
 import { apis } from './kernelRuntime.js';
 import { processes } from './WRT/process.js';
 import { WRT } from './WRT/kernel.js';
-import { desktopItems, desktop, root } from './viewport.js';
+import viewport from './viewport.js';
 import * as utils from "../utils.js";
 import WinUI from '../ui/winui.js';
+
+const { desktopItems, desktop, root } = viewport;
 
 const { fs, process, __dirname, __filename, requireAsync, module, exports, runtimeID, ShellInstance } = apis;
 const System = {}

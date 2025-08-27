@@ -3,13 +3,15 @@ import { WRT } from "./kernel.js";
 import * as utils from "../../utils.js";
 import { IDBFS, fsUtils } from "../../lib/fs.js";
 import { EventEmitter } from "./utils/eventEmitter.js";
-import { appWrapper, screenElement } from "../viewport.js";
+import viewport from "../viewport.js";
 import { appRegistry } from "../appRegistry.js";
 import { System } from "../system.js";
 
 const fs = IDBFS("~WRT");
+const { appWrapper, screenElement } = viewport;
 
 let browserWindowPosition = {};
+export let maxZIndex = 0;
 
 const snapPreview = document.createElement('div');
 snapPreview.className = 'browser-window-snap-preview';
@@ -248,8 +250,8 @@ export function createBrowserWindow(config = {
 
     let width = config.width;
     let height = config.height;
-    let x = (config.x == 'center' || !config.x) ? window.innerWidth / 2 - width / 2 : config.x;
-    let y = (config.y == 'center' || !config.y) ? window.innerHeight / 2 - height / 2 : config.y;
+    let x = (config.x == 'center' || !config.x) ? viewport.width / 2 - width / 2 : config.x;
+    let y = (config.y == 'center' || !config.y) ? viewport.height / 2 - height / 2 : config.y;
     let icon = config.icon;
     let title = config.title;
 
@@ -266,6 +268,8 @@ export function createBrowserWindow(config = {
     resizerContainer.className = 'browser-window-resizers';
     windowContent.className = 'browser-window-content';
 
+    maxZIndex++;
+    container.style.zIndex = maxZIndex;
     container.style.transition = 'none';
     container.style.transform = `translate(${x}px,${y}px)`;
 
@@ -587,8 +591,20 @@ export function createBrowserWindow(config = {
     })
 
     container.addEventListener('pointerdown', (e) => {
-        // ICON.focus(windowID);
+        eventEmitter._emit('focus');
     })
+
+    function onFocus() {
+        maxZIndex++;
+        container.style.zIndex = maxZIndex;
+        container.style.pointerEvents = 'all';
+        container.style.visibility = 'visible';
+        windowContent.style.pointerEvents = 'unset';
+    }
+
+    function onBlur() {
+
+    }
 
     function animate({
         from,
@@ -743,6 +759,7 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
         }
     }
 
+    // Moving
     function handleStartMoving(e) {
         if (toolbarButtons.contains(e.target)) return;
         for (const element of immovableElements) {
@@ -754,13 +771,13 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
         var pageX = pointer.x, pageY = pointer.y;
         if (pageX < 0) {
             pageX = 0;
-        } else if (pageX > window.innerWidth) {
-            pageX = window.innerWidth;
+        } else if (pageX > viewport.width) {
+            pageX = viewport.width;
         }
         if (pageY < 0) {
             pageY = 0;
-        } else if (pageY > window.innerHeight) {
-            pageY = window.innerHeight;
+        } else if (pageY > viewport.height) {
+            pageY = viewport.height;
         }
         pointerDown = true;
         pointerMoved = false;
@@ -803,13 +820,13 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
             }
             if (pageX < 0) {
                 pageX = 0;
-            } else if (pageX > window.innerWidth) {
-                pageX = window.innerWidth;
+            } else if (pageX > viewport.width) {
+                pageX = viewport.width;
             }
             if (pageY < 0) {
                 pageY = 0;
-            } else if (pageY > window.innerHeight) {
-                pageY = window.innerHeight;
+            } else if (pageY > viewport.height) {
+                pageY = viewport.height;
             }
             const side = getSnapSide(pageX, pageY);
             appWrapper.classList.add('moving');
@@ -832,7 +849,7 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
                     var size = getSnapPreviewSize(side);
                     var position = getSnapPreviewPosition(side);
                     snapPreview.style.transition = 'all .15s ease-in-out';
-                    snapPreview.style.zIndex = container.style.zIndex || getMaxZIndex();
+                    snapPreview.style.zIndex = container.style.zIndex || maxZIndex;
                     snapPreview.style.left = position.left + 'px';
                     snapPreview.style.top = position.top + 'px';
                     snapPreview.style.width = size.width + 'px';
@@ -910,13 +927,13 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
             }
             if (pageX < 0) {
                 pageX = 0;
-            } else if (pageX > window.innerWidth) {
-                pageX = window.innerWidth;
+            } else if (pageX > viewport.width) {
+                pageX = viewport.width;
             }
             if (pageY < 0) {
                 pageY = 0;
-            } else if (pageY > window.innerHeight) {
-                pageY = window.innerHeight;
+            } else if (pageY > viewport.height) {
+                pageY = viewport.height;
             }
             x = originalPosition.x + pageX - pointerPosition[0];
             y = originalPosition.y + pageY - pointerPosition[1];
@@ -939,7 +956,7 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
         if (mica == true) {
             requestAnimationFrame(() => {
                 const rect = container.getBoundingClientRect();
-                micaElement.style.clipPath = `inset(${rect.top + 1}px ${window.innerWidth - rect.right + 1}px ${window.innerHeight - rect.bottom + 1}px ${rect.left + 1}px)`;
+                micaElement.style.clipPath = `inset(${rect.top + 1}px ${viewport.width - rect.right + 1}px ${viewport.height - rect.bottom + 1}px ${rect.left + 1}px)`;
                 micaElement.style.transform = `translate(${-rect.left}px,${-rect.top}px)`;
             });
         }
@@ -1045,6 +1062,9 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
             profile: 'window-close'
         });
         eventEmitter._emit('close');
+        setTimeout(() => {
+            container.remove();
+        }, 200);
     }
 
     function changeTitle(title = 'App') {
@@ -1390,6 +1410,11 @@ ${animationData.from.scaleY + (animationData.to.scaleY - animationData.from.scal
 
         return { Tab, on };
     }
+
+    eventEmitter.on('focus', onFocus);
+    eventEmitter.on('blur', onBlur);
+
+    onFocus();
 
     return {
         shadowRoot,

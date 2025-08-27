@@ -6,7 +6,8 @@ document.head.appendChild(style);
 
 ; (async () => {
     var editor = await fs.getFileURL(path.resolve('./editor.html'));
-    var filePath = datas.file || 'C:/Program Files/VSCode/window.js';
+    var filePath = this?.uri?.path || 'C:/Program Files/VSCode/window.js';
+    console.log(filePath)
     var fileBlob = await fs.readFile(filePath);
     var fileType = fileBlob.type;
 
@@ -27,7 +28,7 @@ document.head.appendChild(style);
     document.body.appendChild(iframe);
     document.body.appendChild(loading);
 
-    console.log(datas)
+    console.log(this.path)
 
     iframe.onload = async () => {
         loading.remove();

@@ -204,3 +204,7 @@ export function getImageTheme(img) {
         return 'dark';
     }
 }
+
+export function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

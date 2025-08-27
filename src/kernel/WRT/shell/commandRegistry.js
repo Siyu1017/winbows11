@@ -285,7 +285,7 @@ commandRegistry.register('taskkill', ({ args }, shell) => {
 
 })
 
-commandRegistry.register('start', async ({ args, shell }) => {
+commandRegistry.register('start', async ({ args }, shell) => {
     const uri = parseURI(args[0]);
     if (!uri.scheme) {
         shell.stderr.write(`Invalid URI: ${args[0]}\n`);
@@ -293,14 +293,16 @@ commandRegistry.register('start', async ({ args, shell }) => {
     }
 
     const app = appRegistry.getInfo(uri.scheme);
-    if (!app || !app.script) {
+    if (!app || !app.entryScript) {
         shell.stderr.write(`Can not found file ${uri.scheme}.\n`);
         return false;
     }
 
     try {
         const wrt = new WRT();
-        const result = await wrt.runFile(app.script);
+        const result = await wrt.runFile(app.entryScript, {
+            uri
+        });
         shell.stdout.write(result.evaluation + '\n');
         return true;
     } catch (e) {

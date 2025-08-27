@@ -174,7 +174,7 @@ Object.defineProperty(window.modes, 'dev', {
                 var warningDescription = document.createElement("div");
                 var warningContinue = document.createElement("button");
 
-                warning.style = "position:fixed;top:0;left:0;width:100vw;height:var(--winbows-screen-height);display:flex;align-items:center;justify-content:center;background-color:rgba(0,0,0,.5);z-index:99999";
+                warning.style = "position:fixed;top:0;left:0;width:100vw;height:var(--winbows-screen-height);display:flex;align-items:center;justify-content:center;background-color:rgba(0,0,0,.5);z-index:999999999999";
                 warningWindow.style = "display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px,calc(100vw - 2rem));width: 100%;max-height: min(calc(var(--winbows-screen-height)*80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;";
 
                 warningIcon.style = "width:5rem;height:5rem;";
@@ -230,7 +230,7 @@ Object.defineProperty(window.modes, 'dev', {
         errorContent.innerHTML = e.message;
         errorCloseButton.innerHTML = 'Close';
 
-        error.style = 'position: fixed;top: 0px;left: 0px;width: 100vw;height: var(--winbows-screen-height);display: flex;align-items: center;justify-content: center;background-color: rgba(0, 0, 0, 0.5);z-index: 99999;font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;color:#000;';
+        error.style = 'position: fixed;top: 0px;left: 0px;width: 100vw;height: var(--winbows-screen-height);display: flex;align-items: center;justify-content: center;background-color: rgba(0, 0, 0, 0.5);z-index: 999999999999;font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;color:#000;';
         errorWindow.style = 'display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem 4rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px, -2rem + 100vw);width: 100%;max-height: min(calc(var(--winbows-screen-height) * 80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;';
         errorHeader.style = 'font-size: 175%;font-weight: 600;margin: .5rem 0 1.5rem;';
         errorFooter.style = 'display: flex;gap: .5rem;';
@@ -270,6 +270,17 @@ Object.defineProperty(window.modes, 'dev', {
             System.rom.write('KERNEL.js', kernelContent);
         } catch (e) {
             showErrorWindow(e);
+
+            if (System.rom.exists('KERNEL.js')) {
+                scriptEl.textContent = System.rom.read('KERNEL.js');
+                try {
+                    document.head.appendChild(scriptEl);
+                } catch (e) {
+                    showErrorWindow(e);
+                }
+            } else {
+                console.error('Failed to read KERNEL.js from ROM.');
+            }
         }
 
         if (localBuildId != buildId && !getJsonFromURL()['embed']) {

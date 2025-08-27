@@ -30,7 +30,6 @@ for (const mod of Object.values(builtinPackages)) {
 
 function codeWrapper(code, filename = "<anonymous>") {
     const fn = new Function(`return (async function() {\n${definitionCodes}\n${code}\n});\n//# sourceURL=${filename}`)();
-    Object.defineProperty(fn, 'name', { value: 'main' });
     return fn;
 }
 
@@ -98,6 +97,7 @@ class WinbowsNodejsRuntime {
         //this.proxyBrowserWindow = proxyBrowserWindow;
 
         this[process].on('exit', () => {
+            if (this[alive] == false) return;
             this[alive] = false;
             delete tasklist[this[runtimeID]];
             this.proxyTimeout.clearAll();
@@ -147,12 +147,33 @@ class WinbowsNodejsRuntime {
 
             this[fss].add(builtins.fs);
 
-            await codeWrapper(code, name).call({
-                ...builtins,
-                ...proxyAPIs,
-                ...limitedAPIs
-            });
-            this[modules][name] = module;
+            /*let startLineOffset = 0;
+            function setStartLineOffset(offset) {
+                startLineOffset = offset;
+            }*/
+            try {
+                //const fn = codeWrapper(`\n/*__CBO__*/this.setStartLineOffset?.((()=>{try{throw new Error("BASE_OFFSET");}catch(e){let m=e.stack.match(/:(\\d+):\\d+\\)?$/m);return m?parseInt(m[1],10):0;}})());this.setStartLineOffset=null;\n` + code, name);
+                const fn = codeWrapper(code, name);
+                await fn.call({
+                    // setStartLineOffset,
+                    ...builtins,
+                    ...proxyAPIs,
+                    ...limitedAPIs
+                });
+                this[modules][name] = module;
+            } catch (e) {
+                const stackLines = e.stack.split('\n');
+                /*
+                if (stackLines[1]) {
+                    stackLines[1] = stackLines[1].replace(/:(\d+):(\d+)/, (match, lineNum, colNum) => {
+                        const fixedLine = parseInt(lineNum, 10) - startLineOffset;
+                        return `:${fixedLine}:${colNum}`;
+                    });
+                }*/
+                this.proxyConsole.error(stackLines.join('\n'));
+                this.close(1);
+                return;
+            }
         }
         return this[modules][name].exports;
     }
@@ -308,8 +329,16 @@ class WinbowsNodejsRuntime {
 
         this[fss].add(builtins.fs);
 
+        let startLineOffset = 0;
+        function setStartLineOffset(offset) {
+            startLineOffset = offset;
+        }
+
         try {
-            const result = await codeWrapper(code, filePath).call({
+            const fn = codeWrapper(`\n/*__CBO__*/this.setStartLineOffset?.((()=>{try{throw new Error("BASE_OFFSET");}catch(e){let m=e.stack.match(/:(\\d+):\\d+\\)?$/m);return m?parseInt(m[1],10):0;}})());this.setStartLineOffset=null;\n` + code, filePath);
+
+            const result = await fn.call({
+                setStartLineOffset,
                 ...envParams,
                 ...builtins,
                 ...proxyAPIs,
@@ -331,7 +360,14 @@ class WinbowsNodejsRuntime {
                 });
             }
         } catch (e) {
-            this.proxyConsole.error(e);
+            const stackLines = e.stack.split('\n');
+            if (stackLines[1]) {
+                stackLines[1] = stackLines[1].replace(/:(\d+):(\d+)/, (match, lineNum, colNum) => {
+                    const fixedLine = parseInt(lineNum, 10) - startLineOffset;
+                    return `:${fixedLine}:${colNum}`;
+                });
+            }
+            this.proxyConsole.error(stackLines.join('\n'));
             this.close(1);
             return {
                 exitCode: 1,
@@ -397,7 +433,6 @@ class WinbowsNodejsRuntime {
     }
 
     close(code) {
-        this[alive] = false;
         this[process].exit(code);
     }
 

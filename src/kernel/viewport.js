@@ -1,13 +1,13 @@
 // Root element
-export const root = document.createElement('div');
+const root = document.createElement('div');
 root.className = 'root';
 document.body.appendChild(root);
 
 // Screen of winbows
-export const screenElement = document.createElement('div');
-export const background = document.createElement('div');
-export const backgroundImage = document.createElement('div');
-export const appWrapper = document.createElement('div');
+const screenElement = document.createElement('div');
+const background = document.createElement('div');
+const backgroundImage = document.createElement('div');
+const appWrapper = document.createElement('div');
 
 screenElement.className = 'screen';
 background.className = 'background';
@@ -20,8 +20,8 @@ screenElement.appendChild(appWrapper);
 background.appendChild(backgroundImage);
 
 // Desktop 
-export const desktop = document.createElement('div');
-export const desktopItems = document.createElement('div');
+const desktop = document.createElement('div');
+const desktopItems = document.createElement('div');
 
 desktop.className = 'desktop winui-no-background';
 desktopItems.className = 'desktop-items';
@@ -39,3 +39,19 @@ window.addEventListener('load', updateScreenSize);
 
 const observer = new ResizeObserver(updateScreenSize);
 observer.observe(root);
+
+export default {
+    root,
+    screenElement,
+    background,
+    backgroundImage,
+    appWrapper,
+    desktop,
+    desktopItems,
+    get width() {
+        return root.offsetWidth;
+    },
+    get height() {
+        return root.offsetHeight;
+    }
+}

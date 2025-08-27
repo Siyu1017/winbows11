@@ -1,28 +1,19 @@
-import { root, desktop, desktopItems, backgroundImage } from './viewport.js';
+import viewport from './viewport.js';
+import { loadingImage, loadingText, startLoadingTime, loadingContainer, loadingProgressBar, updateProgressId } from './loading.js';
 import { fsUtils } from '../lib/fs.js';
 import { System } from './system.js';
-import WinUI from '../ui/winui.js';
 import { WRT } from './WRT/kernel.js';
-import { setInitFn } from './lockScreen.js';
-
-//import BrowserWindow from './browserWindow.js';
-import { setWinbows } from './WRT/WApplication.v2.js';
+import { setInitFn, screenLockContainer } from './lockScreen.js';
 import { kernelRuntime, apis } from './kernelRuntime.js';
-import Devtool from './devtool/main.js';
-
+import Devtool from './devtool/devtool.js';
 import * as utils from '../utils.js';
 import taskbar from './taskbar/index.js';
-import "./lockScreen.js"
+import { appRegistry } from './appRegistry.js';
 
-
-
-//window.WinUI = WinUI;
-
+const { root, desktop, desktopItems, backgroundImage, screenElement } = viewport;
 const { fs, process, __dirname, __filename, requireAsync, module, exports, runtimeID, ShellInstance } = apis;
 
 window.kernelRuntime = kernelRuntime;
-
-window.workerModules = {};
 
 // Migration
 async function shouldMigrateFromOldDatabase() {
@@ -344,14 +335,10 @@ if (needsToMigrate) {
 }
 
 try {
-    const URLParams = getJsonFromURL();
+    const URLParams = utils.getJsonFromURL();
     fs.writeFile('C:/Winbows/System/.env/location/param.json', new Blob([JSON.stringify(URLParams)], {
         type: 'application/json'
     }))
-
-    if (URLParams['debug']) {
-
-    }
 
     // Simple console
     if (URLParams['logs'] || URLParams['output']) {
@@ -363,58 +350,6 @@ try {
 
 Devtool();
 
-const startLoadingTime = Date.now();
-
-// Loading
-const loadingContainer = document.createElement('div');
-const loadingImage = document.createElement('div');
-const loadingSpinner = window.modes.dev == true || window.needsUpdate == true ? document.createElement('div') : document.createElementNS("http://www.w3.org/2000/svg", "svg");
-const loadingTextContainer = document.createElement('div');
-const loadingTextShadowTop = document.createElement('div');
-const loadingTextShadowBottom = document.createElement('div');
-const loadingTextStrip = document.createElement('div');
-const loadingProgress = document.createElement('div');
-const loadingProgressBar = document.createElement('div');
-
-loadingContainer.className = 'winbows-loading active';
-loadingImage.className = 'winbows-loading-image';
-loadingTextContainer.className = 'winbows-loading-text-container';
-loadingTextShadowTop.className = 'winbows-loading-text-shadow-top';
-loadingTextShadowBottom.className = 'winbows-loading-text-shadow-bottom';
-loadingTextStrip.className = 'winbows-loading-text-strip';
-loadingContainer.appendChild(loadingImage);
-root.appendChild(loadingContainer);
-
-function loadingText(content) {
-    const loadingText = document.createElement('div');
-    loadingText.textContent = content;
-    loadingText.className = 'winbows-loading-text';
-    loadingTextStrip.appendChild(loadingText);
-    loadingTextStrip.scrollTo({
-        top: loadingTextStrip.scrollHeight,
-        behavior: "smooth"
-    })
-    return loadingText;
-}
-
-if (window.modes.dev == false && window.needsUpdate == false) {
-    loadingSpinner.setAttribute('class', 'winbows-loading-spinner');
-    loadingSpinner.setAttribute('width', 48);
-    loadingSpinner.setAttribute('height', 48);
-    loadingSpinner.setAttribute('viewBox', "0 0 16 16");
-    loadingSpinner.innerHTML = '<circle cx="8px" cy="8px" r="7px"></circle>';
-    loadingContainer.appendChild(loadingSpinner);
-} else {
-    loadingProgress.classList.add('winbows-loading-progress');
-    loadingProgressBar.classList.add('winbows-loading-progress-bar');
-    loadingContainer.appendChild(loadingTextContainer);
-    loadingTextContainer.appendChild(loadingTextShadowTop);
-    loadingTextContainer.appendChild(loadingTextShadowBottom);
-    loadingTextContainer.appendChild(loadingTextStrip);
-    loadingContainer.appendChild(loadingProgress);
-    loadingProgress.appendChild(loadingProgressBar);
-}
-
 try {
     fs.getFileURL('C:/Winbows/icons/applications/tools/start.ico').then(url => {
         loadingImage.style.backgroundImage = `url(${url})`;
@@ -423,31 +358,8 @@ try {
     console.error(e);
 }
 
-loadingText('Starting Winbows11...');
-
-let progress = 0;
-const updateProgressId = setInterval(function () {
-    progress += Math.random() * 1 + 0.2;
-    if (progress > 90) progress = 90;
-    loadingProgressBar.style.width = progress + '%';
-}, 200);
-
-// Lock panel
-
-
-// Functions
-
-function getJsonFromURL(url) {
-    if (!url) url = location.search;
-    var query = url.substr(1);
-    var result = {};
-    query.split("&").forEach(function (part) {
-        var item = part.split("=");
-        result[item[0]] = decodeURIComponent(item[1]);
-    });
-    return result;
-}
-
+// Lock screen
+root.appendChild(screenLockContainer);
 
 window.fileIcons = {
     getIcon: (path = '') => {
@@ -507,11 +419,6 @@ window.fileIcons = {
     }
 }
 
-window.Winbows = {};
-
-window.Components = {};
-window.Compilers = {};
-
 window.addEventListener('contextmenu', (e) => {
     e.preventDefault();
 })
@@ -543,19 +450,17 @@ const mimeTypes = {
     '.avi': 'video/x-msvideo',
     '.mov': 'video/quicktime'
 };
-
 function getMimeType(extension) {
     return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
 }
 
-var currentBackgroundImage;
-
+let currentBackgroundImage;
 window.getBackgroundImage = () => {
     return currentBackgroundImage;
 }
 window.setBackgroundImage = async (image = '') => {
     if (!image || image == currentBackgroundImage) return;
-    var stats = fs.stat(image);
+    const stats = fs.stat(image);
     if (stats.exists != true) {
         await fs.downloadFile(image).catch(err => {
             image = 'C:/Winbows/bg/img0.jpg';
@@ -564,9 +469,9 @@ window.setBackgroundImage = async (image = '') => {
     }
     currentBackgroundImage = image;
     localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
-    var url = await fs.getFileURL(currentBackgroundImage);
+    const url = await fs.getFileURL(currentBackgroundImage);
     document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
-    var img = new Image();
+    const img = new Image();
     img.src = url;
     img.onload = () => {
         var theme = utils.getImageTheme(img);
@@ -583,7 +488,11 @@ window.WinbowsUpdate = () => {
     location.href = './install.html';
 }
 
-await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
+try {
+    await window.setBackgroundImage(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
+} catch (e) {
+    console.error('Failed to set background image\n', e);
+}
 
 try {
     if (!fs.exists('C:/User/')) {
@@ -620,28 +529,20 @@ try {
     console.error(e);
 }
 
-
-
 //await BrowserWindow();
 /*
 const taskbar = await Taskbar();
 Winbows.Screen.appendChild(taskbar.taskbar);
 window.Winbows.Screen.appendChild(taskbar.startMenuContainer);*/
 
+screenElement.appendChild(taskbar.container);
 taskbar.pinApp('C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/app.wrt');
 //window.Taskbar.pinApp('C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wrt');
 await taskbar.preloadImage();
 
-
-
-
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-window.delay = delay;
-
 loadingText(`Almost done!`);
+clearInterval(updateProgressId);
+loadingProgressBar.style.width = '90%';
 
 await (async () => {
     try {
@@ -666,24 +567,30 @@ await (async () => {
 
     const now = Date.now();
     if (now - startLoadingTime < 1000) {
-        await delay(1000 - (now - startLoadingTime));
+        await utils.delay(1000 - (now - startLoadingTime));
     }
 
-    clearInterval(updateProgressId);
     loadingProgressBar.style.width = '100%';
 
     System.desktop.update();
 
-    // await delay(1000);
+    // await utils.delay(1000);
 
     // Remove loading 
     loadingContainer.classList.remove('active');
 
     setInitFn(async function () {
-        await delay(200);
+        await utils.delay(200);
 
         // Initialize Taskbar
         // window.Taskbar.init();
+
+        Object.values(appRegistry.apps).forEach(app => {
+            if (app.autoExecute == true) {
+                const wrt = new WRT();
+                wrt.runFile(app.entryScript);
+            }
+        })
 
         // Run terminal app test
         !(async () => {
@@ -721,7 +628,7 @@ await (async () => {
         }
     })();
 
-    console.log(kernelRuntime, System, window.Winbows)
+    console.log(kernelRuntime, System)
 
     // Run shell test
     !(async () => {

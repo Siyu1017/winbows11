@@ -1,3 +1,5 @@
+import URI from 'uri-js';
+
 export function terminalTable(term, head = [], config = {
     gap: 1,
     separator: '='
@@ -58,7 +60,9 @@ export function terminalTable(term, head = [], config = {
     }
 }
 
-export function parseURI(uri) {
+export const parseURI = URI.parse;
+
+function _parseURI(uri) {
     const result = {
         scheme: null,
         user: null,
@@ -71,9 +75,9 @@ export function parseURI(uri) {
     };
 
     // Extract scheme
-    const schemeMatch = uri.match(/^([A-Za-z][A-Za-z0-9+\-.]*):/);
-    if (!schemeMatch) throw new Error("Invalid or missing scheme");
-    result.scheme = schemeMatch[1];
+    const scheme = getScheme(uri);
+    if (!scheme) throw new Error("Invalid or missing scheme");
+    result.scheme = scheme;
 
     // Remove scheme from string
     let rest = uri.slice(result.scheme.length + 1);
@@ -131,4 +135,16 @@ export function parseURI(uri) {
     result.path = rest ? decodeURIComponent(rest) : null;
 
     return result;
+}
+
+export function getScheme(uri) {
+    if (typeof uri !== 'string') return null;
+    const idx = uri.indexOf(':');
+    if (idx === -1) return null;
+
+    const scheme = uri.slice(0, idx);
+    if (/^[A-Za-z]([A-Za-z0-9+\-.]*[A-Za-z0-9])?$/.test(scheme)) {
+        return scheme;
+    }
+    return null;
 }

@@ -77,6 +77,10 @@ export class ShellInstance extends EventEmitter {
         }
     }
 
+    getPwd() {
+        return fsUtils.normalize(this.root + this.pwd);
+    }
+
     async execCommand(command) {
         if (!this.active) return Promise.reject(new Error('Shell is not active'));
         return new Promise(async (resolve, reject) => {
@@ -124,20 +128,17 @@ export class ShellInstance extends EventEmitter {
                 }
 
                 const app = appRegistry.getInfo(cmdName);
-                if (app && app.script) {
+                if (app && app.entryScript) {
                     const wrt = new WRT(WRT.defaultCwd);
-
+                    
                     try {
-                        const result = await wrt.runFile(app.script);
-                        if (result.evaluation != null) {
-                            this.stdout.write(result.evaluation + '\n');
-                        }
+                        wrt.runFile(app.entryScript);
 
                         if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
                             const end = performance.now();
                             this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
                         }
-                        resolve(result);
+                        resolve();
                     } catch (err) {
                         this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
                         reject(err);
