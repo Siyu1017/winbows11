@@ -329,7 +329,9 @@ export function createBrowserWindow(config = {
     if (mica == true) {
         const observer = new ResizeObserver(updateMica);
         observer.observe(container);
-        window.addEventListener('resize', updateMica)
+        window.addEventListener('resize', updateMica);
+
+        container.classList.add('mica');
     }
 
     // Resizers
