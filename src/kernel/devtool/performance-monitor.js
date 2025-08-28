@@ -100,7 +100,7 @@ function createPerformanceMonitor(container, options = {}) {
                 return (1 - y / max) * chartHeight + topPadding;
             }
 
-            x = w - (now - dataBuffer[0].timestamp) * pxPerMs;
+            x = w - (now - dataBuffer[0].timestamp - dataUpdateInterval) * pxPerMs;
             path.moveTo(x, convertY(0));
             lastX = w + dataUpdateInterval * pxPerMs;
             lastY = convertY(dataBuffer[dataBuffer.length - 1].value);
@@ -243,6 +243,7 @@ if (performance.memory) {
         title: 'Used JS Heap Size',
         unit: 'MB',
         color: [175, 113, 255],
+        smooth: false,
         dataProvider: () => (performance.memory.usedJSHeapSize / 1024 / 1024).toFixed(1)
     }))
 }

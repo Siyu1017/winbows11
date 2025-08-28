@@ -109,6 +109,8 @@ function decompose2DMatrix(matrixStr) {
  * @returns 
  */
 export async function register(path, ctx) {
+    let resolve, reject, mainWindow = null;
+
     const app = {
         _cbs: {},
         on: (evt, cb) => {
@@ -118,6 +120,8 @@ export async function register(path, ctx) {
         executeAsync: async () => {
             app._cbs['ready']?.forEach((cb) => cb())
             return new Promise((rs, rj) => {
+                resolve = rs;
+                reject = rj;
                 //browserWindow.setPromise(rs, rj);
             });
         }
@@ -130,6 +134,13 @@ export async function register(path, ctx) {
             subProcess: true
         })
         ctx.windows.push(browserWindowObj);
+
+        if (mainWindow == null) {
+            mainWindow = browserWindowObj;
+            wrt.process.on('exit', () => {
+                resolve?.();
+            })
+        }
 
         async function load(path) {
             const filePath = fsUtils.resolve(ctx.__dirname, path);
@@ -186,21 +197,7 @@ export async function register(path, ctx) {
     return { app, BrowserWindow };
 }
 
-export function createBrowserWindow(config = {
-    resizable: true,
-    minimizable: true,
-    maximizable: true,
-    closable: true,
-    snappable: true,
-    fullscreenable: true,
-    mica: false,
-    showOnTop: false,
-    theme: 'light',
-    width: 800,
-    height: 600,
-    icon: '',
-    title: 'App',
-}) {
+export function createBrowserWindow(config = {}) {
     const eventEmitter = new EventEmitter();
 
     // Status
@@ -245,22 +242,22 @@ export function createBrowserWindow(config = {
     const taskbarIconElement = document.createElement('div');
 
     // Options
-    let resizable = config.resizable;
-    let minimizable = config.minimizable;
-    let maximizable = config.maximizable;
-    let closable = config.closable;
-    let snappable = config.snappable;
-    let fullscreenable = config.fullscreenable;
-    let mica = config.mica;
-    let showOnTop = config.showOnTop;
-    let theme = config.theme;
+    let resizable = config.resizable ?? true;
+    let minimizable = config.minimizable ?? true;
+    let maximizable = config.maximizable ?? true;
+    let closable = config.closable ?? true;
+    let snappable = config.snappable ?? true;
+    let fullscreenable = config.fullscreenable ?? true;
+    let mica = config.mica ?? false;
+    let showOnTop = config.showOnTop ?? false;
+    let theme = config.theme ?? 'light';
 
-    let width = config.width;
-    let height = config.height;
+    let width = config.width ?? 800;
+    let height = config.height ?? 600;
     let x = (config.x == 'center' || !config.x) ? viewport.width / 2 - width / 2 : config.x;
     let y = (config.y == 'center' || !config.y) ? viewport.height / 2 - height / 2 : config.y;
-    let icon = config.icon;
-    let title = config.title;
+    let icon = config.icon ?? '';
+    let title = config.title ?? 'App';
 
     if (!config.x && !config.y && browserWindowPosition['caller']) {
         // Restore previous position

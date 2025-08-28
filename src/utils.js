@@ -124,8 +124,8 @@ export function toNumber(val) {
 }
 
 export function getPointerPosition(e) {
-    let x = e.clientX;
-    let y = e.clientY;
+    let x = e.pageX;
+    let y = e.pageY;
     if (e.type.startsWith('touch')) {
         var touch = e.touches[0] || e.changedTouches[0];
         x = touch.pageX;

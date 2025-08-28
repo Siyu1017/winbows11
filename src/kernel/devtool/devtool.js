@@ -9,26 +9,94 @@ import { apis } from "../kernelRuntime.js";
 
 const { root } = viewport;
 const { ShellInstance, process } = apis;
+const events = {
+    "start": ["mousedown", "touchstart", "pointerdown"],
+    "move": ["mousemove", "touchmove", "pointermove"],
+    "end": ["mouseup", "touchend", "pointerup", "blur"]
+}
 
 export default function Devtool() {
     let side = 'right';
     let width = 700;
     let height = window.innerHeight;
 
+    let realWidth = width;
     if (width > window.innerWidth) {
-        width = window.innerWidth;
+        realWidth = window.innerWidth;
     }
-
-    root.style.width = `calc(100% - ${width}px)`;
+    root.style.width = `calc(100% - ${realWidth}px)`;
 
     const devContainer = document.createElement('div');
+    const resizer = document.createElement('div');
     const tabview = new Tabview(devContainer);
-    devContainer.className = 'winbows-dev-container winui-dark winui-no-background';
-    devContainer.style = `right: 0; top: 0; width: ${width}px; height: var(--winbows-screen-height);`;
+    devContainer.className = 'winbows-devtool-container winui-dark winui-no-background';
+    devContainer.style = `right: 0; top: 0; width: ${realWidth}px; height: var(--winbows-screen-height);`;
+    resizer.className = 'winbows-devtool-resizer';
+
     document.body.appendChild(devContainer);
+    devContainer.appendChild(resizer);
+
+    let pointerDown = false;
+    let startX = 0;
+    let orgWidth = 0;
+
+    function onStart(e) {
+        pointerDown = true;
+        startX = utils.getPointerPosition(e).x;
+        orgWidth = devContainer.offsetWidth;
+    }
+
+    function onDrag(e) {
+        if (pointerDown == false) return;
+        const x = utils.getPointerPosition(e).x;
+        if (side == 'right') {
+            width = orgWidth + (startX - x);
+        }
+
+        let realWidth = width;
+        if (width > window.innerWidth) {
+            realWidth = window.innerWidth;
+        }
+        devContainer.style.width = `${realWidth}px`;
+        root.style.width = `calc(100% - ${realWidth}px)`;
+        try {
+            document.getSelection()?.removeAllRanges();
+        } catch {};
+    }
+
+    function onEnd(e) {
+        if (pointerDown == false) return;
+        pointerDown = false;
+        let realWidth = width;
+        if (width > window.innerWidth) {
+            realWidth = window.innerWidth;
+        }
+        devContainer.width = `${realWidth}px`;
+        root.style.width = `calc(100% - ${realWidth}px)`;
+    }
+
+
+    events.start.forEach(event => {
+        resizer.addEventListener(event, onStart);
+    })
+    events.move.forEach(event => {
+        window.addEventListener(event, onDrag);
+    })
+    events.end.forEach(event => {
+        window.addEventListener(event, onEnd);
+    })
+
+    const observer = new ResizeObserver(() => {
+        let realWidth = width;
+        if (width > window.innerWidth) {
+            realWidth = window.innerWidth;
+        }
+        devContainer.style.width = `${realWidth}px`;
+        root.style.width = `calc(100% - ${realWidth}px)`;
+    });
+    observer.observe(document.body);
 
     const devtool = new WinbowsDevtool();
-
     const consoleTab = tabview.add({
         id: 'console',
         title: 'Console',
@@ -87,7 +155,7 @@ export default function Devtool() {
 
         const url = el.dataset.href;
         console.log('Clicked:', url);
-        
+
         const shell = new ShellInstance(process);
         shell.stderr.on('data', (data) => {
             console.error(data);

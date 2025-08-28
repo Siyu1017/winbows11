@@ -2079,7 +2079,7 @@ body {
     }
 }
 
-.winbows-dev-container {
+.winbows-devtool-container {
     position: fixed;
     z-index: 999999999;
     background: rgb(30, 30, 30);
@@ -2093,94 +2093,23 @@ body {
     max-height: var(--winbows-screen-height);
     height: var(--winbows-screen-height);
     cursor: default;
+    border-left: 1px solid #484848;
 }
 
-.winbows-dev-container *::selection {
+.winbows-devtool-container *::selection {
     background: rgb(184, 198, 255);
     color: #000;
 }
 
-.winbows-dev-dragbar {
-    width: inherit;
-    height: 1rem;
-}
-
-.winbows-dev-dragbar:before {
-    content: '';
-    mask-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWVsbGlwc2lzLWljb24gbHVjaWRlLWVsbGlwc2lzIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxIi8+PGNpcmNsZSBjeD0iMTkiIGN5PSIxMiIgcj0iMSIvPjxjaXJjbGUgY3g9IjUiIGN5PSIxMiIgcj0iMSIvPjwvc3ZnPg==);
-    mask-position: center;
-    mask-size: contain;
-    width: 1rem;
-    height: 1rem;
-    background-color: #fff;
-    display: block;
-    margin: auto;
-}
-
-div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before {
-    content: '';
-    width: 100%;
-    height: 1.5px;
-    display: block;
-    background: rgba(255, 255, 255, .1);
+.winbows-devtool-resizer {
     position: absolute;
-    top: 0;
     left: 0;
-}
-
-.winbows-dev-log {
-    position: relative;
-    padding: .25rem;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.winbows-dev-log.warn,
-.winbows-dev-log.error,
-.winbows-dev-log.info,
-.winbows-dev-log.other {
-    margin: .25rem 0;
-}
-
-.winbows-dev-log-plaintext {}
-
-.winbows-dev-log-plaintext:empty::before {
-    content: ' ';
-    display: block;
-}
-
-.winbows-dev-log-styled {
-    display: inline;
-}
-
-.winbows-dev-log.other {
-    background: rgb(126 255 158 / 21%);
-    font-weight: bold;
-    padding: 4px 6px;
-    border-radius: 4px;
-    font-style: italic;
-}
-
-.winbows-dev-log.other div {
-    color: rgb(160 255 170);
-}
-
-.winbows-dev-logs {
-    overflow: auto;
-    height: calc(100% - 1rem);
-    max-width: inherit;
-    overflow-x: hidden;
-}
-
-.winbows-dev-resizer {
-    position: absolute;
-    bottom: .25rem;
-    right: .25rem;
-    width: 1rem;
-    height: 1rem;
+    top: 0;
+    width: .5rem;
+    height: 100%;
     z-index: 99;
     box-sizing: border-box;
-    cursor: nwse-resize;
+    cursor: w-resize;
 }
 
 /* Beta */
@@ -2202,6 +2131,7 @@ div.winbows-dev-log+div.winbows-dev-log:not(.warn, .error, .info, .other):before
     inset: 0;
     clip-path: inset(0 0 0 0);
     pointer-events: none;
+    image-rendering: pixelated;
 }
 
 [data-taskbar-style="floating"] .taskbar {

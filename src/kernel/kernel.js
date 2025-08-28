@@ -454,6 +454,47 @@ function getMimeType(extension) {
     return mimeTypes[extension.toLowerCase()] || 'application/octet-stream';
 }
 
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext("2d");
+
+function compressImage(file) {
+    const img = new Image();
+
+    if ({}.toString.call(file) === '[object Blob]') {
+        img.src = URL.createObjectURL(file);
+    } else {
+        img.src = file;
+    }
+
+    return new Promise((resolve) => {
+        img.onload = () => {
+            const targetWidth = 300;
+            const scale = targetWidth / img.width;
+            const targetHeight = img.height * scale;
+
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+            const imageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
+            const data = imageData.data;
+            const factor = 32;
+
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = Math.floor(data[i] / factor) * factor; // R
+                data[i + 1] = Math.floor(data[i + 1] / factor) * factor; // G
+                data[i + 2] = Math.floor(data[i + 2] / factor) * factor; // B
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            canvas.style.imageRendering = "pixelated";
+
+            resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+    })
+}
+
 let currentBackgroundImage;
 window.getBackgroundImage = () => {
     return currentBackgroundImage;
@@ -470,7 +511,13 @@ window.setBackgroundImage = async (image = '') => {
     currentBackgroundImage = image;
     localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
     const url = await fs.getFileURL(currentBackgroundImage);
-    document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
+    try {
+        const micaURL = await compressImage(url);
+        document.querySelector(':root').style.setProperty('--winbows-mica', `url(${micaURL})`);
+    } catch (e) {
+        document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
+        console.error(e);
+    }
     const img = new Image();
     img.src = url;
     img.onload = () => {
