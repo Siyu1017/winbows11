@@ -102,51 +102,50 @@ export class ShellInstance extends EventEmitter {
                 const args = argv._.slice(1);
                 const handler = commandRegistry.get(cmdName?.toLowerCase());
 
-                if (/.+\.wrt$/.test(cmdName)) {
-                    let path = fsUtils.resolveEnvPath(cmdName);
-                    path = fsUtils.resolve(fsUtils.normalize(this.root + this.pwd), path)
-                    if (this.fs.exists(path)) {
+                if (!handler) {
+                    // Check if it's an operable program
+                    if (/.+\.wrt$/.test(cmdName)) {
+                        let path = fsUtils.resolveEnvPath(cmdName);
+                        path = fsUtils.resolve(fsUtils.normalize(this.root + this.pwd), path)
+                        if (this.fs.exists(path)) {
+                            const wrt = new WRT(WRT.defaultCwd);
+
+                            try {
+                                wrt.runFile(path);
+
+                                if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
+                                    const end = performance.now();
+                                    this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
+                                }
+                                resolve();
+                            } catch (err) {
+                                this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
+                                reject(err);
+                            }
+                            continue;
+                        }
+                    }
+
+                    // Check app rergistry
+                    const app = appRegistry.getInfo(cmdName);
+                    if (app && app.entryScript) {
                         const wrt = new WRT(WRT.defaultCwd);
 
                         try {
-                            const result = await wrt.runFile(path);
-                            if (result.evaluation != null) {
-                                this.stdout.write(result.evaluation + '\n');
-                            }
+                            wrt.runFile(app.entryScript);
 
                             if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
                                 const end = performance.now();
                                 this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
                             }
-                            resolve(result);
+                            resolve();
                         } catch (err) {
                             this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
                             reject(err);
                         }
                         continue;
                     }
-                }
 
-                const app = appRegistry.getInfo(cmdName);
-                if (app && app.entryScript) {
-                    const wrt = new WRT(WRT.defaultCwd);
-                    
-                    try {
-                        wrt.runFile(app.entryScript);
-
-                        if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
-                            const end = performance.now();
-                            this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
-                        }
-                        resolve();
-                    } catch (err) {
-                        this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
-                        reject(err);
-                    }
-                    continue;
-                }
-
-                if (!handler) {
                     const err = `'${cmdName}' is not recognized as an internal or external command, operable program or batch file.\n`;
                     this.stderr.write(err);
                     reject(err);

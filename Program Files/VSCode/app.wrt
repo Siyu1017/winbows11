@@ -18,3 +18,5 @@ try {
 } catch (err) {
     console.error('App crashed:', err);
 }
+
+process.exit();

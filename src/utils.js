@@ -208,3 +208,7 @@ export function getImageTheme(img) {
 export function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+export function safeEscape(html) {
+    return html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}

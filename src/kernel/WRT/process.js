@@ -43,7 +43,7 @@ export function generateEnv() {
     };
 }
 
-const processes = new Array(8192);
+const processes = new Array(8192).fill(null);
 const emit = Symbol('emit');
 
 class Process {

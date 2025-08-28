@@ -13,9 +13,10 @@ app.on('ready', () => {
     });
     mainWindow.load('./window.js');
 
+    /*
     mainWindow.on('closed', () => {
         mainWindow = null;
-    });
+    });*/
 })
 
 try {

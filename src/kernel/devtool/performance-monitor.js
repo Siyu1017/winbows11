@@ -61,9 +61,7 @@ function createPerformanceMonitor(container, options = {}) {
 
         let max = dataBuffer[0]?.value;
         for (let i = 1; i < dataBuffer.length; i++) {
-            if (dataBuffer[i].value > max) {
-                max = dataBuffer[i].value;
-            }
+            max = Math.max(max, dataBuffer[i].value);
         }
 
         if (!max) return 10;

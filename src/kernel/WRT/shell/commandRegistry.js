@@ -300,10 +300,9 @@ commandRegistry.register('start', async ({ args }, shell) => {
 
     try {
         const wrt = new WRT();
-        const result = await wrt.runFile(app.entryScript, {
+        wrt.runFile(app.entryScript, {
             uri
         });
-        shell.stdout.write(result.evaluation + '\n');
         return true;
     } catch (e) {
         shell.stderr.write(e.message + '\n');

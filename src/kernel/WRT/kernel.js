@@ -9,7 +9,7 @@ import Devtool from "../../lib/external/winbows-devtool/dist/index.js";
 
 const fs = IDBFS("~WRT");
 const consoleStyle = 'color:#fff;background:#0067c0;padding:2px 4px;border-radius:4px; font-weight: normal;';
-const definitionCodes = `/*!\n * Winbows Node.js Runtime (c) Siyu1017 ${new Date().getFullYear()}\n * Learn more in the Winbows Developer app in the start menu\n */\nconst {fs,path,process,__dirname,__filename,requireAsync,module,exports,runtimeID,ShellInstance,WinUI,WApplication,\nconsole,setInterval,clearInterval,setTimeout,clearTimeout // Proxy APIs\n}=this;\n`;
+const definitionCodes = `/*!\n * Winbows Node.js Runtime (c) Siyu1017 ${new Date().getFullYear()}\n * Learn more in the Winbows Developer app in the start menu.\n */\nconst {fs,path,process,__dirname,__filename,requireAsync,module,exports,runtimeID,ShellInstance,WinUI,WApplication,\nconsole,setInterval,clearInterval,setTimeout,clearTimeout // Proxy APIs\n}=this;\n`;
 
 let builtinPackages = builtinPackageData.packages;
 if (!fs.exists('%appdata%/wrt/wrt_modules/')) {
@@ -65,9 +65,11 @@ class WinbowsNodejsRuntime {
         this[WApplicationPath] = "anonymous_" + utils.randomID(32);
         this[WApplicationAPI] = null;
 
+        /*
         if (!fs.exists(this.cwd)) {
             this.close(1);
         }
+        */
 
         // For GUI
         this.mainWindow = null;
@@ -111,6 +113,11 @@ class WinbowsNodejsRuntime {
                 mfs.quit?.();
             })
             this[fss].clear();
+            this.windows.forEach(window => {
+                try {
+                    window.close();
+                } catch { };
+            })
             setTimeout(() => {
                 Reflect.ownKeys(this).forEach(key => {
                     this[key] = null;
@@ -302,7 +309,7 @@ class WinbowsNodejsRuntime {
                 ...envParams,
                 process: this[process],
                 runtimeID: this[runtimeID],
-                runCode: this.runCode
+                ...this
             });
         }
 
@@ -351,12 +358,14 @@ class WinbowsNodejsRuntime {
                     evaluation: result ?? null
                 };
             } else {
-                return new Promise(resolve => this.kill = () => {
-                    this.close(0);
-                    resolve({
-                        exitCode: 0,
-                        evaluation: result ?? null
-                    });
+                return new Promise(resolve => {
+                    this.kill = () => {
+                        this.close(0);
+                        resolve({
+                            exitCode: 0,
+                            evaluation: result ?? null
+                        });
+                    }
                 });
             }
         } catch (e) {

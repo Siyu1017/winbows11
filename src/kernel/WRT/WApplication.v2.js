@@ -102,6 +102,12 @@ function decompose2DMatrix(matrixStr) {
     };
 }
 
+/**
+ * 
+ * @param {*} path 
+ * @param {WRT} ctx 
+ * @returns 
+ */
 export async function register(path, ctx) {
     const app = {
         _cbs: {},
@@ -123,6 +129,7 @@ export async function register(path, ctx) {
             keepAlive: true,
             subProcess: true
         })
+        ctx.windows.push(browserWindowObj);
 
         async function load(path) {
             const filePath = fsUtils.resolve(ctx.__dirname, path);

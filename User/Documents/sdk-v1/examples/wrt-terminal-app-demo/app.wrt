@@ -2,6 +2,8 @@ const { app, BrowserWindow } = WApplication;
 
 let mainWindow;
 
+process.title = 'cmd'
+
 app.on('window-all-closed', () => {
     app.quit();
 });
@@ -29,3 +31,4 @@ try {
 }
 
 console.info('App exited');
+process.exit();
