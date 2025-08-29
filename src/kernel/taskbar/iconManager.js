@@ -1,6 +1,7 @@
 import { taskbarIcons as taskbarIconsEl, on } from "./taskbar.js";
 import { appRegistry } from "../appRegistry.js";
 import { System } from "../system.js";
+import { EventEmitter } from "../WRT/utils/eventEmitter.js";
 
 let systemItemOptions = {
     start: {
@@ -46,11 +47,12 @@ let pinnedApps = [
 ];
 let taskbarIcons = {};
 let taskbarAppIconOrder = [];
+let lastClicked = null;
 
-class TaskbarIcon {
+class TaskbarIcon extends EventEmitter {
     /**
      * @typedef {Object} TaskbarIconData
-     * @property {number} appId
+     * @property {string} appId
      * @property {'system'|'app'} type
      */
     /**
@@ -101,6 +103,51 @@ class TaskbarIcon {
 
             }
         }
+    }
+
+    open() {
+        if (this.type == 'app') {
+            try {
+                this.status.opened = true;
+                this.item.setAttribute('data-opened', this.status.opened);
+
+                lastClicked = owner;
+                /*
+                if (type != 'item') {
+                    activeWindows.push(id);
+                }
+                if (obj.mica == true) {
+                    var active = obj.browserWindow.classList.contains('active');
+                    const observer = new MutationObserver((mutationsList) => {
+                        for (const mutation of mutationsList) {
+                            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                var temp = obj.browserWindow.classList.contains('active');
+                                if (active != temp) {
+                                    //obj.browserWindow.classList.remove('mica');
+                                    active = temp;
+                                }
+                                setTimeout(() => {
+                                    if (obj.browserWindow.classList.contains('active')) {
+                                        obj.browserWindow.classList.add('mica');
+                                    }
+                                }, 101);
+                            }
+                        }
+                    });
+
+                    observer.observe(obj.browserWindow, {
+                        attributes: true,
+                        attributeFilter: ['class']
+                    });
+                }
+                    */
+            } catch (e) {
+                console.log(e);
+            };
+        }
+
+        this._emit('open');
+        return id;
     }
 }
 

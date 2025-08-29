@@ -17,15 +17,8 @@ export default [
         experiments: {
             topLevelAwait: true, // Enable top-level await support
         },
-        devtool: 'eval',
         module: {
             rules: [
-                /*
-                {
-                    test: /\.ts$/,
-                    use: "ts-loader",
-                    exclude: /node_modules/,
-                },*/
                 {
                     test: /\.css$/,
                     use: [
@@ -39,9 +32,6 @@ export default [
                 }
             ]
         },
-        resolve: {
-            extensions: [".ts", ".js"],
-        },
         optimization: {
             minimize: true,
             minimizer: [
@@ -51,16 +41,15 @@ export default [
             ],
         },
         plugins: [
+            new webpack.DefinePlugin({
+                __BUILD_ID__: `"${BUILD_ID}"`
+            }),
             new webpack.BannerPlugin({
                 banner: `/*!
  * Winbows11 - ${BUILD_ID}
  * Copyright (c) Microhard ${new Date().getFullYear()}
  * Github : Siyu1017/winbows11
- */Object.defineProperty(window.System, 'buildId', {
-        value: "${BUILD_ID}",
-        writable: false,
-        configurable: false
-      });`,
+ */;`,
                 raw: true,
                 entryOnly: true
             })

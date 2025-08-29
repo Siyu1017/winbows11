@@ -68,7 +68,7 @@ commandRegistry.register(['cd', 'chdir'], ({ args }, shell) => {
         return false;
     }
 
-    const pwd = fsUtils.resolve(shell.pwd, target);
+    const pwd = fsUtils.resolve(shell.pwd, dir);    
     shell.pwd = fsUtils.parsePath(pwd).path;
     return true;
 });

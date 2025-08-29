@@ -50,7 +50,10 @@ class Process {
     constructor(cwd) {
         // Process id
         this.pid = processes.findIndex(p => p == null);
-        if (this.pid == -1) throw new Error('The maximum number of processes has been reached');
+        if (this.pid == -1) {
+            console.error(new Error('The maximum number of processes has been reached'));
+            return;
+        }
         processes[this.pid] = this;
 
         // Initialize

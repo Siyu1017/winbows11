@@ -1,4 +1,5 @@
 import { getJsonFromURL } from '../utils.js';
+import rom from './rom.js';
 
 // Proxy Server API
 if ('serviceWorker' in navigator) {
@@ -97,55 +98,6 @@ function isAppleDeviceType() {
     }
     return /Macintosh/.test(ua);
 }
-
-// Initialize
-window.System = {};
-
-// ROM
-!function () {
-    function list() {
-        const item = localStorage.getItem('WINBOWS_ROM_FT');
-        if (item) return JSON.parse(item);
-        localStorage.setItem('WINBOWS_ROM_FT', '[]');
-        return [];
-    }
-
-    function getKey(fileName) {
-        return 'WINBOWS_ROM_FT:' + fileName;
-    }
-
-    window.System.rom = {
-        list,
-        exists: function (fileName) {
-            return list().some(f => f.n === fileName);
-        },
-        write: function (fileName, fileContent) {
-            const FT = list();
-            const fileIndex = FT.findIndex(f => f.n === fileName);
-            if (fileIndex !== -1) {
-                FT.splice(fileIndex, 1);
-            }
-            FT.push({
-                n: fileName,
-                l: fileContent.length
-            });
-            localStorage.setItem(getKey(fileName), fileContent);
-            localStorage.setItem('WINBOWS_ROM_FT', JSON.stringify(FT));
-        },
-        read: function (fileName) {
-            return localStorage.getItem(getKey(fileName)) || "";
-        },
-        rm: function (fileName) {
-            const FT = list();
-            const fileIndex = FT.findIndex(f => f.n === fileName);
-            if (fileIndex !== -1) {
-                FT.splice(fileIndex, 1);
-            }
-            localStorage.removeItem(getKey(fileName));
-            localStorage.setItem('WINBOWS_ROM_FT', JSON.stringify(FT));
-        }
-    }
-}();
 
 // Modes
 const URLParams = getJsonFromURL();
@@ -251,8 +203,8 @@ Object.defineProperty(window.modes, 'dev', {
     scriptEl.onerror = showErrorWindow;
 
     if (!navigator.onLine) {
-        if (System.rom.exists('KERNEL.js')) {
-            scriptEl.textContent = System.rom.read('KERNEL.js');
+        if (rom.exists('KERNEL.js')) {
+            scriptEl.textContent = rom.read('KERNEL.js');
             try {
                 document.head.appendChild(scriptEl);
             } catch (e) {
@@ -267,12 +219,12 @@ Object.defineProperty(window.modes, 'dev', {
             const kernelContent = await req.text();
             scriptEl.textContent = kernelContent;
 
-            System.rom.write('KERNEL.js', kernelContent);
+            rom.write('KERNEL.js', kernelContent);
         } catch (e) {
             showErrorWindow(e);
 
-            if (System.rom.exists('KERNEL.js')) {
-                scriptEl.textContent = System.rom.read('KERNEL.js');
+            if (rom.exists('KERNEL.js')) {
+                scriptEl.textContent = rom.read('KERNEL.js');
                 try {
                     document.head.appendChild(scriptEl);
                 } catch (e) {

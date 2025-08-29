@@ -84,7 +84,7 @@
 
 .winui-contextmenu-menu-item.disabled {
     pointer-events: none;
-    opacity: .7;
+    opacity: .5;
 }
 
 .winui-contextmenu-menu-item.selected:before {

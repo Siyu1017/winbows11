@@ -1,5 +1,4 @@
 // Initialize System
-
 import { commandRegistry } from './WRT/shell/commandRegistry.js';
 import { apis } from './kernelRuntime.js';
 import { processes } from './WRT/process.js';
@@ -7,36 +6,49 @@ import { WRT } from './WRT/kernel.js';
 import viewport from './viewport.js';
 import * as utils from "../utils.js";
 import WinUI from '../ui/winui.js';
+import rom from './rom.js';
 
 const { desktopItems, desktop, root } = viewport;
 
 const { fs, process, __dirname, __filename, requireAsync, module, exports, runtimeID, ShellInstance } = apis;
 const System = {}
 
+Object.defineProperty(System, 'buildId', {
+    value: __BUILD_ID__,
+    writable: false,
+    configurable: false
+})
+Object.defineProperty(System, 'localBuildId', {
+    value: localStorage.getItem('WINBOWS_BUILD_ID') || 'UNKNOWN',
+    writable: false,
+    configurable: false
+})
+
 System.WRT = WRT;
+System.rom = rom;
 System.commandRegistry = commandRegistry;
-System.localBuildId = localStorage.getItem('WINBOWS_BUILD_ID') || 'UNKNOWN';
-System.listeners = {};
 System.processes = processes;
+
+const listeners = {};
 System.addEventListener = (event, listener) => {
-    if (!System.listeners[event]) {
-        System.listeners[event] = [];
+    if (!listeners[event]) {
+        listeners[event] = [];
     }
-    System.listeners[event].push(listener);
+    listeners[event].push(listener);
 }
 System.removeEventListener = (event, listener) => {
-    if (!System.listeners[event]) {
+    if (!listeners[event]) {
         return;
     }
-    System.listeners[event].forEach((item, i) => {
+    listeners[event].forEach((item, i) => {
         if (item == listener) {
-            System.listeners[event].splice(i, 1);
+            listeners[event].splice(i, 1);
         }
     })
 }
 System.triggerEvent = (event, details) => {
-    if (System.listeners[event]) {
-        System.listeners[event].forEach(listener => {
+    if (listeners[event]) {
+        listeners[event].forEach(listener => {
             listener(details);
         })
     }

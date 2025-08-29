@@ -24,6 +24,12 @@ kernelRuntime.runCode('// Winbows NT Kernel\nprocess.title=\"Winbows NT Kernel\"
     __filename: 'C:/Winbows/System/kernel/kernel.js'
 });
 
+if (!apis.fs.exists('C:/')) {
+    try {
+        await apis.fs.mkdir('C:/');
+    } catch { }
+}
+
 export {
     kernelRuntime,
     apis

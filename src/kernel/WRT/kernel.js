@@ -23,6 +23,7 @@ for (const mod of Object.values(builtinPackages)) {
             await fs.downloadFile('%appdata%/wrt/wrt_modules/' + mod.pd + '/README.md');
         } catch (e) {
             console.error(e);
+            continue;
         }
         mod.main = fsUtils.resolve('%appdata%/wrt/wrt_modules/' + mod.pd + '/', mod.main);
     }
@@ -51,6 +52,7 @@ class WinbowsNodejsRuntime {
     constructor(cwd, options = {}) {
         this.keepAlive = options?.keepAlive ?? false;
         this.subProcess = options?.subProcess ?? false;
+        this.withDevtool = options?.withDevtool ?? false;
 
         this.cwd = cwd ? fsUtils.toDirFormat(cwd) : this.defaultCwd;
         this[process] = new Process(this.cwd);
@@ -64,6 +66,37 @@ class WinbowsNodejsRuntime {
         this[alive] = true;
         this[WApplicationPath] = "anonymous_" + utils.randomID(32);
         this[WApplicationAPI] = null;
+
+        if (this.allowConsoleOutput) {
+            this[devtool] = new Devtool();
+            if (this.withDevtool) {
+
+            }
+
+            // Proxy Console
+            this.proxyConsole = new Proxy(this[devtool].console, {
+                get: (obj, prop) => {
+                    if (prop in obj) {
+                        return (...args) => {
+                            console[prop].apply(console, args);
+                            return obj[prop].apply(obj, args);
+                        }
+                    } else {
+                        console.warn.apply(obj, [`%cWRT%c > %c${this[runtimeID]}`, consoleStyle, 'color:inherit;', consoleStyle, `console.${prop} is not supported in WRT Environment.`]);
+                        return () => { };
+                    };
+                },
+                set: () => {
+                    return false;
+                }
+            })
+        } else {
+            this.proxyConsole = new Proxy({}, {
+                get: (_) => {
+                    return () => { };
+                }
+            });
+        }
 
         /*
         if (!fs.exists(this.cwd)) {
@@ -124,8 +157,6 @@ class WinbowsNodejsRuntime {
                 })
             }, 1000);
         })
-
-        this[devtool] = new Devtool();
     }
 
     // Node.js require function
@@ -240,22 +271,6 @@ class WinbowsNodejsRuntime {
             }
         }
     };
-
-    // Proxy Console
-    proxyConsole = new Proxy(console, {
-        get: (obj, prop) => {
-            if (!this.allowConsoleOutput) return () => { };
-            if (!['log', 'warn', 'error', 'info', 'debug'].includes(prop)) return () => {
-                console.warn.apply(obj, [`%cWRT%c > %c${this[runtimeID]}`, consoleStyle, 'color:inherit;', consoleStyle, `console.${prop} is not supported in WRT Environment.`])
-            }
-            return prop in obj ? (...args) => {
-                return obj[prop].apply(obj, [`%cWRT%c > %c${this[runtimeID]}`, consoleStyle, 'color:inherit;', consoleStyle, ...args]);
-            } : undefined;
-        },
-        set: () => {
-            return false;
-        }
-    })
 
     createLocalRequireAsync(currentDir) {
         return (name) => this.requireAsync(name, currentDir);
