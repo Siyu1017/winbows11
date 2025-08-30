@@ -2,6 +2,7 @@ import { EventEmitter } from "../WRT/utils/eventEmitter.js";
 import WinUI from "../../ui/winui.js";
 import * as utils from "../../utils.js";
 import { apis } from "../kernelRuntime.js";
+import viewport from "../viewport.js";
 
 const { ShellInstance, process } = apis;
 const eventEmitter = new EventEmitter();
@@ -70,7 +71,7 @@ taskbar.addEventListener('contextmenu', (e) => {
     taskbarMenu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
     taskbarMenu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
     taskbarMenu.open(e.pageX, taskbar.offsetHeight + 4, 'left-bottom');
-    if (utils.getPosition(taskbarMenu.container).x + taskbarMenu.container.offsetWidth > window.innerWidth) {
+    if (utils.getPosition(taskbarMenu.container).x + taskbarMenu.container.offsetWidth > viewport.width) {
         taskbarMenu.container.style.left = 'unset';
         taskbarMenu.container.style.right = '4px';
     }

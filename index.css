@@ -1331,9 +1331,10 @@ body {
 }
 
 .browser-window-resizers * {
+    --size: 6px;
     pointer-events: auto;
-    width: 4px;
-    height: 4px;
+    width: var(--size);
+    height: var(--size);
     position: absolute;
     user-select: none;
     -webkit-user-select: none;
@@ -1342,36 +1343,36 @@ body {
 
 .browser-window-resizer-top {
     top: 0px;
-    transform: translate(2px, -2px);
+    transform: translate(calc(var(--size) / 2), calc(var(--size) / -2));
 }
 
 .browser-window-resizer-bottom {
     bottom: 0px;
-    transform: translate(2px, 2px);
+    transform: translate(calc(var(--size) / 2), calc(var(--size) / 2));
 }
 
 .browser-window-resizer-top,
 .browser-window-resizer-bottom {
-    width: calc(100% - 4px);
+    width: calc(100% - var(--size));
     left: 0px;
     cursor: n-resize;
 }
 
 .browser-window-resizer-left,
 .browser-window-resizer-right {
-    height: calc(100% - 4px);
+    height: calc(100% - var(--size));
     top: 0;
     cursor: w-resize;
 }
 
 .browser-window-resizer-left {
     left: 0;
-    transform: translate(-2px, 2px);
+    transform: translate(calc(var(--size) / -2), calc(var(--size) / 2));
 }
 
 .browser-window-resizer-right {
     right: 0;
-    transform: translate(2px, 2px);
+    transform: translate(calc(var(--size) / 2), calc(var(--size) / 2));
 }
 
 .browser-window-resizer-right-top,
@@ -1380,7 +1381,7 @@ body {
 }
 
 .browser-window-resizer-right-top {
-    transform: translate(2px, -2px);
+    transform: translate(calc(var(--size) / 2), calc(var(--size) / -2));
     top: 0;
     right: 0;
 }
@@ -1388,11 +1389,11 @@ body {
 .browser-window-resizer-right-bottom {
     right: 0;
     bottom: 0;
-    transform: translate(2px, 2px);
+    transform: translate(calc(var(--size) / 2), calc(var(--size) / 2));
 }
 
 .browser-window-resizer-left-bottom {
-    transform: translate(-2px, 2px);
+    transform: translate(calc(var(--size) / -2), calc(var(--size) / 2));
     bottom: 0;
     left: 0;
 }
@@ -1405,7 +1406,7 @@ body {
 .browser-window-resizer-left-top {
     top: 0;
     left: 0;
-    transform: translate(-2px, -2px);
+    transform: translate(calc(var(--size) / -2), calc(var(--size) / -2));
 }
 
 .thumbnail-container,
@@ -1643,7 +1644,7 @@ body {
 
 /* Panel container */
 .control-panel-container {
-    position: fixed;
+    position: absolute;
     bottom: calc(var(--taskbar-height) + .5rem);
     right: .5rem;
     transform: translateY(calc(var(--taskbar-height) + 150%));
@@ -1929,7 +1930,7 @@ body {
 
 /* Calendar container */
 .control-sidebar-container {
-    position: fixed;
+    position: absolute;
     top: .5rem;
     right: .5rem;
     transform: translateX(150%);

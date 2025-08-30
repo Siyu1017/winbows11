@@ -618,7 +618,7 @@ await (async () => {
         await utils.delay(200);
 
         // Initialize Taskbar
-        // window.Taskbar.init();
+        taskbar.init();
 
         Object.values(appRegistry.apps).forEach(app => {
             if (app.autoExecute == true) {

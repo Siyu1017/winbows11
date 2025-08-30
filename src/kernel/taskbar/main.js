@@ -1,5 +1,6 @@
 import { IDBFS } from "../../lib/fs.js";
 import WinUI from "../../ui/winui.js";
+import viewport from "../viewport.js";
 
 const fs = IDBFS("C:/Winbows/System/kernel/kernel.js");
 const pointerDownEvts = ["mousedown", "touchstart", "pointerdown"];
@@ -294,8 +295,8 @@ function updateThumbnailPosition() {
     var left = utils.getPosition(item).x + item.offsetWidth / 2 - thumbnailContainer.offsetWidth / 2;
     if (left < 8) {
         left = 8;
-    } else if (left + thumbnailContainer.offsetWidth > window.innerWidth - 8) {
-        left = window.innerWidth - thumbnailContainer.offsetWidth - 8;
+    } else if (left + thumbnailContainer.offsetWidth > viewport.width - 8) {
+        left = viewport.width - thumbnailContainer.offsetWidth - 8;
     }
     thumbnailContainer.style.left = left + "px";
 }

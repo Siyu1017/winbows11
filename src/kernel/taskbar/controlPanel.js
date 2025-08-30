@@ -1,4 +1,6 @@
 import { taskbarControls, on } from "./taskbar.js";
+import { System } from "../system.js";
+import viewport from "../viewport.js";
 
 const controlPanelContainer = document.createElement('div');
 const controlSidebarContainer = document.createElement('div');
@@ -19,8 +21,8 @@ controlToggleDesktop.className = 'control-toggle-desktop';
 taskbarControls.appendChild(controlPanelSummary);
 taskbarControls.appendChild(controlSidebarSummary);
 taskbarControls.appendChild(controlToggleDesktop);
-window.Winbows.Screen.appendChild(controlPanelContainer);
-window.Winbows.Screen.appendChild(controlSidebarContainer);
+viewport.screenElement.appendChild(controlPanelContainer);
+viewport.screenElement.appendChild(controlSidebarContainer);
 controlPanelContainer.appendChild(controlPanel);
 controlSidebarContainer.appendChild(controlSidebar);
 
@@ -105,13 +107,13 @@ let quickSettingItems = [{
     }
 }, {
     label: 'Dark Theme',
-    status: window.System.theme.get() != 'light' ? 'enabled' : 'disabled',
+    status: System.theme.get() != 'light' ? 'enabled' : 'disabled',
     name: 'dark-theme',
     change: (status) => {
         if (status == 'enabled') {
-            window.System.theme.set('dark');
+            System.theme.set('dark');
         } else {
-            window.System.theme.set('light');
+            System.theme.set('light');
         }
     }
 }, {
@@ -182,7 +184,7 @@ quickSettingItems.forEach((item, i) => {
     const quickSettingButton = document.createElement('div');
     const quickSettingIcon = document.createElement('div');
     const quickSettingLabel = document.createElement('div');
-    const status = item.status == 'enabled' ? 'enabled' : 'disabled';
+    let status = item.status == 'enabled' ? 'enabled' : 'disabled';
     quickSettingBlock.className = 'control-panel-block';
     quickSettingButton.className = 'control-panel-block-button';
     quickSettingIcon.className = 'control-panel-block-icon';
@@ -216,15 +218,15 @@ quickSettingItems.forEach((item, i) => {
         }
     }
 })
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     quickSettingItems.filter(item => item.name == 'dark-theme')[0].setStatus(theme == 'dark' ? 'enabled' : 'disabled')
 })
 quickSettingSliderBars.forEach(item => {
     const box = document.createElement('div');
     const icon = document.createElement('div');
     const slider = document.createElement('input');
-    const disabled = item.disabled == true;
-    const value = item.value;
+    let disabled = item.disabled == true;
+    let value = item.value;
     box.className = 'control-panel-slider';
     icon.className = 'control-panel-slider-icon';
     icon.classList.add(item.name);

@@ -62,7 +62,9 @@ class TaskbarIcon extends EventEmitter {
      * @returns
      */
     constructor(data, options = {}) {
-        if (!data.appId) return;
+        super();
+
+        if (!data.appId && data.type != 'system') return;
         this.appId = data.appId;
         this.type = data.type == 'system' ? 'system' : 'app';
 
@@ -76,6 +78,8 @@ class TaskbarIcon extends EventEmitter {
             // Not available on system icon
             this.windows = [];
             this.icon = appRegistry.getIcon(data.appId);
+        } else {
+            this.icon = data.icon;
         }
 
         this.item = document.createElement('div');
@@ -94,10 +98,9 @@ class TaskbarIcon extends EventEmitter {
 
         if (this.type == 'app') {
             taskbarAppIconOrder.push(this.appId);
+            taskbarIcons[this.appId] = this;
         }
-
-        taskbarIcons.push(this);
-
+        
         return {
             addWindow: () => {
 
@@ -172,7 +175,14 @@ function preloadImage() {
 }
 
 function init() {
-
+    Object.values(systemItemOptions).forEach((item) => {
+        if (item.display == true) {
+            new TaskbarIcon({
+                type: 'system',
+                icon: item.icon
+            });
+        }
+    })
 }
 
 function getIcon(data, options) {
