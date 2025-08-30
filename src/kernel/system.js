@@ -63,9 +63,9 @@ System.triggerEvent = (event, details) => {
             theme = value != 'dark' ? 'light' : 'dark';
             localStorage.setItem('WINBOWS_THEME', theme);
             if (theme == 'dark') {
-                root.setAttribute('data-theme', 'dark');
+                document.body.setAttribute('data-theme', 'dark');
             } else {
-                root.removeAttribute('data-theme');
+                document.body.removeAttribute('data-theme');
             }
             listeners.forEach(fn => fn(theme));
         },
@@ -77,7 +77,7 @@ System.triggerEvent = (event, details) => {
         }
     }
     if (theme == 'dark') {
-        root.setAttribute('data-theme', 'dark');
+        document.body.setAttribute('data-theme', 'dark');
     }
 })();
 
