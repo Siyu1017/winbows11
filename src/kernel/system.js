@@ -2,11 +2,13 @@
 import { commandRegistry } from './WRT/shell/commandRegistry.js';
 import { apis } from './kernelRuntime.js';
 import { processes } from './WRT/process.js';
-import { WRT } from './WRT/kernel.js';
+import { WRT, tasklist } from './WRT/kernel.js';
 import viewport from './viewport.js';
 import * as utils from "../utils.js";
 import WinUI from '../ui/winui.js';
 import rom from './rom.js';
+import { fallbackImage } from './fallback.js';
+import { loadingText } from './loading.js';
 
 const { desktopItems, desktop, root } = viewport;
 
@@ -25,6 +27,7 @@ Object.defineProperty(System, 'localBuildId', {
 })
 
 System.WRT = WRT;
+System.tasklist = tasklist;
 System.rom = rom;
 System.commandRegistry = commandRegistry;
 System.processes = processes;
@@ -83,6 +86,8 @@ System.triggerEvent = (event, details) => {
 
 // Desktop
 await (async function Desktop() {
+    loadingText('Initializing Desktop...');
+
     System.desktop = {};
     System.desktop.update = updateDesktop;
 
@@ -963,38 +968,48 @@ await (async function Desktop() {
     var defaultShortcuts = [{
         path: 'C:/User/Desktop/desktop.link',
         content: {
-            icon: await fs.getFileURL('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico'),
+            icon: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico',
             name: 'Desktop',
             command: 'explorer --config=PAGE=\"C:/User/Desktop\"'
         }
     }, {
         path: 'C:/User/Desktop/github.link',
         content: {
-            icon: await fs.getFileURL('C:/Winbows/icons/github.png'),
+            icon: 'C:/Winbows/icons/github.png',
             name: 'Github',
             command: 'open "https://github.com/Siyu1017/winbows11/"'
         }
     }, {
         path: 'C:/User/Desktop/code.link',
         content: {
-            icon: await fs.getFileURL('C:/Winbows/icons/applications/office/code.ico'),
+            icon: 'C:/Winbows/icons/applications/office/code.ico',
             name: 'VSCode',
             command: 'code'
         }
     }, {
         path: 'C:/User/Desktop/author.link',
         content: {
-            icon: await fs.getFileURL('C:/Winbows/icons/author.ico'),
+            icon: 'C:/Winbows/icons/author.ico',
             name: 'Siyu',
             command: 'open "https://siyu1017.github.io/"'
         }
     }]
 
     for (let i = 0; i < defaultShortcuts.length; i++) {
-        var content = JSON.stringify(defaultShortcuts[i].content);
-        fs.writeFile(defaultShortcuts[i].path, new Blob([content], {
-            type: 'application/winbows-link'
-        }));
+        let content = defaultShortcuts[i].content;
+        try {
+            content.icon = await fs.getFileURL(content.icon);
+        } catch (e) {
+            content.icon = fallbackImage;
+            console.error(e);
+        }
+        try {
+            fs.writeFile(defaultShortcuts[i].path, new Blob([JSON.stringify(content)], {
+                type: 'application/winbows-link'
+            }));
+        } catch (e) {
+            console.error('Failed to create shortcut', e);
+        }
     }
 
     var lastTime = Date.now();

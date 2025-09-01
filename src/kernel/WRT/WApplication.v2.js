@@ -7,6 +7,7 @@ import viewport from "../viewport.js";
 import { appRegistry } from "../appRegistry.js";
 import { System } from "../system.js";
 import WindowManager from "../windowManager.js";
+import { fallbackImage } from "../fallback.js";
 
 const fs = IDBFS("~WRT");
 const { appWrapper, screenElement } = viewport;
@@ -63,13 +64,32 @@ const animateProfiles = {
         duration: 100
     }
 };
+
 const icons = {
-    close: await fs.getFileURL('C:/Winbows/icons/controls/close.png'),
-    minimize: await fs.getFileURL('C:/Winbows/icons/controls/minimize.png'),
-    maxmin: await fs.getFileURL('C:/Winbows/icons/controls/maxmin.png'),
-    maximize: await fs.getFileURL('C:/Winbows/icons/controls/maximize.png')
+    close: 'C:/Winbows/icons/controls/close.png',
+    minimize: 'C:/Winbows/icons/controls/minimize.png',
+    maxmin: 'C:/Winbows/icons/controls/maxmin.png',
+    maximize: 'C:/Winbows/icons/controls/maximize.png'
+};
+
+const iconKeys = Object.keys(icons)
+for (let i = 0; i < iconKeys.length; i++) {
+    const key = iconKeys[i];
+    try {
+        icons[key] = await fs.getFileURL(icons[key]);
+    } catch (e) {
+        icons[key] = fallbackImage;
+        console.error(e);
+    }
 }
-const defaultStyle = await fs.getFileURL('C:/Winbows/System/styles/app.css');
+
+let defaultStyle = '/Winbows/System/styles/app.css';
+try {
+    defaultStyle = await fs.getFileURL('C:/Winbows/System/styles/app.css');
+} catch (e) {
+    console.error(e);
+}
+
 const resizerConfig = {
     'browser-window-resizer-top': 'vertical',
     'browser-window-resizer-bottom': 'vertical',
@@ -891,7 +911,7 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
         }
         this._emit('dragstart', {
             preventDefault: () => {
-                handleEndMoving({}, 'preventDefault');
+                this.handleEndMoving({}, 'preventDefault');
             },
             type: e.type,
             target: e.target
@@ -975,7 +995,7 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
             }
             this._emit('dragging', {
                 preventDefault: () => {
-                    handleEndMoving({}, 'preventDefault');
+                    this.handleEndMoving({}, 'preventDefault');
                 },
                 type: e.type,
                 target: e.target

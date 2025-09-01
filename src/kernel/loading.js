@@ -1,4 +1,7 @@
+import { IDBFS } from "../lib/fs.js";
 import viewport from "./viewport.js";
+
+const fs = IDBFS("~WRT");
 
 // Loading
 const startLoadingTime = Date.now();
@@ -52,6 +55,15 @@ if (window.modes.dev == false && window.needsUpdate == false) {
 }
 
 loadingText('Starting Winbows11...');
+
+try {
+    await fs.getFileURL('C:/Winbows/icons/applications/tools/start.ico').then(url => {
+        loadingImage.style.backgroundImage = `url(${url})`;
+    })
+    fs.quit();
+} catch (e) {
+    console.error(e);
+}
 
 let progress = 0;
 const updateProgressId = setInterval(function () {

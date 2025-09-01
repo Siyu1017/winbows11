@@ -60,82 +60,12 @@ export function terminalTable(term, head = [], config = {
     }
 }
 
-export const parseURI = URI.parse;
-
-function _parseURI(uri) {
-    const result = {
-        scheme: null,
-        user: null,
-        pass: null,
-        host: null,
-        port: null,
-        path: null,
-        query: {},
-        hash: null
-    };
-
-    // Extract scheme
-    const scheme = getScheme(uri);
-    if (!scheme) throw new Error("Invalid or missing scheme");
-    result.scheme = scheme;
-
-    // Remove scheme from string
-    let rest = uri.slice(result.scheme.length + 1);
-
-    // Extract fragment (#)
-    const hashIndex = rest.indexOf('#');
-    if (hashIndex !== -1) {
-        result.hash = decodeURIComponent(rest.slice(hashIndex + 1));
-        rest = rest.slice(0, hashIndex);
-    }
-
-    // Extract query (?)
-    const queryIndex = rest.indexOf('?');
-    let queryString = '';
-    if (queryIndex !== -1) {
-        queryString = rest.slice(queryIndex + 1);
-        rest = rest.slice(0, queryIndex);
-
-        // Parse query into object
-        queryString.split('&').forEach(pair => {
-            if (!pair) return;
-            const [k, v] = pair.split('=');
-            result.query[decodeURIComponent(k)] = v ? decodeURIComponent(v) : '';
-        });
-    }
-
-    // Check for authority (//host)
-    if (rest.startsWith('//')) {
-        rest = rest.slice(2);
-        let pathStart = rest.indexOf('/');
-        let authority = pathStart !== -1 ? rest.slice(0, pathStart) : rest;
-        rest = pathStart !== -1 ? rest.slice(pathStart) : '/';
-
-        // Extract user info (user:pass@)
-        const atIndex = authority.indexOf('@');
-        if (atIndex !== -1) {
-            const userInfo = authority.slice(0, atIndex);
-            const [user, pass] = userInfo.split(':');
-            result.user = user ? decodeURIComponent(user) : null;
-            result.pass = pass ? decodeURIComponent(pass) : null;
-            authority = authority.slice(atIndex + 1);
-        }
-
-        // Extract host and port
-        const colonIndex = authority.lastIndexOf(':');
-        if (colonIndex !== -1 && authority[colonIndex + 1].match(/^\d+$/)) {
-            result.host = authority.slice(0, colonIndex);
-            result.port = authority.slice(colonIndex + 1);
-        } else {
-            result.host = authority;
-        }
-    }
-
-    // Remaining string is path
-    result.path = rest ? decodeURIComponent(rest) : null;
-
-    return result;
+export function formatTwoColumns(left, right, tabSize = 16) {
+    const padding = Math.max(1, tabSize - left.length);
+    return left + " ".repeat(padding) + right;
 }
+
+export const parseURI = URI.parse;
 
 export function getScheme(uri) {
     if (typeof uri !== 'string') return null;

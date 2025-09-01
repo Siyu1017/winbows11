@@ -16,7 +16,7 @@ const container = document.createElement('div');
 container.style = `height: 100%;`;
 document.body.appendChild(container);
 
-process.title = 'cmd';
+process.title = 'Command Prompt';
 
 function hexToRgb(hex) {
     const bigint = parseInt(hex.replace('#', ''), 16);

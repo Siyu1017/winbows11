@@ -1,3 +1,5 @@
+import { fallbackImage } from "../kernel/fallback.js";
+
 const debugMode = false;
 const defaultEnv = {
     APPDATA: 'C:/User/AppData/Roaming',
@@ -1132,15 +1134,12 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
             fullPath = fsUtils.resolve(__dirname, fullPath);
         }
         if (blobURLCaches[fullPath] && window.modes.dev == false) return blobURLCaches[fullPath];
-        try {
-            const blob = await downloadFile(fullPath);
-            if (!blob) return '';
-            const blobURL = URL.createObjectURL(blob);
-            if (window.modes.dev == false) blobURLCaches[fullPath] = blobURL;
-            return blobURL;
-        } catch (e) {
-            return '';
-        }
+
+        const blob = await downloadFile(fullPath);
+        if (!blob) return '';
+        const blobURL = URL.createObjectURL(blob);
+        if (window.modes.dev == false) blobURLCaches[fullPath] = blobURL;
+        return blobURL;
     }
 
     /**

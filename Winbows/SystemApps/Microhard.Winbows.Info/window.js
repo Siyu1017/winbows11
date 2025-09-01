@@ -3,6 +3,8 @@ document.documentElement.style = `
     height: 450px;
 `
 
+process.title = 'Info';
+
 browserWindow.setSnappable(false);
 
 document.documentElement.classList.add('winui');

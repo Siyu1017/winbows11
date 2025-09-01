@@ -120,9 +120,10 @@ function randomID() {
 
 var tab = createTab();
 
+/*
 if (datas.page) {
     createTab(datas.page)
-}
+}*/
 
 var theme = window.System.theme.get()
 browserWindow.setTheme(theme);

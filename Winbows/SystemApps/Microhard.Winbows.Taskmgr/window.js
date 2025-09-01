@@ -1,4 +1,4 @@
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -6,7 +6,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('winui-dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');
@@ -137,8 +137,8 @@ new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
 var taskItems = {};
 
 function createTaskItem(pid) {
-    var process = window.System.processes[pid];
-    var info = window.appRegistry.getApp(process.path);
+    var process = Object.values(window.System.tasklist).find(t => t.process.pid == pid);
+    var info = appRegistry.getApp(process?.path);
     var title = process.title || 'App';
     var task = document.createElement('div');
     var taskInfo = document.createElement('div');
@@ -152,8 +152,10 @@ function createTaskItem(pid) {
     taskName.className = 'task-name';
     taskPid.className = 'task-pid';
 
-    taskName.innerHTML = window.utils.replaceHTMLTags(title);
-    fs.getFileURL(info.icon).then(url => {
+    taskName.innerHTML = title.replace(/</, '&lt;').replace(/>/, '&gt;');
+
+    console.log(process)
+    fs.getFileURL(info.icon || 'C:/Winbows/icons/files/program.ico').then(url => {
         taskIcon.style.backgroundImage = `url(${url})`;
     })
     taskPid.innerHTML = pid;
@@ -176,7 +178,7 @@ function createTaskItem(pid) {
     }
 
     function changeName(name) {
-        taskName.innerHTML = window.utils.replaceHTMLTags(name);
+        taskName.innerHTML = name.replace(/</, '&lt;').replace(/>/, '&gt;');
     }
 
     function exit() {
@@ -212,14 +214,15 @@ function createTaskItem(pid) {
 }
 
 function initTasks() {
-    Object.keys(window.System.processes).forEach(pid => {
-        createTaskItem(pid);
+    System.processes.filter(p => p != null).forEach((p, i) => {
+        createTaskItem(i);
     })
 }
 
 initTasks();
 
-window.Process.prototype.addEventListener('start', (e) => {
+/*
+System.processes.prototype.addEventListener('start', (e) => {
     createTaskItem(e.pid);
 })
 
@@ -227,4 +230,4 @@ window.Process.prototype.addEventListener('exit', (e) => {
     if (taskItems[e.pid]) {
         taskItems[e.pid].exit();
     }
-})
+})*/

@@ -100,7 +100,7 @@ export class ShellInstance extends EventEmitter {
                 const argv = minimistJs(command.trim().match(/(?:[^\s"]+|"[^"]*")+/g) || []);
                 const cmdName = argv._[0];
                 const args = argv._.slice(1);
-                const handler = commandRegistry.get(cmdName?.toLowerCase());
+                const handler = commandRegistry.get(cmdName?.toLowerCase())?.handler;
 
                 if (!handler) {
                     // Check if it's an operable program

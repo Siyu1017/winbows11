@@ -151,6 +151,7 @@ appRegistry.getIcon = (path) => {
 }
 
 appRegistry.getApp = (path) => {
+    if (!path || typeof path !== 'string') return {};
     const keys = Object.keys(appRegistry.apps);
     const app = Object.values(appRegistry.apps).find(a => path.startsWith(a.basePath));
     if (!app) return {};

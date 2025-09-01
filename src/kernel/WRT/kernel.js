@@ -6,10 +6,14 @@ import WinUI from "../../ui/winui.js";
 import builtinPackageData from "../../../User/AppData/Roaming/wrt/wrt_modules/packages.json";
 import * as WApplication from "./WApplication.v2.js";
 import Devtool from "../../lib/external/winbows-devtool/dist/index.js";
+import { loadingText } from "../loading.js";
+import { appRegistry } from "../appRegistry.js";
 
 const fs = IDBFS("~WRT");
 const consoleStyle = 'color:#fff;background:#0067c0;padding:2px 4px;border-radius:4px; font-weight: normal;';
-const definitionCodes = `/*!\n * Winbows Node.js Runtime (c) Siyu1017 ${new Date().getFullYear()}\n * Learn more in the Winbows Developer app in the start menu.\n */\nconst {fs,path,process,__dirname,__filename,requireAsync,module,exports,runtimeID,ShellInstance,WinUI,WApplication,\nconsole,setInterval,clearInterval,setTimeout,clearTimeout // Proxy APIs\n}=this;\n`;
+const definitionCodes = `/*!\n * Winbows Node.js Runtime (c) Siyu1017 ${new Date().getFullYear()}\n * Learn more in the Winbows Developer app in the start menu.\n */\nconst {fs,path,process,__dirname,__filename,requireAsync,module,exports,runtimeID,ShellInstance,WinUI,WApplication,appRegistry,\nconsole,setInterval,clearInterval,setTimeout,clearTimeout // Proxy APIs\n}=this;\n`;
+
+loadingText('Loading packages...');
 
 let builtinPackages = builtinPackageData.packages;
 if (!fs.exists('%appdata%/wrt/wrt_modules/')) {
@@ -293,7 +297,8 @@ class WinbowsNodejsRuntime {
                 }.bind(this)
             }),
             WApplication: this[WApplicationAPI],
-            WinUI
+            WinUI,
+            appRegistry
         }
     }
 
@@ -331,6 +336,7 @@ class WinbowsNodejsRuntime {
         const module = { exports: {} };
         const currentDir = envParams.__dirname || envParams.__filename ? fsUtils.dirname(envParams.__filename) : this.cwd;
         const filePath = envParams.__filename ? fsUtils.resolve(this.cwd, envParams.__filename) : '<anonymous>';
+        this.path = filePath;
 
         tasklist[this[runtimeID]] = {
             __filename: filePath,

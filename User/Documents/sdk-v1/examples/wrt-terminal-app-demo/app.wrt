@@ -2,7 +2,7 @@ const { app, BrowserWindow } = WApplication;
 
 let mainWindow;
 
-process.title = 'cmd'
+process.title = 'Command Prompt'
 
 app.on('window-all-closed', () => {
     app.quit();
@@ -11,7 +11,8 @@ app.on('window-all-closed', () => {
 app.on('ready', () => {
     mainWindow = new BrowserWindow({
         width: 800,
-        height: 600
+        height: 600,
+        title: 'Command Prompt'
     });
     mainWindow.load('./app/dist/index.js');
 

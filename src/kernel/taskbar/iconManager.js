@@ -2,6 +2,10 @@ import { taskbarIcons as taskbarIconsEl, on } from "./taskbar.js";
 import { appRegistry } from "../appRegistry.js";
 import { System } from "../system.js";
 import { EventEmitter } from "../WRT/utils/eventEmitter.js";
+import { apis } from "../kernelRuntime.js";
+import { fallbackImage } from "../fallback.js";
+
+const { fs } = apis;
 
 let systemItemOptions = {
     start: {
@@ -31,6 +35,21 @@ let systemItemOptions = {
     }
 }
 
+for (const key of Object.keys(systemItemOptions)) {
+    try {
+        const icon = systemItemOptions[key].icon;
+        if (typeof icon === 'string') {
+            systemItemOptions[key].icon = await fs.getFileURL(icon);
+        } else {
+            for (const theme of Object.keys(icon)) {
+                systemItemOptions[key].icon[theme] = await fs.getFileURL(icon[theme]);
+            }
+        }
+    } catch (e) {
+        systemItemOptions[key].icon = fallbackImage;
+    }
+}
+
 const taskbarItems = document.createElement('div');
 const taskbarApps = document.createElement('div');
 
@@ -41,13 +60,17 @@ taskbarIconsEl.appendChild(taskbarItems);
 taskbarIconsEl.appendChild(taskbarApps);
 
 let pinnedApps = [
-    'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/app.wrt',     // File explorer
-    'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wrt',             // Edge
-    'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wrt'    // MH Store
+    'explorer',     // File explorer
+    'edge',         // Edge
+    'store'         // MH Store
 ];
 let taskbarIcons = {};
 let taskbarAppIconOrder = [];
 let lastClicked = null;
+
+pinnedApps.forEach((app, i) => {
+    pinnedApps[i] = appRegistry.getApp(app).appId;
+})
 
 class TaskbarIcon extends EventEmitter {
     /**
@@ -96,11 +119,17 @@ class TaskbarIcon extends EventEmitter {
         }
         this.item.appendChild(this.itemImage);
 
+        if (pinnedApps.includes(this.appId)) {
+            taskbarApps.appendChild(this.item);
+        } else if (this.type == 'system') {
+            taskbarItems.appendChild(this.item);
+        }
+
         if (this.type == 'app') {
             taskbarAppIconOrder.push(this.appId);
             taskbarIcons[this.appId] = this;
         }
-        
+
         return {
             addWindow: () => {
 

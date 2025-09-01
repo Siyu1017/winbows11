@@ -350,14 +350,6 @@ try {
 
 Devtool();
 
-try {
-    fs.getFileURL('C:/Winbows/icons/applications/tools/start.ico').then(url => {
-        loadingImage.style.backgroundImage = `url(${url})`;
-    })
-} catch (e) {
-    console.error(e);
-}
-
 // Lock screen
 root.appendChild(screenLockContainer);
 

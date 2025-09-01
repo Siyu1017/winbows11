@@ -1,5 +1,7 @@
 const { app, BrowserWindow } = WApplication;
 
+process.title = 'Info';
+
 let mainWindow;
 
 app.on('ready', () => {
