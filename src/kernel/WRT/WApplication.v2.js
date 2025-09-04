@@ -8,6 +8,7 @@ import { appRegistry } from "../appRegistry.js";
 import { System } from "../system.js";
 import WindowManager from "../windowManager.js";
 import { fallbackImage } from "../fallback.js";
+import crashHandler from "../crashHandler.js";
 
 const fs = IDBFS("~WRT");
 const { appWrapper, screenElement } = viewport;
@@ -83,12 +84,13 @@ for (let i = 0; i < iconKeys.length; i++) {
     }
 }
 
-let defaultStyle = '/Winbows/System/styles/app.css';
-try {
-    defaultStyle = await fs.getFileURL('C:/Winbows/System/styles/app.css');
-} catch (e) {
-    console.error(e);
-}
+const defaultStyle = await (async () => {
+    try {
+        return await fs.getFileURL('C:/Winbows/System/styles/app.css');
+    } catch (e) {
+        crashHandler(e);
+    }
+})();
 
 const resizerConfig = {
     'browser-window-resizer-top': 'vertical',
@@ -767,6 +769,7 @@ export class BrowserWindow extends EventEmitter {
 
         this.on('focus', this.onFocus);
         this.on('blur', this.onBlur);
+        this.onFocus();
 
         WindowManager.emit('create', this);
 

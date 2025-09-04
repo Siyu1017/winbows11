@@ -2,6 +2,10 @@ import { apis } from "../kernelRuntime.js";
 import * as utils from "../../utils.js";
 import WinUI from "../../ui/winui.js";
 import { on } from "./taskbar.js";
+import viewport from "../viewport.js";
+import { appRegistry } from "../appRegistry.js";
+import { WRT } from "../WRT/kernel.js";
+import { lockScreenContainer } from "../lockScreen.js";
 
 const { fs } = apis;
 
@@ -29,6 +33,7 @@ startMenuFooter.className = 'start-menu-footer';
 
 startMenuSearchInput.placeholder = 'Search for apps, settings and documents';
 
+viewport.screenElement.appendChild(startMenuContainer);
 startMenuContainer.appendChild(startMenu);
 startMenu.appendChild(startMenuInner);
 startMenuInner.appendChild(startMenuSearch);
@@ -92,7 +97,7 @@ footerPowerButton.addEventListener('click', (e) => {
             icon: "lock",
             text: "Lock",
             action: () => {
-                window.Winbows.ShowLockScreen();
+                lockScreenContainer.classList.add('active');
             }
         }, {
             icon: "quiet-hours",
@@ -128,9 +133,130 @@ on('pointerdown', (e) => {
     }
 })
 
-on('pointerdown', (e) => {
-    if (e.target == startMenuContainer || startMenuContainer.contains(e.target) || powerMenu.container.contains(e.target)) return;
-    startMenuContainer.classList.remove('active');
-})
+export default function startMenuHandler(icon) {
+    let show = false;
 
-export default startMenuContainer;
+    function showStart() {
+        startMenuContainer.classList.add('active');
+        show = true;
+    }
+
+    function hideStart() {
+        startMenuContainer.classList.remove('active');
+        show = false;
+    }
+
+    icon.item.addEventListener('click', (e) => {
+        if (show == false) {
+            showStart();
+        } else {
+            hideStart();
+        }
+    })
+
+    on('pointerdown', (e) => {
+        if (
+            startMenuContainer.contains(e.target) ||    // Start menu
+            powerMenu.container.contains(e.target) ||   // Contextmenu
+            icon.item.contains(e.target)                // Taskbar icon
+        ) return;
+
+        hideStart();
+    })
+
+    !(async () => {
+        // Start Menu
+        const pinnedList = [
+            {
+                name: 'Edge',
+                app: 'edge'
+            }, {
+                name: 'VSCode',
+                app: 'code'
+            }, {
+                name: 'Command',
+                app: 'cmd'
+            }, {
+                name: 'Info',
+                app: 'info'
+            }, {
+                name: 'Task Manager',
+                app: 'taskmgr'
+            }
+        ];
+        
+        /*
+        const pinnedList = [
+            {
+                name: 'File Explorer',
+                app: 'explorer'
+            }, {
+                name: 'Edge',
+                app: 'edge'
+            }, {
+                name: 'VSCode',
+                app: 'code'
+            }, {
+                name: 'Command',
+                app: 'cmd'
+            }, {
+                name: 'Paint',
+                app: 'paint'
+            }, {
+                name: 'Info',
+                app: 'info'
+            }, {
+                name: 'Task Manager',
+                app: 'taskmgr'
+            }, {
+                name: 'FPS Meter',
+                app: 'fpsmeter'
+            }, {
+                name: 'Photos',
+                app: 'photos'
+            }, {
+                name: 'Edge BETA',
+                app: 'edgebeta'
+            }, {
+                name: 'Network Listener',
+                app: 'network-listener'
+            }, {
+                name: 'JSON Viewer',
+                app: 'json-viewer'
+            }, {
+                name: 'Notepad',
+                app: 'notepad'
+            }, {
+                name: 'Settings',
+                app: 'settings'
+            }
+        ];
+        */
+
+        pinnedList.forEach(pinned => {
+            var info = appRegistry.getInfo(pinned.app);
+            var item = document.createElement('div');
+            var itemIcon = document.createElement('div');
+            var itemName = document.createElement('div');
+            item.className = 'start-menu-pinned-app';
+            itemIcon.className = 'start-menu-pinned-app-icon';
+            itemName.className = 'start-menu-pinned-app-name';
+
+            itemName.innerHTML = utils.replaceHTMLTags(pinned.name);
+            fs.getFileURL(info.icon).then(url => {
+                itemIcon.style.backgroundImage = `url(${url})`;
+            })
+
+            item.addEventListener('click', (e) => {
+                hideStart();
+
+                const wrt = new WRT(WRT.defaultCwd);
+                wrt.runFile(info.entryScript);
+            })
+
+            pinnedApps.appendChild(item);
+            item.appendChild(itemIcon);
+            item.appendChild(itemName);
+        })
+    })();
+}

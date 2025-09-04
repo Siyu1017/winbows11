@@ -9,22 +9,12 @@ import WinUI from '../ui/winui.js';
 import rom from './rom.js';
 import { fallbackImage } from './fallback.js';
 import { loadingText } from './loading.js';
+import SystemInformation from './systemInformationProvider.js';
 
 const { desktopItems, desktop, root } = viewport;
 
 const { fs, process, __dirname, __filename, requireAsync, module, exports, runtimeID, ShellInstance } = apis;
-const System = {}
-
-Object.defineProperty(System, 'buildId', {
-    value: __BUILD_ID__,
-    writable: false,
-    configurable: false
-})
-Object.defineProperty(System, 'localBuildId', {
-    value: localStorage.getItem('WINBOWS_BUILD_ID') || 'UNKNOWN',
-    writable: false,
-    configurable: false
-})
+const System = { ...SystemInformation };
 
 System.WRT = WRT;
 System.tasklist = tasklist;
@@ -977,7 +967,7 @@ await (async function Desktop() {
         content: {
             icon: 'C:/Winbows/icons/github.png',
             name: 'Github',
-            command: 'open "https://github.com/Siyu1017/winbows11/"'
+            command: 'start "https://github.com/Siyu1017/winbows11/" --new-window'
         }
     }, {
         path: 'C:/User/Desktop/code.link',
@@ -991,7 +981,7 @@ await (async function Desktop() {
         content: {
             icon: 'C:/Winbows/icons/author.ico',
             name: 'Siyu',
-            command: 'open "https://siyu1017.github.io/"'
+            command: 'start "https://siyu1017.github.io/" --new-window'
         }
     }]
 
@@ -1074,7 +1064,7 @@ System.FileViewers = {
         '.webm': ['mediaplayer'],
         '.avi': ['mediaplayer'],
         '.mov': ['mediaplayer'],
-        '.li.nk': ['edge']
+        '.link': ['edge']
     },
     defaultViewers: {
         '.css': 'code',

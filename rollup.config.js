@@ -10,6 +10,7 @@ import crypto from 'node:crypto'
 import typescript from 'rollup-plugin-typescript2';
 import postcss from 'rollup-plugin-postcss';
 import json from "@rollup/plugin-json";
+import pkg from "./package.json" assert { type: "json" };
 
 const BUILD_ID = crypto.randomBytes(8).toString('hex');
 
@@ -47,7 +48,7 @@ export default [{
  * Copyright (c) Microhard ${new Date().getFullYear()}
  * Github : Siyu1017/winbows11
  */`,
-        intro: `const buildId = "${BUILD_ID}";`
+        intro: `const buildId="${BUILD_ID}",version="${pkg.version}";`
     },
     plugins: [
         terser()

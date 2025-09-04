@@ -398,11 +398,16 @@ commandRegistry.register('start', {
         '<program>': 'Specifies the program to start.'
     },
     category: 'built-in',
-    handler: async ({ args }, shell) => {
+    handler: async ({ flags, args }, shell) => {
         const uri = parseURI(args[0]);
         if (!uri.scheme) {
             shell.stderr.write(`Invalid URI: ${args[0]}\n`);
             return false;
+        }
+
+        if (uri.scheme.startsWith('http') && flags['new-window']) {
+            window.open(args[0].substring(1, args[0].length - 1), '_blank');
+            return true;
         }
 
         const app = appRegistry.getInfo(uri.scheme);

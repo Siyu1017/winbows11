@@ -3,7 +3,7 @@ import { loadingImage, loadingText, startLoadingTime, loadingContainer, loadingP
 import { fsUtils } from '../lib/fs.js';
 import { System } from './system.js';
 import { WRT } from './WRT/kernel.js';
-import { setInitFn, screenLockContainer } from './lockScreen.js';
+import { setInitFn, lockScreenContainer } from './lockScreen.js';
 import { kernelRuntime, apis } from './kernelRuntime.js';
 import Devtool from './devtool/devtool.js';
 import * as utils from '../utils.js';
@@ -351,7 +351,7 @@ try {
 Devtool();
 
 // Lock screen
-root.appendChild(screenLockContainer);
+root.appendChild(lockScreenContainer);
 
 window.fileIcons = {
     getIcon: (path = '') => {

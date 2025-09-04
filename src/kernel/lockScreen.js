@@ -3,62 +3,62 @@ import * as utils from "../utils.js";
 import { apis } from "./kernelRuntime.js";
 
 const { fs } = apis;
-const screenLockContainer = document.createElement('div');
-const screenLock = document.createElement('div');
-const screenLockBackground = document.createElement('div');
-const screenLockMain = document.createElement('div');
-const screenLockSignin = document.createElement('div');
+const lockScreenContainer = document.createElement('div');
+const lockScreen = document.createElement('div');
+const lockScreenBackground = document.createElement('div');
+const lockScreenMain = document.createElement('div');
+const lockScreenSignin = document.createElement('div');
 
-screenLockContainer.className = 'screen-lock-container active';
-screenLock.className = 'screen-lock';
-screenLockBackground.className = 'screen-lock-background';
-screenLockMain.className = 'screen-lock-main';
-screenLockSignin.className = 'screen-lock-signin';
+lockScreenContainer.className = 'lock-screen-container active';
+lockScreen.className = 'lock-screen';
+lockScreenBackground.className = 'lock-screen-background';
+lockScreenMain.className = 'lock-screen-main';
+lockScreenSignin.className = 'lock-screen-signin';
 
-screenLockContainer.appendChild(screenLock);
-screenLock.appendChild(screenLockBackground);
-screenLock.appendChild(screenLockMain);
-screenLock.appendChild(screenLockSignin);
+lockScreenContainer.appendChild(lockScreen);
+lockScreen.appendChild(lockScreenBackground);
+lockScreen.appendChild(lockScreenMain);
+lockScreen.appendChild(lockScreenSignin);
 
 // Clock on lock panel
-const screenLockTime = document.createElement('div');
-const screenLockDate = document.createElement('div');
+const lockScreenTime = document.createElement('div');
+const lockScreenDate = document.createElement('div');
 
-screenLockTime.className = 'screen-lock-time';
-screenLockDate.className = 'screen-lock-date';
+lockScreenTime.className = 'lock-screen-time';
+lockScreenDate.className = 'lock-screen-date';
 
-screenLockMain.appendChild(screenLockTime);
-screenLockMain.appendChild(screenLockDate);
+lockScreenMain.appendChild(lockScreenTime);
+lockScreenMain.appendChild(lockScreenDate);
 
 // Signin panel
-const screenLockSigninAvatar = document.createElement('div');
-const screenLockSigninUsername = document.createElement('div');
-const screenLockSigninButton = document.createElement('button');
+const lockScreenSigninAvatar = document.createElement('div');
+const lockScreenSigninUsername = document.createElement('div');
+const lockScreenSigninButton = document.createElement('button');
 
-screenLockSigninAvatar.className = 'screen-lock-signin-avatar';
-screenLockSigninUsername.className = 'screen-lock-signin-username';
-screenLockSigninButton.className = 'screen-lock-signin-button';
+lockScreenSigninAvatar.className = 'lock-screen-signin-avatar';
+lockScreenSigninUsername.className = 'lock-screen-signin-username';
+lockScreenSigninButton.className = 'lock-screen-signin-button';
 
-screenLockSignin.appendChild(screenLockSigninAvatar);
-screenLockSignin.appendChild(screenLockSigninUsername);
-screenLockSignin.appendChild(screenLockSigninButton);
+lockScreenSignin.appendChild(lockScreenSigninAvatar);
+lockScreenSignin.appendChild(lockScreenSigninUsername);
+lockScreenSignin.appendChild(lockScreenSigninButton);
 
-screenLockSigninUsername.innerHTML = utils.replaceHTMLTags('Admin');
-screenLockSigninButton.innerHTML = utils.replaceHTMLTags('Sign In');
+lockScreenSigninUsername.innerHTML = utils.replaceHTMLTags('Admin');
+lockScreenSigninButton.innerHTML = utils.replaceHTMLTags('Sign In');
 
 // Loading images
 try {
     fs.getFileURL('C:/Winbows/icons/user.png').then(url => {
-        screenLockSigninAvatar.style.backgroundImage = `url(${url})`;
+        lockScreenSigninAvatar.style.backgroundImage = `url(${url})`;
     })
     await fs.getFileURL('C:/Winbows/bg/img100.jpg').then(url => {
         if (!url) {
-            screenLockBackground.style.backgroundImage = 'linear-gradient(to right, #000)';
+            lockScreenBackground.style.backgroundImage = 'linear-gradient(to right, #000)';
         } else {
-            screenLockBackground.style.backgroundImage = `url(${url})`;
+            lockScreenBackground.style.backgroundImage = `url(${url})`;
         }
     }).catch(err => {
-        screenLockBackground.style.backgroundImage = 'linear-gradient(to right, #000)';
+        lockScreenBackground.style.backgroundImage = 'linear-gradient(to right, #000)';
         console.error(err);
     })
 } catch (e) {
@@ -70,8 +70,8 @@ const now = new Date();
 const leftToUpdateTime = (60 - now.getSeconds()) * 1000;
 const leftToUpdateDate = (((24 - now.getHours()) * 60 * 60) - (now.getMinutes() * 60) - now.getSeconds()) * 1000;
 
-screenLockTime.innerHTML = now.format("hh") < 13 ? now.format("hh:mm") : new Date(now.getTime() - 12 * 1000 * 60 * 60).format("hh:mm");
-screenLockDate.innerHTML = now.toLocaleDateString(void 0, {
+lockScreenTime.innerHTML = now.format("hh") < 13 ? now.format("hh:mm") : new Date(now.getTime() - 12 * 1000 * 60 * 60).format("hh:mm");
+lockScreenDate.innerHTML = now.toLocaleDateString(void 0, {
     weekday: "long",
     month: "long",
     day: "numeric"
@@ -80,14 +80,14 @@ screenLockDate.innerHTML = now.toLocaleDateString(void 0, {
 function updateTime() {
     const now = new Date();
     const leftToUpdateTime = (60 - now.getSeconds()) * 1000;
-    screenLockTime.innerHTML = now.format("hh") < 13 ? now.format("hh:mm") : new Date(now.getTime() - 12 * 1000 * 60 * 60).format("hh:mm");
+    lockScreenTime.innerHTML = now.format("hh") < 13 ? now.format("hh:mm") : new Date(now.getTime() - 12 * 1000 * 60 * 60).format("hh:mm");
     setTimeout(updateTime, leftToUpdateTime);
 }
 
 function updateDate() {
     const now = new Date();
     const leftToUpdateDate = (((24 - now.getHours()) * 60 * 60) - ((60 - now.getMinutes()) * 60) - now.getSeconds()) * 1000;
-    screenLockDate.innerHTML = now.toLocaleDateString(void 0, {
+    lockScreenDate.innerHTML = now.toLocaleDateString(void 0, {
         weekday: "long",
         month: "long",
         day: "numeric"
@@ -103,14 +103,14 @@ if (window.modes.debug == true) {
 setTimeout(updateTime, leftToUpdateTime);
 setTimeout(updateDate, leftToUpdateDate);
 
-screenLockMain.addEventListener('click', () => {
-    screenLock.classList.add('signin');
+lockScreenMain.addEventListener('click', () => {
+    lockScreen.classList.add('signin');
 })
 
 let initFn = () => { };
-screenLockSigninButton.addEventListener('click', () => {
-    screenLockContainer.classList.remove('active');
-    screenLock.classList.remove('signin');
+lockScreenSigninButton.addEventListener('click', () => {
+    lockScreenContainer.classList.remove('active');
+    lockScreen.classList.remove('signin');
     if (init == true) {
         // initTaskbar();
         init = false;
@@ -134,6 +134,6 @@ function setInitFn(fn) {
 }
 
 export {
-    screenLockContainer,
+    lockScreenContainer,
     setInitFn
 }

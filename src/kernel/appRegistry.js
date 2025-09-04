@@ -177,6 +177,10 @@ appRegistry.generateProfile = (appName, basePath, entryScript) => {
     }
 }
 
+appRegistry.getData = (appId) => {
+    return Object.values(appRegistry.apps).find(app => app.appId == appId);
+}
+
 appRegistry.exists = (name) => !!appRegistry.apps[name] || Object.keys(appRegistry.apps).some(k => appRegistry.apps[k].path === name);
 
 export { appRegistry };

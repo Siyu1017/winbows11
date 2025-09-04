@@ -1,6 +1,8 @@
 import { getJsonFromURL } from '../utils.js';
 import rom from './rom.js';
 
+console.log(`winbows11 v${version}`);
+
 // Proxy Server API
 if ('serviceWorker' in navigator) {
     var listeners = {};
@@ -204,7 +206,7 @@ Object.defineProperty(window.modes, 'dev', {
 
     if (!navigator.onLine) {
         if (rom.exists('KERNEL.js')) {
-            scriptEl.textContent = rom.read('KERNEL.js');
+            scriptEl.textContent = rom.read('KERNEL.js') + '\n//# sourceURL=kernel.js';
             try {
                 document.head.appendChild(scriptEl);
             } catch (e) {
@@ -217,7 +219,7 @@ Object.defineProperty(window.modes, 'dev', {
         try {
             const req = await fetch(`/Winbows/System/kernel/kernel.js?timestamp=${new Date().getTime()}`);
             const kernelContent = await req.text();
-            scriptEl.textContent = kernelContent;
+            scriptEl.textContent = kernelContent + '\n//# sourceURL=kernel.js';
 
             rom.write('KERNEL.js', kernelContent);
         } catch (e) {
@@ -335,4 +337,4 @@ Object.defineProperty(window.modes, 'dev', {
 })();
 
 // Welcome message
-console.log('%cWelcome to Winbows11\n%c%cGithub: Siyu1017/winbows11', 'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;background-image: linear-gradient(to right, rgba(71, 202, 250, 255), rgba(3, 124, 213, 255));-webkit-text-fill-color: #0000;background-clip: text;-webkit-background-clip: text;font-weight: 500;font-size: 4rem;', '', 'background:rgb(24,24,24);color:#fff;border-radius:.5rem;padding: .5rem 1rem;font-size: 1rem;display: inline-block;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;');
+console.log(`%cWelcome to Winbows11\n%cGithub: Siyu1017/winbows11`, 'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;background-image: linear-gradient(to right, rgba(71, 202, 250, 255), rgba(3, 124, 213, 255));-webkit-text-fill-color: #0000;background-clip: text;-webkit-background-clip: text;font-weight: 500;font-size: 4rem;', 'background:rgb(24,24,24);color:#fff;border-radius:.5rem;padding: .5rem 1rem;font-size: 1rem;display: inline-block;font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;');

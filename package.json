@@ -1,16 +1,6 @@
 {
-  "dependencies": {
-    "@xterm/addon-fit": "^0.10.0",
-    "@xterm/xterm": "^5.5.0",
-    "clean-webpack-plugin": "^4.0.0",
-    "express": "^5.1.0",
-    "micromatch": "^4.0.8",
-    "uri-js": "^4.4.1",
-    "url": "^0.11.4",
-    "xterm": "^5.3.0"
-  },
   "name": "winbows11",
-  "version": "1.0.0",
+  "version": "1.0.0-beta.11",
   "description": "Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!",
   "main": "server.js",
   "directories": {
@@ -40,6 +30,16 @@
     "url": "https://github.com/Siyu1017/winbows11/issues"
   },
   "homepage": "https://github.com/Siyu1017/winbows11#readme",
+  "dependencies": {
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "express": "^5.1.0",
+    "micromatch": "^4.0.8",
+    "uri-js": "^4.4.1",
+    "url": "^0.11.4",
+    "xterm": "^5.3.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",

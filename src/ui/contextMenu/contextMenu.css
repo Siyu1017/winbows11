@@ -3,8 +3,8 @@
     --contextmenu-bg: #fff;
     --contextmenu-color: #000;
     --contextmenu-border: 1px solid rgba(0, 0, 0, .1);
-    --contextmenu-hover: rgba(0, 0, 0, .05);
-    --contextmenu-active: rgba(0, 0, 0, .1);
+    --contextmenu-hover: rgba(0, 0, 0, .08);
+    --contextmenu-active: rgba(0, 0, 0, .12);
     --contextmenu-separator-bg: rgba(0, 0, 0, .1);
     --contextmenu-backdrop-filter: initial;
     --contextmenu-icon-width: 1rem;

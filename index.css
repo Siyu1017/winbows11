@@ -52,7 +52,7 @@ body {
 .overlay {
     pointer-events: none;
     z-index: 1000000;
-    width: 100vw;
+    width: var(--viewport-width);
     height: var(--viewport-height);
     position: fixed;
     top: 0;
@@ -160,14 +160,15 @@ body {
 
 .bsod {
     background: #3873AA;
-    width: 100vw;
-    height: var(--winbows-screen-height);
+    width: inherit;
+    height: inherit;
     display: flex;
     position: fixed;
     left: 0;
     top: 0;
     z-index: 99999999999;
     justify-content: center;
+    overflow: auto;
 }
 
 .bsod * {
@@ -179,6 +180,9 @@ body {
 
 .bsod-container {
     max-width: 80%;
+    word-break: break-word;
+    padding: 1rem 0 3rem;
+    height: fit-content;
 }
 
 .winbows-loading {
@@ -334,12 +338,12 @@ body {
     border-radius: inherit;
 }
 
-.screen-lock-container,
-.screen-lock-container * {
+.lock-screen-container,
+.lock-screen-container * {
     transition: all .2s ease-in-out;
 }
 
-.screen-lock-container {
+.lock-screen-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -350,18 +354,18 @@ body {
     pointer-events: none;
 }
 
-.screen-lock-container.active {
+.lock-screen-container.active {
     opacity: 1;
     pointer-events: auto;
     z-index: 9999;
 }
 
-.screen-lock {
+.lock-screen {
     width: var(--viewport-width);
     height: var(--viewport-height);
 }
 
-.screen-lock-background {
+.lock-screen-background {
     width: var(--viewport-width);
     height: var(--viewport-height);
     background-position: center;
@@ -371,7 +375,7 @@ body {
     z-index: -1;
 }
 
-.screen-lock-main {
+.lock-screen-main {
     position: fixed;
     top: 0;
     left: 0;
@@ -384,29 +388,29 @@ body {
     color: #ededed;
 }
 
-.screen-lock-time {
+.lock-screen-time {
     font-size: 6.25rem;
     font-weight: 600;
 }
 
-.screen-lock-date {
+.lock-screen-date {
     font-size: 1.25rem;
     padding: .25rem 0;
     white-space: nowrap;
 }
 
-.screen-lock * {
+.lock-screen * {
     user-select: none;
     -webkit-user-drag: none;
     -webkit-user-select: none;
 }
 
-.screen-lock-main *,
-.screen-lock-signin * {
+.lock-screen-main *,
+.lock-screen-signin * {
     transition: all .2s ease-in-out;
 }
 
-.screen-lock-signin {
+.lock-screen-signin {
     position: fixed;
     top: 0;
     left: 0;
@@ -424,26 +428,26 @@ body {
     transition: backdrop-filter .6s ease-in-out, all .2s ease-in-out;
 }
 
-.screen-lock-signin * {
+.lock-screen-signin * {
     transform: scale(.95);
 }
 
-.screen-lock.signin .screen-lock-signin * {
+.lock-screen.signin .lock-screen-signin * {
     transform: scale(1);
 }
 
-.screen-lock.signin .screen-lock-signin {
+.lock-screen.signin .lock-screen-signin {
     pointer-events: auto;
     opacity: 1;
     backdrop-filter: blur(3rem);
     -webkit-backdrop-filter: blur(3rem);
 }
 
-.screen-lock.signin .screen-lock-main {
+.lock-screen.signin .lock-screen-main {
     opacity: 0;
 }
 
-.screen-lock-signin-avatar {
+.lock-screen-signin-avatar {
     background-image: linear-gradient(315deg, rgb(2 59 244), rgb(252 253 255));
     width: 12rem;
     height: 12rem;
@@ -454,12 +458,12 @@ body {
     aspect-ratio: 1/1;
 }
 
-.screen-lock-signin-username {
+.lock-screen-signin-username {
     font-size: 1.5rem;
     font-weight: 600;
 }
 
-.screen-lock-signin-button {
+.lock-screen-signin-button {
     margin-top: 1rem;
     margin-bottom: 4rem;
     font-size: 1rem;
@@ -473,7 +477,7 @@ body {
     font-family: var(--winbows-font-default);
 }
 
-.screen-lock-signin-button:hover {
+.lock-screen-signin-button:hover {
     background: rgb(210 210 210 / 18%);
 }
 
@@ -884,7 +888,7 @@ body {
 }
 
 .start-menu-container {
-    position: fixed;
+    position: absolute;
     left: 50%;
     bottom: calc(var(--taskbar-height) + .5rem);
     transform: translateX(-50%) translateY(200%);
@@ -911,8 +915,9 @@ body {
     overflow: hidden;
     box-shadow: 0 0 8px 4px rgb(0 0 0 / 9%);
     width: 40rem;
-    max-width: calc(100vw - 1rem);
-    height: min(var(--viewport-height) - 1rem - var(--taskbar-height), 45rem);
+    max-width: calc(var(--viewport-width) - 1rem);
+    height: min(var(
+    --viewport-height) - 1rem - var(--taskbar-height), 45rem);
     display: flex;
     flex-direction: column;
 }

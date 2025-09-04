@@ -4,6 +4,8 @@ import { System } from "../system.js";
 import { EventEmitter } from "../WRT/utils/eventEmitter.js";
 import { apis } from "../kernelRuntime.js";
 import { fallbackImage } from "../fallback.js";
+import { WRT } from "../WRT/kernel.js";
+import startMenuHandler from "./startMenu.js";
 
 const { fs } = apis;
 
@@ -13,7 +15,8 @@ let systemItemOptions = {
         icon: {
             light: 'C:/Winbows/icons/applications/tools/start.ico',
             dark: 'C:/Winbows/icons/applications/tools/start2.ico'
-        }
+        },
+        handler: startMenuHandler
     },
     search: {
         display: true,
@@ -69,7 +72,7 @@ let taskbarAppIconOrder = [];
 let lastClicked = null;
 
 pinnedApps.forEach((app, i) => {
-    pinnedApps[i] = appRegistry.getApp(app).appId;
+    pinnedApps[i] = appRegistry.getInfo(app).appId;
 })
 
 class TaskbarIcon extends EventEmitter {
@@ -88,6 +91,8 @@ class TaskbarIcon extends EventEmitter {
         super();
 
         if (!data.appId && data.type != 'system') return;
+        if (taskbarIcons[data.appId]) return taskbarIcons[data.appId];
+
         this.appId = data.appId;
         this.type = data.type == 'system' ? 'system' : 'app';
 
@@ -100,7 +105,7 @@ class TaskbarIcon extends EventEmitter {
         if (this.type == 'app') {
             // Not available on system icon
             this.windows = [];
-            this.icon = appRegistry.getIcon(data.appId);
+            this.icon = appRegistry.getData(data.appId)?.icon ?? 'C:/Winbows/icons/files/program.ico';
         } else {
             this.icon = data.icon;
         }
@@ -109,17 +114,28 @@ class TaskbarIcon extends EventEmitter {
         this.itemImage = document.createElement('div');
         this.item.className = 'taskbar-item';
         this.itemImage.className = 'taskbar-icon';
-        if (typeof data.icon === 'string') {
-            this.itemImage.style.backgroundImage = `url(${data.icon})`;
+        if (typeof this.icon === 'string') {
+            fs.getFileURL(this.icon).then(url => {
+                this.itemImage.style.backgroundImage = `url(${url})`;
+            }).catch(e => {
+                console.error(e);
+            })
         } else {
-            this.itemImage.style.backgroundImage = `url(${data.icon[System.theme.get()]})`;
+            this.itemImage.style.backgroundImage = `url(${this.icon[System.theme.get()]})`;
             System.theme.onChange(theme => {
-                this.itemImage.style.backgroundImage = `url(${data.icon[theme]})`;
+                this.itemImage.style.backgroundImage = `url(${this.icon[theme]})`;
             })
         }
         this.item.appendChild(this.itemImage);
 
         if (pinnedApps.includes(this.appId)) {
+            this.item.addEventListener('click', (e) => {
+                try {
+                    new WRT().runFile(appRegistry.getData(this.appId).entryScript);
+                } catch (e) {
+                    console.error(e);
+                }
+            })
             taskbarApps.appendChild(this.item);
         } else if (this.type == 'system') {
             taskbarItems.appendChild(this.item);
@@ -129,12 +145,6 @@ class TaskbarIcon extends EventEmitter {
             taskbarAppIconOrder.push(this.appId);
             taskbarIcons[this.appId] = this;
         }
-
-        return {
-            addWindow: () => {
-
-            }
-        }
     }
 
     open() {
@@ -143,7 +153,7 @@ class TaskbarIcon extends EventEmitter {
                 this.status.opened = true;
                 this.item.setAttribute('data-opened', this.status.opened);
 
-                lastClicked = owner;
+                lastClicked = this.appId;
                 /*
                 if (type != 'item') {
                     activeWindows.push(id);
@@ -166,7 +176,7 @@ class TaskbarIcon extends EventEmitter {
                             }
                         }
                     });
-
+    
                     observer.observe(obj.browserWindow, {
                         attributes: true,
                         attributeFilter: ['class']
@@ -179,7 +189,20 @@ class TaskbarIcon extends EventEmitter {
         }
 
         this._emit('open');
-        return id;
+    }
+
+    close() {
+        if (this.windows) {
+            this.windows.forEach(windowObj => {
+                windowObj.close();
+            })
+        }
+
+        if (!pinnedApps.includes(this.appId) && this.type != 'system') {
+            taskbarApps.removeChild(this.item);
+        }
+
+        this.status.opened = false;
     }
 }
 
@@ -206,11 +229,19 @@ function preloadImage() {
 function init() {
     Object.values(systemItemOptions).forEach((item) => {
         if (item.display == true) {
-            new TaskbarIcon({
+            const icon = new TaskbarIcon({
                 type: 'system',
                 icon: item.icon
             });
+            item.handler?.(icon);
         }
+    })
+
+    pinnedApps.forEach((appId) => {
+        new TaskbarIcon({
+            appId,
+            type: 'app'
+        });
     })
 }
 

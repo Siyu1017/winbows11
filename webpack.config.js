@@ -2,6 +2,7 @@ import path from 'path';
 import webpack from 'webpack'
 import fs from 'fs';
 import TerserPlugin from 'terser-webpack-plugin';
+import pkg from "./package.json" assert { type: "json" };
 
 const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
@@ -42,7 +43,8 @@ export default [
         },
         plugins: [
             new webpack.DefinePlugin({
-                __BUILD_ID__: `"${BUILD_ID}"`
+                __BUILD_ID__: `"${BUILD_ID}"`,
+                __VERSION__: `"${pkg.version}"`
             }),
             new webpack.BannerPlugin({
                 banner: `/*!
@@ -50,8 +52,7 @@ export default [
  * Copyright (c) Microhard ${new Date().getFullYear()}
  * Github : Siyu1017/winbows11
  */;`,
-                raw: true,
-                entryOnly: true
+                raw: true
             })
         ]
     }

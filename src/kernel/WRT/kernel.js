@@ -8,6 +8,7 @@ import * as WApplication from "./WApplication.v2.js";
 import Devtool from "../../lib/external/winbows-devtool/dist/index.js";
 import { loadingText } from "../loading.js";
 import { appRegistry } from "../appRegistry.js";
+import { EventEmitter } from "./utils/eventEmitter.js";
 
 const fs = IDBFS("~WRT");
 const consoleStyle = 'color:#fff;background:#0067c0;padding:2px 4px;border-radius:4px; font-weight: normal;';
@@ -51,6 +52,7 @@ const WApplicationPath = Symbol('wap');
 const WApplicationAPI = Symbol('waapi');
 
 const tasklist = {};
+const eventEmitter = new EventEmitter();
 
 class WinbowsNodejsRuntime {
     constructor(cwd, options = {}) {
@@ -121,6 +123,7 @@ class WinbowsNodejsRuntime {
                     this.title = value;
                     this[process].title = value;
 
+                    eventEmitter._emit('change', this);
                     if (tasklist[this[runtimeID]]) {
                         tasklist[this[runtimeID]].title = value;
                     }
@@ -137,6 +140,7 @@ class WinbowsNodejsRuntime {
 
         this[process].on('exit', () => {
             if (this[alive] == false) return;
+            eventEmitter._emit('close', this);
             this[alive] = false;
             delete tasklist[this[runtimeID]];
             this.proxyTimeout.clearAll();
@@ -161,6 +165,8 @@ class WinbowsNodejsRuntime {
                 })
             }, 1000);
         })
+
+        eventEmitter._emit('create', this);
     }
 
     // Node.js require function
@@ -467,6 +473,14 @@ class WinbowsNodejsRuntime {
     }
 
     defaultCwd = 'C:/'
+
+    static on(evt, cb) {
+        eventEmitter.on(evt, cb);
+    }
+
+    static off(evt, cb) {
+        eventEmitter.off(evt, cb);
+    }
 }
 
 export { WinbowsNodejsRuntime as WRT, tasklist };

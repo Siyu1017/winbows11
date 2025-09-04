@@ -15,13 +15,15 @@ System.theme.onChange(theme => {
     }
 })
 
-var style = document.createElement('link');
+const style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
 style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
-var icons = {
+process.title = 'Task Manager';
+
+const icons = {
     tasks: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sidebar-item-icon"><path d="M12 3v17a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1H3"></path></svg>',
     performance: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sidebar-item-icon"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M17 12h-2l-2 5-2-10-2 5H7"/></svg>',
     history: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sidebar-item-icon"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
@@ -29,10 +31,10 @@ var icons = {
     users: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="sidebar-item-icon"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
 }
 
-var searchContainer = document.createElement('div');
-var searchBox = document.createElement('div');
-var searchIcon = document.createElement('div');
-var searchInput = document.createElement('input');
+const searchContainer = document.createElement('div');
+const searchBox = document.createElement('div');
+const searchIcon = document.createElement('div');
+const searchInput = document.createElement('input');
 
 searchContainer.className = 'search-container';
 searchBox.className = 'search-box';
@@ -55,12 +57,12 @@ searchInput.addEventListener('blur', () => {
 browserWindow.setImmovable(searchBox);
 
 var focusedIcon = 'tasks';
-var app = document.createElement('div');
-var sidebar = document.createElement('div');
-var content = document.createElement('div');
-var taskList = document.createElement('div');
-var taskHeader = document.createElement('div');
-var taskListNoMatched = document.createElement('div');
+const app = document.createElement('div');
+const sidebar = document.createElement('div');
+const content = document.createElement('div');
+const taskList = document.createElement('div');
+const taskHeader = document.createElement('div');
+const taskListNoMatched = document.createElement('div');
 
 app.className = 'app';
 sidebar.className = 'sidebar';
@@ -134,17 +136,19 @@ new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
     })
 })
 
-var taskItems = {};
+const taskItems = {};
 
-function createTaskItem(pid) {
-    var process = Object.values(window.System.tasklist).find(t => t.process.pid == pid);
-    var info = appRegistry.getApp(process?.path);
-    var title = process.title || 'App';
-    var task = document.createElement('div');
-    var taskInfo = document.createElement('div');
-    var taskIcon = document.createElement('div');
-    var taskName = document.createElement('div');
-    var taskPid = document.createElement('div');
+function createTaskItem(wrt) {
+    const pid = wrt.process.pid;
+    if (typeof pid !== 'number') return;
+
+    const info = appRegistry.getApp(wrt?.path);
+    const title = wrt.title || 'App';
+    const task = document.createElement('div');
+    const taskInfo = document.createElement('div');
+    const taskIcon = document.createElement('div');
+    const taskName = document.createElement('div');
+    const taskPid = document.createElement('div');
 
     task.className = 'task';
     taskInfo.className = 'task-info';
@@ -152,9 +156,10 @@ function createTaskItem(pid) {
     taskName.className = 'task-name';
     taskPid.className = 'task-pid';
 
+    console.log(wrt);
+
     taskName.innerHTML = title.replace(/</, '&lt;').replace(/>/, '&gt;');
 
-    console.log(process)
     fs.getFileURL(info.icon || 'C:/Winbows/icons/files/program.ico').then(url => {
         taskIcon.style.backgroundImage = `url(${url})`;
     })
@@ -184,6 +189,7 @@ function createTaskItem(pid) {
     function exit() {
         task.remove();
         delete taskItems[pid];
+        wrt.process.exit(0);
     }
 
     task.addEventListener('contextmenu', (e) => {
@@ -193,9 +199,7 @@ function createTaskItem(pid) {
                 icon: "clear",
                 className: "delete",
                 text: "Kill process",
-                action: () => {
-                    window.System.processes[pid].exit();
-                }
+                action: exit
             }
         ])
         if (e.type.startsWith('touch')) {
@@ -214,10 +218,34 @@ function createTaskItem(pid) {
 }
 
 function initTasks() {
-    System.processes.filter(p => p != null).forEach((p, i) => {
-        createTaskItem(i);
+    Object.values(System.tasklist).forEach((p, i) => {
+        createTaskItem(p);
     })
 }
+
+System.WRT.on('create', (wrt) => {
+    if (!taskItems[wrt.process.pid]) {
+        createTaskItem(wrt);
+    }
+});
+
+System.WRT.on('close', (wrt) => {
+    if (taskItems[wrt.process.pid]) {
+        taskItems[wrt.process.pid].exit();
+    }
+})
+
+System.WRT.on('change', (wrt) => {
+    if (taskItems[wrt.process.pid]) {
+        taskItems[wrt.process.pid].changeName(wrt.title);
+        const info = appRegistry.getApp(wrt?.path);
+        if (info.icon) {
+            fs.getFileURL(info.icon).then(url => {
+                taskItems[wrt.process.pid].changeIcon(url);
+            });
+        }
+    }
+})
 
 initTasks();
 

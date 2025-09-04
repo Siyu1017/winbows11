@@ -61,7 +61,7 @@ export default function Devtool() {
         root.style.width = `calc(100% - ${realWidth}px)`;
         try {
             document.getSelection()?.removeAllRanges();
-        } catch {};
+        } catch { };
     }
 
     function onEnd(e) {
@@ -129,6 +129,8 @@ export default function Devtool() {
         }
     })
 
+    devtool.console.info("Winbows Devtool Version:", devtool.version);
+
     if (window.HMGR) {
         window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
             devtool.console.log(`${e.isThisTab != true ? `From client [${e.fromClientId || 'UNKNOWN'}]\n` : ''}%c[HMGR] %c${e.method} %c${e.url} %c${e.status}`, 'color:#ff00ff', '', 'color:#86b7ff', e.ok ? 'color:#58ff31' : 'color:red');
@@ -154,7 +156,7 @@ export default function Devtool() {
         if (!el) return;
 
         const url = el.dataset.href;
-        console.log('Clicked:', url);
+        //console.log('Clicked:', url);
 
         const shell = new ShellInstance(process);
         shell.stderr.on('data', (data) => {
