@@ -1,6 +1,6 @@
 import { EventEmitter } from "../WRT/utils/eventEmitter.js";
-import WinUI from "../../ui/winui.js";
-import * as utils from "../../utils.js";
+import WinUI from "../../lib/winui/winui.js";
+import * as utils from "../../shared/utils.js";
 import { apis } from "../kernelRuntime.js";
 import viewport from "../viewport.js";
 

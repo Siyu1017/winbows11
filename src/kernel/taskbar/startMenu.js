@@ -1,6 +1,6 @@
 import { apis } from "../kernelRuntime.js";
-import * as utils from "../../utils.js";
-import WinUI from "../../ui/winui.js";
+import * as utils from "../../shared/utils.js";
+import WinUI from "../../lib/winui/winui.js";
 import { on } from "./taskbar.js";
 import viewport from "../viewport.js";
 import { appRegistry } from "../appRegistry.js";

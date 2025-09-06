@@ -1,5 +1,5 @@
 import { root } from "./viewport.js";
-import * as utils from "../utils.js";
+import * as utils from "../shared/utils.js";
 import { apis } from "./kernelRuntime.js";
 
 const { fs } = apis;

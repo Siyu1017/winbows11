@@ -1,11 +1,11 @@
-import { fsUtils, IDBFS } from "../../lib/fs.js";
+import { fsUtils, IDBFS } from "../../shared/fs.js";
 import { Process } from "./process.js";
-import * as utils from "../../utils.js";
+import * as utils from "../../shared/utils.js";
 import { ShellInstance } from "./shell/shell.js";
-import WinUI from "../../ui/winui.js";
+import WinUI from "../../lib/winui/winui.js";
 import builtinPackageData from "../../../User/AppData/Roaming/wrt/wrt_modules/packages.json";
 import * as WApplication from "./WApplication.v2.js";
-import Devtool from "../../lib/external/winbows-devtool/dist/index.js";
+import Devtool from "../../lib/winbows-devtool/dist/index.js";
 import { loadingText } from "../loading.js";
 import { appRegistry } from "../appRegistry.js";
 import { EventEmitter } from "./utils/eventEmitter.js";

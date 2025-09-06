@@ -1,0 +1,284 @@
+.logContainer {
+    position: relative;
+    padding: .25rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    display: flex;
+    --error-bg: rgb(255 106 86 / 21%);
+    --error-icon-bg: rgb(248, 72, 72);
+    --error-color: rgb(255 168 160);
+    --warn-bg: rgb(221 190 64 / 21%);
+    --warn-icon-bg: rgb(232 148 48);
+    --warn-color: rgb(255 236 158);
+    --info-bg: rgb(126 174 255 / 21%);
+    --info-icon-bg: rgb(37 156 237);
+    --info-color: rgb(160 203 255);
+}
+
+.logContainer.noSep {
+    padding: 0;
+    padding-top: .25rem;
+}
+
+.logContainer.pt0 {
+    padding-top: 0;
+}
+
+.logContainer.pt5 {
+    padding-top: 5px;
+}
+
+.logContainer:not(.noSep)+.logContainer:not(.noSep):before {
+    content: '';
+    width: 100%;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-top: 1px solid rgb(72, 72, 72);
+}
+
+.logIndent {
+    display: flex;
+    width: fit-content;
+    height: inherit;
+}
+
+.logLevelIndent {
+    height: 100%;
+    width: 1rem;
+    display: block;
+    position: relative;
+}
+
+.logItem {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.logItem.warn,
+.logItem.error,
+.logItem.info {
+    border-radius: .25rem;
+    padding: .125rem .375rem;
+}
+
+.logItem.warn {
+    background: var(--warn-bg);
+    color: var(--warn-color);
+}
+
+.logItem.error {
+    background: var(--error-bg);
+    color: var(--error-color);
+}
+
+.logItem.info {
+    background: var(--info-bg);
+    color: var(--info-color);
+}
+
+.logIconContainer {}
+
+.logIcon.warn,
+.logIcon.error,
+.logIcon.info {
+    margin-right: .25rem;
+    width: .925rem;
+    height: .925rem;
+    mask-position: center center;
+    mask-repeat: no-repeat;
+    mask-size: 99%;
+}
+
+.logIcon.warn {
+    mask-image: url("data:image/svg+xml,%3Csvg width=%2720%27 height=%2720%27 fill=%27none%27 xmlns=%27http://www.w3.org/2000/svg%27%3E%3Cpath fill-rule=%27evenodd%27 clip-rule=%27evenodd%27 d=%27m1 17 9-15 9 15H1ZM11 7v5H9V7h2Zm-1 8.1a1.1 1.1 0 1 0 0-2.2 1.1 1.1 0 0 0 0 2.2Z%27 fill=%27%23000%27/%3E%3C/svg%3E");
+    background-color: var(--warn-icon-bg);
+}
+
+.logIcon.error {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none'%3E%3Cpath d='M12 1.25C17.9371 1.25 22.75 6.06294 22.75 12C22.75 17.9371 17.9371 22.75 12 22.75C6.06294 22.75 1.25 17.9371 1.25 12C1.25 6.06294 6.06294 1.25 12 1.25ZM12 10.5859L9 7.58594L7.58594 9L10.5859 12L7.58691 15L9.00098 16.4141L12 13.4141L14.999 16.4141L16.4131 15L13.4131 12L16.4141 9L15 7.58594L12 10.5859Z' fill='%23000000'%3E%3C/path%3E%3C/svg%3E");;
+    background-color: var(--error-icon-bg);
+}
+
+.logIcon.info {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor' class='size-6'%3E%3Cpath fill-rule='evenodd' d='M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 0 1 .67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 1 1-.671-1.34l.041-.022ZM12 9a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z' clip-rule='evenodd' /%3E%3C/svg%3E%0A");
+    background-color: var(--info-icon-bg);
+}
+
+.logCountContainer {
+    width: fit-content;
+}
+
+.logCount {
+    padding: 0 .25rem;
+    border-radius: 99px;
+    background: rgb(154, 154, 154);
+    color: #000;
+    font-weight: bold;
+    width: fit-content;
+    margin-right: .25rem;
+}
+
+.warn .logCount {
+    background: var(--warn-icon-bg);
+}
+
+.error .logCount {
+    background: var(--error-icon-bg);
+}
+
+.info .logCount {
+    background: var(--info-icon-bg);
+}
+
+.logContent {
+    width: 100%;
+    overflow: hidden;
+}
+
+.logPlaintext {
+    min-height: inherit;
+}
+
+.logPlaintext:empty::before {
+    content: ' ';
+    display: block;
+    min-height: inherit;
+}
+
+.logStyled {
+    display: inline-block;
+}
+
+.logClear {
+    font-style: italic;
+    color: #a0a0a0;
+}
+
+.collapsibleContainer {
+    display: flex;
+    flex-direction: column;
+}
+
+.collapsibleSummaryContainer {
+    display: flex;
+    width: auto;
+}
+
+.collapsibleSummaryIconContainer {
+    display: block;
+}
+
+.collapsibleSummaryIcon {
+    background-color: #E3E2E3;
+    mask-image: url("data:image/svg+xml,%3Csvg width='14' height='14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.5 6.65 4.9 2.8v7.7' fill='%23000'/%3E%3C/svg%3E");
+    mask-size: auto;
+    width: 14px;
+    height: 14px;
+    transition: all .1s ease-in-out;
+    min-width: 14px;
+    min-height: 14px;
+    position: relative;
+    top: .5px;
+}
+
+.collapsibleContainer:not(.collapsed) .collapsibleSummaryIcon {
+    transform: rotate(90deg);
+}
+
+.collapsibleSummary {
+    flex: 1;
+}
+
+.collapsibleContentContainer {
+    display: block;
+}
+
+.collapsibleContainer.collapsed .collapsibleContentContainer {
+    display: none;
+}
+
+.collapsibleContent {
+    padding-left: .875rem;
+}
+
+.tableContainer {
+    --border-color: rgb(72, 72, 72);
+    --odd-background: #161616;
+    --even-background: #212121;
+    width: inherit;
+    padding: 0 0 .25rem;
+}
+
+.table {
+    width: 100%;
+    border-spacing: 0;
+    border: 1px solid var(--border-color);
+    table-layout: fixed;
+}
+
+.table th,
+.table td {
+    padding: .25rem .5rem;
+    text-align: left;
+    font-weight: normal;
+    height: 1.375rem;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tableHeader,
+.tableBody {
+    width: 100%;
+}
+
+.tableHeader {
+    background: transparent;
+    border: none;
+}
+
+.tableHeaderCell {
+    border-bottom: 1px solid var(--border-color);
+    position: relative;
+}
+
+.tableHeaderCellCaret {
+    display: block;
+    margin-left: auto;
+    background-color: #e3e2e3;
+    height: 14px;
+    mask-image: url("data:image/svg+xml;charset=utf-8,%3Csvg width='14' height='14' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10.5 6.65 4.9 2.8v7.7' fill='%23000'/%3E%3C/svg%3E");
+    mask-size: auto;
+    min-height: 14px;
+    min-width: 14px;
+    position: absolute;
+    right: 4px;
+    top: 4px;
+    transition: all .1s ease-in-out;
+    width: 14px;
+    transform: rotate(90deg);
+}
+
+.tableHeaderCellCaret.up {
+    transform: rotate(-90deg);
+}
+
+.tableHeaderCell+.tableHeaderCell,
+.tableCell+.tableCell {
+    border-left: 1px solid var(--border-color);
+}
+
+.tableHeaderCell:hover {
+    background: rgba(255, 255, 255, .05);
+}
+
+.tableRow:nth-child(2n-1) {
+    background: var(--odd-background);
+}
+
+.tableRow:nth-child(2n) {
+    background: var(--even-background);
+}

@@ -1,5 +1,5 @@
 import { getScheme } from "./WRT/shell/utils.js";
-import { fsUtils } from "../lib/fs.js";
+import { fsUtils } from "../shared/fs.js";
 
 function generateAppSeed({ appName, basePath, contentPath }) {
     let seed = null;

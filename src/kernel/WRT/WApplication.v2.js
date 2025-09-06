@@ -1,7 +1,7 @@
-import WinUI from "../../ui/winui.js";
+import WinUI from "../../lib/winui/winui.js";
 import { WRT } from "./kernel.js";
-import * as utils from "../../utils.js";
-import { IDBFS, fsUtils } from "../../lib/fs.js";
+import * as utils from "../../shared/utils.js";
+import { IDBFS, fsUtils } from "../../shared/fs.js";
 import { EventEmitter } from "./utils/eventEmitter.js";
 import viewport from "../viewport.js";
 import { appRegistry } from "../appRegistry.js";

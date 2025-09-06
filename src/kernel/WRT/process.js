@@ -1,4 +1,4 @@
-import { fsUtils } from "../../lib/fs.js";
+import { fsUtils } from "../../shared/fs.js";
 import { InputStream } from "./utils/inputStream.js";
 import { OutputStream } from "./utils/outputStream.js";
 import { EventEmitter } from "./utils/eventEmitter.js";

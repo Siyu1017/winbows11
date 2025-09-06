@@ -1,6 +1,6 @@
-import * as utils from "../../utils.js";
-import WinbowsDevtool from "../../lib/external/winbows-devtool/dist/index.js";
-import "../../lib/external/winbows-devtool/dist/index.css";
+import * as utils from "../../shared/utils.js";
+import WinbowsDevtool from "../../lib/winbows-devtool/dist/index.js";
+import "../../lib/winbows-devtool/dist/index.css";
 import viewport from "../viewport.js";
 import { Tabview } from "./tabview.js";
 import storage from "./storage.js";

@@ -1,6 +1,6 @@
 import viewport from "./viewport.js";
 import SystemInformation from "./systemInformationProvider.js";
-import { safeEscape, getStackTrace } from "../utils.js";
+import { safeEscape, getStackTrace } from "../shared/utils.js";
 
 export default function crashHandler(e) {
     try {

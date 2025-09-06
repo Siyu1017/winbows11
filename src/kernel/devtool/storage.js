@@ -1,6 +1,6 @@
 import "./storage.css";
 import { apis } from "../kernelRuntime.js";
-import { fsUtils } from "../../lib/fs.js";
+import { fsUtils } from "../../shared/fs.js";
 
 const { fs } = apis;
 

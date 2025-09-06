@@ -1,0 +1,52 @@
+.devtool {
+    position: relative;
+    overflow-y: auto;
+    height: 100%;
+    cursor: default;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+    -webkit-overflow-scrolling: touch;
+    background: rgb(30, 30, 30);
+    color: #efefef;
+    color-scheme: dark;
+}
+
+.devtool *::selection {
+    background: rgb(184, 198, 255);
+    color: #000;
+}
+
+.devtool,
+.devtool * {
+    box-sizing: border-box;
+}
+
+.devtool a {
+    color: rgb(184, 198, 255);
+}
+
+.devtoolLogsArea {
+    position: relative;
+    height: fit-content;
+}
+
+.devtoolMeasurementArea {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    visibility: hidden;
+    z-index: -1;
+    pointer-events: none;
+    height: 0;
+    overflow-x: hidden;
+    padding: .5rem;
+    height: fit-content;
+}
+
+.devtoolLogs {
+    padding: .5rem;
+    overflow-x: hidden;
+    position: absolute;
+    width: 100%;
+}

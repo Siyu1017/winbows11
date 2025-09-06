@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Winbows Devtool</title>
+    <link rel="stylesheet" href="./dist/index.css">
+</head>
+
+<body style="margin: 0;">
+    <script>
+        function updateScreenSize() {
+            document.body.style.width = window.innerWidth + 'px';
+            document.body.style.height = window.innerHeight + 'px';
+        }
+        window.addEventListener('resize', updateScreenSize);
+        window.addEventListener('load', updateScreenSize);
+        updateScreenSize();
+    </script>
+    <div style="width: 100%;height: 100%;" id="myDevtool"></div>
+    <script type="module">
+        import Devtool from './dist/index.js';
+
+        function Person(firstName, lastName) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+        }
+
+        var john = new Person("John", "Smith");
+        var jane = new Person("Jane", "Doe");
+        var emily = new Person("Emily", "Jones");
+
+        const devtool = new Devtool();
+        const console = devtool.console;
+        document.getElementById('myDevtool').appendChild(devtool.devtool);
+
+        // clear
+        console.clear();
+
+        // Styled log
+        console.log('%cWelcome to Winbows Devtool!', 'background-image: linear-gradient(to right, rgba(71, 202, 250, 255), rgba(3, 124, 213, 255));-webkit-text-fill-color: #0000;background-clip: text;-webkit-background-clip: text;font-weight: bold;font-size:150%;', '\nHere are the available methods:', { console });
+
+        // Version
+        console.info("Version:", devtool.version);
+
+        // outputs
+        console.error(new Error('This is an error message'));
+        console.warn('This is a warning message');
+        console.info('This is an info message');
+        console.debug('This is a debug message');
+
+        // group
+        console.group('level1');
+        console.log('Log inside level1');
+        console.group('level2');
+        console.log('Log inside level2');
+        console.groupCollapsed('level3');
+        console.warn('Log inside collapsed level3');
+        console.groupCollapsed('level4');
+        console.warn('Log inside collapsed level4');
+        console.group('level5');
+        console.log('Log inside level5');
+        console.table([john, jane, emily], ["firstName"]);
+        console.groupEnd();
+        console.groupEnd();
+        console.groupEnd();
+        console.groupEnd();
+        console.groupEnd();
+
+        console.group('');
+        console.log('message');
+        console.groupEnd();
+        console.log('message');
+
+        // count
+        console.count('testCount');
+        console.count('testCount');
+        console.count('testCount');
+        console.countReset('testCount');
+        console.count('testCount');
+
+        // time
+        console.time();
+        console.timeLog();
+        console.timeEnd();
+
+        // other
+        console.trace();
+        console.assert(4 == 5, '4 is not equal to 5');
+
+        // table
+        console.table([john, jane, emily, {
+            a: 1, b: 2, c: 3, d: { a: 1, b: 2, c: 3, d: 4 }, e: [1, 2, 3, 4, 5], f: new Set([1, 2, 3]),
+            g: new Map([["a", 1], ["b", 2], ["c", 3]])
+        }]);
+
+        const users = [
+            { name: 'Alice', age: 30, city: 'New York' },
+            { name: 'Bob', age: 24, city: 'London' },
+            { name: 'Charlie', age: 35, city: 'Paris' }
+        ];
+        console.table(users);
+
+        // Repeated
+        for (let i = 0; i < 20; i++) {
+            console.log('Repeated log');
+        }
+        for (let i = 0; i < 20; i++) {
+            console.warn('Repeated warn');
+        }
+        for (let i = 0; i < 20; i++) {
+            console.error(new Error('Repeated error'));
+        }
+        for (let i = 0; i < 20; i++) {
+            console.info('Repeated info');
+        }
+    </script>
+</body>
+
+</html>

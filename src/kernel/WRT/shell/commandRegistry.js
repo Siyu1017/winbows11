@@ -1,5 +1,5 @@
-import { fsUtils } from "../../../lib/fs.js";
-import { capitalizeFirstLetter, parseKeyValueArgs } from "../../../utils.js";
+import { fsUtils } from "../../../shared/fs.js";
+import { capitalizeFirstLetter, parseKeyValueArgs } from "../../../shared/utils.js";
 import { tasklist } from "../kernel.js";
 import { formatTwoColumns, parseURI, terminalTable } from "./utils.js";
 import { appRegistry } from "../../appRegistry.js";

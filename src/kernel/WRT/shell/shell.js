@@ -1,5 +1,5 @@
-import minimistJs from "../../../lib/external/minimist.js/index.js";
-import { fsUtils, IDBFS } from "../../../lib/fs.js";
+import minimistJs from "../../../lib/minimist.js/index.js";
+import { fsUtils, IDBFS } from "../../../shared/fs.js";
 import { commandRegistry } from "./commandRegistry.js";
 import { InputStream } from "../utils/inputStream.js";
 import { OutputStream } from "../utils/outputStream.js";

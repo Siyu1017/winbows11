@@ -1,4 +1,4 @@
-import { IDBFS } from "../lib/fs.js";
+import { IDBFS } from "../shared/fs.js";
 import viewport from "./viewport.js";
 
 const fs = IDBFS("~WRT");
