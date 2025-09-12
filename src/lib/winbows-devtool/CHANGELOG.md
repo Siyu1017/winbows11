@@ -1,3 +1,9 @@
+### v1.3.0
+
+## Added
+
+- Support Objects that use Symbols as keys
+
 ### v1.2.1
 
 ## Fixed

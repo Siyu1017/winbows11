@@ -6,6 +6,7 @@ import { Tabview } from "./tabview.js";
 import storage from "./storage.js";
 import performanceMonitor from "./performance-monitor.js";
 import { apis } from "../kernelRuntime.js";
+import tasks from "./tasks.js";
 
 const { root } = viewport;
 const { ShellInstance, process } = apis;
@@ -113,6 +114,12 @@ export default function Devtool() {
         id: 'storage',
         title: 'Storage',
         content: storage,
+        closable: false
+    })
+    const tasksTab = tabview.add({
+        id: 'tasks',
+        title: 'Tasks',
+        content: tasks,
         closable: false
     })
 

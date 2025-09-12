@@ -218,8 +218,8 @@ function createTaskItem(wrt) {
 }
 
 function initTasks() {
-    Object.values(System.tasklist).forEach((p, i) => {
-        createTaskItem(p);
+    System.tasklist.list().forEach(id => {
+        createTaskItem(System.tasklist.get(id));
     })
 }
 

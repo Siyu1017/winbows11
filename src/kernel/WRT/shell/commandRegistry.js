@@ -4,6 +4,7 @@ import { tasklist } from "../kernel.js";
 import { formatTwoColumns, parseURI, terminalTable } from "./utils.js";
 import { appRegistry } from "../../appRegistry.js";
 import { WRT } from "../kernel.js";
+import SystemInformation from "../../systemInformationProvider.js";
 
 /**
  * @typedef {Object} CommandConfig
@@ -363,9 +364,9 @@ commandRegistry.register('tasklist', {
             text: 'Runtime ID'
         }]);
 
-        Object.keys(tasklist).forEach(k => {
+        tasklist.list().forEach(k => {
             try {
-                const task = tasklist[k];
+                const task = tasklist.get(k);
                 table.row([{ text: fsUtils.basename(task.__filename || '') }, { text: String(task.process.pid) }, { text: task.title }, { text: k }]);
             } catch (e) {
                 console.error(e);
@@ -515,6 +516,17 @@ commandRegistry.register('pwd', {
             pwd += '/';
         }
         shell.stdout.write(pwd + '\n');
+        return true;
+    }
+})
+
+// Print Winbows Version
+commandRegistry.register('ver', {
+    description: 'Print Winbows version.',
+    usage: 'version',
+    category: 'built-in',
+    handler: (_, shell) => {
+        shell.stdout.write(`Winbows11 [Version ${SystemInformation.version}]\n`);
         return true;
     }
 })

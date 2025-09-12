@@ -1,3 +1,4 @@
+import crashHandler from "../kernel/crashHandler.js";
 import { fallbackImage } from "../kernel/fallback.js";
 
 const debugMode = false;
@@ -416,7 +417,7 @@ async function doTask() {
             return doTask();
         } else if (e.name === 'InvalidStateError' && repairing == true) {
             print('Failed to repair idbfs.');
-            if (window.Crash) window.Crash();
+            crashHandler(e);
         }
     }
 }

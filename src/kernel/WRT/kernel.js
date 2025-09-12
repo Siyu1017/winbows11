@@ -4,7 +4,7 @@ import * as utils from "../../shared/utils.js";
 import { ShellInstance } from "./shell/shell.js";
 import WinUI from "../../lib/winui/winui.js";
 import builtinPackageData from "../../../User/AppData/Roaming/wrt/wrt_modules/packages.json";
-import * as WApplication from "./WApplication.v2.js";
+import * as WApplication from "./WApplication.js";
 import Devtool from "../../lib/winbows-devtool/dist/index.js";
 import { loadingText } from "../loading.js";
 import { appRegistry } from "../appRegistry.js";
@@ -12,7 +12,7 @@ import { EventEmitter } from "./utils/eventEmitter.js";
 
 const fs = IDBFS("~WRT");
 const consoleStyle = 'color:#fff;background:#0067c0;padding:2px 4px;border-radius:4px; font-weight: normal;';
-const definitionCodes = `/*!\n * Winbows Node.js Runtime (c) Siyu1017 ${new Date().getFullYear()}\n * Learn more in the Winbows Developer app in the start menu.\n */\nconst {fs,path,process,__dirname,__filename,requireAsync,module,exports,runtimeID,ShellInstance,WinUI,WApplication,appRegistry,\nconsole,setInterval,clearInterval,setTimeout,clearTimeout // Proxy APIs\n}=this;\n`;
+const definitionCodes = `/*!\n * Winbows Node.js Runtime (c) Siyu1017 ${new Date().getFullYear()}\n * Learn more in the Winbows Developer app in the start menu.\n */\nconst {fs,path,process,__dirname,__filename,requireAsync,module,exports,runtimeID,ShellInstance,WinUI,WApplication,appRegistry,\nconsole,setInterval,clearInterval,setTimeout,clearTimeout // Proxy APIs\n}=this;const {System}=window;\n`;
 
 loadingText('Loading packages...');
 
@@ -51,7 +51,34 @@ const devtool = Symbol('devtool');
 const WApplicationPath = Symbol('wap');
 const WApplicationAPI = Symbol('waapi');
 
-const tasklist = {};
+const tasklist = new ((() => {
+    const tasks = new Map();
+    return class TaskList extends EventEmitter {
+        constructor() {
+            super();
+        }
+        add(id, task) {
+            tasks.set(id, task);
+            this._emit('add', { id, task });
+        }
+        remove(id) {
+            tasks.delete(id);
+            this._emit('remove', { id });
+        }
+        update(id, key, value) {
+            const task = tasks.get(id);
+            if (!task) return;
+            task[key] = value;
+            this._emit('update', { id, key, value });
+        }
+        get(id) {
+            return tasks.get(id);
+        }
+        list() {
+            return tasks.keys();
+        }
+    }
+})())();
 const eventEmitter = new EventEmitter();
 
 class WinbowsNodejsRuntime {
@@ -88,7 +115,7 @@ class WinbowsNodejsRuntime {
                             return obj[prop].apply(obj, args);
                         }
                     } else {
-                        console.warn.apply(obj, [`%cWRT%c > %c${this[runtimeID]}`, consoleStyle, 'color:inherit;', consoleStyle, `console.${prop} is not supported in WRT Environment.`]);
+                        console.warn.apply(obj, [`%cWRT%c > %c${this[runtimeID]}`, consoleStyle, 'color:inherit;', consoleStyle, `console.${String(prop)} is not supported in WRT Environment.`]);
                         return () => { };
                     };
                 },
@@ -124,9 +151,7 @@ class WinbowsNodejsRuntime {
                     this[process].title = value;
 
                     eventEmitter._emit('change', this);
-                    if (tasklist[this[runtimeID]]) {
-                        tasklist[this[runtimeID]].title = value;
-                    }
+                    tasklist.update(this[runtimeID], 'title', value)
 
                     return true;
                 } else {
@@ -142,7 +167,7 @@ class WinbowsNodejsRuntime {
             if (this[alive] == false) return;
             eventEmitter._emit('close', this);
             this[alive] = false;
-            delete tasklist[this[runtimeID]];
+            tasklist.remove(this[runtimeID]);
             this.proxyTimeout.clearAll();
             this.proxyInterval.clearAll();
             this.proxyShellInstances.forEach(instance => {
@@ -344,11 +369,11 @@ class WinbowsNodejsRuntime {
         const filePath = envParams.__filename ? fsUtils.resolve(this.cwd, envParams.__filename) : '<anonymous>';
         this.path = filePath;
 
-        tasklist[this[runtimeID]] = {
+        tasklist.add(this[runtimeID], {
             __filename: filePath,
             __dirname: currentDir,
             ...this
-        };
+        });
 
         const builtins = {
             ...this.getDefaultBuiltins(currentDir), // Default variables

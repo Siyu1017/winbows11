@@ -169,7 +169,7 @@ function getPreview(data, level = 0) {
             }
         } else if (type == 'object') {
             if (showDetail) {
-                const keys = Object.keys(data);
+                const keys = Reflect.ownKeys(data);
                 let html = keys.slice(0, 5).map(k => {
                     const t = data[k];
                     return `${wrapKey(k)}: ${wrapValue(traversal(t, level + 1), getType(t))}`;
@@ -445,11 +445,12 @@ class ObjectViewer {
         } else if (type == 'object') {
             const commonKeys = Object.keys(data).sort();
             const propertyKeys = Object.getOwnPropertyNames(data).filter(t => !commonKeys.includes(t)).sort();
+            const symbolKeys = Object.getOwnPropertySymbols(data);
 
-            commonKeys.forEach(k => {
+            commonKeys.concat(symbolKeys).forEach(k => {
                 const value = data[k];
                 const { item, key } = createEl({
-                    key: k,
+                    key: k?.toString(),
                     value,
                     preview: getPreview(value),
                     nextFn: this.getLevel.bind(this),
@@ -525,6 +526,23 @@ class ObjectViewer {
                 })
                 parent.appendChild(item);
             })
+        } else {
+            try {
+                const props = Reflect.ownKeys(data);
+
+                props.forEach(k => {
+                    const value = data[k];
+                    const { item, key } = createEl({
+                        key: k?.toString(),
+                        value,
+                        preview: getPreview(value),
+                        nextFn: this.getLevel.bind(this),
+                        type: getType(value),
+                        expandable: expandable(value)
+                    })
+                    parent.appendChild(item);
+                });
+            } catch (e) { }
         }
     }
     getPreview = getPreview

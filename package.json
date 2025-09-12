@@ -1,6 +1,6 @@
 {
   "name": "winbows11",
-  "version": "1.0.0-beta.11",
+  "version": "1.0.0-beta.12",
   "description": "Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!",
   "main": "server.js",
   "directories": {

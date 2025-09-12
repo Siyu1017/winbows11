@@ -1,3 +1,3 @@
 [submodule "src/lib/winbows-devtool"]
 	path = src/lib/winbows-devtool
-	url = https://github.com/Siyu1017/winbows-devtool
+	url = https://github.com/Siyu1017/winbows-devtool.git

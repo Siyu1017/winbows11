@@ -55,7 +55,7 @@ const fitAddon = new FitAddon();
 
 term.loadAddon(fitAddon);
 term.open(container);
-term.write("Microhard Winbows [Version 11.0.0]\n(c) Microhard Corporation. All rights reserved.\n\nType \"help\" for available commands.\n");
+term.write(`Winbows11 [Version ${System.version}]\n(c) Microhard Corporation. All rights reserved.\n\nType \"help\" for available commands.\n`);
 
 /*
 let progress = 0;

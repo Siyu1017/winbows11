@@ -14,7 +14,7 @@ import SystemInformation from './systemInformationProvider.js';
 const { desktopItems, desktop, root } = viewport;
 
 const { fs, process, __dirname, __filename, requireAsync, module, exports, runtimeID, ShellInstance } = apis;
-const System = { ...SystemInformation };
+const System = SystemInformation;
 
 System.WRT = WRT;
 System.tasklist = tasklist;
