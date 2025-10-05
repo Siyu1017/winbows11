@@ -10,7 +10,7 @@ function emit(event, details) {
     }
 }
 
-export const router = {
+const router = {
     push: (path) => {
         if (path != routerHistory[currentIndex]) {
             routerHistory.splice(currentIndex + 1)
@@ -78,3 +78,5 @@ export const router = {
         return currentIndex;
     }
 }
+
+module.exports = { router }; 

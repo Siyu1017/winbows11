@@ -12,5 +12,9 @@ app.use(express.static(__dirname), (req, res, next) => {
 })
 
 app.listen(3000, function () {
-    console.log("Server is running at http://localhost:3000");
+    setTimeout(() => {
+        console.log("Server is running at http://localhost:3000");
+        console.log("Dev mode: http://localhost:3000/?dev");
+        console.log("Log parser: http://localhost:3000/dev/log-parser/")
+    }, 1000);
 })

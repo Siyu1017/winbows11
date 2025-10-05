@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
-fs.rmSync('build.txt');
 
 function walk(dir, done) {
     var results = [];

@@ -138,25 +138,22 @@ new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
 
 const taskItems = {};
 
-function createTaskItem(wrt) {
-    const pid = wrt.process.pid;
-    if (typeof pid !== 'number') return;
-
-    const info = appRegistry.getApp(wrt?.path);
-    const title = wrt.title || 'App';
-    const task = document.createElement('div');
+function createTaskItem(task) {
+    const runtimeID = task.runtimeID;
+    const pid = task.process.pid;
+    const info = appRegistry.getApp(task.path);
+    const title = task.title || 'App';
+    const taskEl = document.createElement('div');
     const taskInfo = document.createElement('div');
     const taskIcon = document.createElement('div');
     const taskName = document.createElement('div');
     const taskPid = document.createElement('div');
 
-    task.className = 'task';
+    taskEl.className = 'task';
     taskInfo.className = 'task-info';
     taskIcon.className = 'task-icon';
     taskName.className = 'task-name';
     taskPid.className = 'task-pid';
-
-    console.log(wrt);
 
     taskName.innerHTML = title.replace(/</, '&lt;').replace(/>/, '&gt;');
 
@@ -166,17 +163,17 @@ function createTaskItem(wrt) {
     taskPid.innerHTML = pid;
 
     if (title.toLowerCase().includes(searchInput.value.toLowerCase()) || pid.toString().includes(searchInput.value)) {
-        task.style.display = 'flex';
+        taskEl.style.display = 'flex';
         taskListNoMatched.style.display = 'none';
     } else {
-        task.style.display = 'none';
+        taskEl.style.display = 'none';
     }
 
-    task.appendChild(taskInfo);
+    taskEl.appendChild(taskInfo);
     taskInfo.appendChild(taskIcon);
     taskInfo.appendChild(taskName);
-    task.appendChild(taskPid);
-    taskList.appendChild(task);
+    taskEl.appendChild(taskPid);
+    taskList.appendChild(taskEl);
 
     function changeIcon(icon) {
         taskIcon.style.backgroundImage = `url(${icon})`;
@@ -187,12 +184,12 @@ function createTaskItem(wrt) {
     }
 
     function exit() {
-        task.remove();
-        delete taskItems[pid];
-        wrt.process.exit(0);
+        taskEl.remove();
+        delete taskItems[runtimeID];
+        task.process.exit(0);
     }
 
-    task.addEventListener('contextmenu', (e) => {
+    taskEl.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         menu = WinUI.contextMenu([
             {
@@ -212,42 +209,47 @@ function createTaskItem(wrt) {
         menu.open(e.pageX, e.pageY, 'left-top');
     })
 
-    taskItems[pid] = { title, pid: pid.toString(), task, changeIcon, changeName, exit };
+    taskItems[runtimeID] = { title, pid: pid.toString(), task: taskEl, changeIcon, changeName, exit };
 
     return { changeIcon, changeName, exit };
 }
 
-function initTasks() {
-    System.tasklist.list().forEach(id => {
-        createTaskItem(System.tasklist.get(id));
-    })
-}
+System.tasklist.list().forEach(runtimeID => {
+    createTaskItem({
+        runtimeID,
+        ...System.tasklist.get(runtimeID)
+    });
+})
 
-System.WRT.on('create', (wrt) => {
-    if (!taskItems[wrt.process.pid]) {
-        createTaskItem(wrt);
+System.tasklist.on('add', (e) => {
+    if (!taskItems[e.runtimeID]) {
+        createTaskItem({
+            runtimeID: e.runtimeID,
+            ...e.task
+        });
     }
 });
 
-System.WRT.on('close', (wrt) => {
-    if (taskItems[wrt.process.pid]) {
-        taskItems[wrt.process.pid].exit();
+System.tasklist.on('remove', (e) => {
+    const item = taskItems[e.id];
+    if (item) {
+        item.exit();
     }
 })
 
-System.WRT.on('change', (wrt) => {
-    if (taskItems[wrt.process.pid]) {
-        taskItems[wrt.process.pid].changeName(wrt.title);
-        const info = appRegistry.getApp(wrt?.path);
-        if (info.icon) {
-            fs.getFileURL(info.icon).then(url => {
-                taskItems[wrt.process.pid].changeIcon(url);
-            });
+System.tasklist.on('update', (e) => {
+    const item = taskItems[e.id];
+    if (item) {
+        if (e.key == 'title') {
+            item.changeName(e.value);
+        } else if (e.key == 'icon') {
+            fs.getFileURL(e.value || 'C:/Winbows/icons/files/program.ico').then(url => {
+                item.changeIcon(url);
+            })
         }
     }
 })
 
-initTasks();
 
 /*
 System.processes.prototype.addEventListener('start', (e) => {

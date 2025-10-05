@@ -1,6 +1,3 @@
-import crashHandler from "../kernel/crashHandler.js";
-import { fallbackImage } from "../kernel/fallback.js";
-
 const debugMode = false;
 const defaultEnv = {
     APPDATA: 'C:/User/AppData/Roaming',
@@ -159,10 +156,10 @@ const fsUtils = {
 const UUIDManager = (function () {
     const uuids = new Map();
     const priorities = {
-        "C:/Winbows/System/kernel/init.js": 9,
-        "C:/Winbows/System/kernel/kernel.js": 9,
-        "C:/Winbows/System/process.js": 9,
-        "~WRT": 8
+        "~BOOT": 10,
+        "~KERNEL": 9,
+        "~SYSTEM": 9,
+        "~EXPLORER": 8
     }
 
     function UUID() {
@@ -210,7 +207,7 @@ const UUIDManager = (function () {
         if (uuids.has(uuid)) {
             uuids.delete(uuid);
         } else {
-            throw new Error("Invalid uuid.");
+            console.error(new Error("Invalid uuid."));
         }
     }
 
@@ -417,7 +414,6 @@ async function doTask() {
             return doTask();
         } else if (e.name === 'InvalidStateError' && repairing == true) {
             print('Failed to repair idbfs.');
-            crashHandler(e);
         }
     }
 }
@@ -1146,9 +1142,9 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
     /**
      * Get file content
      * @param {string} fullPath 
-     * @returns {string}
+     * @returns {Promise<string>}
      */
-    async function getFileAsText(fullPath) {
+    async function readFileAsText(fullPath) {
         if (__dirname != "") {
             fullPath = fsUtils.resolve(__dirname, fullPath);
         }
@@ -1212,7 +1208,7 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
         // =================== For Web Workers =================== //
         proxy,
         // ================= Convenient functions ================ //
-        downloadFile, getFileURL, getFileAsText,
+        downloadFile, getFileURL, readFileAsText,
         // ================= Deprecated functions ================ //
         getFileExtension, resolvePath
     };

@@ -1,6 +1,5 @@
-import { fs } from 'winbows/fs';
-
 // "null" refers to the group separator
+const fsUtils = path;
 const caches = {};
 const pageDatas = [
     {
@@ -45,6 +44,41 @@ const pageDatas = [
         icon: './icons/network.ico'
     }
 ];
+
+function getPosition(element) {
+    function offset(el) {
+        var rect = el.getBoundingClientRect(),
+            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+    }
+    return { x: offset(element).left, y: offset(element).top };
+}
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+}
+
+function canvasClarifier(canvas, ctx, width, height) {
+    const originalSize = {
+        width: (width ? width : canvas.offsetWidth),
+        height: (height ? height : canvas.offsetHeight)
+    }
+    var ratio = window.devicePixelRatio || 1;
+    canvas.width = originalSize.width * ratio;
+    canvas.height = originalSize.height * ratio;
+    ctx.scale(ratio, ratio);
+    if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
+        canvas.style.width = originalSize.width + 'px';
+        canvas.style.height = originalSize.height + 'px';
+    }
+}
 
 function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
@@ -92,7 +126,7 @@ function getData(path) {
     }
 }
 
-export async function setupTab(browserWindow, tab, page = 'pages://home') {
+async function setupTab(browserWindow, tab, page = 'pages://home') {
     // Path
     var pathStrip = document.createElement('div');
     var pathStripActions = document.createElement('div');
@@ -196,8 +230,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     setSidebar(true);
 
-    const module = await browserWindow.import('./_router.js');
-    const router = module.router;
+    const { router } = await requireAsync('./_router.js');
     let pageContents = {};
 
     async function updatePage(e) {
@@ -276,16 +309,16 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
                     navigator.storage.estimate().then(quota => {
                         usedSizeBar.style.width = size / quota.quota * 100 + '%';
-                        usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
+                        usedSizeText.innerHTML = `${formatBytes(size)} / ${formatBytes(quota.quota)}`;
                     })
 
-                    footerPageSize.innerHTML = window.utils.formatBytes(size);
+                    footerPageSize.innerHTML = formatBytes(size);
                 }
                 pageContent = itemViewer;
             } else {
                 try {
-                    const module = await browserWindow.import(`./pages/` + path.replace('pages://', '') + '.js');
-                    pageContents[path] = module.default(router);
+                    const page = await requireAsync(`./pages/` + path.replace('pages://', '') + '.js');
+                    pageContents[path] = page(router);
                     pageContent = pageContents[path] || document.createElement('div');
                 } catch (e) {
                     // Page not found
@@ -491,7 +524,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
             selected = [];
             createdItems.forEach(item => {
-                var position = window.utils.getPosition(item.item);
+                var position = getPosition(item.item);
                 var itemWidth = item.item.offsetWidth;
                 var itemHeight = item.item.offsetHeight;
 
@@ -520,17 +553,17 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
         function selectionEnd(e) {
             selecting = false;
-            window.utils.canvasClarifier(canvas, ctx);
+            canvasClarifier(canvas, ctx);
         }
 
         function render() {
-            window.utils.canvasClarifier(canvas, ctx);
+            canvasClarifier(canvas, ctx);
             if (selecting == false) return;
 
             var viewer = viewerContainer.querySelector('.explorer-item-viewer');
             if (!viewer) return;
 
-            var position = window.utils.getPosition(canvas);
+            var position = getPosition(canvas);
 
             ctx.save();
             ctx.beginPath();
@@ -680,20 +713,20 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         itemName.className = 'explorer-viewer-item-name';
 
         if (details.type == 'application/winbows-link') {
-            fs.getFileAsText(path).then(content => {
+            fs.readFileAsText(path).then(content => {
                 try {
                     const link = JSON.parse(content);
                     itemIcon.style.backgroundImage = `url(${link.icon})`;
                     itemIcon.classList.add('shortcut');
                     itemName.innerHTML = link.name;
                     item.addEventListener('click', (e) => {
-                        window.System.Shell(link.command);
+                        System.shell.execCommand(link.command);
                     })
                     getImageURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
                         itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
                     })
                 } catch (e) {
-                    getImageURL(window.fileIcons.getIcon(path)).then(url => {
+                    getImageURL(System.fileIcons.getIcon(path)).then(url => {
                         itemIcon.style.backgroundImage = `url(${url})`;
                     })
                     itemName.innerHTML = fsUtils.basename(path);
@@ -701,7 +734,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                 }
             })
         } else {
-            getImageURL(window.fileIcons.getIcon(path)).then(url => {
+            getImageURL(System.fileIcons.getIcon(path)).then(url => {
                 itemIcon.style.backgroundImage = `url(${url})`;
                 if (details.type.startsWith('image/')) {
                     try {
@@ -717,18 +750,21 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             })
             itemName.innerHTML = details.name;
             item.addEventListener('click', () => {
-                if (['.wrt'].includes(window.utils.getFileExtension(path))) {
-                    new window.System.WRT().runFile(path);
+                if (['.wrt'].includes(path.extname(path))) {
+                    System.shell.execCommand(path);
                     return;
                 }
-                var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                var defaultViewer = System.fileViewers.getDefaultViewer(path);
                 if (defaultViewer != null) {
-                    new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                    System.shell.execCommand(`${defaultViewer.script} --path=${path}`);
                 } else {
-                    if (window.modes.debug == true) {
-                        console.log('./chooseViewer.wrt')
-                    }
-                    new Process(fs.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
+                    const shell = new ShellInstance(process);
+                    shell.execCommand(`chooseViewer.wrt --path=${path}`).then(() => {
+                        shell.dispose();
+                    }).catch(e => {
+                        console.error(e);
+                        shell.dispose();
+                    })
                 }
             })
         }
@@ -748,7 +784,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "open",
                     text: "Open",
                     action: () => {
-                        var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                        var defaultViewer = System.fileViewers.getDefaultViewer(path);
                         if (defaultViewer != null) {
                             new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                         } else {
@@ -784,7 +820,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         await window.setBackgroundImage(path);
                     }
                 })
-            } else if (details.type.search('javascript') > -1 || window.utils.getFileExtension(path) == '.wrt') {
+            } else if (details.type.search('javascript') > -1 || path.extname(path) == '.wrt') {
                 items.push({
                     className: "run-as-an-app",
                     icon: 'window-snipping',
@@ -793,7 +829,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         new Process(path).start();
                     }
                 })
-            } else if (window.utils.getFileExtension(path) == '.wbsf') {
+            } else if (path.extname(path) == '.wbsf') {
                 items.push({
                     icon: 'window-snipping',
                     text: 'Run file',
@@ -805,7 +841,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         })
                     }
                 })
-            } else if (fontExtensions.includes(window.utils.getFileExtension(path))) {
+            } else if (fontExtensions.includes(path.extname(path))) {
                 items.push({
                     className: "set-as-default-font",
                     icon: 'font',
@@ -890,7 +926,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             } catch (e) { };
         }))
         footerPageItems.innerHTML = `${items.length} Items`;
-        footerPageSize.innerHTML = window.utils.formatBytes(pageStat.length);
+        footerPageSize.innerHTML = formatBytes(pageStat.length);
 
         if (items.length == 0) {
             const el = document.createElement('span');
@@ -1016,3 +1052,5 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         }
     });
 }
+
+module.exports = { setupTab };

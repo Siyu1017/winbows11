@@ -69,7 +69,7 @@ body {
 
 .overlay.nightlight {
     opacity: 0;
-    background: rgb(117 91 0 / 50%);
+    background: rgb(80 57 5 / 69%);
     /* transition: opacity 2s ease-in-out; */
 }
 
@@ -373,6 +373,7 @@ body {
     background-size: cover;
     position: absolute;
     z-index: -1;
+    background-color: #000;
 }
 
 .lock-screen-main {
@@ -484,7 +485,7 @@ body {
 .screen {
     width: var(--viewport-width);
     height: var(--viewport-height);
-    background: #000;
+    background: #fff;
     --taskbar-item-translateX: 0px;
     z-index: 1;
     position: fixed;
@@ -916,8 +917,7 @@ body {
     box-shadow: 0 0 8px 4px rgb(0 0 0 / 9%);
     width: 40rem;
     max-width: calc(var(--viewport-width) - 1rem);
-    height: min(var(
-    --viewport-height) - 1rem - var(--taskbar-height), 45rem);
+    height: min(var(--viewport-height) - 1rem - var(--taskbar-height), 45rem);
     display: flex;
     flex-direction: column;
 }
@@ -2116,6 +2116,24 @@ body {
     z-index: 99;
     box-sizing: border-box;
     cursor: w-resize;
+}
+
+.winbows-devtool-content {
+    width: inherit;
+    height: calc(100% - 1.75rem);
+}
+
+.winbows-devtool-footer {
+    width: inherit;
+    position: sticky;
+    bottom: 0;
+    background: rgb(30, 30, 30);
+    height: 1.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaaab0;
+    border-top: 1px solid #484848;
 }
 
 /* Beta */

@@ -1,0 +1,158 @@
+import backgroundImage from "./desktop/backgroundImage.js";
+import ModuleManager from "../moduleManager.js";
+import { IDBFS } from "../../shared/fs.js";
+import Taskbar from "./taskbar/taskbar.js";
+import { loading, viewport } from "../core/viewport.js";
+import lockScreen from "../core/lockScreen.js";
+import Logger, { WinbowsDebugLog } from "../core/log.js";
+import { desktopEl } from "./desktop/init.js";
+import timer from "../core/timer.js";
+import desktop from "./desktop/desktop.js";
+// import Copilot from "./copilot/chat.js";
+
+export default async function init() {
+    const logger = new Logger({
+        module: 'Explorer'
+    })
+    timer.groupEnd();
+    timer.group('Explorer');
+
+    const taskbar = Taskbar();
+    timer.mark('Taskbar');
+
+    const fs = IDBFS('~EXPLORER');
+    const WRT = ModuleManager.get('WRT');
+    const pseudoProcess = new WRT({
+        code: '//! Explorer pseudo-process',
+        __filename: 'C:/Winbows/System/explorer.wrt',
+        options: {
+            keepAlive: true
+        }
+    });
+    pseudoProcess.process.title = 'Explorer';
+    pseudoProcess.main();
+    pseudoProcess.process.on('exit', () => {
+        logger.warn('Explorer process exited');
+        taskbar.taskbar.remove();
+        taskbar.controlPanel.panel.remove();
+        taskbar.controlPanel.sidebar.remove();
+        desktopEl.remove();
+        backgroundImage.backgroundEl.remove();
+    })
+    logger.info('Explorer pseudo-process created');
+    timer.mark('Explorer process');
+
+    ModuleManager.register('backgroundImage', backgroundImage, 'original');
+    timer.mark('Background image');
+
+    await desktop.init();
+    desktop.update();
+    ModuleManager.register('desktop', desktop, 'original');
+    timer.mark('Desktop');
+
+    const Explorer = {
+        sysApi: {
+            backgroundImage,
+            taskbar,
+        },
+        usrApi: {
+
+        },
+        ps: pseudoProcess.process
+    }
+    logger.info('Explorer APIs registered');
+    ModuleManager.register('Explorer', Explorer, 'original');
+    timer.mark('API registration');
+
+    //timer.group('Copilot');
+    //const copilot = await Copilot();
+    //window.copilot = copilot;
+    //timer.groupEnd();
+
+    await (async () => {
+        try {
+            const fontName = 'WINBOWS_FONT_' + [...Array(12)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+            const fontURL = await fs.getFileURL('C:/Winbows/fonts/Segoe Fluent Icons.ttf');
+            const myFont = new FontFace(fontName, `url(${fontURL})`);
+            await myFont.load();
+
+            document.fonts.add(myFont);
+            document.querySelector(':root').style.setProperty('--winbows-font-icon', fontName);
+            logger.info("Icon font loaded");
+        } catch (error) {
+            logger.error('Failed to load font', error);
+        }
+        timer.mark('Loading fonts');
+        return;
+    })();
+
+    try {
+        await backgroundImage.set(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
+        logger.info("Background image has been set successfully");
+    } catch (e) {
+        logger.error('Failed to set background image\n', e);
+    }
+    timer.mark('Loading background image');
+
+    // Initialize Lock Screen
+    logger.info('Initializing lock screen...');
+    viewport.root.appendChild(lockScreen.container);
+
+    try {
+        await fs.getFileURL('C:/Winbows/icons/user.png').then(url => {
+            lockScreen.avatar.style.backgroundImage = `url(${url})`;
+        })
+        await fs.getFileURL('C:/Winbows/bg/img100.jpg').then(url => {
+            if (!url) {
+                lockScreen.background.style.backgroundImage = 'linear-gradient(to right, #000)';
+            } else {
+                lockScreen.background.style.backgroundImage = `url(${url})`;
+            }
+        }).catch(err => {
+            lockScreen.background.style.backgroundImage = 'linear-gradient(to right, #000)';
+            logger.error(err);
+        })
+    } catch (e) {
+        logger.error('An error occurred while loading image:', e);
+    }
+
+    lockScreen.setInitFn(async () => {
+        // Tests
+        const WRT = ModuleManager.get('WRT');
+        const System = ModuleManager.get('System');
+
+        /*
+        new WRT({
+            code: `console.log('WRT context (wrapped sequentially by the kernel and the System)', this)`
+        }).main();
+
+        new WRT({
+            code: await fs.readFileAsText('C:/User/Documents/sdk-v1/examples/wrt-module-demo/app.wrt'),
+            __filename: 'C:/User/Documents/sdk-v1/examples/wrt-module-demo/app.wrt'
+        }).main();
+
+        new WRT({
+            code: await fs.readFileAsText('C:/User/Documents/sdk-v1/examples/wrt-shell-demo/app.wrt'),
+            __filename: 'C:/User/Documents/sdk-v1/examples/wrt-shell-demo/app.wrt'
+        }).main();*/
+
+        const shell = new System.ShellInstance(pseudoProcess.process);
+        shell.execCommand('info');
+        shell.execCommand('cmd');
+        shell.execCommand('debuglog-parser');
+        shell.execCommand('explorer --page=C:/');
+
+        // WinbowsDebugLog.export();
+    })
+    logger.info('Lock screen initialized');
+    timer.mark('Lock screen');
+    logger.info('Explorer initialized');
+    timer.groupEnd();
+
+    return new Promise(res => {
+        setTimeout(() => {
+            res();
+            loading.hide();
+        }, 500);
+    })
+}

@@ -133,7 +133,7 @@ Object.defineProperty(window.Compilers, 'Window', {
                 console.log(path, module);
             }
             if (!moduleCaches[script]) {
-                let content = await fs.getFileAsText(script);
+                let content = await fs.readFileAsText(script);
                 moduleCaches[script] = content;
                 return URL.createObjectURL(new Blob([`const __dirname="${getDirName(path)}",__filename="${path}";${content}`], { type: 'application/javascript' }));
             } else {
@@ -185,7 +185,7 @@ Object.defineProperty(window.Compilers, 'Window', {
                     importStmts.push(bindings ? `import ${bindings} from '${blobURL}';` : `import '${blobURL}';`);
                 } else {
                     const resolvedPath = resolvePath(currentPath, importPath);
-                    const resolvedCode = await fs.getFileAsText(resolvedPath);
+                    const resolvedCode = await fs.readFileAsText(resolvedPath);
                     if (!resolvedCode) {
                         console.warn(`No modules were exported from the file '${resolvedPath}'`);
                         continue;
@@ -243,7 +243,7 @@ Object.defineProperty(window.Compilers, 'Window', {
             if (window.modes.debug == true) {
                 console.log('browserWindow.import', url);
             }
-            const content = await asyncReplaceImports(await fs.getFileAsText(url), url);
+            const content = await asyncReplaceImports(await fs.readFileAsText(url), url);
             const blob = new Blob([content], { type: 'application/javascript' });
             const blobURL = URL.createObjectURL(blob);
             const module = await import(blobURL);

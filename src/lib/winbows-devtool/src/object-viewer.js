@@ -49,6 +49,8 @@ function expandable(obj) {
     } else if (utils.isObject(obj)) {
         if (Object.keys(obj).length > 0) {
             return true;
+        } else if (obj.__proto__ && Object.keys(obj.__proto__).length > 0) {
+            return true;
         }
         return false;
     } else {
@@ -442,37 +444,6 @@ class ObjectViewer {
 
         if (type == 'array') {
             return handleArray(data, parent, this.getLevel.bind(this));
-        } else if (type == 'object') {
-            const commonKeys = Object.keys(data).sort();
-            const propertyKeys = Object.getOwnPropertyNames(data).filter(t => !commonKeys.includes(t)).sort();
-            const symbolKeys = Object.getOwnPropertySymbols(data);
-
-            commonKeys.concat(symbolKeys).forEach(k => {
-                const value = data[k];
-                const { item, key } = createEl({
-                    key: k?.toString(),
-                    value,
-                    preview: getPreview(value),
-                    nextFn: this.getLevel.bind(this),
-                    type: getType(value),
-                    expandable: expandable(value)
-                })
-                parent.appendChild(item);
-            });
-
-            propertyKeys.forEach(k => {
-                const value = data[k];
-                const { item, key } = createEl({
-                    key: k,
-                    value,
-                    preview: getPreview(value),
-                    nextFn: this.getLevel.bind(this),
-                    type: getType(value),
-                    expandable: expandable(value)
-                })
-                parent.appendChild(item);
-                key.style.opacity = '.6';
-            });
         } else if (type == 'map') {
             data.keys().forEach((key, i) => {
                 const value = data.get(key);
@@ -526,7 +497,7 @@ class ObjectViewer {
                 })
                 parent.appendChild(item);
             })
-        } else {
+        } else if (false) {
             try {
                 const props = Reflect.ownKeys(data);
 
@@ -543,6 +514,37 @@ class ObjectViewer {
                     parent.appendChild(item);
                 });
             } catch (e) { }
+        } else {
+            const commonKeys = Object.keys(data).sort();
+            const propertyKeys = Object.getOwnPropertyNames(data).filter(t => !commonKeys.includes(t)).sort();
+            const symbolKeys = Object.getOwnPropertySymbols(data);
+
+            commonKeys.concat(symbolKeys).forEach(k => {
+                const value = data[k];
+                const { item, key } = createEl({
+                    key: k?.toString(),
+                    value,
+                    preview: getPreview(value),
+                    nextFn: this.getLevel.bind(this),
+                    type: getType(value),
+                    expandable: expandable(value)
+                })
+                parent.appendChild(item);
+            });
+
+            propertyKeys.forEach(k => {
+                const value = data[k];
+                const { item, key } = createEl({
+                    key: k?.toString(),
+                    value,
+                    preview: getPreview(value),
+                    nextFn: this.getLevel.bind(this),
+                    type: getType(value),
+                    expandable: expandable(value)
+                })
+                parent.appendChild(item);
+                key.style.opacity = '.6';
+            });
         }
     }
     getPreview = getPreview

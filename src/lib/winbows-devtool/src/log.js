@@ -3,8 +3,8 @@ import styles from "./log.module.css";
 import * as utils from "./utils";
 
 const sourceRegexp = /(?:blob:.+?\/[a-f0-9A-F\-]+|https?:\/\/([a-zA-Z0-9\-\.]+|localhost)(:\d+)?\/[a-zA-Z0-9?&#=.%_\-~/]*)/g;
-const linkRegexp = /(?:blob:.+?\/[a-f0-9A-F\-]+|https?:\/\/([a-zA-Z0-9\-\.]+|localhost)(:\d+)?\/(?:[A-Za-z0-9\-._~!$&()*+,;=:@/?]|%[0-9A-Fa-f]{2})*)/g;
-const localFileRegexp = /([A-Z]:[\\/](?:[^<>:"|?*\r\n]+[\\/])*[^<>:"|?*\r\n]*)/g;
+const linkRegexp = /(?:blob:.+?\/[a-f0-9A-F\-]+|https?:\/\/([a-zA-Z0-9\-\.]+|localhost)(:\d+)?\/(?:[A-Za-z0-9\-._~!$&()*+,;=:@/?#]|%[0-9A-Fa-f]{2})*)/g;
+const localFileRegexp = /([A-Z]:[\\/](?:[^<>:"|?*\r\n]+[\\/])*[^<>:"'|? *\r\n]*)/g;
 
 function safeString(str) {
     if (typeof str !== 'string') {
@@ -137,7 +137,7 @@ function formatArgs(container, originalArgs) {
     const arg0 = structure[0];
     const arg0IsString = arg0.type == 'plaintext' || typeof arg0.value == 'string';
 
-    function traversal(structure, parent, level = 0) {
+    function traversal(structure, parent, level = 0, datas = {}) {
         const isTopLevel = level == 0;
 
         for (const index in structure) {
@@ -148,12 +148,14 @@ function formatArgs(container, originalArgs) {
             if (isTopLevel && arg.type == 'plaintext' && index == 0) {
                 // arg0
                 el.className = styles.logPlaintext;
-                traversal(arg.value, el, level + 1);
+                traversal(arg.value, el, level + 1, datas);
             } else if (!isTopLevel && arg.type == 'styled') {
                 // styled ( allowed under top level )
                 el.style.cssText = arg.style;
                 el.className = styles.logStyled;
-                traversal(arg.value, el, level + 1);
+                traversal(arg.value, el, level + 1, {
+                    type: 'styled'
+                });
             } else {
                 // Parse it with object viewer
                 if (ObjectViewer.utils.expandable(arg.value)) {
@@ -181,7 +183,10 @@ function formatArgs(container, originalArgs) {
                         el.innerHTML = (container.childElementCount > 0 ? ' ' : '') + ObjectViewer.utils.getPreview(arg.value);
                     }
                 } else {
-                    el.innerHTML = safeString(arg.value).replace(linkRegexp, (match) => {
+                    if (datas.type == 'styled') {
+                        //el.style.display = 'inline-block';
+                    }
+                    el.innerHTML = safeString(arg.value).replace(/\n/, '<br>').replace(linkRegexp, (match) => {
                         return `<a href="${match}" target="_blank">${match}</a>`
                     }).replace(localFileRegexp, (match) => {
                         return `<a href="javascript:void(0)" data-href="${match}">${match}</a>`

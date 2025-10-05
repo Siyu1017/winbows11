@@ -1,21 +1,9 @@
-/*import del from "rollup-plugin-delete";
-import builtins from 'rollup-plugin-node-builtins';
-import globals from 'rollup-plugin-node-globals';
-*/
-
 import terser from "@rollup/plugin-terser";
-import resolve from '@rollup/plugin-node-resolve';
 import fs from 'fs';
-import crypto from 'node:crypto'
-import typescript from 'rollup-plugin-typescript2';
-import postcss from 'rollup-plugin-postcss';
-import json from "@rollup/plugin-json";
 import pkg from "./package.json" assert { type: "json" };
 
-const BUILD_ID = crypto.randomBytes(8).toString('hex');
-
-// Save the build id 
-fs.writeFileSync('build.txt', BUILD_ID);
+const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
+if (!BUILD_ID) throw new Error('An error occurred while reading build id');
 
 // Remove old kernel files
 fs.rmSync('Winbows/System/kernel', { recursive: true, force: true });

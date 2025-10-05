@@ -1,6 +1,6 @@
-import { setupTab } from './tab.js';
+const { setupTab } = await requireAsync('./tab.js');
 
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -8,7 +8,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('winui-dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');
@@ -20,6 +20,8 @@ window.System.theme.onChange(theme => {
 document.body.classList.add('winui');
 document.body.classList.add('winui-no-background');
 
+process.title = 'File Explorer';
+
 const styles = ['./window.v2.css', './pages/style.css'];
 
 const promises = [];
@@ -28,7 +30,7 @@ for (let i in styles) {
         let style = document.createElement('link');
         style.rel = 'stylesheet';
         style.type = 'text/css';
-        style.href = await fs.getFileURL(path.resolve(styles[i]));
+        style.href = await fs.getFileURL(styles[i]);
         document.head.appendChild(style);
         resolve();
     }))
@@ -40,9 +42,11 @@ var tabview = browserWindow.useTabview({
     icon: false
 });
 
+console.log(process.args)
+
 // Create a tab
 var tab = new tabview.Tab();
-setupTab(browserWindow, tab, datas.page || 'pages://home');
+setupTab(browserWindow, tab, process.args.page || 'pages://home');
 
 // Handle click event
 tabview.on('requestCreateTab', (e) => {

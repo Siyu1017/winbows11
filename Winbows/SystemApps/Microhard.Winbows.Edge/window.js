@@ -3,6 +3,8 @@ tabView.className = 'tabview';
 document.body.appendChild(tabView);
 document.body.classList.add('winui');
 
+process.title = 'Microhard Edge';
+
 var tabStrip = document.createElement('div');
 var tabStripTabs = document.createElement('div');
 var tabStripCreate = document.createElement('div');
@@ -125,7 +127,7 @@ if (datas.page) {
     createTab(datas.page)
 }*/
 
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -135,7 +137,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');

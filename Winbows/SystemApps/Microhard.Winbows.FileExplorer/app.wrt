@@ -2,8 +2,12 @@ const { app, BrowserWindow } = WApplication;
 
 let mainWindow;
 
+process.title = 'File Explorer';
+
 app.on('ready', () => {
-    mainWindow = new BrowserWindow();
+    mainWindow = new BrowserWindow({
+        mica: true
+    });
     mainWindow.load('./window.v2.js');
 
     mainWindow.on('closed', () => {

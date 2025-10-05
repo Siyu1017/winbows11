@@ -58,7 +58,7 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
     margin-top:.5rem;=
     width: fit-content;
     user-select: none;
-    " onclick="setBackgroundImage('C:/Winbows/bg/img19.jpg');">Apply dark theme</button></li>
+    " data-task="set-background-image">Apply dark theme</button></li>
 <li style="
     margin: .5rem 0;
 ">Window animation</li>
@@ -95,13 +95,18 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 			</div>
             </div>`;
 
+document.querySelector('[data-task="set-background-image"]').addEventListener('click', () => {
+    // System.backgroundImage.set('C:/Winbows/bg/img19.jpg');
+    // -> Explorer GUI APIs...
+})
+
 document.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {
-        window.System.Shell(el.getAttribute('data-action'))
+        new ShellInstance().execCommand(el.getAttribute('data-action'))
     })
 })
 
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -111,7 +116,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');

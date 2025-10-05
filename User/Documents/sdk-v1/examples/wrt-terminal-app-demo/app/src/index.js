@@ -53,9 +53,11 @@ const term = new Terminal({
 });
 const fitAddon = new FitAddon();
 
+await shell.execCommand('cd C:/');
+
 term.loadAddon(fitAddon);
 term.open(container);
-term.write(`Winbows11 [Version ${System.version}]\n(c) Microhard Corporation. All rights reserved.\n\nType \"help\" for available commands.\n`);
+term.write(`Winbows11 [Version ${System.information.version}]\n(c) Microhard Corporation. All rights reserved.\n\nType \"help\" for available commands.\n`);
 
 /*
 let progress = 0;

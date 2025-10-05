@@ -744,7 +744,7 @@ async function createFileItem(parent, details, path) {
     itemName.className = 'explorer-viewer-item-name';
 
     if (details.type == 'application/winbows-link') {
-        fs.getFileAsText(path).then(content => {
+        fs.readFileAsText(path).then(content => {
             try {
                 const link = JSON.parse(content);
                 itemIcon.style.backgroundImage = `url(${link.icon})`;

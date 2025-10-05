@@ -6,3 +6,4 @@ vite.config.js
 .vercel
 *.test.js
 *.test.html
+build.txt

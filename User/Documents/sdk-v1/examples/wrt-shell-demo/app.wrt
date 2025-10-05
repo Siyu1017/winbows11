@@ -3,6 +3,12 @@ const shell = new ShellInstance(process);
 console.info(ShellInstance, this);
 
 shell.stdout.on('data', dt => {
+    /*let styles = [];
+    dt = dt.replace(/(?:\s*)(\S+)=(\S+)/g, (match, p1, p2) => {
+        styles = styles.concat(['color:rgb(140 197 255)','color:unset','color:#ff8b1c','color:unset']);
+        return `%c${p1}%c=%c${p2}%c`;
+    })
+    console.log('[STDOUT] ' + dt, ...styles);*/
     console.log('[STDOUT]', dt);
 })
 shell.stderr.on('data', dt => {

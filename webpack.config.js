@@ -10,7 +10,7 @@ if (!BUILD_ID) throw new Error('An error occurred while reading build id');
 export default [
     {
         name: 'kernel',
-        entry: './src/kernel/kernel.js',
+        entry: './src/os/core/boot.js',
         output: {
             path: path.resolve('Winbows/System/kernel'),
             filename: 'kernel.js'
@@ -44,7 +44,8 @@ export default [
         plugins: [
             new webpack.DefinePlugin({
                 __BUILD_ID__: `"${BUILD_ID}"`,
-                __VERSION__: `"${pkg.version}"`
+                __VERSION__: `"${pkg.version}"`,
+                __MODE__: `"${process.env.NODE_ENV}"`
             }),
             new webpack.BannerPlugin({
                 banner: `/*!
@@ -55,5 +56,38 @@ export default [
                 raw: true
             })
         ]
+    }, {
+        name: 'kernel',
+        entry: './src/install/install.js',
+        output: {
+            path: path.resolve('Winbows/System/kernel'),
+            filename: 'install.js'
+        },
+        experiments: {
+            topLevelAwait: true, // Enable top-level await support
+        },
+        module: {
+            rules: [
+                {
+                    test: /\.css$/,
+                    use: [
+                        {
+                            loader: 'style-loader'
+                        },
+                        {
+                            loader: 'css-loader'
+                        }
+                    ]
+                }
+            ]
+        },
+        optimization: {
+            minimize: true,
+            minimizer: [
+                new TerserPlugin({
+                    extractComments: false
+                }),
+            ],
+        }
     }
-];
+]

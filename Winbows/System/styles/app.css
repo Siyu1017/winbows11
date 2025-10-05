@@ -1,4 +1,4 @@
-.window * {
+* {
     box-sizing: border-box;
     font-family: var(--winbows-font-default);
 }
