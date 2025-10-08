@@ -1,3 +1,4 @@
+import timer from "../../core/timer.js";
 import { viewport } from "../../core/viewport.js";
 import ModuleManager from "../../moduleManager.js";
 
@@ -339,6 +340,8 @@ export function ControlPanel(taskbarControls) {
         updateTime();
         updateDate();
     })();
+
+    timer.mark('Control Panel')
 
     return { panel: controlPanelContainer, sidebar: controlSidebarContainer }
 }

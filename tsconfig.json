@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "strict": true,
+    "declaration": true,
+    "allowJs": true,
+    "outDir": "dist",
+    "types": [
+      "./types/globals"
+    ]
+  },
+  "exclude": [
+    "src",
+    "node_modules",
+    "dist",
+  ],
+  "include": [
+    "User/**/*.js",
+    "Program Fiiles/**/*.js",
+    "Winbows/**/*.js",
+  ]
+}

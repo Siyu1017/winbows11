@@ -92,7 +92,8 @@ const ModuleManager = {
     get(name, tag) {
         const mod = modules.get(name);
         if (!mod) {
-            throw new Error(`Module ${name} not found`);
+            logger.warn(`Module ${name} not found`);
+            return null;
         }
 
         if (!tag) {

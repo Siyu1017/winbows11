@@ -5,8 +5,8 @@ style.href = await fs.getFileURL(path.resolve('./chooseViewerWindow.css'));
 document.head.appendChild(style);
 
 function getCategoryString() {
-    const file = datas.file;
-    const extension = window.utils.getFileExtension(datas.file);
+    const file = process.args['path'];
+    const extension = path.extname(file);
     if (extension != '') {
         return `${extension}`;
     } else {
@@ -14,7 +14,7 @@ function getCategoryString() {
     }
 }
 
-const extension = window.utils.getFileExtension(datas.file);
+const extension = path.extname(process.args['path']);
 
 var selected = null;
 
@@ -60,7 +60,7 @@ container.appendChild(footer);
 footer.appendChild(alwaysButton);
 footer.appendChild(onceButton);
 
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -68,7 +68,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('winui-dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');
@@ -93,17 +93,13 @@ browserWindow.addEventListener('blur', (e) => {
     process.exit(0);
 })
 
-var viewers = window.System.FileViewers.getViewers(datas.file);
-
-if (window.modes.debug == true) {
-    console.log(viewers)
-}
+const viewers = System.fileViewers.getViewers(process.args['path']);
 
 Object.keys(viewers).forEach(viewer => {
     var item = document.createElement('div');
     var itemIcon = document.createElement('div');
     var itemName = document.createElement('div');
-    var app = window.appRegistry.getApp(viewers[viewer].script);
+    var app = appRegistry.getInfoByPath(viewers[viewer].script);
 
     item.className = 'viewer';
     itemIcon.className = 'viewer-icon';
@@ -141,15 +137,15 @@ alwaysButton.addEventListener('click', () => {
     if (window.modes.debug == true) {
         console.log(selected)
     }
-    window.System.FileViewers.setDefaultViewer(extension, selected);
-    new Process(viewers[selected].script).start(`const FILE_PATH="${datas.file}";`);
+    System.fileViewers.setDefaultViewer(extension, selected);
+    System.shell.execCommand(`"${viewers[selected].script}" --path="${process.args['path']}"`);
     self = true;
     process.exit(0);
 })
 
 onceButton.addEventListener('click', () => {
     if (selected == null) return;
-    new Process(viewers[selected].script).start(`const FILE_PATH="${datas.file}";`);
+    System.shell.execCommand(`"${viewers[selected].script}" --path="${process.args['path']}"`);
     self = true;
     process.exit(0);
 })

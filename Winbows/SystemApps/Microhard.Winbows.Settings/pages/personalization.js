@@ -1,4 +1,4 @@
-import { SettingItem } from '../components/setting.item.js';
+const { SettingItem } = await requireAsync('../components/setting.item.js');
 
 var settingItems = [
     {
@@ -14,7 +14,7 @@ var settingItems = [
     }
 ]
 
-export default function main() {
+module.exports = function main() {
     var container = document.createElement('div');
     container.className = 'setting-item-group';
     for (let i in settingItems) {

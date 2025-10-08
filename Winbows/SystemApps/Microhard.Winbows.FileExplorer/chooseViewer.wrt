@@ -1,9 +1,11 @@
-; (async () => {
-    const status = JSON.parse(await (await fs('readFile', 'C:/Winbows/System/.env/location/param.json')).text());
-    if (status['dev'] || status['develop'] || status['logs'] || status['output']) {
-        console.log(FILE_PATH);
-    }
-    await System.requestAccessWindow('./chooseViewerWindow.js', {
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Open with...';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
         width: 360,
         height: 540,
         x: 'center',
@@ -12,11 +14,19 @@
         resizable: false,
         closable: false,
         minimizable: false,
-        title: 'Open with',
+        title: 'Open with...',
         mica: true,
-        datas: {
-            file: FILE_PATH
-        },
         theme: 'system'
     });
-})();
+    mainWindow.load('./chooseViewerWindow.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

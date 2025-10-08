@@ -1,4 +1,4 @@
-export const sidebarItems = {
+const sidebarItems = {
     home: {
         title: 'Home',
         icon: '../icons/home.webp',
@@ -60,3 +60,5 @@ export const sidebarItems = {
         path: "/update"
     },
 }
+
+module.exports = { sidebarItems };

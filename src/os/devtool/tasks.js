@@ -1,5 +1,6 @@
 import { fsUtils, IDBFS } from "../../shared/fs.js";
 import { tasklist } from "../kernel/wrt/core.js";
+import ModuleManager from "../moduleManager.js";
 //import { tasklist } from "../WRT/kernel.js";
 //import { appRegistry } from "../appRegistry.js";
 //import { apis } from "../kernelRuntime.js";
@@ -56,9 +57,10 @@ function createRow(task) {
     const fileCell = document.createElement('td');
     const runtimeIdCell = document.createElement('td');
     const pidCell = document.createElement('td');
+    const System = ModuleManager.get('System');
 
     iconImage.style = `background-size: cover;background-position: center;background-repeat: no-repeat;width: 1rem;height: 1rem;display: block;margin:auto;`;
-    fs.getFileURL(('task.__filename' == 'available' ? appRegistry.getApp(task.__filename).icon : '') || 'C:/Winbows/icons/files/program.ico').then(url => {
+    fs.getFileURL((task.__filename ? System?.appRegistry.getInfoByPath(task.__filename).icon : '') || 'C:/Winbows/icons/files/program.ico').then(url => {
         iconImage.style.backgroundImage = `url(${url})`;
     })
     iconCell.appendChild(iconImage);

@@ -118,18 +118,32 @@ const updateProgressId = setInterval(function () {
     progress += Math.random() * 1 + 0.2;
     if (progress > 90) {
         progress = 90;
-        clearInterval(updateProgressId);
     }
     loadingProgressBar.style.width = progress + '%';
 }, 200);
+function setProgress(p) {
+    if (p >= 0 && p <= 100) {
+        progress = p;
+        loadingProgressBar.style.width = progress + '%';
+    }
+}
+function textWithProgress(t, p) {
+    if (p >= 0 && p <= 100) {
+        progress = p;
+        loadingProgressBar.style.width = progress + '%';
+    }
+    text(t);
+}
 
 export const loading = {
     container: loadingContainer,
     image: loadingImage,
     progressBar: loadingProgressBar,
     text,
+    textWithProgress,
     startLoadingTime,
     updateProgressId,
+    setProgress,
     hide() {
         loadingContainer.classList.remove('active');
     }

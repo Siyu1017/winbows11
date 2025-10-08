@@ -120,7 +120,7 @@ function randomID() {
     return id;
 }
 
-var tab = createTab();
+var tab = createTab(process.args['path'] || '');
 
 /*
 if (datas.page) {

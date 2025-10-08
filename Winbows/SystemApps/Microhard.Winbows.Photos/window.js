@@ -4,7 +4,7 @@ style.type = 'text/css';
 style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
-var photoPath = datas.file;
+var photoPath = process.args['path'] || '';
 
 var supportedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico"];
 var supportedMimeTypes = {
@@ -74,7 +74,7 @@ function check() {
         try {
             var photoBlob = await fs.readFile(photoPath);
             var photoBlobType = mineTypeToExtension(photoBlob ? photoBlob.type : '');
-            var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
+            var photoExtension = photoBlobType ? photoBlobType : path.extname(photoPath);
             var photoURL = URL.createObjectURL(photoBlob);
             if (!supportedExtensions.includes(photoExtension)) {
                 resolve(chooseFile(`<div>Unsupported file type ( ${photoExtension} )</div><br>`));
@@ -92,7 +92,7 @@ await check();
 
 var photoBlob = await fs.readFile(photoPath);
 var photoBlobType = mineTypeToExtension(photoBlob ? photoBlob.type : '');
-var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
+var photoExtension = photoBlobType ? photoBlobType : path.extname(photoPath);
 var photoURL = URL.createObjectURL(photoBlob);
 
 var debuggerMode = false;

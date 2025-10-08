@@ -1,6 +1,6 @@
 const { setupTab } = await requireAsync('./tab.js');
 
-var theme = System.theme.get()
+let theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -38,18 +38,18 @@ for (let i in styles) {
 await Promise.allSettled(promises);
 
 // Use tabview
-var tabview = browserWindow.useTabview({
+const tabview = browserWindow.useTabview({
     icon: false
 });
 
 console.log(process.args)
 
 // Create a tab
-var tab = new tabview.Tab();
+const tab = new tabview.Tab();
 setupTab(browserWindow, tab, process.args.page || 'pages://home');
 
 // Handle click event
 tabview.on('requestCreateTab', (e) => {
-    var tab = new tabview.Tab();
+    const tab = new tabview.Tab();
     setupTab(browserWindow, tab);
 })

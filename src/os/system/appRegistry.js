@@ -1,5 +1,10 @@
 import { getScheme } from "./shell/shellUtils.js";
 import { fsUtils } from "../../shared/fs.js";
+import Logger from "../core/log.js";
+
+const logger = new Logger({
+    module: 'AppRegistry'
+});
 
 function generateAppSeed({ appName, basePath, contentPath }) {
     let seed = null;
@@ -142,6 +147,7 @@ appRegistry.uninstall = () => { };
 appRegistry.update = () => { };
 
 appRegistry.getInfo = (name) => {
+    logger.warn('appRegistry.getInfo has been deprecated. Please use appRegistry.getInfoByName instead.');
     if (!apps[name]) {
         return {};
     }
@@ -181,9 +187,20 @@ appRegistry.generateProfile = (appName, basePath, entryScript) => {
 }
 
 appRegistry.getData = (appId) => {
+    logger.warn('appRegistry.getData has been deprecated. Please use appRegistry.getInfoByAppId instead.');
     return Object.values(apps).find(app => app.appId == appId);
 }
 
 appRegistry.exists = (name) => !!apps[name] || Object.keys(apps).some(k => apps[k].path === name);
+
+appRegistry.getInfoByName = (name) => {
+    return apps[name] || {};
+}
+appRegistry.getInfoByPath = (path) => {
+    return Object.values(apps).find(a => path.startsWith(a.basePath)) || {};
+}
+appRegistry.getInfoByAppId = (appId) => {
+    return Object.values(apps).find(app => app.appId == appId) || {};
+}
 
 export default appRegistry;

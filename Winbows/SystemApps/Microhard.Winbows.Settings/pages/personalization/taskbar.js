@@ -1,9 +1,7 @@
-import { Switch } from "../../components/ui.switch.js";
-import { Checkbox } from "../../components/ui.checkbox.js";
-import { Select } from "../../components/ui.select.js";
-import { SettingItemCollapsible } from "../../components/setting.item.collapsible.js";
+const { Select } = await requireAsync("../../components/ui.select.js");
+const { SettingItemCollapsible } = await requireAsync("../../components/setting.item.collapsible.js");
 
-export default function main() {
+module.exports = function main() {
     var container = document.createElement('div');
     var taskbarAlignment = document.createElement('div');
     var taskbarStyle = document.createElement('div');
@@ -11,7 +9,7 @@ export default function main() {
     container.className = 'setting-item-group';
     taskbarAlignment.innerHTML = 'Taskbar alignment';
     taskbarStyle.innerHTML = 'Taskbar style<span class="beta"></span>';
-    
+
     var taskbarBehaviors = SettingItemCollapsible({
         title: 'Taskbar behaviors',
         description: 'Taskbar alignment and style'
@@ -27,7 +25,7 @@ export default function main() {
                 selected: document.body.getAttribute('data-taskbar-align') !== 'left'
             }
         ], function (e) {
-            document.body.setAttribute('data-taskbar-align', ['center','left'].includes(e.value) ? e.value : 'center');
+            document.body.setAttribute('data-taskbar-align', ['center', 'left'].includes(e.value) ? e.value : 'center');
         })],
         [taskbarStyle, '', Select([
             {
@@ -49,20 +47,20 @@ export default function main() {
     function capitalizeFirstLetter(val) {
         return String(val).charAt(0).toUpperCase() + String(val).slice(1);
     }
-/*
-    container.appendChild(Switch({ checked: false }));
-    container.appendChild(Checkbox({ checked: true }));
-    container.appendChild(Select(
-        [
-            {
-                text: 'Option 1'
-            }, {
-                text: 'Option 2'
-            }, {
-                text: 'Option 3'
-            }
-        ]
-    ));
-*/
+    /*
+        container.appendChild(Switch({ checked: false }));
+        container.appendChild(Checkbox({ checked: true }));
+        container.appendChild(Select(
+            [
+                {
+                    text: 'Option 1'
+                }, {
+                    text: 'Option 2'
+                }, {
+                    text: 'Option 3'
+                }
+            ]
+        ));
+    */
     return container
 }

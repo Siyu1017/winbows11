@@ -15,8 +15,11 @@ import crashHandler from "../core/crashHandler.js";
 import timer, { getDuration, marks } from "../core/timer.js";
 import fileViewers from "./fileViewer.js";
 import fileIcons from "./fileIcon.js";
+import { loading } from "../core/viewport.js";
 
 async function init() {
+    loading.textWithProgress('Initializing System...', 12);
+
     const logger = new Logger({
         module: 'System'
     })
@@ -38,7 +41,7 @@ async function init() {
     System.fileViewers = fileViewers;
     System.fileIcons = fileIcons;
 
-    const _WRT = ModuleManager.get('WRT', 'kernel');
+    const _WRT = ModuleManager.get('WRT');
     ModuleManager.update('WRT', class extends _WRT {
         constructor(options) {
             super(options);
@@ -135,6 +138,7 @@ async function init() {
     timer.mark('Setting up directory');
     logger.info('System initialized');
     await initializeExplorer();
+    clearInterval(loading.updateProgressId);
 
     let output = [];
     let levels = [];

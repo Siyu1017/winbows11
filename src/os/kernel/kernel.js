@@ -332,7 +332,7 @@ async function main() {
         }
     }, 'kernel');
 
-    const WRT = ModuleManager.get('WRT', 'kernel');
+    const WRT = ModuleManager.get('WRT');
     const pseudoProcess = new WRT({
         __filename: "C:/Winbows/System/kernel/kernel.js",
         code: `//! Kernel pseudo-process

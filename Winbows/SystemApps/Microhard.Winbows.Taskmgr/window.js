@@ -141,7 +141,7 @@ const taskItems = {};
 function createTaskItem(task) {
     const runtimeID = task.runtimeID;
     const pid = task.process.pid;
-    const info = appRegistry.getApp(task.path);
+    const info = System.appRegistry.getInfoByPath(task.__filename);
     const title = task.title || 'App';
     const taskEl = document.createElement('div');
     const taskInfo = document.createElement('div');

@@ -17,9 +17,6 @@ export default async function init() {
     timer.groupEnd();
     timer.group('Explorer');
 
-    const taskbar = Taskbar();
-    timer.mark('Taskbar');
-
     const fs = IDBFS('~EXPLORER');
     const WRT = ModuleManager.get('WRT');
     const pseudoProcess = new WRT({
@@ -31,6 +28,12 @@ export default async function init() {
     });
     pseudoProcess.process.title = 'Explorer';
     pseudoProcess.main();
+    logger.info('Explorer pseudo-process created');
+    timer.mark('Explorer process');
+
+    loading.textWithProgress('Initializing Taskbar...', 30);
+
+    const taskbar = await Taskbar();
     pseudoProcess.process.on('exit', () => {
         logger.warn('Explorer process exited');
         taskbar.taskbar.remove();
@@ -39,11 +42,11 @@ export default async function init() {
         desktopEl.remove();
         backgroundImage.backgroundEl.remove();
     })
-    logger.info('Explorer pseudo-process created');
-    timer.mark('Explorer process');
 
     ModuleManager.register('backgroundImage', backgroundImage, 'original');
     timer.mark('Background image');
+
+    loading.textWithProgress('Initializing Desktop...', 36);
 
     await desktop.init();
     desktop.update();
@@ -51,23 +54,29 @@ export default async function init() {
     timer.mark('Desktop');
 
     const Explorer = {
-        sysApi: {
-            backgroundImage,
-            taskbar,
-        },
-        usrApi: {
-
-        },
-        ps: pseudoProcess.process
+        backgroundImage,
+        taskbar
     }
     logger.info('Explorer APIs registered');
     ModuleManager.register('Explorer', Explorer, 'original');
+    ModuleManager.update('WRT', class extends WRT {
+        constructor(options) {
+            super(options);
+
+            this.mountAPI({
+                name: 'Explorer',
+                api: Explorer
+            });
+        }
+    }, 'explorer');
     timer.mark('API registration');
 
     //timer.group('Copilot');
     //const copilot = await Copilot();
     //window.copilot = copilot;
     //timer.groupEnd();
+
+    loading.textWithProgress('Loading Fonts...', 48);
 
     await (async () => {
         try {
@@ -86,6 +95,8 @@ export default async function init() {
         return;
     })();
 
+    loading.textWithProgress('Loading Background Image...', 60);
+
     try {
         await backgroundImage.set(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
         logger.info("Background image has been set successfully");
@@ -97,6 +108,8 @@ export default async function init() {
     // Initialize Lock Screen
     logger.info('Initializing lock screen...');
     viewport.root.appendChild(lockScreen.container);
+
+    loading.textWithProgress('Almost done!', 88);
 
     try {
         await fs.getFileURL('C:/Winbows/icons/user.png').then(url => {

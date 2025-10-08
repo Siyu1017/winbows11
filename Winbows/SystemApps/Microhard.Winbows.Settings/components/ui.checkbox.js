@@ -1,4 +1,4 @@
-export function Checkbox(config = {}, handler = function () { }) {
+function Checkbox(config = {}, handler = function () { }) {
     const checkboxElement = document.createElement('label');
     const checkboxInput = document.createElement('input');
     const checkboxMark = document.createElement('span');
@@ -70,3 +70,5 @@ export function Checkbox(config = {}, handler = function () { }) {
 
     return checkboxElement;
 }
+
+module.exports = { Checkbox }

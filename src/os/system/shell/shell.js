@@ -2,7 +2,7 @@ import minimistJs from "../../../lib/minimist.js/index.js";
 import { fsUtils, IDBFS } from "../../../shared/fs.js";
 import { commandRegistry } from "./commandRegistry.js";
 import stdio from "../../lib/stdio.js";
-import { EventEmitter } from "../../../shared/utils.js";
+import { EventEmitter, randomID } from "../../../shared/utils.js";
 import { generateEnv } from "../../kernel/wrt/process.js";
 import appRegistry from "../appRegistry.js";
 import ModuleManager from "../../moduleManager.js";
@@ -36,6 +36,7 @@ export class ShellInstance extends EventEmitter {
         this._pendingDispose = false;
         this._exitCode = 0;
         this.fs = IDBFS();
+        this.id = randomID(24);
 
         this.process.on('exit', (code) => {
             this.dispose(code);
@@ -61,7 +62,6 @@ export class ShellInstance extends EventEmitter {
 
     input(promptText, type = 'normal') {
         this.stdout.write(promptText);
-        console.log("[PROMPT]", promptText);
         this._emit('input', {
             promptText,
             type

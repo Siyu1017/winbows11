@@ -1,13 +1,13 @@
 const fileIcons = {
     getIcon: (path = '') => {
         const ext = fsUtils.extname(path);
-        if (fileIcons.registerd[ext]) {
-            return fileIcons.registerd[ext];
+        if (fileIcons.registeredIcons[ext]) {
+            return fileIcons.registeredIcons[ext];
         } else {
-            return fileIcons.registerd['*'];
+            return fileIcons.registeredIcons['*'];
         }
     },
-    registerd: {
+    registeredIcons: {
         // Default
         '*': 'C:/Winbows/icons/files/generic.ico',
         '.jpg': 'C:/Winbows/icons/files/image.ico',
@@ -52,7 +52,7 @@ const fileIcons = {
     },
     register: (ext, icon) => {
         if (ext == '*') return;
-        fileIcons.registerd[ext] = icon;
+        fileIcons.registeredIcons[ext] = icon;
     }
 }
 

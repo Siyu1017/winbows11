@@ -230,13 +230,10 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     setSidebar(true);
 
-    const { router } = await requireAsync('./_router.js');
+    const router = (await requireAsync('./_router.js'))(tab.id);
     let pageContents = {};
 
     async function updatePage(e) {
-        if (window.modes.debug == true) {
-            console.log('change', e.path, 'from', tab.id);
-        }
         const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
         //const pageItem = Object.values(pageListItems).filter(item => item.path === path);
         //if (pageItem.length == 0) return;
@@ -269,15 +266,15 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                 itemViewer.className = 'explorer-item-viewer';
                 footerPageItems.innerHTML = `${fs.disks.length} Items`;
                 for (var i = 0; i < fs.disks.length; i++) {
-                    var disk = fs.disks[i];
-                    var stat = fs.stat(disk + ':/');
-                    var itemElement = document.createElement('div');
-                    var iconElement = document.createElement('div');
-                    var infoElement = document.createElement('div');
-                    var diskName = document.createElement('div');
-                    var totalSizeBar = document.createElement('div');
-                    var usedSizeBar = document.createElement('div');
-                    var usedSizeText = document.createElement('div');
+                    const disk = fs.disks[i];
+                    const stat = fs.stat(disk + ':/');
+                    const itemElement = document.createElement('div');
+                    const iconElement = document.createElement('div');
+                    const infoElement = document.createElement('div');
+                    const diskName = document.createElement('div');
+                    const totalSizeBar = document.createElement('div');
+                    const usedSizeBar = document.createElement('div');
+                    const usedSizeText = document.createElement('div');
 
                     itemElement.className = 'explorer-viewer-disk-item';
                     iconElement.className = 'explorer-viewer-disk-icon';
@@ -305,7 +302,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                         router.push(disk + ':/');
                     })
 
-                    var size = stat.length;
+                    const size = stat.length;
 
                     navigator.storage.estimate().then(quota => {
                         usedSizeBar.style.width = size / quota.quota * 100 + '%';
@@ -560,10 +557,10 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
             canvasClarifier(canvas, ctx);
             if (selecting == false) return;
 
-            var viewer = viewerContainer.querySelector('.explorer-item-viewer');
+            const viewer = viewerContainer.querySelector('.explorer-item-viewer');
             if (!viewer) return;
 
-            var position = getPosition(canvas);
+            const position = getPosition(canvas);
 
             ctx.save();
             ctx.beginPath();
@@ -750,21 +747,15 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
             })
             itemName.innerHTML = details.name;
             item.addEventListener('click', () => {
-                if (['.wrt'].includes(path.extname(path))) {
+                if (['.wrt'].includes(fsUtils.extname(path))) {
                     System.shell.execCommand(path);
                     return;
                 }
                 var defaultViewer = System.fileViewers.getDefaultViewer(path);
                 if (defaultViewer != null) {
-                    System.shell.execCommand(`${defaultViewer.script} --path=${path}`);
+                    System.shell.execCommand(`"${defaultViewer.script}" --path=${path}`);
                 } else {
-                    const shell = new ShellInstance(process);
-                    shell.execCommand(`chooseViewer.wrt --path=${path}`).then(() => {
-                        shell.dispose();
-                    }).catch(e => {
-                        console.error(e);
-                        shell.dispose();
-                    })
+                    System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=${path}`);
                 }
             })
         }
@@ -786,12 +777,9 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                     action: () => {
                         var defaultViewer = System.fileViewers.getDefaultViewer(path);
                         if (defaultViewer != null) {
-                            new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                            System.shell.execCommand(`"${defaultViewer.script}" --path=${path}`);
                         } else {
-                            if (window.modes.debug == true) {
-                                console.log('./chooseViewer.wrt')
-                            }
-                            new Process(fs.resolvePath('./chooseViewer.wrt')).start(`const FILE_PATH="${path}";`);
+                            System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=${path}`);
                         }
                     }
                 }, {
@@ -799,7 +787,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "open-with",
                     text: "Open with...",
                     action: () => {
-                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt').start(`const FILE_PATH="${path}";`);
+                        System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=${path}`);
                     }
                 }, {
                     icon: "delete",
@@ -817,10 +805,10 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "set-as-background",
                     text: "Set as background",
                     action: async () => {
-                        await window.setBackgroundImage(path);
+                        await Explorer.backgroundImage.set(path);
                     }
                 })
-            } else if (details.type.search('javascript') > -1 || path.extname(path) == '.wrt') {
+            } else if (details.type.search('javascript') > -1 || fsUtils.extname(path) == '.wrt') {
                 items.push({
                     className: "run-as-an-app",
                     icon: 'window-snipping',
@@ -829,7 +817,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                         new Process(path).start();
                     }
                 })
-            } else if (path.extname(path) == '.wbsf') {
+            } else if (fsUtils.extname(path) == '.wbsf') {
                 items.push({
                     icon: 'window-snipping',
                     text: 'Run file',
@@ -841,7 +829,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                         })
                     }
                 })
-            } else if (fontExtensions.includes(path.extname(path))) {
+            } else if (fontExtensions.includes(fsUtils.extname(path))) {
                 items.push({
                     className: "set-as-default-font",
                     icon: 'font',

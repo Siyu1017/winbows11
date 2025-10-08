@@ -1,7 +1,6 @@
-import { fs } from 'winbows/fs';
-import { Link } from './link.js';
-import { router } from '../_router.js';
-import { sidebarItems } from '../sidebarItems.js';
+const { Link } = await requireAsync('./link.js');
+const { router } = await requireAsync('../_router.js');
+const { sidebarItems } = await requireAsync('../sidebarItems.js');
 
 // await fs.init();
 
@@ -102,4 +101,4 @@ function sidebar() {
     return sidebarContainer;
 }
 
-export { sidebar };
+module.exports = { sidebar };

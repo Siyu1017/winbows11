@@ -1,5 +1,11 @@
-; (async () => {
-    await System.requestAccessWindow('./chooseFileWindow.js', {
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Choose File';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
         x: 0,
         y: 0,
         width: 640,
@@ -9,9 +15,15 @@
         snappable: false,
         title: 'Choose File...'
     });
+    mainWindow.load('./chooseFileWindow.js');
 
-    process.on('message', async function (event) {
-        // console.log(event.data)
-        postMessage(event.data);
+    mainWindow.on('closed', () => {
+        mainWindow = null;
     });
-})();
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

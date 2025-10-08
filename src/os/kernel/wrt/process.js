@@ -88,6 +88,11 @@ const processes = new ((() => {
     }
 })())();
 
+/**
+ * @class 
+ * @param {string} cwd 
+ * @returns 
+ */
 function Process(cwd) {
     const eventEmitter = new EventEmitter();
     this.on = eventEmitter.on.bind(eventEmitter);
@@ -132,14 +137,27 @@ function Process(cwd) {
     this.stdin = new stdio.InputStream();
     this.stdout = new stdio.OutputStream();
 
+    /**
+     * @param {Function} cb 
+     * @returns {any}
+     */
     this.nextTick = (cb) => {
         return 'queueMicrotask' in window ? queueMicrotask(cb) : fallbackNextTick(cb)
     }
+
+    /**
+     * @returns {any}
+     */
     this.kill = () => {
         alive = false;
         processes.remove(pid);
         eventEmitter._emit('exit', 0);
     }
+
+    /**
+     * @param {number} [code]
+     * @returns {any}
+     */
     this.exit = async (code) => {
         if (eventEmitter._list('beforeExit').length > 0) {
             const pms = [];
@@ -161,10 +179,19 @@ function Process(cwd) {
         processes.remove(pid);
         eventEmitter._emit('exit', code || 0);
     }
+
+    /**
+     * @returns {any}
+     */
     this.abort = () => {
         alive = false;
         processes.remove(pid);
     }
+
+    /**
+     * @param {string} dir 
+     * @returns {Error|any}
+     */
     this.chdir = (dir) => {
         dir = fsUtils.toDirFormat(dir);
         if (!fs.exists(dir)) {
@@ -173,6 +200,10 @@ function Process(cwd) {
             _cwd = dir;
         }
     }
+
+    /**
+     * @returns {string} Current working directory
+     */
     this.cwd = () => {
         return _cwd;
     }

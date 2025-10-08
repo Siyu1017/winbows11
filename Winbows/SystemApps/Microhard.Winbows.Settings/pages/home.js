@@ -1,7 +1,6 @@
-import { Link } from '../components/link.js';
-import { fs } from 'winbows/fs';
+const { Link } = await requireAsync('../components/link.js');
 
-export default function main() {
+module.exports = function main() {
     var container = document.createElement('div');
     var header = document.createElement('div');
     var device = document.createElement('div');
@@ -46,7 +45,7 @@ export default function main() {
     updateTitle.innerHTML = 'Winbows Update';
     updateTime.innerHTML = 'Last checked: Just now';
 
-    fs.getFileURL(window.getBackgroundImage()).then(url => {
+    fs.getFileURL(Explorer.backgroundImage.get()).then(url => {
         deviceImage.style.backgroundImage = `url(${url})`;
     })
     fs.getFileURL('../icons/network.ico').then(url => {

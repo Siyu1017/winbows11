@@ -1,4 +1,4 @@
-export function Switch(config = {}, handler = function () { }) {
+function Switch(config = {}, handler = function () { }) {
     const switchElement = document.createElement('label');
     const switchCheckbox = document.createElement('input');
     const switchLabel = document.createElement('span');
@@ -67,3 +67,5 @@ export function Switch(config = {}, handler = function () { }) {
     switchElement.appendChild(switchSlider);
     return switchElement;
 }
+
+module.exports = { Switch }

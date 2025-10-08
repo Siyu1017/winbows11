@@ -1,6 +1,4 @@
-import { fs } from 'winbows/fs';
-
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -8,7 +6,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('winui-dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');
@@ -34,6 +32,8 @@ for (let i in styles) {
     }))
 }
 await Promise.allSettled(promises);
+
+const fsUtils = path;
 
 // "null" refers to the group separator
 const caches = {};

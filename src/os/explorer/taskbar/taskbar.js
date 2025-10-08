@@ -3,8 +3,12 @@ import ModuleManager from "../../moduleManager.js";
 import WinUI from "../../../lib/winui/winui.js";
 import { EventEmitter, getPosition } from "../../../shared/utils.js";
 import { ControlPanel } from "./controlPanel.js";
+import timer from "../../core/timer.js";
+import IconManager from "./iconManager.js";
 
-function Taskbar() {
+async function Taskbar() {
+    timer.group('Taskbar');
+
     const { screenElement } = viewport;
     const System = ModuleManager.get('System');
 
@@ -79,9 +83,12 @@ function Taskbar() {
     })
 
     const controlPanel = ControlPanel(taskbarControls);
+    const iconManager = await IconManager();
+
+    timer.groupEnd();
 
     return {
-        taskbar, taskbarIcons, taskbarIconsApps, taskbarIconsItems, taskbarControls, controlPanel
+        taskbar, taskbarIcons, taskbarIconsApps, taskbarIconsItems, taskbarControls, controlPanel, iconManager
     }
 }
 

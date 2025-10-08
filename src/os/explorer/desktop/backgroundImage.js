@@ -45,9 +45,17 @@ function compressImage(file) {
 }
 
 let currentBackgroundImage;
+/**
+ * @returns {string}
+ */
 function get() {
     return currentBackgroundImage;
 }
+
+/**
+ * @param {string} image 
+ * @returns {any}
+ */
 async function set(image = '') {
     if (!image || image == currentBackgroundImage) return;
     const stats = fs.stat(image);

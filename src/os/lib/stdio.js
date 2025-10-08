@@ -59,7 +59,7 @@ class OutputStream extends EventEmitter {
     }
 
     toString() {
-        return this.buffer;
+        return this.buffer.join('');
     }
 
     read() {

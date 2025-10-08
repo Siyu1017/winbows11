@@ -41,37 +41,37 @@ const fileViewers = {
     registeredViewers: {
         'code': {
             name: 'Visual Studio Code',
-            script: 'C:/Program Files/VSCode/viewer.js',
+            script: 'C:/Program Files/VSCode/app.wrt',
             accepts: [/*'css', 'js', 'jsx', 'ts', 'ejs', 'html', 'txt', 'json', 'xml', 'py', 'java', 'c', 'h', */'*']
         },
         'edge': {
             name: 'Microhard Edge',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/viewer.js',
+            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge/app.wrt',
             accepts: ['.html', '.pdf', '.txt', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.bmp', '.ico', '.webp', '.gif']
         },
         'edgebeta': {
             name: 'Microhard Edge BETA',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/viewer.js',
+            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Edge.BETA/app.wrt',
             accepts: ['.html', '.pdf', '.txt', '.js', '.css', '.png', '.jpg', '.jpeg', '.svg', '.bmp', '.ico', '.webp', '.gif']
         },
         'photos': {
             name: 'Photos',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/viewer.js',
+            script: 'C:/Winbows/SystemApps/Microhard.Winbows.Photos/app.wrt',
             accepts: ['*']
         },
         'mediaplayer': {
             name: 'MediaPlayer',
-            script: 'C:/Winbows/SystemApps/Microhard.Winbows.MediaPlayer/window.js',
+            script: 'C:/Winbows/SystemApps/Microhard.Winbows.MediaPlayer/app.wrt',
             accepts: ['.mp3', '.wav', '.ogg', '.mp4', '.webm', '.avi', '.mov']
         },
         'json-viewer': {
             name: 'JSON Viewer',
-            script: 'C:/Program Files/JSON Viewer/viewer.js',
+            script: 'C:/Program Files/JSON Viewer/app.wrt',
             accepts: ['.json']
         },
         'notepad': {
             name: 'Notepad',
-            script: 'C:/Program Files/Notepad/viewer.js',
+            script: 'C:/Program Files/Notepad/app.wrt   ',
             accepts: ['*']
         }
     },
@@ -94,7 +94,7 @@ const fileViewers = {
         }
         localStorage.setItem('WINBOWS_SYSTEM_FV_REGISTERED_VIEWERS', JSON.stringify(fileViewers.registeredViewers));
     },
-    unregisterViewer: (viewer) => {
+    deregisterViewer: (viewer) => {
         if (fileViewers.isRegisterd(viewer)) {
             delete fileViewers.registeredViewers[viewer];
         }

@@ -1,8 +1,0 @@
-;(async () => {
-    await System.requestAccessWindow('./window.v2.js', {
-        datas: {
-            page: PAGE
-        },
-        mica: true
-    })
-})();

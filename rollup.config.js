@@ -26,7 +26,7 @@ for (const mod of builtinModules) {
 fs.writeFileSync('./User/AppData/Roaming/wrt/wrt_modules/packages.json', JSON.stringify(builtinModuleDatas), 'utf-8')
 
 export default [{
-    input: `src/kernel/init.js`,
+    input: `src/init/init.js`,
     output: {
         name: '_',
         file: `Winbows/System/kernel/init.js`,

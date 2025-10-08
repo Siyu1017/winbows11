@@ -1,6 +1,6 @@
-import { router } from "../_router.js";
+const { router } = await requireAsync('../_router.js');
 
-export function Link(href) {
+function Link(href) {
     const link = document.createElement('div');
     link.addEventListener('click', (e) => {
         e.preventDefault();
@@ -11,3 +11,5 @@ export function Link(href) {
     })
     return link;
 }
+
+module.exports = { Link }

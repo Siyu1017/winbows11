@@ -308,6 +308,11 @@ class WinbowsNodejsRuntime {
     unmountAPI(name) {
         delete this.apis[name];
     }
+
+    /**
+     * @param {*} modulePath 
+     * @returns {Promise<any>}
+     */
     async requireAsync(modulePath) {
         if (!this.modules[modulePath]) {
             const __dirname = fsUtils.dirname(modulePath);

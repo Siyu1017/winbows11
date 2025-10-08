@@ -1,8 +1,8 @@
-import { router } from "./_router.js";
-import { sidebar } from './components/sidebar.js';
-import titles from './meta.js';
+const { router } = await requireAsync("./_router.js");
+const { sidebar } = await requireAsync('./components/sidebar.js');
+const titles = await requireAsync('./meta.js');
 
-var theme = window.System.theme.get();
+var theme = System.theme.get();
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -12,7 +12,7 @@ if (theme == 'dark') {
     document.documentElement.style = `background: rgb(249 249 249 / 94%);-webkit-backdrop-filter: blur(120px) saturate(2);backdrop-filter: blur(120px) saturate(2);`;
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');
@@ -34,7 +34,7 @@ for (let i in styles) {
         let style = document.createElement('link');
         style.rel = 'stylesheet';
         style.type = 'text/css';
-        style.href = await fs.getFileURL(path.resolve(styles[i]));
+        style.href = await fs.getFileURL(styles[i]);
         document.head.appendChild(style);
         resolve();
     }))
@@ -42,7 +42,7 @@ for (let i in styles) {
 for (let i in Object.keys(fonts)) {
     promises.push(new Promise(async (resolve, reject) => {
         var key = Object.keys(fonts)[i];
-        var font = new FontFace(key, `url(${await fs.getFileURL(path.resolve(fonts[key]))})`);
+        var font = new FontFace(key, `url(${await fs.getFileURL(fonts[key])})`);
         await font.load();
         window.document.fonts.add(font);
         resolve();
@@ -113,8 +113,8 @@ router.on('change', async (e) => {
             navbar.replaceChild(loadingSpinner, backButton);
         }
         try {
-            const module = await browserWindow.import(`./pages/` + path + '.js');
-            pageContents[path] = module.default();
+            const module = await requireAsync(`./pages/` + path + '.js');
+            pageContents[path] = module();
             page = pageContents[path] || document.createElement('div');
         } catch (e) {
             console.log(e);
@@ -143,8 +143,8 @@ router.on('change', async (e) => {
     }
 })
 
-if (pathInApp.length > 0 && typeof pathInApp == "string") {
-    router.push(pathInApp);
+if (process.args['path']) {
+    router.push(process.args['path']);
 } else {
     router.push('/home');
 }
