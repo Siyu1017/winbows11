@@ -2,6 +2,7 @@ import ModuleManager from "../../moduleManager.js";
 import { BrowserWindow } from "./browserWindow.js";
 import { EventEmitter } from "../../../shared/utils.js";
 import { IDBFS } from "../../../shared/fs.js";
+import appRegistry from "../appRegistry.js";
 
 const fs = IDBFS('~SYSTEM');
 
@@ -57,7 +58,19 @@ function register(ctx) {
                 },
                 argv: ctx.process.argv.slice(2) || []
             })
+            this.wrt.on('change:process.title', (e) => {
+                this.browserWindowObj.changeTitle(e.value);
+            })
+
+            // Add the window object to the parent WRT
             ctx.__Module_WApplication_Windows__.push(this.browserWindowObj);
+
+            const WindowManager = ModuleManager.get('WindowManager');
+            const IconManager = ModuleManager.get('IconManager');
+            const appName = this.config.appName || appRegistry.getInfoByPath(ctx.__filename)?.appName;
+            const appData = appRegistry.generateProfile(appName || '', ctx.__dirname, ctx.__filename);
+            const icon = await IconManager.getIcon(appData);
+            icon.open(WindowManager.get(this.browserWindowObj.id));
 
             //this.browserWindowObj.taskbarIconElement = taskbar.getIcon(appRegistry.generateProfile('', ctx.__dirname, ctx.__filename));
 
@@ -70,6 +83,7 @@ function register(ctx) {
             }
 
             this.browserWindowObj.on('close', () => {
+                icon.close(this.browserWindowObj.id);
                 if (this.wrt.alive) {
                     this.wrt.process.exit();
                 }

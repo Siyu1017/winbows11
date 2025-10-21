@@ -34,7 +34,7 @@ async function Taskbar() {
             icon: "settings",
             text: "Taskbar Settings",
             action: () => {
-                System.shell.execCommand('start settings://personalization/taskbar').catch(e => {
+                System.shell.execCommand('settings --path=/personalization/taskbar').catch(e => {
                     console.error(e);
                 })
             },
@@ -83,12 +83,14 @@ async function Taskbar() {
     })
 
     const controlPanel = ControlPanel(taskbarControls);
-    const iconManager = await IconManager();
+    const iconManager = await IconManager({ taskbarIconsApps, taskbarIconsItems, taskbarIcons });
+    ModuleManager.register('IconManager', iconManager, 'original');
 
     timer.groupEnd();
 
     return {
-        taskbar, taskbarIcons, taskbarIconsApps, taskbarIconsItems, taskbarControls, controlPanel, iconManager
+        taskbar, taskbarIcons, taskbarIconsApps, taskbarIconsItems, taskbarControls, controlPanel, iconManager,
+        init: iconManager.init
     }
 }
 

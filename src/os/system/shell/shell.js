@@ -101,7 +101,15 @@ export class ShellInstance extends EventEmitter {
             const { command, resolve, reject } = _queue.get(this).shift();
             try {
                 const start = performance.now();
-                const argv = minimistJs(parseArgsStringToArgv(command.trim()) || []);
+                const argsArr = parseArgsStringToArgv(command.trim()) || [];
+                const argv = minimistJs(argsArr);
+
+                for (const [k, v] of Object.entries(argv)) {
+                    if (typeof v === 'string' && /(^".*"$)|(^'.*'$)/.test(v)) {
+                        argv[k] = v.slice(1, -1);
+                    }
+                }
+
                 const cmdName = argv._[0];
                 const args = argv._.slice(1);
                 const handler = commandRegistry.get(String(cmdName).toLowerCase())?.handler;
@@ -109,7 +117,7 @@ export class ShellInstance extends EventEmitter {
 
                 if (!handler) {
                     // argv without cmdName
-                    const argv = command.trim().split(' ').filter(Boolean).slice(1);
+                    const argv = [...argsArr].filter(Boolean).slice(1);
 
                     // Check if it's an operable program
                     if (/.+\.wrt$/.test(cmdName)) {

@@ -4,13 +4,29 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## v1.0.0-beta.15 (2025-10-21)
+
+### Added
+
+- Taskbar app icons
+- Start menu
+- Window animation
+- Task view feature
+
+### Fixed
+
+- Remaining time incorrectly showing a negative value after installation completed
+- Installation failure caused by incorrect build metadata
+- A bug where arguments like `--key="value"` were parsed as `{ key: '"value"' }` instead of `{ key: 'value' }`
+- An issue where the Mica background layer extended beyond the window’s viewport bounds after resizing, causing visual overflow artifacts.
+
 ## v1.0.0-beta.14 (2025-10-08)
 
 ### Added
 
-- Taskbar icons
+- Taskbar icons *(implemented in `v1.0.0-beta.15`)*
 - Setting app for WRT environment
-- Start menu
+- Start menu *(implemented in `v1.0.0-beta.15`)*
 - Type declarations of WRT global object
 
 ### Fixed

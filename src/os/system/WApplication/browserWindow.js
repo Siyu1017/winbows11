@@ -7,6 +7,7 @@ import appRegistry from "../appRegistry.js";
 import { fallbackImage } from "../../core/fallback.js";
 import crashHandler from "../../core/crashHandler.js";
 import ModuleManager from "../../moduleManager.js";
+import WindowManager from "./windowManager.js";
 
 const fs = IDBFS("~SYSTEM");
 const { appWrapper, screenElement } = viewport;
@@ -36,6 +37,25 @@ function cubicBezier(p1x, p1y, p2x, p2y) {
     };
 }
 
+function derivative(f, epsilon = 1e-5) {
+    return t => (f(t + epsilon) - f(t)) / epsilon;
+}
+
+function invertEasingNewton(easeFn, derivativeFn, value, guess = 0.5, iterations = 5) {
+    let t = guess;
+    if (!derivativeFn) {
+        derivativeFn = derivative(easeFn);
+    }
+    for (let i = 0; i < iterations; i++) {
+        const y = easeFn(t) - value;
+        const dy = derivativeFn(t);
+        t -= y / dy;
+        if (t < 0) t = 0;
+        if (t > 1) t = 1;
+    }
+    return t;
+}
+
 const events = {
     "start": ["mousedown", "touchstart", "pointerdown"],
     "move": ["mousemove", "touchmove", "pointermove"],
@@ -57,6 +77,14 @@ const animateProfiles = {
     'window-close': {
         func: cubicBezier(.42, 0, .58, 1),
         duration: 100
+    },
+    'taskview-in': {
+        func: cubicBezier(0, .87, .21, 1),
+        duration: 200
+    },
+    'taskview-out': {
+        func: cubicBezier(.37, 1.03, 1, 1),
+        duration: 150
     }
 };
 
@@ -156,6 +184,18 @@ function getSnapSize(side) {
     }
 }
 
+function getSnapSizeNumber(side) {
+    var width = viewport.width;
+    var height = viewport.height - 48;
+    if (side.includes('l') || side.includes('r')) {
+        width /= 2;
+    }
+    if ((side.includes('t') && !side.includes('f')) || side.includes('b')) {
+        height /= 2;
+    }
+    return { width, height };
+}
+
 function getSnapPosition(side) {
     var left = '0';
     var top = '0';
@@ -164,6 +204,21 @@ function getSnapPosition(side) {
     }
     if (side.includes('b')) {
         top = 'calc((var(--viewport-height) - var(--taskbar-height)) / 2)';
+    }
+    return {
+        left: left,
+        top: top
+    }
+}
+
+function getSnapPositionNum(side) {
+    var left = 0;
+    var top = 0;
+    if (side.includes('r')) {
+        left = viewport.width / 2;
+    }
+    if (side.includes('b')) {
+        top = (viewport.height - 48) / 2;
     }
     return {
         left: left,
@@ -205,6 +260,8 @@ export class BrowserWindow extends EventEmitter {
     constructor(config = {}) {
         super();
 
+        this.id = 'window_' + utils.randomID(24);
+
         // Status
         this.isMaximized = false;
         this.isMinimized = false;
@@ -219,6 +276,7 @@ export class BrowserWindow extends EventEmitter {
 
         // Elements
         this.container = document.createElement('div');
+        this.micaContainer = document.createElement('div');
         this.micaElement = document.createElement('div');
         this.windowElement = document.createElement('div');
         this.resizerContainer = document.createElement('div');
@@ -243,7 +301,7 @@ export class BrowserWindow extends EventEmitter {
             toolbar: document.createElement('div'),
             content: document.createElement('div')
         }
-        this.taskbarIconElement = document.createElement('div');    // TODO: 
+        this.taskbarIconElement = document.createElement('div');
 
         // Options
         this.resizable = config.resizable ?? true;
@@ -272,17 +330,23 @@ export class BrowserWindow extends EventEmitter {
 
         this.x = (config.x == 'center' || !config.x) ? viewport.width / 2 - this.realWidth / 2 : config.x;
         this.y = (config.y == 'center' || !config.y) ? viewport.height / 2 - this.realHeight / 2 : config.y;
-        this.icon = config.icon ?? '';
+        this.realX = this.x;
+        this.realY = this.y;
+
+        this.icon = config.icon ?? appRegistry.getIcon('');
         this.title = config.title ?? 'App';
 
         if (!config.x && !config.y && browserWindowPosition['caller']) {
             // Restore previous position
             this.x = browserWindowPosition['caller'][0];
             this.y = browserWindowPosition['caller'][1];
+            this.realX = this.x;
+            this.realY = this.y;
         }
 
         // Container
         this.container.className = 'browser-window-container';
+        this.micaContainer.className = 'browser-window-mica-container';
         this.micaElement.className = 'browser-window-mica';
         this.windowElement.className = 'broser-window';
         this.resizerContainer.className = 'browser-window-resizers';
@@ -291,9 +355,10 @@ export class BrowserWindow extends EventEmitter {
         maxZIndex++;
         this.container.style.zIndex = maxZIndex;
         this.container.style.transition = 'none';
-        this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
+        this.container.style.transform = `translate(${this.realX}px,${this.realY}px)`;
 
-        this.container.appendChild(this.micaElement);
+        this.container.appendChild(this.micaContainer);
+        this.micaContainer.appendChild(this.micaElement);
         this.container.appendChild(this.windowElement);
         this.windowElement.appendChild(this.resizerContainer);
         this.windowElement.appendChild(this.windowContent);
@@ -332,6 +397,10 @@ export class BrowserWindow extends EventEmitter {
                 ts: Date.now() + 100
             },
             isRunning: false,
+            stat: {
+                t: 0,
+                x: 0
+            },
             profile: {
                 func: cubicBezier(.42, 0, .58, 1),
                 duration: 100
@@ -457,17 +526,19 @@ export class BrowserWindow extends EventEmitter {
 
                     this.x = translateX;
                     this.y = translateY;
+                    this.realX = this.x;
+                    this.realY = this.y;
 
                     this.container.style.transition = 'none';
-                    this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
+                    this.container.style.transform = `translate(${this.realX}px,${this.realY}px)`;
                 }
 
                 const handleStartResizing = (e) => {
                     if (this.isMaximized == true) return;
                     pointerPosition = utils.getPointerPosition(e);
                     originalPosition = {
-                        x: this.x,
-                        y: this.y
+                        x: this.realX,
+                        y: this.realY
                     }
                     originalSize = {
                         width: this.realWidth,
@@ -550,8 +621,9 @@ export class BrowserWindow extends EventEmitter {
         this.closeImage.className = 'window-toolbar-button-icon';
 
         // Load icon image
-        fs.getFileURL(this.icon || appRegistry.getIcon(''))
+        fs.getFileURL(this.icon)
             .then(url => {
+                this.icon = url;
                 this.toolbarIcon.style.backgroundImage = `url(${url})`;
             });
 
@@ -666,13 +738,16 @@ export class BrowserWindow extends EventEmitter {
             this._emit('focus');
         })
 
-        this.on('focus', this.onFocus);
-        this.on('blur', this.onBlur);
-        this.onFocus();
+        this.on('focus', this.focus);
+        this.on('blur', this.blur);
+        this.focus();
+
+        WindowManager.add(this.id, this);
 
         // WindowManager.emit('create', this);
 
         return {
+            id: this.id,
             shadowRoot: this.shadowRoot,
             container: this.container,
             window: this.browserWindow.window,
@@ -681,6 +756,7 @@ export class BrowserWindow extends EventEmitter {
 
             // Methods
             minimize: this.minimize.bind(this),
+            unminimize: this.unminimize.bind(this),
             maximize: this.maximizeWindow.bind(this),
             unmaximize: this.unmaximizeWindow.bind(this),
             close: this.close.bind(this),
@@ -699,7 +775,7 @@ export class BrowserWindow extends EventEmitter {
         }
     }
 
-    onFocus = () => {
+    focus = () => {
         maxZIndex++;
         this.container.style.zIndex = maxZIndex;
         this.container.style.pointerEvents = 'all';
@@ -707,8 +783,9 @@ export class BrowserWindow extends EventEmitter {
         this.windowContent.style.pointerEvents = 'unset';
     }
 
-    onBlur = () => {
-
+    blur = () => {
+        this.container.style.pointerEvents = 'none';
+        this.windowContent.style.pointerEvents = 'none';
     }
 
     animate = ({
@@ -719,22 +796,51 @@ export class BrowserWindow extends EventEmitter {
         if (profile) {
             this.animationData.profile = animateProfiles[profile];
         }
+
         Object.keys(to).forEach(CSSKey => {
             if (/[A-z]/gi.test(CSSKey[0])) {
                 this.animationData.to[CSSKey] = to[CSSKey];
             }
         })
-        var cT = getComputedStyle(this.container).transform;
-        var cO = getComputedStyle(this.container).opacity;
-        var opacity = Number(cO);
 
-        var x = 0, y = 0, scaleX = 1, scaleY = 1;
+        const cT = getComputedStyle(this.container).transform;
+        const cO = getComputedStyle(this.container).opacity;
+        let opacity = Number(cO);
+        let x = 0, y = 0, scaleX = 1, scaleY = 1;
+
         if (cT.startsWith("matrix(")) {
-            var transform = decompose2DMatrix(cT);
+            const transform = decompose2DMatrix(cT);
             x = transform.translateX;
             y = transform.translateY;
             scaleX = transform.scaleX;
             scaleY = transform.scaleY;
+
+            // Handle interrupted animation
+            const originalT = this.animationData.stat.__t;
+            if (this.animationData.isRunning == true && originalT > 0 && originalT < 1) {
+                const originalX = this.animationData.stat.__x;
+                const currentFunc = this.animationData.profile.func;
+                const t = invertEasingNewton(currentFunc, derivative(currentFunc), originalX, originalT);
+                const duration = this.animationData.profile.duration;
+
+                this.animationData.stat.__t = t;
+                this.animationData.stat.__x = currentFunc(this.animationData.stat.__t);
+
+                // console.info('Animation interrupted, Original x:', originalX, ', Current x:', this.animationData.stat.__x, ', Original t:', originalT, ', Current t:', t);
+
+                this.animationData.from.x = this.animationData.stat.x;
+                this.animationData.from.y = this.animationData.stat.y;
+                this.animationData.from.scaleX = this.animationData.stat.scaleX;
+                this.animationData.from.scaleY = this.animationData.stat.scaleY;
+                this.animationData.from.opacity = this.animationData.stat.opacity;
+                this.animationData.from.ts = Date.now() - duration * this.animationData.stat.t;
+                this.animationData.to.ts = this.animationData.from.ts + duration;
+
+                if (this.animationData.isRunning == false) {
+                    this.animateRunner();
+                }
+                return;
+            }
         }
 
         if (from) {
@@ -767,14 +873,24 @@ export class BrowserWindow extends EventEmitter {
         const t = d / this.animationData.profile.duration;
         const p = this.animationData.profile.func(t > 1 ? 1 : t < 0 ? 0 : t);
 
+        this.animationData.stat.__t = t;
+        this.animationData.stat.__x = p;
+        this.animationData.stat.x = this.animationData.from.x + (this.animationData.to.x - this.animationData.from.x) * p;
+        this.animationData.stat.y = this.animationData.from.y + (this.animationData.to.y - this.animationData.from.y) * p;
+        this.animationData.stat.scaleX = this.animationData.from.scaleX + (this.animationData.to.scaleX - this.animationData.from.scaleX) * p;
+        this.animationData.stat.scaleY = this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animationData.from.scaleY) * p;
+        this.animationData.stat.opacity = this.animationData.from.opacity + (this.animationData.to.opacity - this.animationData.from.opacity) * p;
+
         this.container.style.transform = `translate(
-${this.animationData.from.x + (this.animationData.to.x - this.animationData.from.x) * p}px,
-${this.animationData.from.y + (this.animationData.to.y - this.animationData.from.y) * p}px
+${this.animationData.stat.x}px,
+${this.animationData.stat.y}px
 ) scale(
-${this.animationData.from.scaleX + (this.animationData.to.scaleX - this.animationData.from.scaleX) * p},
-${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animationData.from.scaleY) * p}
+${this.animationData.stat.scaleX},
+${this.animationData.stat.scaleY}
 )`;
-        this.container.style.opacity = (this.animationData.from.opacity + (this.animationData.to.opacity - this.animationData.from.opacity) * p).toString();
+        this.container.style.opacity = this.animationData.stat.opacity.toString();
+        //this.realX = this.animationData.stat.x;
+        //this.realY = this.animationData.stat.y;
 
         if (now < this.animationData.to.ts) {
             requestAnimationFrame(this.animateRunner);
@@ -830,9 +946,15 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
                 this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                 this.browserWindow.window.style.transition = 'none';
                 this.container.removeAttribute('data-maximized');
-                this.browserWindow.window.style.width = this.realWidth + 'px';
-                this.browserWindow.window.style.height = this.realHeight + 'px';
+
+                this.browserWindow.window.style.width = this.width + 'px';
+                this.browserWindow.window.style.height = this.height + 'px';
+                this.realWidth = this.width;
+                this.realHeight = this.height;
+
                 this.browserWindow.window.style.borderRadius = 'revert-layer';
+                this.micaContainer.style.borderRadius = 'revert-layer';
+
                 this.maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
                 this.isMaximized = false;
                 this.originalSnapSide = '';
@@ -857,6 +979,8 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
 
             this.container.style.transition = 'none';
             this.container.style.transform = `translate(${this.originalPosition.x + pageX - this.pointerPosition[0]}px,${this.originalPosition.y + pageY - this.pointerPosition[1]}px)`;
+            this.realX = this.originalPosition.x + pageX - this.pointerPosition[0];
+            this.realY = this.originalPosition.y + pageY - this.pointerPosition[1];
 
             if (this.snappable == false) {
                 this.snapSide = '';
@@ -927,7 +1051,13 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
                 this.maximizeWindow();
             }
             const position = getSnapPosition(this.snapSide);
+            const positionNum = getSnapPositionNum(this.snapSide);
             const size = getSnapSize(this.snapSide);
+            const sizeNum = getSnapSizeNumber(this.snapSide);
+            this.realX = positionNum.left;
+            this.realY = positionNum.top;
+            this.realWidth = sizeNum.width;
+            this.realHeight = sizeNum.height;
 
             this.container.style.transform = `translate(${position.left},${position.top})`;
             this.container.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
@@ -940,6 +1070,7 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
             this.browserWindow.window.style.width = size.width;
             this.browserWindow.window.style.height = size.height;
             this.browserWindow.window.style.borderRadius = '0';
+            this.micaContainer.style.borderRadius = '0';
         } else if (type == 'user') {
             let pageX = e.pageX;
             let pageY = e.pageY;
@@ -960,8 +1091,11 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
             }
             this.x = this.originalPosition.x + pageX - this.pointerPosition[0];
             this.y = this.originalPosition.y + pageY - this.pointerPosition[1];
+            this.realX = this.x;
+            this.realY = this.y;
+
             this.container.style.transition = 'none';
-            this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
+            this.container.style.transform = `translate(${this.realX}px,${this.realY}px)`;
         }
         this.originalSnapSide = this.snapSide;
         this.snapSide = '';
@@ -973,6 +1107,16 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
             target: e.target
         })
         this.updateMica();
+    }
+
+    updateData = () => {
+        if (!this.originalSnapSide) return;
+        const positionNum = getSnapPositionNum(this.originalSnapSide);
+        const sizeNum = getSnapSizeNumber(this.originalSnapSide);
+        this.realX = positionNum.left;
+        this.realY = positionNum.top;
+        this.realWidth = sizeNum.width;
+        this.realHeight = sizeNum.height;
     }
 
     updateMica = () => {
@@ -991,6 +1135,7 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
         var height = this.container.offsetHeight;
 
         this.container.style.transition = 'none';
+        this.isMinimized = true;
 
         var scaleX = 180 / width;
         var scaleY = 120 / height;
@@ -1016,29 +1161,30 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
         this._emit('minimize');
     }
 
-    unmaximizeWindow = (animation = true) => {
-        this.originalSnapSide = '';
-        this.isMaximized = false;
-        this.container.removeAttribute('data-maximized');
-        this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
-
-        if (animation == true) {
-            this.container.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-            this.browserWindow.window.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-            setTimeout(() => {
-                this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-                this.browserWindow.window.style.transition = 'none';
-            }, 200)
-        } else {
-            this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
-            this.browserWindow.window.style.transition = 'none';
+    unminimize = () => {
+        let x = this.realX,
+            y = this.realY;
+        if (this.originalSnapSide != '') {
+            x = 0; y = 0;
+            if (this.originalSnapSide.includes('r')) {
+                x = viewport.width / 2;
+            }
+            if (this.originalSnapSide.includes('b')) {
+                y = (viewport.height - 48) / 2;
+            }
         }
-
-        this.browserWindow.window.style.width = this.realWidth + 'px';
-        this.browserWindow.window.style.height = this.realHeight + 'px';
-        this.browserWindow.window.style.borderRadius = 'revert-layer';
-        this.maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
-        this.updateMica();
+        this.isMinimized = false;
+        this.container.style.transition = 'none';
+        this.animate({
+            to: {
+                x, y,
+                scaleX: 1,
+                scaleY: 1,
+                opacity: 1
+            },
+            profile: 'window-show'
+        });
+        this._emit('unminimize');
     }
 
     maximizeWindow = (animation = true) => {
@@ -1046,6 +1192,8 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
         this.isMaximized = true;
         this.container.setAttribute('data-maximized', 'true');
         this.container.style.transform = `translate(0px,0px)`;
+        this.realX = 0;
+        this.realY = 0;
         // hostElement.style.width = 'var(--viewport-width)';
         // hostElement.style.height = 'calc(var(--viewport-height) - var(--taskbar-height))';
 
@@ -1063,8 +1211,43 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
 
         this.browserWindow.window.style.width = 'var(--viewport-width)';
         this.browserWindow.window.style.height = 'calc(var(--viewport-height) - var(--taskbar-height))';
+        this.realWidth = viewport.width;
+        this.realHeight = viewport.height - 48;
+
         this.browserWindow.window.style.borderRadius = '0';
+        this.micaContainer.style.borderRadius = '0';
         this.maximizeImage.style.backgroundImage = `url(${icons.maximize})`;
+        this.updateMica();
+    }
+
+    unmaximizeWindow = (animation = true) => {
+        this.originalSnapSide = '';
+        this.isMaximized = false;
+        this.container.removeAttribute('data-maximized');
+        this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
+        this.realX = this.x;
+        this.realY = this.y;
+
+        if (animation == true) {
+            this.container.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+            this.browserWindow.window.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+            setTimeout(() => {
+                this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                this.browserWindow.window.style.transition = 'none';
+            }, 200)
+        } else {
+            this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+            this.browserWindow.window.style.transition = 'none';
+        }
+
+        this.browserWindow.window.style.width = this.width + 'px';
+        this.browserWindow.window.style.height = this.height + 'px';
+        this.realWidth = this.width;
+        this.realHeight = this.height;
+
+        this.browserWindow.window.style.borderRadius = 'revert-layer';
+        this.micaContainer.style.borderRadius = 'revert-layer';
+        this.maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
         this.updateMica();
     }
 
@@ -1085,6 +1268,8 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
             profile: 'window-close'
         });
         this._emit('close');
+        WindowManager.remove(this.id);
+
         setTimeout(() => {
             this.container.remove();
         }, 200);
@@ -1094,14 +1279,18 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
         if (!title) return;
         this.title = title;
         this.toolbarTitle.innerHTML = utils.replaceHTMLTags(title);
-        this._emit('title-changed', title);
+        this._emit('change:title', {
+            value: title
+        });
     }
 
     changeIcon = (url = '') => {
         if (!url) return;
         this.icon = url;
         this.toolbarIcon.style.backgroundImage = `url(${url})`;
-        this._emit('icon-changed', url);
+        this._emit('change:icon', {
+            value: url
+        });
     }
 
     setTheme = (theme) => {
@@ -1211,6 +1400,10 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
             if (listeners[event]) {
                 listeners[event].forEach((listener) => listener(detail));
             }
+        }
+
+        const closeBrowserWindow = () => {
+            this.close();
         }
 
         class Tab {
@@ -1416,7 +1609,7 @@ ${this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animatio
                 delete tabs[this.id];
                 order.splice(index, 1);
                 if (Object.keys(tabs).length == 0) {
-                    return close();
+                    return closeBrowserWindow();
                 } else if (order[index]) {
                     return tabs[order[index]].focus();
                 } else if (order[index - 1]) {

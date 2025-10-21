@@ -1,3 +1,5 @@
+import { EventEmitter } from "../../shared/utils.js";
+
 // Viewport
 document.body.innerHTML = '';
 document.body.style.background = 'transparent';
@@ -19,9 +21,14 @@ appWrapper.className = 'app-wrapper';
 root.appendChild(screenElement);
 screenElement.appendChild(appWrapper);
 
+const viewportEventEmitter = new EventEmitter();
 function updateScreenSize() {
     root.style.setProperty('--viewport-width', root.offsetWidth + 'px');
     root.style.setProperty('--viewport-height', root.offsetHeight + 'px');
+    viewportEventEmitter._emit('resize', {
+        width: root.offsetWidth,
+        height: root.offsetHeight
+    })
 }
 window.addEventListener('resize', updateScreenSize);
 window.addEventListener('load', updateScreenSize);
@@ -38,6 +45,9 @@ export const viewport = {
     },
     get height() {
         return root.offsetHeight;
+    },
+    onResize(cb) {
+        viewportEventEmitter.on('resize', cb);
     }
 }
 

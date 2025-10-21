@@ -108,7 +108,9 @@ try {
             const ds = (now - startTime) / 1000;
             const bytesPerSecond = downloadedSize / ds;
             const seconds = ~~((size - downloadedSize) / bytesPerSecond);
-            if (seconds < 60) {
+            if (seconds < 0) {
+                return '0 second';
+            } else if (seconds < 60) {
                 return `${seconds} sencond(s)`;
             } else if (seconds < 60 * 60) {
                 return `${~~(seconds / 60)} minute(s) and ${seconds % 60} sencond(s)`;
@@ -120,7 +122,7 @@ try {
         }
 
         function formatBytes(bytes, decimals = 2) {
-            if (bytes === 0 || !bytes) return '';
+            if (bytes <= 0 || !bytes) return '';
 
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];

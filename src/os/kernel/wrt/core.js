@@ -39,7 +39,7 @@ const tasklist = new ((() => {
 })())();
 
 const WRTEvtEmitter = new utils.EventEmitter();
-class WinbowsNodejsRuntime {
+class WinbowsNodejsRuntime extends utils.EventEmitter {
     static on(evt, cb) {
         WRTEvtEmitter.on(evt, cb);
     }
@@ -131,6 +131,8 @@ class WinbowsNodejsRuntime {
     constructor({
         code, __filename, __dirname, appName = '', options = {}, argv = []
     }) {
+        super();
+
         this.runtimeID = utils.randomID(12);
 
         if (__filename && typeof __filename === 'string') {
@@ -188,6 +190,7 @@ class WinbowsNodejsRuntime {
                     this.title = value;
                     process.title = value;
                     tasklist.update(this.runtimeID, 'title', value);
+                    this._emit('change:process.title', { value, runtimeID: this.runtimeID });
                 } else {
                     target[prop] = value;
                 }
@@ -206,6 +209,11 @@ class WinbowsNodejsRuntime {
 
         // args {key->value}
         process.args = minimistJs(process.argv);
+        for (const [k, v] of Object.entries(process.args)) {
+            if (typeof v === 'string' && /(^".*"$)|(^'.*'$)/.test(v)) {
+                process.args[k] = v.slice(1, -1);
+            }
+        }
 
         process.on('exit', () => {
             if (this.alive == false) return;

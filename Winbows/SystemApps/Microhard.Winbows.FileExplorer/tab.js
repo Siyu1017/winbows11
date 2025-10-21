@@ -120,7 +120,7 @@ function getData(path) {
         }
     }
     return {
-        title: capitalizeFirstLetter(fsUtils.basename(path)),
+        title: fsUtils.basename(path),
         icon: 'C:/Winbows/icons/folders/folder.ico',
         active: pageDatas.filter(t => t != null).find(t => t.path == 'pages://this_pc').active
     }
@@ -339,8 +339,11 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
         try {
             const pageData = getData(path);
             tab.changeHeader(pageData.title);
+            browserWindow.changeTitle(pageData.title);
+
             getImageURL(pageData.icon).then(url => {
                 tab.changeIcon(url);
+                browserWindow.changeIcon(url);
             })
             pageData.active();
         } catch (e) { }
@@ -739,9 +742,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                             itemIcon.style.backgroundImage = `url(${url})`;
                         })
                     } catch (e) {
-                        if (window.modes.debug == true) {
-                            console.log('Failed to load image.');
-                        }
+                        console.error(e);
                     }
                 }
             })
@@ -753,9 +754,9 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                 }
                 var defaultViewer = System.fileViewers.getDefaultViewer(path);
                 if (defaultViewer != null) {
-                    System.shell.execCommand(`"${defaultViewer.script}" --path=${path}`);
+                    System.shell.execCommand(`"${defaultViewer.script}" --path="${path}"`);
                 } else {
-                    System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=${path}`);
+                    System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path="${path}"`);
                 }
             })
         }
@@ -774,12 +775,13 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                     }, */{
                     className: "open",
                     text: "Open",
+                    icon: 'open-in-new-window',
                     action: () => {
                         var defaultViewer = System.fileViewers.getDefaultViewer(path);
                         if (defaultViewer != null) {
-                            System.shell.execCommand(`"${defaultViewer.script}" --path=${path}`);
+                            System.shell.execCommand(`"${defaultViewer.script}" --path="${path}"`);
                         } else {
-                            System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=${path}`);
+                            System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path="${path}"`);
                         }
                     }
                 }, {
@@ -787,7 +789,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "open-with",
                     text: "Open with...",
                     action: () => {
-                        System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=${path}`);
+                        System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path="${path}"`);
                     }
                 }, {
                     icon: "delete",
@@ -803,6 +805,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
             if (details.type.startsWith('image/')) {
                 items.push({
                     className: "set-as-background",
+                    icon: 'photo',
                     text: "Set as background",
                     action: async () => {
                         await Explorer.backgroundImage.set(path);
@@ -934,9 +937,11 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                     name: fsUtils.basename(path)
                 }, path)
             } else {
+                /*
                 if (window.modes.debug == true) {
                     console.log(stat.mimeType)
                 }
+                    */
                 await createFileItem(itemViewer, {
                     name: fsUtils.basename(path),
                     type: stat.mimeType
@@ -963,20 +968,24 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
         event.preventDefault();
         dropZone.classList.remove('dragover');
 
-        var completed = 0;
-        var total = 0;
-        var target = router.getCurrentRoute();
+        let completed = 0;
+        let total = 0;
+        let target = router.getCurrentRoute();
 
         if (target == '' || target.startsWith('pages://')) return;
         if (!target.endsWith('/')) {
             target += '/';
         }
 
+        /*
         if (window.modes.debug == true) {
             console.log(currentPage, target)
         }
+            */
 
         const items = event.dataTransfer.items;
+        console.info(items, target);
+
         total = items.length;
         for (let i = 0; i < items.length; i++) {
             const item = items[i].webkitGetAsEntry();
@@ -1000,9 +1009,10 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
                         const fullPath = `${target}${filePath}`;
                         await fs.writeFile(fullPath, blob).then(() => {
                             completed++;
+                            /*
                             if (window.modes.debug == true) {
                                 console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-                            }
+                            }*/
                             if (completed == total) {
                                 getPage(currentPage);
                             }

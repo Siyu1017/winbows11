@@ -42,15 +42,10 @@ export default async function init() {
         desktopEl.remove();
         backgroundImage.backgroundEl.remove();
     })
-
-    ModuleManager.register('backgroundImage', backgroundImage, 'original');
-    timer.mark('Background image');
-
     loading.textWithProgress('Initializing Desktop...', 36);
 
     await desktop.init();
     desktop.update();
-    ModuleManager.register('desktop', desktop, 'original');
     timer.mark('Desktop');
 
     const Explorer = {
@@ -103,7 +98,7 @@ export default async function init() {
     } catch (e) {
         logger.error('Failed to set background image\n', e);
     }
-    timer.mark('Loading background image');
+    timer.mark('Background image');
 
     // Initialize Lock Screen
     logger.info('Initializing lock screen...');
@@ -130,6 +125,8 @@ export default async function init() {
     }
 
     lockScreen.setInitFn(async () => {
+        await taskbar.init();
+
         // Tests
         const WRT = ModuleManager.get('WRT');
         const System = ModuleManager.get('System');
@@ -153,7 +150,7 @@ export default async function init() {
         shell.execCommand('info');
         shell.execCommand('cmd');
         shell.execCommand('debuglog-parser');
-        shell.execCommand('explorer --page=C:/');
+        shell.execCommand('explorer --path=C:/');
 
         // WinbowsDebugLog.export();
     })

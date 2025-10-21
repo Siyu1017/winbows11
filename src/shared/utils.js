@@ -220,23 +220,27 @@ export class EventEmitter {
 
     on(eventName, handler) {
         if (!this.listeners.has(eventName)) {
-            this.listeners.set(eventName, new Set());
+            this.listeners.set(eventName, []);
         }
-        this.listeners.get(eventName).add(handler);
+        this.listeners.get(eventName).push(handler);
     }
 
     off(eventName, handler) {
         if (!this.listeners.has(eventName)) return;
-        this.listeners.get(eventName).delete(handler);
+        const index = this.listeners.get(eventName).indexOf(handler);
+        if (index === -1) return;
+        this.listeners.get(eventName).splice(index, 1);
     }
 
     _emit(eventName, ...args) {
-        if (!this.listeners.has(eventName)) return;
-        for (const handler of this.listeners.get(eventName)) {
-            try {
-                handler(...args);
-            } catch (e) {
-                console.error(`Error in handler for ${eventName}:`, e);
+        const handlers = this.listeners.get(eventName);
+        if (handlers) {
+            for (const fn of handlers.slice()) {
+                try {
+                    fn(...args);
+                } catch (e) {
+                    console.error(`Error in handler for ${eventName}:`, e);
+                }
             }
         }
     }

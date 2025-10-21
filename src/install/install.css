@@ -17,7 +17,7 @@ body {
 
 .install-window {
     background: #fff;
-    border-radius: .5rem;
+    border-radius: 1.5rem;
     width: min(80vw, 720px);
     height: min(80vh, 480px);
     display: flex;

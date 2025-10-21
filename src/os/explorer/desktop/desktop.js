@@ -380,7 +380,7 @@ async function init(params) {
                         icon: 'open-with',
                         text: "Open with...",
                         action: () => {
-                            new WRT().runFile('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt')//.start(`const FILE_PATH="${path}";`);
+                            System.shell.execCommand('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt')//.start(`const FILE_PATH="${path}";`);
                         }
                     });
                 }
@@ -389,7 +389,7 @@ async function init(params) {
                         text: 'Open file location',
                         icon: 'folder-open',
                         action: () => {
-                            System.shell.execCommand('explorer --config=PAGE=\"C:/User/Desktop\"').catch(e => {
+                            System.shell.execCommand('explorer --path=\"C:/User/Desktop\"').catch(e => {
                                 console.error(e);
                             })
                         }
@@ -589,7 +589,7 @@ async function init(params) {
                         } else if (type == 'directory') {
                             detail = {
                                 name: name,
-                                command: `run explorer --config=PAGE=\"${path}\"`
+                                command: `explorer --path=\"${path}\"`
                             };
                         } else {
                             detail = {
@@ -597,12 +597,9 @@ async function init(params) {
                                 action: () => {
                                     var defaultViewer = System.FileViewers.getDefaultViewer(path);
                                     if (defaultViewer != null) {
-                                        new WRT().runFile(defaultViewer.script)//.start(`const FILE_PATH="${path}";`);
+                                        System.shell.execCommand(defaultViewer.script)//.start(`const FILE_PATH="${path}";`);
                                     } else {
-                                        if (window.modes.debug == true) {
-                                            console.log('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt')
-                                        }
-                                        new WRT().runFile('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt')//.start(`const FILE_PATH="${path}";`);
+                                        System.shell.execCommand('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt')//.start(`const FILE_PATH="${path}";`);
                                     }
                                 }
                             };
@@ -681,7 +678,7 @@ async function init(params) {
         if (allowed == false) return;
         allowed == false;
 
-        function hashURL(url) {
+        async function hashURL(url) {
             return crypto.subtle.digest('SHA-256', new TextEncoder().encode(url)).then(buf =>
                 Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
             );
@@ -869,7 +866,7 @@ async function init(params) {
         content: {
             icon: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico',
             name: 'Desktop',
-            command: 'explorer --config=PAGE=\"C:/User/Desktop\"'
+            command: 'explorer --path=C:/User/Desktop'
         }
     }, {
         path: 'C:/User/Desktop/github.link',

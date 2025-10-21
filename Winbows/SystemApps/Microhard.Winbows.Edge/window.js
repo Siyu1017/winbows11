@@ -462,11 +462,6 @@ async function createTab(page, active = true) {
     text-align: center;
     margin-bottom: .5rem;
 ">Microhard Edge</div>
-    <div style="
-    font-size: .875rem;
-    text-align: center;
-    font-style: italic;
-">Where do you want to go?</div>
 <hr style="
     /* height: 1px; */
     /* background: #000; */

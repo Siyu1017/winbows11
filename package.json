@@ -1,6 +1,6 @@
 {
   "name": "winbows11",
-  "version": "1.0.0-beta.14",
+  "version": "1.0.0-beta.15",
   "description": "Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!",
   "main": "server.js",
   "directories": {
@@ -9,9 +9,10 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
+    "start:dev": "node dev-server.js",
     "build:prod": "node buildID.js && cross-env NODE_ENV=production concurrently \"rollup -c\" \"webpack --mode production\" \"node build.cjs\"",
     "build:dev": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c\" \"webpack --mode development\" \"node build.cjs\"",
-    "build:watch": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c -w\" \"webpack --mode development --watch\" \"nodemon dev-server.js\""
+    "build:watch": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c -w\" \"webpack --mode development --watch\""
   },
   "repository": {
     "type": "git",

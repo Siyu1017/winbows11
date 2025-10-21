@@ -42,11 +42,11 @@ const tabview = browserWindow.useTabview({
     icon: false
 });
 
-console.log(process.args)
+// console.log(process.args)
 
 // Create a tab
 const tab = new tabview.Tab();
-setupTab(browserWindow, tab, process.args.page || 'pages://home');
+setupTab(browserWindow, tab, process.args.path || 'pages://home');
 
 // Handle click event
 tabview.on('requestCreateTab', (e) => {

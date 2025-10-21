@@ -182,7 +182,9 @@ appRegistry.generateProfile = (appName, basePath, entryScript) => {
     const app = appRegistry.getApp(entryScript)
     return {
         appId: app.appId ?? generateAppId(appName, basePath, entryScript),
-        type: 'app'
+        type: 'app',
+        icon: app.icon ?? 'C:/Winbows/icons/files/program.ico',
+        basePath, entryScript, appName
     }
 }
 

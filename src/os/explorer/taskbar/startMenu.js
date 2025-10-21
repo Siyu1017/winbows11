@@ -6,7 +6,7 @@ import { viewport } from "../../core/viewport.js";
 import lockScreenObj from "../../core/lockScreen.js";
 import timer from "../../core/timer.js";
 
-export default function StartMenu() {
+export default function StartMenu(icon) {
     const fs = IDBFS('~EXPLORER');
     const downEvts = ["mousedown", "touchstart", "pointerdown"];
 
@@ -144,34 +144,36 @@ export default function StartMenu() {
     }
 
     function hideStart() {
+        if (show == false) return;
         startMenuContainer.classList.remove('active');
         show = false;
     }
 
-    icon.item.addEventListener('click', (e) => {
-        if (show == false) {
-            showStart();
-        } else {
-            hideStart();
-        }
-    })
+    icon.on('blur', () => {
+        icon.close();
+    });
 
     downEvts.forEach(event => {
-        window.addEventListener(event, (e) => {
+        viewport.root.addEventListener(event, (e) => {
             if (
                 startMenuContainer.contains(e.target) ||    // Start menu
                 powerMenu.container.contains(e.target) ||   // Contextmenu
-                icon.item.contains(e.target)                // Taskbar icon
+                icon.iconEl.contains(e.target)              // Taskbar icon
             ) return;
 
-            hideStart();
+            icon.close();
         })
     })
 
-    !(async () => {
+    return (async () => {
         // Start Menu
+        const System = ModuleManager.get('System');
+        const appRegistry = System.appRegistry;
         const pinnedList = [
             {
+                name: 'File Explorer',
+                app: 'explorer'
+            }, {
                 name: 'Edge',
                 app: 'edge'
             }, {
@@ -186,6 +188,9 @@ export default function StartMenu() {
             }, {
                 name: 'Task Manager',
                 app: 'taskmgr'
+            }, {
+                name: 'Settings',
+                app: 'settings'
             }
         ];
 
@@ -252,16 +257,20 @@ export default function StartMenu() {
                 itemIcon.style.backgroundImage = `url(${url})`;
             })
             item.addEventListener('click', (e) => {
-                hideStart();
-                const System = ModuleManager.get('System');
-                System.shell.execCommand(info.entryScript);
+                icon.close();
+                System.shell.execCommand(`${pinned.app}`);
             })
 
             pinnedApps.appendChild(item);
             item.appendChild(itemIcon);
             item.appendChild(itemName);
         })
-    })();
 
-    timer.mark('Start Menu');
+        timer.mark('Start Menu');
+
+        return {
+            open: showStart,
+            close: hideStart
+        }
+    })();
 }

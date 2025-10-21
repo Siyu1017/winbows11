@@ -18,27 +18,27 @@ module.exports = function main() {
             {
                 text: 'Left',
                 value: 'left',
-                selected: document.body.getAttribute('data-taskbar-align') === 'left'
+                selected: window.document.body.getAttribute('data-taskbar-align') === 'left'
             }, {
                 text: 'Center',
                 value: 'center',
-                selected: document.body.getAttribute('data-taskbar-align') !== 'left'
+                selected: window.document.body.getAttribute('data-taskbar-align') !== 'left'
             }
         ], function (e) {
-            document.body.setAttribute('data-taskbar-align', ['center', 'left'].includes(e.value) ? e.value : 'center');
+            window.document.body.setAttribute('data-taskbar-align', ['center', 'left'].includes(e.value) ? e.value : 'center');
         })],
         [taskbarStyle, '', Select([
             {
                 text: 'Default',
                 value: 'default',
-                selected: document.body.getAttribute('data-taskbar-style') !== 'floating'
+                selected: window.document.body.getAttribute('data-taskbar-style') !== 'floating'
             }, {
                 text: 'Floating',
                 value: 'floating',
-                selected: document.body.getAttribute('data-taskbar-style') === 'floating'
+                selected: window.document.body.getAttribute('data-taskbar-style') === 'floating'
             }
         ], function (e) {
-            document.body.setAttribute('data-taskbar-style', ['default', 'floating'].includes(e.value) ? e.value : 'default');
+            window.document.body.setAttribute('data-taskbar-style', ['default', 'floating'].includes(e.value) ? e.value : 'default');
         })]
     ]);
 

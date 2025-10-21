@@ -34,6 +34,7 @@
     gap: .75rem;
     border-radius: .375rem;
     cursor: default;
+    user-select: none;
 }
 
 .quickaccess-item:hover {
