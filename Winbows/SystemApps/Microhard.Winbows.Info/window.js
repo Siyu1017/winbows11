@@ -42,29 +42,20 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">
 <li style="
     margin: .5rem 0;
-">✨New IDBFS✨</li>
+">✨Winbows Node.js Runtime✨</li>
 <li style="
     margin: .5rem 0;
     
-">Dark theme<br><button style="
-    cursor: pointer;
-    background: #0067c0;
-    padding: .5rem 1rem;
-    border-radius: .5rem;
-    border:0;
-    outline:none;
-    font:inherit;
-    color:#fff;
-    margin-top:.5rem;=
-    width: fit-content;
-    user-select: none;
-    " data-task="set-background-image">Apply dark theme</button></li>
+">Dark theme</li>
 <li style="
     margin: .5rem 0;
 ">Window animation</li>
 <li style="
     margin: .5rem 0;
-">Mica effect ( Beta )</li>
+">Mica effect</li>
+<li style="
+    margin: .5rem 0;
+">Taskview ( Beta )</li>
 <!--li style="
     margin: .5rem 0;
 ">Rearrange app icons in the taskbar</li-->
@@ -94,11 +85,6 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">Github</a>.</div>
 			</div>
             </div>`;
-
-document.querySelector('[data-task="set-background-image"]').addEventListener('click', () => {
-    // System.backgroundImage.set('C:/Winbows/bg/img19.jpg');
-    // -> Explorer GUI APIs...
-})
 
 document.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {

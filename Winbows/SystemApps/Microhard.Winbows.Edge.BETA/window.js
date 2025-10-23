@@ -159,7 +159,7 @@ async function createTab(page, active = true) {
         "move": ["mousemove", "touchmove", "pointermove"],
         "end": ["mouseup", "touchend", "pointerup", "blur"]
     }
-    var properties = { changeHeader, changeIcon, close, focus, blur, tab, id };
+    var properties = { changeTitle, changeIcon, close, focus, blur, tab, id };
     tabs[id] = properties;
 
     function moveNodeToIndex(nodeIndex, targetIndex, container) {
@@ -349,7 +349,7 @@ async function createTab(page, active = true) {
     function changeIcon(icon) {
         tabIcon.style.backgroundImage = `url(${icon})`;
     }
-    function changeHeader(header) {
+    function changeTitle(header) {
         tabHeader.innerHTML = header;
     }
 
@@ -572,7 +572,7 @@ async function createTab(page, active = true) {
         viewerTitle.innerHTML = '';
         viewerList.innerHTML = '';
         var exists = fs.exists(currentPage);
-        changeHeader(currentPage);
+        changeTitle(currentPage);
         if (!exists.exists) {
             viewerList.innerHTML = 'File not found.';
             showViewer();
@@ -631,7 +631,7 @@ async function createTab(page, active = true) {
                 var url = await fs.getFileURL(currentPage);
                 getHeader(url).then(header => {
                     if (header == url) return;
-                    changeHeader(header);
+                    changeTitle(header);
                 })
                 iframe.src = url;
                 showIframe();
@@ -655,7 +655,7 @@ async function createTab(page, active = true) {
 
         if (currentPage.trim() == '') {
             showEdgePages();
-            changeHeader('New Tab');
+            changeTitle('New Tab');
         } else if (isLocalFileURL == true) {
             handleLocalURL(currentPage);
         } else {
@@ -686,10 +686,10 @@ async function createTab(page, active = true) {
                 var url = URL.createObjectURL(blob);
                 try {
                     getHeader(url).then(header => {
-                        changeHeader(header);
+                        changeTitle(header);
                     })
                 } catch (e) {
-                    changeHeader(url);
+                    changeTitle(url);
                 }
                 iframe.src = url;
                 iframe.onload = () => {
@@ -699,10 +699,10 @@ async function createTab(page, active = true) {
             }).catch(e => {
                 try {
                     getHeader(url).then(header => {
-                        changeHeader(header);
+                        changeTitle(header);
                     })
                 } catch (e) {
-                    changeHeader(url);
+                    changeTitle(url);
                 }
                 iframe.src = url;
                 iframe.onload = () => {

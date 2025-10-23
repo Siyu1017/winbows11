@@ -8,7 +8,7 @@ app.on('ready', () => {
     mainWindow = new BrowserWindow({
         mica: true
     });
-    mainWindow.load('./window.v2.js');
+    mainWindow.load('./window.js');
 
     mainWindow.on('closed', () => {
         mainWindow = null;

@@ -1,4 +1,5 @@
 import * as utils from "../../shared/utils.js";
+// import i18n from "../i18n/i18n.js";
 
 const lockScreenContainer = document.createElement('div');
 const lockScreen = document.createElement('div');
@@ -34,8 +35,8 @@ lockScreenSignin.appendChild(lockScreenSigninAvatar);
 lockScreenSignin.appendChild(lockScreenSigninUsername);
 lockScreenSignin.appendChild(lockScreenSigninButton);
 
-lockScreenSigninUsername.innerHTML = utils.replaceHTMLTags('Admin');
-lockScreenSigninButton.innerHTML = utils.replaceHTMLTags('Sign In');
+lockScreenSigninUsername.innerHTML = utils.replaceHTMLTags('Admin'); //i18n.t('lockscreen.username');
+lockScreenSigninButton.innerHTML = utils.replaceHTMLTags('Sign In'); //i18n.t('lockscreen.signin');
 
 let init = true;
 const now = new Date();

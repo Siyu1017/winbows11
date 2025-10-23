@@ -1149,9 +1149,9 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
             fullPath = fsUtils.resolve(__dirname, fullPath);
         }
         if (
-            navigator.onLine != true                            // Offline
+            navigator.onLine != true                                     // Offline
             || window.needsUpdate == false && window.modes.dev == false  // Installed
-            || fullPath.startsWith('C:/User/Desktop/')       // Desktop folder
+            || fullPath.startsWith('C:/User/Desktop/')                   // Desktop folder
         ) {
             return await (await readFile(fullPath)).text();
         }

@@ -29,7 +29,7 @@
 .window-toolbar {
     width: -webkit-fill-available;
     background: rgb(235 235 235);
-    min-height: fit-content;
+    /*min-height: fit-content;*/
     max-height: fit-content;
     display: flex;
     pointer-events: auto;

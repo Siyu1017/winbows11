@@ -77,8 +77,6 @@ document.documentElement.classList.add('winui');
 document.documentElement.classList.add('winui-no-background');
 browserWindow.setImmovable(backButton);
 
-console.log(document)
-
 var appSidebar = document.createElement('div');
 var appPage = document.createElement('div');
 appSidebar.className = 'app-sidebar';
@@ -104,9 +102,6 @@ router.on('change', async (e) => {
     if (path == '/') {
         return router.replace('/home');
     }
-    if (window.modes.debug == true) {
-        console.log('change', path);
-    }
     let page = pageContents[path];
     if (!pageContents[path]) {
         if (navbar.contains(backButton)) {
@@ -117,7 +112,7 @@ router.on('change', async (e) => {
             pageContents[path] = module();
             page = pageContents[path] || document.createElement('div');
         } catch (e) {
-            console.log(e);
+            console.error(e);
             var el = document.createElement('div');
             el.innerHTML = 'Not found!';
             page = el;
@@ -136,7 +131,10 @@ router.on('change', async (e) => {
         }
     }
 
-    pageTitle.innerHTML = titles[path] || capitalizeFirstLetter(path.split('/').slice(-1));
+    const title = titles[path] || capitalizeFirstLetter(path.split('/').slice(-1));
+    pageTitle.innerHTML = title;
+    browserWindow.changeTitle(`${title} - Settings`);
+    
     pageContainer.replaceChildren(...[page]);
     if (navbar.contains(loadingSpinner)) {
         navbar.replaceChild(backButton, loadingSpinner);

@@ -39,7 +39,7 @@ declare namespace TabviewObject {
         focus: () => void;
         blur: () => void;
         close: () => void;
-        changeHeader(header: string): void;
+        changeTitle(header: string): void;
         changeIcon(icon: string): void;
     }
 }

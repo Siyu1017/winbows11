@@ -8,6 +8,7 @@ import { fallbackImage } from "../../core/fallback.js";
 import crashHandler from "../../core/crashHandler.js";
 import ModuleManager from "../../moduleManager.js";
 import WindowManager from "./windowManager.js";
+// import i18n from "../../i18n/i18n.js";
 
 const fs = IDBFS("~SYSTEM");
 const { appWrapper, screenElement } = viewport;
@@ -668,7 +669,7 @@ export class BrowserWindow extends EventEmitter {
                 {
                     className: "restore",
                     icon: "chrome-restore",
-                    text: "Restore",
+                    text: "Restore", //i18n.t('browserwindow.toolbarcontextmenu.restore'),
                     disabled: !this.isMaximized == true,
                     action: () => {
                         this.unmaximizeWindow();
@@ -676,7 +677,7 @@ export class BrowserWindow extends EventEmitter {
                 }, {
                     className: "minimize",
                     icon: "chrome-minimize",
-                    text: "Minimize",
+                    text: "Minimize", //i18n.t('browserwindow.toolbarcontextmenu.minimize'),
                     disabled: this.minimizable == false,
                     action: () => {
                         this.minimize();
@@ -685,7 +686,7 @@ export class BrowserWindow extends EventEmitter {
                 }, {
                     className: "maximize",
                     icon: "chrome-maximize",
-                    text: "Maximize",
+                    text: "Maximize", //i18n.t('browserwindow.toolbarcontextmenu.maximize'),
                     disabled: !(this.isMaximized == false && !this.maximizable == false),
                     action: () => {
                         this.maximizeWindow();
@@ -695,7 +696,7 @@ export class BrowserWindow extends EventEmitter {
                 }, {
                     className: "close",
                     icon: "chrome-close",
-                    text: "Close",
+                    text: "Close", //i18n.t('browserwindow.toolbarcontextmenu.close'),
                     action: () => {
                         this.close();
                     },
@@ -781,6 +782,7 @@ export class BrowserWindow extends EventEmitter {
         this.container.style.pointerEvents = 'all';
         this.container.style.visibility = 'visible';
         this.windowContent.style.pointerEvents = 'unset';
+        this.container.classList.add('active');
     }
 
     blur = () => {
@@ -1135,7 +1137,10 @@ ${this.animationData.stat.scaleY}
         var height = this.container.offsetHeight;
 
         this.container.style.transition = 'none';
+        this.container.classList.remove('active');
         this.isMinimized = true;
+
+        this.blur();
 
         var scaleX = 180 / width;
         var scaleY = 120 / height;
@@ -1159,6 +1164,13 @@ ${this.animationData.stat.scaleY}
             profile: 'window-hide'
         });
         this._emit('minimize');
+
+        setTimeout(() => {
+            if (this.isMinimized == true) {
+                this.container.style.setProperty('z-index', '-1', 'important');
+                this.container.style.setProperty('visibility', 'hidden');
+            }
+        }, animateProfiles['window-hide'].duration);
     }
 
     unminimize = () => {
@@ -1175,6 +1187,7 @@ ${this.animationData.stat.scaleY}
         }
         this.isMinimized = false;
         this.container.style.transition = 'none';
+        this.focus();
         this.animate({
             to: {
                 x, y,
@@ -1185,6 +1198,12 @@ ${this.animationData.stat.scaleY}
             profile: 'window-show'
         });
         this._emit('unminimize');
+
+        setTimeout(() => {
+            if (this.isMinimized == false) {
+                this.focus();
+            }
+        }, animateProfiles['window-show'].duration);
     }
 
     maximizeWindow = (animation = true) => {
@@ -1284,6 +1303,10 @@ ${this.animationData.stat.scaleY}
         });
     }
 
+    /**
+     * @param {string} url Blob URL
+     * @returns 
+     */
     changeIcon = (url = '') => {
         if (!url) return;
         this.icon = url;
@@ -1406,7 +1429,21 @@ ${this.animationData.stat.scaleY}
             this.close();
         }
 
-        class Tab {
+        const setBrowserWindowIcon = (icon) => {
+            if (icon?.startsWith?.('blob:')) {
+                this.changeIcon(icon);
+            } else {
+                fs.getFileURL(icon).then(url => {
+                    this.changeIcon(url);
+                })
+            }
+        }
+
+        const setBrowserWindowTitle = (title) => {
+            this.changeTitle(title)
+        }
+
+        class Tab extends EventEmitter {
             tab = document.createElement('div');
             tabInfo = document.createElement('div');
             tabIcon = document.createElement('div');
@@ -1418,11 +1455,22 @@ ${this.animationData.stat.scaleY}
             constructor(config = {
                 active: true,
                 icon: true,
-                tabAnimation: true
+                tabAnimation: true,
+                syncTitle: true,
+                syncIcon: true
             }) {
+                super();
+
                 // Initialize tab
                 order.push(this.id);
 
+                this.config = {
+                    syncTitle: config.syncTitle == false ? false : true,
+                    syncIcon: config.syncIcon == false ? false : true
+                }
+
+                this.icon = '';
+                this.title = '';
                 this.tab.className = 'tabview-tabstrip-tab';
                 this.tabInfo.className = 'tabview-tabstrip-tab-info';
                 this.tabIcon.className = 'tabview-tabstrip-tab-icon';
@@ -1568,6 +1616,10 @@ ${this.animationData.stat.scaleY}
                     window.addEventListener(event, dragEnd);
                 })
 
+                this.tab.addEventListener('click', () => {
+                    this.focus();
+                });
+
                 this.tabClose.addEventListener('click', () => {
                     this.close()
                 });
@@ -1591,16 +1643,33 @@ ${this.animationData.stat.scaleY}
             }
             focus() {
                 Object.values(tabs).forEach(tab => {
+                    if (tab.id == this.id) return;
                     tab.blur();
                 })
                 this.tab.classList.add('active');
                 this.tabviewItem.classList.add('active');
+                this._emit('focus');
+
+                if (this.config.syncIcon) {
+                    setBrowserWindowIcon(this.icon);
+                }
+                if (this.config.syncTitle) {
+                    setBrowserWindowTitle(this.title);
+                }
             }
-            changeHeader(header) {
+            changeTitle(header) {
+                this.title = header;
                 this.tabHeader.innerHTML = utils.replaceHTMLTags(header);
+                if (this.config.syncTitle) {
+                    setBrowserWindowTitle(this.title);
+                }
             }
             changeIcon(icon) {
+                this.icon = icon;
                 this.tabIcon.style.backgroundImage = `url(${icon})`;
+                if (this.config.syncIcon) {
+                    setBrowserWindowIcon(this.icon);
+                }
             }
             close() {
                 this.tab.remove();
@@ -1621,6 +1690,7 @@ ${this.animationData.stat.scaleY}
             blur() {
                 this.tab.classList.remove('active');
                 this.tabviewItem.classList.remove('active');
+                this._emit('blur');
             }
         }
 

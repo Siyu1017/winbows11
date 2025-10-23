@@ -21,7 +21,8 @@ body {
     --winbows-primary-color: #0067c0;
     --winbows-secondary-color: #000;
     --winbows-taskbar-bg: rgb(255 255 255 / 85%);
-    --winbows-taskbar-hover-color: rgba(255, 255, 255, .67);
+    --winbows-taskbar-hover-color: rgba(255, 255, 255, .54);
+    --winbows-taskbar-active-color: rgba(255, 255, 255, .67);
     --winbows-font-default: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 
@@ -45,7 +46,8 @@ body {
     --winbows-primary-color: #1cbdff;
     --winbows-secondary-color: #fff;
     --winbows-taskbar-bg: rgb(36 36 36 / 80%);
-    --winbows-taskbar-hover-color: rgba(255, 255, 255, .1);
+    --winbows-taskbar-hover-color: rgba(255, 255, 255, .08);
+    --winbows-taskbar-active-color: rgba(255, 255, 255, .13);
     color: #fff;
 }
 
@@ -656,7 +658,7 @@ body {
     flex-direction: row;
     flex-wrap: nowrap;
     -webkit-user-drag: none;
-    z-index: 999999999;
+    z-index: 10;
     transition: background .2s ease-in-out, backdrop-filter .2s ease-in-out;
     border-top: 1.5px solid rgb(0 0 0 / 10%);
 }
@@ -715,10 +717,14 @@ body {
     margin-left: 0 !important;
 }
 
-.taskbar-icon:not([data-dragging="true"]):hover,
+.taskbar-icon:not([data-dragging="true"]):hover {
+    background: var(--winbows-taskbar-hover-color);
+    box-shadow: 0 .125rem .125rem 0 rgba(0, 0, 0, .05);
+}
+
 .taskbar-icon:not([data-dragging="true"]):active,
 .taskbar-icon[data-focused="true"]:not([data-dragging="true"]) {
-    background: var(--winbows-taskbar-hover-color);
+    background: var(--winbows-taskbar-active-color);
     box-shadow: 0 .125rem .125rem 0 rgba(0, 0, 0, .05);
 }
 
@@ -1426,7 +1432,7 @@ body {
     justify-content: center;
     border-radius: 6px;
     overflow: hidden;
-    z-index: 10;
+    z-index: 9;
     pointer-events: none;
     height: fit-content;
     width: fit-content;
@@ -1437,7 +1443,7 @@ body {
 
 .thumbnail-container.active {
     opacity: 1;
-    z-index: 9;
+    z-index: 99999999999999;
     pointer-events: auto;
     backdrop-filter: blur(16px) saturate(1.8);
     -webkit-backdrop-filter: blur(16px) saturate(1.8);
@@ -2499,6 +2505,7 @@ body {
     background: #ffffffcf;
     backdrop-filter: blur(3rem);
     -webkit-backdrop-filter: blur(3rem);
+    overflow: hidden;
 }
 
 .taskview-mask:hover .taskview-mask-controlbar {
@@ -2518,6 +2525,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: .25rem;
+    overflow: hidden;
 }
 
 .taskview-mask-controlbar-info-icon {
@@ -2531,6 +2539,9 @@ body {
 .taskview-mask-controlbar-info-title {
     font-size: .75rem;
     user-select: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .taskview-mask-controlbar-close {

@@ -1,7 +1,6 @@
 import SystemInformation from "../core/sysInfo.js";
 import { WRT as _WRT, tasklist } from "./wrt/core.js";
-import Devtool from "../devtool/devtool.js";
-import { EventEmitter, randomID } from "../../shared/utils.js";
+import { EventEmitter, getJsonFromURL, randomID } from "../../shared/utils.js";
 import initializeSystem from "../system/system.js";
 import crashHandler from "../core/crashHandler.js";
 import ModuleManager from "../moduleManager.js";
@@ -9,13 +8,18 @@ import Logger from "../core/log.js";
 import timer from "../core/timer.js";
 
 async function main() {
+    // TODO: i18n
+
     const logger = new Logger({
         module: 'Kernel'
     })
     timer.mark('Boot');
     timer.group('Kernel');
 
-    if (SystemInformation.mode == 'development') {
+    // nd => no devtool flag
+    const params = getJsonFromURL()
+    if (SystemInformation.mode == 'development' && !params['nd'] || params['dev']) {
+        const Devtool = (await import("../devtool/devtool.js")).default;
         const { devtool } = Devtool();
 
         // Welcome message

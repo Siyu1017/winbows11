@@ -5,6 +5,7 @@ import ModuleManager from "../../moduleManager.js";
 import { viewport } from "../../core/viewport.js";
 import lockScreenObj from "../../core/lockScreen.js";
 import timer from "../../core/timer.js";
+// import i18n from "../../i18n/i18n.js";
 
 export default function StartMenu(icon) {
     const fs = IDBFS('~EXPLORER');
@@ -96,27 +97,27 @@ export default function StartMenu(icon) {
         powerMenu.setItems([
             {
                 icon: "lock",
-                text: "Lock",
+                text: "Lock", //i18n.t('startmenu.menu.lock'),
                 action: () => {
                     lockScreenObj.container.classList.add('active');
                 }
             }, {
                 icon: "quiet-hours",
-                text: "Sleep",
+                text: "Sleep", //i18n.t('startmenu.menu.sleep'),
                 action: () => {
 
                 },
                 disabled: true
             }, {
                 icon: "power-button",
-                text: "Shut down",
+                text: "Shut down", //i18n.t('startmenu.menu.shutdown'),
                 action: () => {
 
                 },
                 disabled: true
             }, {
                 icon: "update-restore",
-                text: "Restart",
+                text: "Restart", //i18n.t('startmenu.menu.restart'),
                 action: () => {
                     location.reload();
                 }
@@ -161,7 +162,7 @@ export default function StartMenu(icon) {
                 icon.iconEl.contains(e.target)              // Taskbar icon
             ) return;
 
-            icon.close();
+            icon.close(null, true);
         })
     })
 
@@ -169,6 +170,7 @@ export default function StartMenu(icon) {
         // Start Menu
         const System = ModuleManager.get('System');
         const appRegistry = System.appRegistry;
+        /*
         const pinnedList = [
             {
                 name: 'File Explorer',
@@ -192,9 +194,8 @@ export default function StartMenu(icon) {
                 name: 'Settings',
                 app: 'settings'
             }
-        ];
+        ];*/
 
-        /*
         const pinnedList = [
             {
                 name: 'File Explorer',
@@ -223,10 +224,10 @@ export default function StartMenu(icon) {
             }, {
                 name: 'Photos',
                 app: 'photos'
-            }, {
+            }, /*{
                 name: 'Edge BETA',
                 app: 'edgebeta'
-            }, {
+            }, */{
                 name: 'Network Listener',
                 app: 'network-listener'
             }, {
@@ -240,7 +241,6 @@ export default function StartMenu(icon) {
                 app: 'settings'
             }
         ];
-        */
 
         pinnedList.forEach(pinned => {
             const info = appRegistry.getInfo(pinned.app);

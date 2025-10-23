@@ -20,6 +20,8 @@ function register(ctx) {
         })
     })
 
+    const processData = appRegistry.getInfoByPath(ctx.__filename);
+
     const app = {
         _cbs: {},
         on: (evt, cb) => {
@@ -58,9 +60,23 @@ function register(ctx) {
                 },
                 argv: ctx.process.argv.slice(2) || []
             })
+
+            let self = false;
             this.wrt.on('change:process.title', (e) => {
+                if (self == true) return self = false;
                 this.browserWindowObj.changeTitle(e.value);
+                self = true;
             })
+            this.browserWindowObj.on('change:title', (e) => {
+                self = true;
+                this.wrt.process.title = e.value;
+            })
+
+            if (processData?.icon) {
+                fs.getFileURL(processData.icon).then(url => {
+                    this.browserWindowObj.changeIcon(url);
+                })
+            }
 
             // Add the window object to the parent WRT
             ctx.__Module_WApplication_Windows__.push(this.browserWindowObj);

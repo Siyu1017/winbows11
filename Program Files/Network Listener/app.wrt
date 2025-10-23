@@ -1,5 +1,22 @@
-; (async () => {
-    await System.requestAccessWindow('./window.js', {
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Network Listener';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
         title: 'Network Listener'
-    })
-})()
+    });
+    mainWindow.load('./window.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

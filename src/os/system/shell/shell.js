@@ -122,27 +122,33 @@ export class ShellInstance extends EventEmitter {
                     // Check if it's an operable program
                     if (/.+\.wrt$/.test(cmdName)) {
                         let path = fsUtils.resolveEnvPath(cmdName);
-                        path = fsUtils.resolve(fsUtils.normalize(this.root + this.pwd), path)
-                        if (this.fs.exists(path)) {
-                            const wrt = new WRT({
-                                code: await this.fs.readFileAsText(path),
-                                __filename: path,
-                                argv: argv
-                            });
+                        path = fsUtils.resolve(fsUtils.normalize(this.root + this.pwd), path);
 
-                            try {
-                                wrt.main();
+                        try {
+                            const fileContent = await this.fs.readFileAsText(path);
+                            if (fileContent) {
+                                const wrt = new WRT({
+                                    code: fileContent,
+                                    __filename: path,
+                                    argv: argv
+                                });
 
-                                if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
-                                    const end = performance.now();
-                                    this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
+                                try {
+                                    wrt.main();
+
+                                    if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
+                                        const end = performance.now();
+                                        this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
+                                    }
+                                    resolve();
+                                } catch (err) {
+                                    this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
+                                    reject(err);
                                 }
-                                resolve();
-                            } catch (err) {
-                                this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
-                                reject(err);
+                                continue;
                             }
-                            continue;
+                        } catch (e) {
+                            console.error(e);
                         }
                     }
 

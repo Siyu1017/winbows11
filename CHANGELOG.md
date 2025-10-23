@@ -4,6 +4,17 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## v1.0.0-beta.16 (2025-10-23)
+
+### Added
+
+- Windows using TabView now update their title and icon when the active tab's title or icon changes, or when a tab gains focus
+
+### Fixed
+
+- An issue where the taskbar thumbnail icon was not displayed
+- An issue where TaskView wouldn't automatically close when opening a new window
+
 ## v1.0.0-beta.15 (2025-10-21)
 
 ### Added
@@ -18,7 +29,7 @@ All notable changes to this project will be documented here.
 - Remaining time incorrectly showing a negative value after installation completed
 - Installation failure caused by incorrect build metadata
 - A bug where arguments like `--key="value"` were parsed as `{ key: '"value"' }` instead of `{ key: 'value' }`
-- An issue where the Mica background layer extended beyond the window’s viewport bounds after resizing, causing visual overflow artifacts.
+- An issue where the Mica background layer extended beyond the window’s viewport bounds after resizing, causing visual overflow artifacts
 
 ## v1.0.0-beta.14 (2025-10-08)
 

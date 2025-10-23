@@ -197,7 +197,7 @@ export default function Taskview(icon) {
     viewport.root.addEventListener('click', (e) => {
         if (icon.iconEl.contains(e.target)) return;
 
-        icon.close();
+        icon.close(null, true);
     })
 
     return {

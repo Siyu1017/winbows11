@@ -1,9 +1,26 @@
-; (async () => {
-    await System.requestAccessWindow('./window.js', {
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'FPS Meter';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
         title: 'FPS Meter',
         width: 300,
         height: 150,
         resizable: false,
         showOnTop: true
     });
-})();
+    mainWindow.load('./window.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

@@ -221,7 +221,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     /*
     getData(currentPage).then(pageData => {
-        tab.changeHeader(pageData.title);
+        tab.changeTitle(pageData.title);
         tab.changeIcon(pageData.icon);
     });
     getPage(currentPage);
@@ -232,6 +232,11 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     const router = (await requireAsync('./_router.js'))(tab.id);
     let pageContents = {};
+    let winTitle = 'File Explorer';
+
+    tab.on('focus', () => {
+        browserWindow.changeTitle(winTitle);
+    })
 
     async function updatePage(e) {
         const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
@@ -338,8 +343,9 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
 
         try {
             const pageData = getData(path);
-            tab.changeHeader(pageData.title);
-            browserWindow.changeTitle(pageData.title);
+            tab.changeTitle(pageData.title);
+            browserWindow.changeTitle(pageData.title + ' - File Explorer');
+            winTitle = pageData.title + ' - File Explorer';
 
             getImageURL(pageData.icon).then(url => {
                 tab.changeIcon(url);
@@ -984,7 +990,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
             */
 
         const items = event.dataTransfer.items;
-        console.info(items, target);
+        // console.info(items, target);
 
         total = items.length;
         for (let i = 0; i < items.length; i++) {

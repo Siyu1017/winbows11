@@ -1,5 +1,22 @@
-; (async () => {
-    await System.requestAccessWindow('./window.js', {
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'JSON Viewer';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
         title: 'JSON Viewer'
     });
-})();
+    mainWindow.load('./window.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

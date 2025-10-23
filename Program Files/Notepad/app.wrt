@@ -1,13 +1,25 @@
-; (async () => {
-    await System.requestAccessWindow('./window.js', {
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Notepad';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
+        title: 'Notepad',
         x: 120,
         y: 60,
-        title: 'Notepad',
         mica: true
     });
+    mainWindow.load('./window.js');
 
-    process.on('message', async function (event) {
-        // console.log(event.data)
-        postMessage(event.data);
+    mainWindow.on('closed', () => {
+        mainWindow = null;
     });
-})();
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

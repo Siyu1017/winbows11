@@ -92,9 +92,13 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         thumbnailBar.appendChild(thumbnailCloseButton);
 
         // Thumbnail info
-        fs.getFileURL(app.icon).then(url => {
-            thumbnailIcon.style.backgroundImage = `url(${url})`;
-        })
+        if (app.icon.startsWith('blob:')) {
+            thumbnailIcon.style.backgroundImage = `url(${app.icon})`;
+        } else {
+            fs.getFileURL(app.icon).then(url => {
+                thumbnailIcon.style.backgroundImage = `url(${url})`;
+            })
+        }
         thumbnailTitle.innerHTML = app.title;
 
         // Thumbnail styles
@@ -199,6 +203,7 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
     let lastClickedIconId = null;   // App icons and system icons
     let activeWindows = [];         // App icons only
     let iconRepository = {};        // AppID => Icon
+    let systemIcons = [];
 
     class Icon extends EventEmitter {
         constructor(iconData) {
@@ -247,6 +252,7 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
                     return;
                 })
                 taskbarIconsItems.appendChild(this.iconEl);
+                systemIcons.push(this);
                 return;
             } else {
                 this.iconEl.setAttribute('data-openable', true);
@@ -333,6 +339,10 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
             win.on('change:title', e => {
                 this.windows[id].title = e.value;
             })
+            win.on('change:icon', e => {
+                this.windows[id].icon = e.value;
+            })
+
             win.taskbarIconElement = this.iconEl;
             this.focus(id);
             this.status.active = true;
@@ -431,6 +441,9 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
 
             if (this.type !== 'system') {
                 lastClickedIconId = this.owner;
+                systemIcons.forEach(icon => {
+                    icon.close(null, true);
+                })
             }
             this.status.focused = true;
             this.update();

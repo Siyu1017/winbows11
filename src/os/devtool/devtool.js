@@ -9,6 +9,7 @@ import performanceMonitor from "./performance-monitor.js";
 import tasks from "./tasks.js";
 import terminal from "./terminal.js";
 import Logger from "../core/log.js";
+// import i18n from "../i18n/i18n.js";
 
 const { root } = viewport;
 //const { ShellInstance, process } = apis;
@@ -112,31 +113,31 @@ export default function Devtool() {
 
     const consoleTab = tabview.add({
         id: 'console',
-        title: 'Console',
+        title: 'Console', //i18n.t('devtool.tab.console'),
         content: devtool.devtool,
         closable: false
     })
     const performanceMonitorTab = tabview.add({
         id: 'performance-monitor',
-        title: 'Performance Monitor',
+        title: 'Performance Monitor', //i18n.t('devtool.tab.performance-monitor'),
         content: performanceMonitor.container,
         closable: false
     })
     const storageTab = tabview.add({
         id: 'storage',
-        title: 'Storage',
+        title: 'Storage', //i18n.t('devtool.tab.storage'),
         content: storage,
         closable: false
     })
     const tasksTab = tabview.add({
         id: 'tasks',
-        title: 'Tasks',
+        title: 'Tasks', //i18n.t('devtool.tab.tasks'),
         content: tasks,
         closable: false
     })
     const terminalTab = tabview.add({
         id: 'terminal',
-        title: 'Terminal',
+        title: 'Terminal', //i18n.t('devtool.tab.terminal'),
         content: terminal,
         closable: false
     })

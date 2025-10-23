@@ -10,7 +10,7 @@ var tabview = browserWindow.useTabview();
 var tab = new tabview.Tab({
     icon: false
 });
-setupPage(tab);
+setupPage(tab, process.args.path);
 
 document.body.classList.add('winui');
 
@@ -208,8 +208,8 @@ function createEditor(target) {
     return { editor, getValue, setValue, on };
 }
 
-async function setupPage(tab) {
-    tab.changeHeader('Untitled');
+async function setupPage(tab, file) {
+    tab.changeTitle('Untitled');
 
     var container = tab.getContainer();
     var menubar = document.createElement('div');
@@ -224,7 +224,7 @@ async function setupPage(tab) {
     container.appendChild(editorContainer);
     menubar.appendChild(menubarItems);
 
-    var filePath = datas.page || '';
+    var filePath = file || '';
     var fileContent = '';
     var editor = createEditor(editorContainer);
 
@@ -234,15 +234,15 @@ async function setupPage(tab) {
         }).then(res => {
             fileContent = res;
             editor.setValue(fileContent);
-            tab.changeHeader(window.parent.utils.getFileName(filePath));
+            tab.changeTitle(window.parent.utils.getFileName(filePath));
         })
     }
 
     editor.on('change', () => {
         if (fileContent != editor.getValue()) {
-            tab.changeHeader('● ' + (filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled'));
+            tab.changeTitle('● ' + (filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled'));
         } else {
-            tab.changeHeader(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
+            tab.changeTitle(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
         }
     })
 
@@ -256,7 +256,7 @@ async function setupPage(tab) {
                     fileContent = '';
                     filePath = '';
                     editor.setValue(fileContent);
-                    tab.changeHeader('Untitled');
+                    tab.changeTitle('Untitled');
                 }
             }, {
                 text: 'Open File...',
@@ -272,7 +272,7 @@ async function setupPage(tab) {
                             }).then(content => {
                                 fileContent = content;
                                 editor.setValue(fileContent);
-                                tab.changeHeader(window.parent.utils.getFileName(filePath));
+                                tab.changeTitle(window.parent.utils.getFileName(filePath));
                             })
                         }
                         if (e.data.type == 'cancel') {
@@ -287,7 +287,7 @@ async function setupPage(tab) {
                         fs.writeFile(filePath, new Blob([editor.getValue()], {
                             type: 'text/plain;charset=utf-8'
                         })).then(() => {
-                            tab.changeHeader(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
+                            tab.changeTitle(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
                         })
                     } else {
                         var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/saveFile.js').start();
