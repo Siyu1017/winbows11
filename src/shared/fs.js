@@ -1097,7 +1097,7 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
             name: 'InvalidPath',
             message: ''
         };
-        return fetch(path).then(response => {
+        return fetch((path.startsWith('/') ? '.' : './') + path).then(response => {
             if (response.ok) {
                 return response.blob();
             } else {
