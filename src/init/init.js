@@ -217,7 +217,7 @@ Object.defineProperty(window.modes, 'dev', {
         }
     } else {
         try {
-            const req = await fetch(`/Winbows/System/kernel/kernel.js?timestamp=${new Date().getTime()}`);
+            const req = await fetch(`./Winbows/System/kernel/kernel.js?timestamp=${new Date().getTime()}`);
             const kernelContent = await req.text();
             scriptEl.textContent = kernelContent + '\n//# sourceURL=kernel.js';
 
@@ -246,7 +246,7 @@ Object.defineProperty(window.modes, 'dev', {
             document.body.style.transition = 'background-image .2s ease-in-out';
 
             try {
-                const req = await fetch(`/build-fetch.json?timestamp=${new Date().getTime()}`);
+                const req = await fetch(`./build-fetch.json?timestamp=${new Date().getTime()}`);
                 const data = await req.json();
                 latestBuildData = data;
             } catch (e) { console.log(e); }
