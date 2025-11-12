@@ -260,6 +260,7 @@
     height: -webkit-fill-available;
     display: block;
     border: 0;
+    background: #fff;
 }
 
 .explorer-content-viewer {

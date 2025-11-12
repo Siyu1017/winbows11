@@ -13,4 +13,8 @@ declare namespace stdio {
         read(): string;
         clear(): void;
     }
+
+    interface Writable extends EventEmitter {
+        on(event: 'close'|'drain'|'erorr'|'pipe'|'unpipe', listener: Function): void;
+    }
 }

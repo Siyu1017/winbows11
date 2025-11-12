@@ -4,6 +4,7 @@ import { IDBFS } from "../../shared/fs.js";
 import main from "../kernel/kernel.js";
 import Logger from "./log.js";
 import { codes } from "../../shared/events.js";
+import "./stat.js";
 
 timer.mark('IDB file system');
 

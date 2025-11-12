@@ -2,7 +2,7 @@ import minimistJs from "../../../lib/minimist.js/index.js";
 import { fsUtils, IDBFS } from "../../../shared/fs.js";
 import { commandRegistry } from "./commandRegistry.js";
 import stdio from "../../lib/stdio.js";
-import { EventEmitter, randomID } from "../../../shared/utils.js";
+import { EventEmitter, randomID } from "../../../shared/utils.ts";
 import { generateEnv } from "../../kernel/wrt/process.js";
 import appRegistry from "../appRegistry.js";
 import ModuleManager from "../../moduleManager.js";
@@ -11,9 +11,12 @@ import parseArgsStringToArgv from 'string-argv';
 const reservedEnvKeys = Object.keys(generateEnv());
 const _queue = new WeakMap();
 const _queueRunning = new WeakMap();
+const _handleCLI = Symbol('handleCLI')
 
 export class ShellInstance extends EventEmitter {
-    constructor(process) {
+    constructor(process, {
+        isTTY = false
+    } = {}) {
         super();
 
         // Initialize queue
@@ -28,6 +31,7 @@ export class ShellInstance extends EventEmitter {
         this.env = {
             ...process.env
         };
+        this.isTTY = isTTY != false;
         this.stdin = new stdio.InputStream();
         this.stdout = new stdio.OutputStream();
         this.stderr = new stdio.OutputStream();
@@ -60,14 +64,67 @@ export class ShellInstance extends EventEmitter {
         }
     }
 
+    async [_handleCLI](wrt) {
+        if (wrt.type !== 'cli') return;
+        if (!wrt.runInBackground && !this.isTTY) {
+            const System = ModuleManager.get('System');
+            const WRT = ModuleManager.get('WRT');
+            const pipeName = `system://shell-service/` + randomID(64);
+            const ipc = System.processAPIs.IPC.listen(pipeName);
+            const data = appRegistry.getInfo('cmd');
+            const cmdWRT = new WRT({
+                code: await this.fs.readFileAsText(data.entryScript),
+                __filename: data.entryScript
+                // token: token
+            });
+            cmdWRT.process.env.pipe = pipeName;
+            cmdWRT.main();
+
+            ipc.on('data', (e) => {
+                // if (e.data.type === 'check') {
+                //     ipc.send({
+                //         type: 'check',
+                //         data: token
+                //     })
+                // }
+                if (e.data.type === 'ready') {
+                    ipc.send({
+                        type: 'data',
+                        data: wrt
+                    })
+                    setTimeout(() => {
+                        ipc.close();
+                    })
+                }
+            })
+
+            if (this.getEnv("SHOW_EXEC_TIME") == "1" && this.active != false) {
+                const end = performance.now();
+                this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
+            }
+
+            return null;
+        } else {
+            wrt.main();
+
+            return wrt;
+        }
+    }
+
     input(promptText, type = 'normal') {
         this.stdout.write(promptText);
+        this.stdin.resume();
         this._emit('input', {
             promptText,
             type
         });
 
-        return this.stdin.read();
+        return new Promise(resolve => {
+            this.stdin.once('data', dt => {
+                this.stdin.pause();
+                resolve(dt);
+            });
+        })
     }
 
     write(input) {
@@ -87,6 +144,7 @@ export class ShellInstance extends EventEmitter {
 
     async execCommand(command) {
         if (!this.active) return Promise.reject(new Error('Shell is not active'));
+        if (command.trim() === '') return;
         return new Promise(async (resolve, reject) => {
             _queue.get(this).push({ command, resolve, reject });
             this.processQueue();
@@ -114,6 +172,7 @@ export class ShellInstance extends EventEmitter {
                 const args = argv._.slice(1);
                 const handler = commandRegistry.get(String(cmdName).toLowerCase())?.handler;
                 const WRT = ModuleManager.get('WRT');
+                const System = ModuleManager.get('System');
 
                 if (!handler) {
                     // argv without cmdName
@@ -133,6 +192,14 @@ export class ShellInstance extends EventEmitter {
                                     argv: argv
                                 });
 
+                                if (wrt.type === 'cli') {
+                                    resolve({
+                                        type: 'cli',
+                                        data: await this[_handleCLI](wrt)
+                                    });
+                                    continue;
+                                }
+
                                 try {
                                     wrt.main();
 
@@ -140,7 +207,10 @@ export class ShellInstance extends EventEmitter {
                                         const end = performance.now();
                                         this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
                                     }
-                                    resolve();
+                                    resolve({
+                                        type: 'gui',
+                                        data: wrt
+                                    });
                                 } catch (err) {
                                     this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
                                     reject(err);
@@ -161,6 +231,14 @@ export class ShellInstance extends EventEmitter {
                             argv: argv
                         });
 
+                        if (wrt.type === 'cli') {
+                            resolve({
+                                type: 'cli',
+                                data: await this[_handleCLI](wrt)
+                            });
+                            continue;
+                        }
+
                         try {
                             wrt.main();
 
@@ -168,7 +246,9 @@ export class ShellInstance extends EventEmitter {
                                 const end = performance.now();
                                 this.stdout.write(`Execution completed, took ${(end - start).toFixed(2)}ms\n`);
                             }
-                            resolve();
+                            resolve({
+                                type: 'gui'
+                            });
                         } catch (err) {
                             this.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${err.message}\n`);
                             reject(err);

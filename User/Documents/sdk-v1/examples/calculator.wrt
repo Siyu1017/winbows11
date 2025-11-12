@@ -1,0 +1,65 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+async function input(promptText) {
+    process.stdin.resume();
+    process.stdout.write(promptText);
+
+    return new Promise(resolve => {
+        process.stdin.once('data', dt => {
+            process.stdin.pause();
+            resolve(dt);
+            process.stdout.write('\n');
+        });
+    })
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+process.stdout.write(
+    `
+  ███████╗████████╗ █████╗ ███╗   ██╗██████╗  █████╗ ██████╗ ██████╗ 
+  ██╔════╝╚══██╔══╝██╔══██╗████╗  ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+  ███████╗   ██║   ███████║██╔██╗ ██║██║  ██║███████║██████╔╝██║  ██║
+  ╚════██║   ██║   ██╔══██║██║╚██╗██║██║  ██║██╔══██║██╔══██╗██║  ██║
+  ███████║   ██║   ██║  ██║██║ ╚████║██████╔╝██║  ██║██║  ██║██████╔╝
+  ╚══════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ 
+
+   ██████╗ █████╗ ██╗      ██████╗██╗   ██╗██╗      █████╗ ████████╗ ██████╗ ██████╗ 
+  ██╔════╝██╔══██╗██║     ██╔════╝██║   ██║██║     ██╔══██╗╚══██╔══╝██╔═══██╗██╔══██╗
+  ██║     ███████║██║     ██║     ██║   ██║██║     ███████║   ██║   ██║   ██║██████╔╝
+  ██║     ██╔══██║██║     ██║     ██║   ██║██║     ██╔══██║   ██║   ██║   ██║██╔══██╗
+  ╚██████╗██║  ██║███████╗╚██████╗╚██████╔╝███████╗██║  ██║   ██║   ╚██████╔╝██║  ██║
+   ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝
+\n`);
+const a = await input('Enter the first number: ');
+const operator = await input('Enter the operator: ');
+const b = await input('Enter the second number: ');
+process.stdout.write('\n');
+
+// Standard
+// Calculator
+
+const patterns = ['\\', '|', '/', '-'];
+let info = 'Calculating possibility';
+let current = 0;
+function loading() {
+    process.stdout.write('\r\x1b[0J' + patterns[current] + ' ' + info + '.'.repeat(current));
+    current++;
+    if (current >= patterns.length) {
+        current = 0;
+    }
+}
+const id = setInterval(loading, 100);
+
+await delay(1000);
+info = 'Checking the weather in London';
+await delay(1000);
+info = 'Asking ChatGPT';
+await delay(1000)
+info = 'Gathering datas';
+await delay(1500);
+clearInterval(id);
+process.stdout.write('\r\x1b[0J');
+process.stdout.write(a.trim() + ' ' + operator.trim() + ' ' + b.trim() + ' = Hello World!\n');

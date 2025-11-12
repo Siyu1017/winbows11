@@ -1,3 +1,5 @@
+//! $RTH={"type":"gui"}
+
 const { app, BrowserWindow } = WApplication;
 
 process.title = 'Info';

@@ -1,7 +1,7 @@
 import { IDBFS } from "../../../shared/fs.js";
 import ModuleManager from "../../moduleManager.js";
 import { viewport } from "../../core/viewport.js";
-import { getImageTheme } from "../../../shared/utils.js";
+import { getImageTheme } from "../../../shared/utils.ts";
 import { desktopEl } from "./init.js";
 
 const fs = IDBFS("~EXPLORER");
@@ -68,24 +68,30 @@ async function set(image = '') {
     currentBackgroundImage = image;
     localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
     const url = await fs.getFileURL(currentBackgroundImage);
-    try {
-        const micaURL = await compressImage(url);
-        document.querySelector(':root').style.setProperty('--winbows-mica', `url(${micaURL})`);
-    } catch (e) {
-        document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
-        console.error(e);
-    }
-    const img = new Image();
-    img.src = url;
-    img.onload = () => {
-        const System = ModuleManager.get('System');
-        const theme = getImageTheme(img);
 
-        desktopEl.classList.remove('winui-light', 'winui-dark');
-        desktopEl.classList.add(`winui-${theme}`);
-        System.theme.set(theme);
-        backgroundImage.style.backgroundImage = `url(${url})`;
-    }
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = url;
+        img.onload = async () => {
+            try {
+                const micaURL = await compressImage(url);
+                document.querySelector(':root').style.setProperty('--winbows-mica', `url(${micaURL})`);
+            } catch (e) {
+                document.querySelector(':root').style.setProperty('--winbows-mica', `url(${url})`);
+                console.error(e);
+            }
+
+            const System = ModuleManager.get('System');
+            const theme = getImageTheme(img);
+
+            desktopEl.classList.remove('winui-light', 'winui-dark');
+            desktopEl.classList.add(`winui-${theme}`);
+            System.theme.set(theme);
+            backgroundImage.style.backgroundImage = `url(${url})`;
+
+            resolve();
+        }
+    })
 }
 
 export default {

@@ -60,9 +60,13 @@ function createRow(task) {
     const System = ModuleManager.get('System');
 
     iconImage.style = `background-size: cover;background-position: center;background-repeat: no-repeat;width: 1rem;height: 1rem;display: block;margin:auto;`;
-    fs.getFileURL((task.__filename ? System?.appRegistry.getInfoByPath(task.__filename).icon : '') || 'C:/Winbows/icons/files/program.ico').then(url => {
-        iconImage.style.backgroundImage = `url(${url})`;
-    })
+    if (task.icon) {
+        iconImage.style.backgroundImage = `url(${task.icon})`
+    } else {
+        fs.getFileURL((task.__filename ? System?.appRegistry.getInfoByPath(task.__filename).icon : '') || 'C:/Winbows/icons/files/program.ico').then(url => {
+            iconImage.style.backgroundImage = `url(${url})`;
+        })
+    }
     iconCell.appendChild(iconImage);
 
     titleCell.textContent = task.title ?? 'Task';
@@ -71,9 +75,13 @@ function createRow(task) {
     pidCell.textContent = String(task.process?.pid) || 'UNKNOWN';
 
     function updateIcon(icon) {
-        fs.getFileURL(icon || 'C:/Winbows/icons/files/program.ico').then(url => {
-            iconImage.style.backgroundImage = `url(${url})`;
-        })
+        if (icon.startsWith('C:/')) {
+            fs.getFileURL(icon || 'C:/Winbows/icons/files/program.ico').then(url => {
+                iconImage.style.backgroundImage = `url(${url})`;
+            })
+        } else {
+            iconImage.style.backgroundImage = `url(${icon})`;
+        }
     }
 
     function updateTitle(title) {

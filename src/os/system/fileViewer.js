@@ -71,7 +71,7 @@ const fileViewers = {
         },
         'notepad': {
             name: 'Notepad',
-            script: 'C:/Program Files/Notepad/app.wrt   ',
+            script: 'C:/Program Files/Notepad/app.wrt',
             accepts: ['*']
         }
     },

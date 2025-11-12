@@ -1,5 +1,6 @@
-import { EventEmitter } from "../../shared/utils.js";
+import { EventEmitter } from "../../shared/utils.ts";
 import "./tabview.css";
+import { UserData } from "./userData.ts";
 
 export class Tabview extends EventEmitter {
     /**
@@ -109,6 +110,8 @@ export class Tabview extends EventEmitter {
             }
             this.slider.style.left = `${left}px`;
             this.slider.style.width = `${tabItem.offsetWidth}px`;
+
+            UserData.save('tabview.last_clicked', id);
         }
 
         tabItem.addEventListener('click', onSelect);

@@ -1,4 +1,4 @@
-import * as utils from "../../shared/utils.js";
+import * as utils from "../../shared/utils.ts";
 // import i18n from "../i18n/i18n.js";
 
 const lockScreenContainer = document.createElement('div');

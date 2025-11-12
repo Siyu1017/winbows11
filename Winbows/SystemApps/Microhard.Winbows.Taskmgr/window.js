@@ -130,6 +130,9 @@ Object.keys(icons).forEach(key => {
 var menu = null;
 new Array("mousedown", "touchstart", "pointerdown").forEach(event => {
     window.addEventListener(event, (e) => {
+        document.querySelectorAll('.task.active').forEach(el => {
+            el.classList.remove('active');
+        })
         if (menu == null) return;
         if (menu.container.contains(e.target)) return;
         menu.close();
@@ -157,9 +160,14 @@ function createTaskItem(task) {
 
     taskName.innerHTML = title.replace(/</, '&lt;').replace(/>/, '&gt;');
 
-    fs.getFileURL(info.icon || 'C:/Winbows/icons/files/program.ico').then(url => {
-        taskIcon.style.backgroundImage = `url(${url})`;
-    })
+    if (task.icon) {
+        taskIcon.style.backgroundImage = `url(${task.icon})`;
+    } else {
+        fs.getFileURL(info.icon || 'C:/Winbows/icons/files/program.ico').then(url => {
+            taskIcon.style.backgroundImage = `url(${url})`;
+        })
+    }
+
     taskPid.innerHTML = pid;
 
     if (title.toLowerCase().includes(searchInput.value.toLowerCase()) || pid.toString().includes(searchInput.value)) {
@@ -199,14 +207,17 @@ function createTaskItem(task) {
                 action: exit
             }
         ])
+        taskEl.classList.add('active');
+
+        let x = e.pageX, y = e.pageY;
         if (e.type.startsWith('touch')) {
             var touch = e.touches[0] || e.changedTouches[0];
-            e.pageX = touch.pageX;
-            e.pageY = touch.pageY;
+            x = touch.pageX;
+            y = touch.pageY;
         }
         menu.container.style.setProperty('--contextmenu-bg', 'var(--winbows-taskbar-bg)');
         menu.container.style.setProperty('--contextmenu-backdrop-filter', 'saturate(3) blur(20px)');
-        menu.open(e.pageX, e.pageY, 'left-top');
+        menu.open(x, y, 'left-top');
     })
 
     taskItems[runtimeID] = { title, pid: pid.toString(), task: taskEl, changeIcon, changeName, exit };

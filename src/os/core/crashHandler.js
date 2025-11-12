@@ -1,6 +1,6 @@
 import { viewport } from "./viewport.js";
 import SystemInformation from "./sysInfo.js";
-import { safeEscape, getStackTrace } from "../../shared/utils.js";
+import { safeEscape, getStackTrace } from "../../shared/utils.ts";
 import Logger, { WinbowsDebugLog } from "./log.js";
 
 let crashed = false;

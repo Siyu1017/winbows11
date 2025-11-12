@@ -1,11 +1,13 @@
 import { fsUtils } from "../../../shared/fs.js";
-import { capitalizeFirstLetter, parseKeyValueArgs } from "../../../shared/utils.js";
+import { capitalizeFirstLetter, parseKeyValueArgs } from "../../../shared/utils.ts";
 import { formatTwoColumns, parseURI, terminalTable } from "./shellUtils.js";
 import appRegistry from "../appRegistry.js";
 import SystemInformation from "../../core/sysInfo.js";
 import ModuleManager from "../../moduleManager.js";
 import { tasklist } from "../../kernel/wrt/core.js";
 import { processes } from "../../kernel/wrt/process.js";
+import { viewport } from "../../core/viewport.js";
+import { stat } from "../../core/stat.js";
 
 /**
  * @callback CommandHandler
@@ -226,8 +228,6 @@ commandRegistry.register(['md', 'mkdir'], {
     }
 })
 
-// TODO: Fix register config
-
 // Remove directory
 commandRegistry.register(['rd', 'rmdir'], {
     description: 'Deletes a directory.',
@@ -387,6 +387,29 @@ commandRegistry.register('tasklist', {
     }
 })
 
+commandRegistry.register('shutdown', {
+    description: 'Enables you to shut down or restart local or remote computers, one at a time.',
+    usage: 'shutdown [/r]',
+    options: {
+        '/r': 'Restarts the computer after shutdown.'
+    },
+    category: 'built-in',
+    handler: async ({ args }, shell) => {
+        if (args.includes('/r')) {
+            location.reload();
+            return;
+        }
+
+        setTimeout(() => {
+            stat.set('Kernel.WRT.available', false);
+            tasklist.list().forEach(k => {
+                tasklist.get(k)?.kill();
+            })
+            viewport.root.innerHTML = '';
+        })
+    }
+})
+
 commandRegistry.register('taskkill', {
     description: 'Ends one or more tasks or processes. Processes can be ended by process ID or image name. You can use the tasklist command command to determine the process ID (PID) for the process to be ended.',
     usage: 'taskkill [/pid <processID> | /im <imagename>]',
@@ -434,7 +457,7 @@ commandRegistry.register('start', {
         }
 
         if (uri.scheme.startsWith('http') && flags['new-window']) {
-            window.open(args[0].substring(1, args[0].length - 1), '_blank');
+            window.open(args[0], '_blank');
             return true;
         }
 
@@ -575,6 +598,20 @@ commandRegistry.register('exit', {
 })
 
 //==== Text processing and file operation assistance ====//
+
+// Set title
+commandRegistry.register('title', {
+    description: 'Creates a title for the Command Prompt window.',
+    usage: 'title [<string>]',
+    options: {
+        '<string>': 'Specifies the text to appear as the title of the Command Prompt window.'
+    },
+    category: 'built-in',
+    handler: ({ args }, shell) => {
+        shell.process.title = args.join(' ');
+        return true;
+    }
+})
 
 // Echo
 commandRegistry.register('echo', {

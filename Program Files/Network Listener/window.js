@@ -677,7 +677,7 @@ class Network {
             this.detailContent.querySelector('[data-element="network-payload"]').appendChild(openWith);
         }
         if (responseViewer.isJson == true) {
-            var url = path.resolve(`./saved/responses/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`);
+            var url = path.resolve(`./saved/responses/${[...Array(72)].map(() => Math.floor(Math.random() * 16).toString(16)).join('')}.json`, __dirname);
             var openWith = document.createElement('button');
             openWith.className = 'btn';
             openWith.innerHTML = `Open with JSON Viewer<!--span style="font-size: 12px;
@@ -694,7 +694,7 @@ class Network {
                 await fs.writeFile(url, new Blob([await request.response.clone().text()], {
                     type: 'application/json'
                 })).then((result) => {
-                    new Process('C:/Program Files/JSON Viewer/viewer.js').start(`const FILE_PATH="${url}";`);
+                    System.shell.execCommand(`json-viewer --path="${url}"`);
                     document.body.style.cursor = 'auto';
                 })
             }

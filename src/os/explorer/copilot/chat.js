@@ -18,37 +18,31 @@ function detectNumLayers(session) {
             maxLayer = Math.max(maxLayer, parseInt(match[1], 10));
         }
     }
-    return maxLayer + 1; // 層數 = 最大 index + 1
+    return maxLayer + 1;
 }
 
 function selectNextToken(logits, k = 50) {
-    // 轉成機率分布
     const probs = softmax(logits);
-
-    // 找前 k 名
     const sorted = probs
         .map((p, i) => ({ p, i }))
         .sort((a, b) => b.p - a.p)
         .slice(0, k);
 
-    // 隨機挑一個
     let r = Math.random();
     let cum = 0;
     for (let { p, i } of sorted) {
         cum += p;
         if (r < cum) return i;
     }
-    return sorted[0].i; // 保底
+    return sorted[0].i;
 }
 
 function softmax(logits) {
-    // 找最大值
     let max = -Infinity;
     for (let i = 0; i < logits.length; i++) {
         if (logits[i] > max) max = logits[i];
     }
 
-    // 計算 exp
     const exps = new Array(logits.length);
     let sum = 0;
     for (let i = 0; i < logits.length; i++) {
@@ -56,15 +50,14 @@ function softmax(logits) {
         sum += exps[i];
     }
 
-    // 正規化
     for (let i = 0; i < exps.length; i++) {
         exps[i] /= sum;
     }
     return exps;
 }
 
-const numHeads = 12;       // 注意力頭數
-const headSize = 64;      // 每個 head 的維度
+const numHeads = 12;
+const headSize = 64;
 
 function createEmptyPast(numLayers, batchSize, numHeads, headSize) {
     const past = [];
@@ -78,7 +71,6 @@ function createEmptyPast(numLayers, batchSize, numHeads, headSize) {
 }
 
 async function chat(inputText, maxTokens = 20) {
-    // encode 使用者輸入
     const encoded = await tokenizer.encode(inputText);
     conversationIds.push(...encoded);
 
@@ -86,7 +78,6 @@ async function chat(inputText, maxTokens = 20) {
     let pastKeyValues = createEmptyPast(4, 1, 4, 32);
 
     for (let i = 0; i < maxTokens; i++) {
-        // 第一次生成送整段，之後只送最後一個 token + past_key_values
         const inputIds = pastKeyValues ? [conversationIds[conversationIds.length - 1]] : conversationIds;
         const inputTensor = new ort.Tensor(
             "int32",
@@ -95,13 +86,12 @@ async function chat(inputText, maxTokens = 20) {
         );
         const attentionMask = new ort.Tensor(
             "int32",
-            Int32Array.from([1]), // 只有一個 token
+            Int32Array.from([1]),
             [1, 1]
         );
 
         const feeds = { input_ids: inputTensor, attention_mask: attentionMask };
 
-        // 只有當 pastKeyValues 已存在時才加進去
         if (pastKeyValues) {
             pastKeyValues.forEach((pkv, idx) => {
                 feeds[`past_key_values.${idx}.key`] = pkv.key;
@@ -111,7 +101,6 @@ async function chat(inputText, maxTokens = 20) {
 
         const outputs = await session.run(feeds);
 
-        // 更新 past_key_values
         pastKeyValues = [];
         let idx = 0;
         while (outputs.hasOwnProperty(`present.${idx}.key`)) {
@@ -122,7 +111,6 @@ async function chat(inputText, maxTokens = 20) {
             idx++;
         }
 
-        // 取 logits
         const logitsData = outputs.logits.data;
         const vocabSize = tokenizer.vocab_size;
         const lastLogits = logitsData.slice(logitsData.length - vocabSize);
@@ -140,11 +128,11 @@ async function chat(inputText, maxTokens = 20) {
     return outputText;
 }
 
-async function generateText(inputText, maxTokens = 200) {
+async function generateText(inputText, stream, maxTokens = 50) {
     const encoded = await tokenizer.encode(inputText);
     const conversationIds = [...encoded];
 
-    let outputText = "";
+    let outputText = '';
     let pastKeyValues = createEmptyPast(detectNumLayers(session), 1, numHeads, headSize);
 
     for (let i = 0; i < maxTokens; i++) {
@@ -207,6 +195,7 @@ async function generateText(inputText, maxTokens = 200) {
         conversationIds.push(nextTokenId);
         const decoded = await tokenizer.decode([nextTokenId]);
         outputText += decoded;
+        stream?.write(decoded);
     }
 
     return outputText;

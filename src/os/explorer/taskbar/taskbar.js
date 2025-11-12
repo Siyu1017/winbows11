@@ -1,7 +1,7 @@
 import { viewport } from "../../core/viewport.js";
 import ModuleManager from "../../moduleManager.js";
 import WinUI from "../../../lib/winui/winui.js";
-import { EventEmitter, getPosition } from "../../../shared/utils.js";
+import { EventEmitter, getPosition } from "../../../shared/utils.ts";
 import { ControlPanel } from "./controlPanel.js";
 import timer from "../../core/timer.js";
 import IconManager from "./iconManager.js";

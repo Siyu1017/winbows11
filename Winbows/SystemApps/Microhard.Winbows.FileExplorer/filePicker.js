@@ -15,10 +15,13 @@ System.theme.onChange(theme => {
     }
 })
 
+process.title = 'File Picker';
+browserWindow.changeIcon(fs.getFileURL('./app.ico'));
+
 document.body.classList.add('winui');
 document.body.classList.add('winui-no-background');
 
-const styles = ['./window.v2.css', './chooseFileWindow.css', './pages/style.css'];
+const styles = ['./window.css', './filePicker.css', './pages/style.css'];
 
 const promises = [];
 for (let i in styles) {
@@ -32,6 +35,18 @@ for (let i in styles) {
     }))
 }
 await Promise.allSettled(promises);
+
+const pipe = process.env.pipe;
+const channel = IPC.connect(pipe);
+channel.on('data', (e) => {
+    const dt = e.data;
+    if (dt.type == 'cancel') {
+        process.exit();
+    }
+    if (dt.type == 'config') {
+        // TODO
+    }
+})
 
 const fsUtils = path;
 
@@ -81,6 +96,31 @@ const pageDatas = [
     }
 ];
 
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+}
+
+function canvasClarifier(canvas, ctx, width, height) {
+    const originalSize = {
+        width: (width ? width : canvas.offsetWidth),
+        height: (height ? height : canvas.offsetHeight)
+    }
+    var ratio = window.devicePixelRatio || 1;
+    canvas.width = originalSize.width * ratio;
+    canvas.height = originalSize.height * ratio;
+    ctx.scale(ratio, ratio);
+    if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
+        canvas.style.width = originalSize.width + 'px';
+        canvas.style.height = originalSize.height + 'px';
+    }
+}
+
 function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
@@ -89,6 +129,16 @@ function hasParentFolder(fullPath) {
     if (fullPath.startsWith('pages://')) return false;
     const { path } = fsUtils.parsePath(fullPath);
     return path.split('/').filter(i => i.trim().length > 0).length > 0;
+}
+
+function getPosition(element) {
+    function offset(el) {
+        var rect = el.getBoundingClientRect(),
+            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+    }
+    return { x: offset(element).left, y: offset(element).top };
 }
 
 function getParentPath(fullPath) {
@@ -196,19 +246,23 @@ footerButtonCancel.innerHTML = 'Cancel';
 footerButtonConfirm.innerHTML = 'Confirm';
 
 footerButtonCancel.addEventListener('click', (e) => {
-    browserWindow.worker.postMessage({
-        type: 'cancel',
-        token: TOKEN,
-        items: []
-    })
+    try {
+        channel.send({
+            type: 'cancel',
+            items: []
+        })
+    } catch (e) { }
+    process.exit();
 })
 
 footerButtonConfirm.addEventListener('click', (e) => {
-    browserWindow.worker.postMessage({
-        type: 'confirm',
-        token: TOKEN,
-        items: selected
-    })
+    try {
+        channel.send({
+            type: 'confirm',
+            items: selected
+        })
+    } catch (e) { }
+    process.exit();
 })
 
 // Selection canvas
@@ -253,8 +307,7 @@ footerButtonGroup.appendChild(footerButtonConfirm);
 
 setSidebar(true);
 
-const module = await browserWindow.import('./_router.js');
-const router = module.router;
+const router = (await requireAsync('./_router.js'))('_');
 let pageContents = {};
 
 async function updatePage(e) {
@@ -330,16 +383,16 @@ async function updatePage(e) {
 
                 navigator.storage.estimate().then(quota => {
                     usedSizeBar.style.width = size / quota.quota * 100 + '%';
-                    usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
+                    usedSizeText.innerHTML = `${formatBytes(size)} / ${formatBytes(quota.quota)}`;
                 })
 
-                footerPageSize.innerHTML = window.utils.formatBytes(size);
+                footerPageSize.innerHTML = formatBytes(size);
             }
             pageContent = itemViewer;
         } else if (path.startsWith('pages://')) {
             try {
-                const module = await browserWindow.import(`./pages/` + path.replace('pages://', '') + '.js');
-                pageContents[path] = module.default(router);
+                const mod = await requireAsync(`./pages/` + path.replace('pages://', '') + '.js');
+                pageContents[path] = mod(router);
                 pageContent = pageContents[path] || document.createElement('div');
             } catch (e) {
                 // Page not found
@@ -379,7 +432,7 @@ router.on('change', updatePage);
 router.on('reload', updatePage);
 
 // Initialize
-router.push(datas.page || 'pages://home');
+router.push(process.args.path || 'pages://home');
 
 pathStripActionBack.disabled = true;
 pathStripActionNext.disabled = true;
@@ -424,7 +477,6 @@ function setSidebar(initialize = false) {
                     sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
                         active.classList.remove('active');
                     })
-                    // TODO : Set the page of item
                     //currentPage = item.path;
                     router.push(item.path);
                     //addToHistory(currentPage);
@@ -541,7 +593,7 @@ var createdItems = [];
 
         selected = [];
         createdItems.forEach(item => {
-            var position = window.utils.getPosition(item.item);
+            var position = getPosition(item.item);
             var itemWidth = item.item.offsetWidth;
             var itemHeight = item.item.offsetHeight;
 
@@ -570,17 +622,17 @@ var createdItems = [];
 
     function selectionEnd(e) {
         selecting = false;
-        window.utils.canvasClarifier(canvas, ctx);
+        canvasClarifier(canvas, ctx);
     }
 
     function render() {
-        window.utils.canvasClarifier(canvas, ctx);
+        canvasClarifier(canvas, ctx);
         if (selecting == false) return;
 
         var viewer = viewerContainer.querySelector('.explorer-item-viewer');
         if (!viewer) return;
 
-        var position = window.utils.getPosition(canvas);
+        var position = getPosition(canvas);
 
         ctx.save();
         ctx.beginPath();
@@ -754,7 +806,7 @@ async function createFileItem(parent, details, path) {
                     itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
                 })
             } catch (e) {
-                getImageURL(window.fileIcons.getIcon(path)).then(url => {
+                getImageURL(System.fileIcons.getIcon(path)).then(url => {
                     itemIcon.style.backgroundImage = `url(${url})`;
                 })
                 itemName.innerHTML = fsUtils.basename(path);
@@ -762,7 +814,7 @@ async function createFileItem(parent, details, path) {
             }
         })
     } else {
-        getImageURL(window.fileIcons.getIcon(path)).then(url => {
+        getImageURL(System.fileIcons.getIcon(path)).then(url => {
             itemIcon.style.backgroundImage = `url(${url})`;
             if (details.type.startsWith('image/')) {
                 try {
@@ -807,7 +859,7 @@ async function createFileItem(parent, details, path) {
                 className: "open",
                 text: "Open",
                 action: () => {
-                    var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                    var defaultViewer = System.fileViewers.getDefaultViewer(path);
                     if (defaultViewer != null) {
                         new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
                     } else {
@@ -840,10 +892,10 @@ async function createFileItem(parent, details, path) {
                 className: "set-as-background",
                 text: "Set as background",
                 action: async () => {
-                    await window.setBackgroundImage(path);
+                    await Explorer.backgroundImage.set(path);
                 }
             })
-        } else if (details.type.search('javascript') > -1 || ['.wrt','.wrt'].includes(window.utils.getFileExtension(path))) {
+        } else if (details.type.search('javascript') > -1 || ['.wrt', '.wrt'].includes(path.extname(path))) {
             items.push({
                 className: "run-as-an-app",
                 icon: 'window-snipping',
@@ -852,7 +904,7 @@ async function createFileItem(parent, details, path) {
                     new Process(path).start();
                 }
             })
-        } else if (window.utils.getFileExtension(path) == '.wbsf') {
+        } else if (path.extname(path) == '.wbsf') {
             items.push({
                 icon: 'window-snipping',
                 text: 'Run file',
@@ -860,11 +912,11 @@ async function createFileItem(parent, details, path) {
                     const file = await fs.readFile(path);
                     const script = await file.text();
                     script.split('\n').filter(t => t.trim().length > 0).forEach(line => {
-                        window.System.Shell(line.trim());
+                        System.Shell(line.trim());
                     })
                 }
             })
-        } else if (fontExtensions.includes(window.utils.getFileExtension(path))) {
+        } else if (fontExtensions.includes(path.extname(path))) {
             items.push({
                 className: "set-as-default-font",
                 icon: 'font',
@@ -949,7 +1001,7 @@ async function localPageCrafter(path) {
         } catch (e) { };
     }))
     footerPageItems.innerHTML = `${items.length} Items`;
-    footerPageSize.innerHTML = window.utils.formatBytes(pageStat.length);
+    footerPageSize.innerHTML = formatBytes(pageStat.length);
 
     if (items.length == 0) {
         const el = document.createElement('span');

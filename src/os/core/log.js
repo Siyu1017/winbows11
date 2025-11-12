@@ -1,6 +1,9 @@
 import crashHandler from "./crashHandler.js";
 import SystemInformation from "./sysInfo.js";
 
+const flags = {
+    disableConsoleOutput: false
+}
 const Log = (function () {
     let logs = [];
     let startTime = Date.now();
@@ -163,8 +166,18 @@ const Log = (function () {
 
         logs.push(entry);
 
+        if (level === 'FATAL') {
+            if (typeof log.msg === 'string') {
+                crashHandler(new Error(log.msg));
+            } else {
+                crashHandler(log.msg);
+            }
+        }
+
+        if (flags.disableConsoleOutput) return;
+
         if (level === 'INFO' || (SystemInformation.mode === 'development' && level === 'DEBUG')) {
-            // INFO & DEBUG ( Only shown during development )
+            // INFO, DEBUG ( Only shown during development )
             console.log(`%c${entry.time} Σ${entry.sum}ms Δ${entry.delta}ms\n%c[${log.module}]: %c${log.msg}`, 'color: rgb(154 154 154);'
                 , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', log.data ? log.data : '');
         } else if (level === 'WARN') {
@@ -173,14 +186,6 @@ const Log = (function () {
         } else if (level === 'ERROR' || level === 'FATAL') {
             // ERROR, FATAL
             console.error(`[${log.module}]: ${log.msg}`, log.data ? log.data : '')
-        }
-
-        if (level === 'FATAL') {
-            if (typeof log.msg === 'string') {
-                crashHandler(new Error(log.msg));
-            } else {
-                crashHandler(log.msg);
-            }
         }
     }
 

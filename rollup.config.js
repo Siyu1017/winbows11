@@ -1,6 +1,10 @@
+import typescript from "@rollup/plugin-typescript";
 import terser from "@rollup/plugin-terser";
 import fs from 'fs';
 import pkg from "./package.json" assert { type: "json" };
+import commonjs from "@rollup/plugin-commonjs";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
+import chalk from 'chalk';
 
 const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
@@ -20,7 +24,7 @@ for (const mod of builtinModules) {
         modInfo.pd = mod;
         builtinModuleDatas.packages[mod] = modInfo;
     } catch (e) {
-        console.warn('Failed to read file', './User/AppData/Roaming/wrt/wrt_modules/' + mod + '/package.json')
+        console.warn(chalk.redBright(chalk.bold('[WRT]: Failed to read file', './User/AppData/Roaming/wrt/wrt_modules/' + mod + '/package.json')))
     }
 }
 fs.writeFileSync('./User/AppData/Roaming/wrt/wrt_modules/packages.json', JSON.stringify(builtinModuleDatas), 'utf-8')
@@ -39,6 +43,17 @@ export default [{
         intro: `const buildId="${BUILD_ID}",version="${pkg.version}";`
     },
     plugins: [
+
+        nodeResolve({
+            extensions: [".js", ".ts"],
+        }),
+        typescript({
+            include: ['src/**/*'],
+            outDir: 'Winbows/System/kernel/',
+            declaration: false,
+            allowImportingTsExtensions: true
+        }),
+        commonjs(),
         terser()
     ]
 }];

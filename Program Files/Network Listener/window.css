@@ -6,11 +6,11 @@
     --flex-5: .25;
     --flex-6: .1;
     --border: #505259;
-    --bg-1: #262627;
-    --bg-2: #1B1B1D;
-    --bg-selected: #474648;
-    --bg-hover: #47464866;
-    --bg-selection: rgba(255, 255, 255, .25);
+    --bg-1: #171717;
+    --bg-2: #111111;
+    --bg-selected: #353535;
+    --bg-hover: #33333366;
+    --bg-selection: rgb(85 151 255 / 30%);
 }
 
 .extension-devtool-network-container {
@@ -376,7 +376,7 @@
 }
 
 .extension-devtool-network-item.selected {
-    background: #383b43ff !important;
+    background: #1e2135 !important;
 }
 
 .extension-devtool-network-resizer {

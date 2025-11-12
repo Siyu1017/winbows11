@@ -61,7 +61,7 @@ input.addEventListener('change', function (event) {
     }
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = async function (e) {
         devtool.console.clear();
         devtool.console.info(`File: ${file.name}`);
 
@@ -98,6 +98,7 @@ input.addEventListener('change', function (event) {
                 }
                 devtool.console.log(`%c${log.time} Σ${log.sum}ms Δ${log.delta}ms\n%c[${log.module}/${log.level}]: %c${log.msg}`, 'color: rgb(154 154 154);'
                     , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', log.data ? log.data : '');
+                await new Promise(resolve => setTimeout(resolve));
             }
         } catch (error) {
             console.error('Error parsing JSON:', error);

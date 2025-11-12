@@ -37,7 +37,7 @@ function computeTaskLayout(containerWidth, containerHeight, windows) {
             }
 
             rowLayouts.push({
-                w, h
+                w, h, k: w * h
             })
         }
 
@@ -50,12 +50,14 @@ function computeTaskLayout(containerWidth, containerHeight, windows) {
                 const ratio = maxRowHeight / max.h;
                 max.w *= ratio;
                 max.h = maxRowHeight;
+                max.k *= ratio
             } else if (rowWidth > maxRowWidth) {
-                const max = rowLayouts.reduce((max, o) => o.w > max.w ? o : max);
+                const max = rowLayouts.reduce((max, o) => o.k > max.k ? o : max);
                 let ratio = (max.w - (rowWidth - maxRowWidth)) / max.w;
-                if (ratio < 0.9) ratio = 0.9;
+                if (ratio < 0.99) ratio = 0.99;
                 max.w *= ratio;
                 max.h *= ratio;
+                max.k *= Math.pow(ratio, 2);
             }
 
             rowWidth = rowLayouts.map(b => b.w).reduce((a, b) => a + b, 0) + (rowLayouts.length - 1) * padding;
@@ -69,7 +71,7 @@ function computeTaskLayout(containerWidth, containerHeight, windows) {
             layouts.push(rowLayouts[j]);
             xSum += rowLayouts[j].w + padding;
         }
-        ySum += maxRowHeight + controlbarHeight + padding;
+        ySum += rowHeight + controlbarHeight + padding;
     }
 
     return layouts;
@@ -92,8 +94,11 @@ export default function Taskview(icon) {
         desktopEl.style.pointerEvents = 'none';
 
         const windows = windowManager.all();
-        const layout = computeTaskLayout(viewport.width, viewport.height - 48, windows);
-        windows.forEach((win, i) => {
+        const mainWindows = windows.filter(w => w.type !== 'sub-window');
+        const subWindows = windows.filter(w => w.type === 'sub-window');
+
+        const layout = computeTaskLayout(viewport.width, viewport.height - 48, mainWindows);
+        mainWindows.forEach((win, i) => {
             const w = layout[i].w;
             const h = layout[i].h;
             const scale = w / win.realWidth;
@@ -154,6 +159,10 @@ export default function Taskview(icon) {
                 },
                 profile: 'taskview-in'
             })
+            win.focus();
+        })
+        subWindows.forEach((win) => {
+            win.container.style.display = 'none';
         })
     }
 
@@ -164,17 +173,21 @@ export default function Taskview(icon) {
         desktopEl.style.pointerEvents = 'auto';
 
         const windows = windowManager.all();
+        const mainWindows = windows.filter(w => w.type !== 'sub-window');
+        const subWindows = windows.filter(w => w.type === 'sub-window');
         while (masks.length) {
             const mask = masks.shift();
             mask.remove();
         }
-        windows.forEach((win, i) => {
+        mainWindows.forEach((win, i) => {
             win.browserWindow.window.style.borderRadius = win.originalSnapSide ? '0px' : 'revert-layer';
             win.micaContainer.style.borderRadius = win.originalSnapSide ? '0px' : 'revert-layer';
 
             win.container.style.transition = 'none';
             if (win.isMinimized) {
-                win.minimize();
+                win.minimize(() => {
+                    return show == false;
+                });
             } else {
                 win.animate({
                     to: {
@@ -187,6 +200,9 @@ export default function Taskview(icon) {
                     profile: 'taskview-out'
                 })
             }
+        })
+        subWindows.forEach((win) => {
+            win.container.style.display = 'revert-layer';
         })
     }
 

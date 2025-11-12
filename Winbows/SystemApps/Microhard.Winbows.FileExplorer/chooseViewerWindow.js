@@ -5,7 +5,7 @@ style.href = await fs.getFileURL(path.resolve('./chooseViewerWindow.css'));
 document.head.appendChild(style);
 
 function getCategoryString() {
-    const file = process.args['path'];
+    const file = process.args['path'] || '';
     const extension = path.extname(file);
     if (extension != '') {
         return `${extension}`;
@@ -14,7 +14,7 @@ function getCategoryString() {
     }
 }
 
-const extension = path.extname(process.args['path']);
+const extension = path.extname(process.args['path'] || '');
 
 var selected = null;
 

@@ -1,4 +1,4 @@
-import { canvasClarifier } from "../../shared/utils.js";
+import { canvasClarifier } from "../../shared/utils.ts";
 import "./performance-monitor.css";
 
 function createPerformanceMonitor(container, options = {}) {

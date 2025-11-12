@@ -1,3 +1,5 @@
+//! $RTH={"type":"cli"}
+
 const module1 = await requireAsync('./modules/module1.js');
 const myModule = await requireAsync('./modules/myModule.js');
 

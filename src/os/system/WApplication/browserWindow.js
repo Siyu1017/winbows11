@@ -1,7 +1,7 @@
 import WinUI from "../../../lib/winui/winui.js";
-import * as utils from "../../../shared/utils.js";
+import * as utils from "../../../shared/utils.ts";
 import { IDBFS } from "../../../shared/fs.js";
-import { EventEmitter } from "../../../shared/utils.js";
+import { EventEmitter } from "../../../shared/utils.ts";
 import { viewport } from "../../core/viewport.js";
 import appRegistry from "../appRegistry.js";
 import { fallbackImage } from "../../core/fallback.js";
@@ -258,7 +258,7 @@ function getSnapPreviewPosition(side) {
 }
 
 export class BrowserWindow extends EventEmitter {
-    constructor(config = {}) {
+    constructor(options = {}) {
         super();
 
         this.id = 'window_' + utils.randomID(24);
@@ -305,20 +305,20 @@ export class BrowserWindow extends EventEmitter {
         this.taskbarIconElement = document.createElement('div');
 
         // Options
-        this.resizable = config.resizable ?? true;
-        this.minimizable = config.minimizable ?? true;
-        this.maximizable = config.maximizable ?? true;
-        this.closable = config.closable ?? true;
-        this.snappable = config.snappable ?? true;
-        this.fullscreenable = config.fullscreenable ?? true;
-        this.mica = config.mica ?? false;
-        this.showOnTop = config.showOnTop ?? false;
-        this.theme = config.theme ?? 'light';
+        this.resizable = options.resizable ?? true;
+        this.minimizable = options.minimizable ?? true;
+        this.maximizable = options.maximizable ?? true;
+        this.closable = options.closable ?? true;
+        this.snappable = options.snappable ?? true;
+        this.fullscreenable = options.fullscreenable ?? true;
+        this.mica = options.mica ?? false;
+        this.showOnTop = options.showOnTop ?? false;
+        this.theme = options.theme ?? 'light';
 
-        this.minWidth = config.minWidth ?? 300;
-        this.minHeight = config.minHeight ?? 180;
-        this.width = config.width ?? 800;
-        this.height = config.height ?? 600;
+        this.minWidth = options.minWidth ?? 300;
+        this.minHeight = options.minHeight ?? 180;
+        this.width = options.width ?? 800;
+        this.height = options.height ?? 600;
         this.realWidth = this.width;
         this.realHeight = this.height;
 
@@ -329,18 +329,40 @@ export class BrowserWindow extends EventEmitter {
             this.realHeight = this.minHeight;
         }
 
-        this.x = (config.x == 'center' || !config.x) ? viewport.width / 2 - this.realWidth / 2 : config.x;
-        this.y = (config.y == 'center' || !config.y) ? viewport.height / 2 - this.realHeight / 2 : config.y;
+        this.x = (options.x == 'center' || !options.x) ? viewport.width / 2 - this.realWidth / 2 : options.x;
+        this.y = (options.y == 'center' || !options.y) ? viewport.height / 2 - this.realHeight / 2 : options.y;
         this.realX = this.x;
         this.realY = this.y;
 
-        this.icon = config.icon ?? appRegistry.getIcon('');
-        this.title = config.title ?? 'App';
+        this.icon = options.icon ?? appRegistry.getIcon('');
+        this.title = options.title ?? 'App';
+        this.type = options.type === 'sub-window' ? options.type : 'main-window';
 
-        if (!config.x && !config.y && browserWindowPosition['caller']) {
+        if (this.type === 'sub-window') {
+            this.fullscreenable = false;
+            this.maximizable = false;
+            this.minimizable = false;
+            this.snappable = false;
+        }
+
+        if (!options.x && !options.y && options.__filename) {
+            if (!browserWindowPosition[options.__filename]) {
+                browserWindowPosition[options.__filename] = [this.x, this.y];
+            } else {
+                browserWindowPosition[options.__filename][0] += 8;
+                browserWindowPosition[options.__filename][1] += 8;
+            }
+
+            if (browserWindowPosition[options.__filename][0] > viewport.width) {
+                browserWindowPosition[options.__filename][0] -= viewport.width;
+            }
+            if (browserWindowPosition[options.__filename][1] > viewport.height - 48) {
+                browserWindowPosition[options.__filename][1] -= viewport.height + 48;
+            }
+
             // Restore previous position
-            this.x = browserWindowPosition['caller'][0];
-            this.y = browserWindowPosition['caller'][1];
+            this.x = browserWindowPosition[options.__filename][0];
+            this.y = browserWindowPosition[options.__filename][1];
             this.realX = this.x;
             this.realY = this.y;
         }
@@ -1131,7 +1153,7 @@ ${this.animationData.stat.scaleY}
         }
     }
 
-    minimize = () => {
+    minimize = (condition = () => true) => {
         var position = utils.getPosition(this.taskbarIconElement);
         var width = this.container.offsetWidth;
         var height = this.container.offsetHeight;
@@ -1166,7 +1188,7 @@ ${this.animationData.stat.scaleY}
         this._emit('minimize');
 
         setTimeout(() => {
-            if (this.isMinimized == true) {
+            if (this.isMinimized == true && condition?.() !== false) {
                 this.container.style.setProperty('z-index', '-1', 'important');
                 this.container.style.setProperty('visibility', 'hidden');
             }
@@ -1358,7 +1380,7 @@ ${this.animationData.stat.scaleY}
         this.on(event, listener);
     }
 
-    useTabview = (config = {
+    useTabview = (options = {
         icon: true
     }) => {
         const tabview = document.createElement('div');
@@ -1374,7 +1396,7 @@ ${this.animationData.stat.scaleY}
         tabStripCreateButton.className = 'tabview-tabstrip-create-button';
 
         this.browserWindow.content.appendChild(tabview);
-        if (config.icon == false) {
+        if (options.icon == false) {
             this.browserWindow.toolbar.replaceChild(tabStrip, this.toolbarInfo);
         } else {
             this.toolbarInfo.replaceChild(tabStrip, this.toolbarTitle);
@@ -1452,7 +1474,7 @@ ${this.animationData.stat.scaleY}
             tabviewItem = document.createElement('div');
             id = randomID();
 
-            constructor(config = {
+            constructor(options = {
                 active: true,
                 icon: true,
                 tabAnimation: true,
@@ -1464,9 +1486,9 @@ ${this.animationData.stat.scaleY}
                 // Initialize tab
                 order.push(this.id);
 
-                this.config = {
-                    syncTitle: config.syncTitle == false ? false : true,
-                    syncIcon: config.syncIcon == false ? false : true
+                this.options = {
+                    syncTitle: options.syncTitle == false ? false : true,
+                    syncIcon: options.syncIcon == false ? false : true
                 }
 
                 this.icon = '';
@@ -1546,7 +1568,7 @@ ${this.animationData.stat.scaleY}
                     var unit = this.tab.offsetWidth + 8;
                     var count = Math.round(x / unit);
 
-                    if (config.tabAnimation != false) {
+                    if (options.tabAnimation != false) {
                         this.tab.style.transform = `translateX(${x}px)`;
                     }
 
@@ -1560,7 +1582,7 @@ ${this.animationData.stat.scaleY}
 
                     if (x > 0) {
                         Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
-                            if (config.tabAnimation != false) {
+                            if (options.tabAnimation != false) {
                                 tab.tab.style.transition = 'revert-layer';
                             }
                             var index = order.indexOf(tab.id);
@@ -1572,7 +1594,7 @@ ${this.animationData.stat.scaleY}
                         })
                     } else if (x < 0) {
                         Object.values(tabs).filter(tab => tab.id != this.id).forEach(tab => {
-                            if (config.tabAnimation != false) {
+                            if (options.tabAnimation != false) {
                                 tab.tab.style.transition = 'revert-layer';
                             }
                             var index = order.indexOf(tab.id);
@@ -1616,7 +1638,8 @@ ${this.animationData.stat.scaleY}
                     window.addEventListener(event, dragEnd);
                 })
 
-                this.tab.addEventListener('click', () => {
+                this.tab.addEventListener('click', (e) => {
+                    if (this.tabClose.contains(e.target)) return;
                     this.focus();
                 });
 
@@ -1631,10 +1654,10 @@ ${this.animationData.stat.scaleY}
                 tabStripTabs.appendChild(this.tab);
                 tabview.appendChild(this.tabviewItem);
 
-                if (config.active != false) {
+                if (options.active != false) {
                     this.focus();
                 }
-                if (config.icon == false) {
+                if (options.icon == false) {
                     this.tabIcon.remove();
                 }
             }
@@ -1646,28 +1669,29 @@ ${this.animationData.stat.scaleY}
                     if (tab.id == this.id) return;
                     tab.blur();
                 })
+
                 this.tab.classList.add('active');
                 this.tabviewItem.classList.add('active');
                 this._emit('focus');
 
-                if (this.config.syncIcon) {
+                if (this.options.syncIcon) {
                     setBrowserWindowIcon(this.icon);
                 }
-                if (this.config.syncTitle) {
+                if (this.options.syncTitle) {
                     setBrowserWindowTitle(this.title);
                 }
             }
             changeTitle(header) {
                 this.title = header;
                 this.tabHeader.innerHTML = utils.replaceHTMLTags(header);
-                if (this.config.syncTitle) {
+                if (this.options.syncTitle) {
                     setBrowserWindowTitle(this.title);
                 }
             }
             changeIcon(icon) {
                 this.icon = icon;
                 this.tabIcon.style.backgroundImage = `url(${icon})`;
-                if (this.config.syncIcon) {
+                if (this.options.syncIcon) {
                     setBrowserWindowIcon(this.icon);
                 }
             }

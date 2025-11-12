@@ -11,11 +11,10 @@ import WApplication from "./WApplication/WApplication.js";
 import initializeExplorer from "../explorer/explorer.wrt";
 import SystemInformation from "../core/sysInfo.js";
 import Logger from "../core/log.js";
-import crashHandler from "../core/crashHandler.js";
 import timer, { getDuration, marks } from "../core/timer.js";
 import fileViewers from "./fileViewer.js";
 import fileIcons from "./fileIcon.js";
-import { loading } from "../core/viewport.js";
+import { loading, winbowsIcon } from "../core/viewport.js";
 
 async function init() {
     loading.textWithProgress('Initializing System...', 12);
@@ -77,16 +76,18 @@ async function init() {
 
     const pseudoProcess = new WRT({
         code: '//! System pseudo-process',
-        __filename: 'C:/Winbows/System/system.wrt',
+        __filename: 'C:/Winbows/System/system.js',
         options: {
             keepAlive: true
-        }
+        },
+        icon: winbowsIcon
     })
     pseudoProcess.process.title = 'System';
     pseudoProcess.main();
     pseudoProcess.process.on('exit', () => {
         logger.fatal('System process exited');
     })
+    System.processAPIs = pseudoProcess.apis;
     // System.systemProcess = pseudoProcess;
     logger.info('System pseudo-process created');
 
@@ -139,6 +140,7 @@ async function init() {
     logger.info('System initialized');
     await initializeExplorer();
     clearInterval(loading.updateProgressId);
+    loading.setProgress(100);
 
     let output = [];
     let levels = [];

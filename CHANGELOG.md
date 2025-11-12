@@ -4,6 +4,23 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+### Added
+
+- You can now run interactive CLI applications within the terminal
+- Add a new `Explorer.FilePicker` API for easier file browsing and selection
+- Applications now support configurable headers
+- Sub-windows are now available for GUI applications
+
+### Improved
+
+- Improve the loading screen to eliminate lag and provide a smoother experience
+
+### Fixed
+
+- Fix desktop icons not displaying correctly
+- Fix minimized windows not showing in TaskView after repeated toggles
+- Fix an issue where closing a tab in a TabView window did not automatically focus the remaining tab
+
 ## v1.0.0-beta.16 (2025-10-23)
 
 ### Added

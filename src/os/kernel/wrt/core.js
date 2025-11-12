@@ -1,12 +1,18 @@
 import { fsUtils, IDBFS } from "../../../shared/fs.js";
 import { Process } from "./process.js";
-import * as utils from "../../../shared/utils.js";
+import * as utils from "../../../shared/utils.ts";
 import Console from "../../../lib/winbows-devtool/dist/index.js";
 import crashHandler from "../../core/crashHandler.js";
 import SystemInformation from "../../core/sysInfo.js";
 import ModuleManager from "../../moduleManager.js";
 import minimistJs from "../../../lib/minimist.js/index.js";
+import { stat } from "../../core/stat.js";
+import Logger from "../../core/log.js";
+import { child_process } from "./child_process.ts";
 
+const logger = new Logger({
+    module: 'WRT'
+})
 const fs = IDBFS("~KERNEL");
 const consoleStyle = 'color:#fff;background:#0067c0;padding:2px 4px;border-radius:4px; font-weight: normal;';
 const tasklist = new ((() => {
@@ -38,7 +44,11 @@ const tasklist = new ((() => {
     }
 })())();
 
+stat.set('Kernel.WRT.available', true);
+
 const WRTEvtEmitter = new utils.EventEmitter();
+// const _token = Symbol('token');
+
 class WinbowsNodejsRuntime extends utils.EventEmitter {
     static on(evt, cb) {
         WRTEvtEmitter.on(evt, cb);
@@ -129,9 +139,11 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
     }
 
     constructor({
-        code, __filename, __dirname, appName = '', options = {}, argv = []
+        code = '', __filename, __dirname, options = {}, argv = [], type, runInBackground, icon, // token
     }) {
         super();
+
+        if (stat.get('Kernel.WRT.available') !== true) return false;
 
         this.runtimeID = utils.randomID(12);
 
@@ -143,9 +155,23 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                 this.__dirname = fsUtils.dirname(__filename);
             }
         } else {
-            this.__filename = 'wrt://snippets/anonymous_' + this.runtimeID + '.wsp';
+            this.__filename = 'wrt://snippets/anonymous_' + this.runtimeID;
             this.__dirname = 'C:/';
         }
+
+        if (icon) {
+            this.icon = icon;
+        }
+
+        // if (token) {
+        //     this[_token] = token;
+        // }
+
+        // Object.defineProperty(this, 'isTrusted', {
+        //     get: function () {
+        //         return !!this[_token];
+        //     }
+        // });
 
         // Status
         this.alive = true;
@@ -158,7 +184,50 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         this.options.allowedConsoleOutput = options?.allowedConsoleOutput ?? SystemInformation.mode == 'development' ? true : false;
         this.options.keepAlive = options?.keepAlive ?? false;
 
+        // Runtime type
+        this.type = 'cli';
+        this.runInBackground = true;
+        const firstLine = code?.split('\n')?.[0] || '';
+        if (firstLine.startsWith('//!')) {
+            const headerString = firstLine.slice(3).trim();
+            const headers = {};
+            headerString.split('&').forEach(header => {
+                const i = header.indexOf('=');
+                if (i === -1) {
+                    headers[header.toUpperCase()] = undefined;
+                } else {
+                    headers[header.slice(0, i).toUpperCase()] = header.slice(i + 1);
+                }
+            })
+
+            if (headers['$RTH']) {
+                try {
+                    const RTH = JSON.parse(headers['$RTH']);
+                    if (RTH.type) {
+                        this.type = RTH.type === 'gui' ? 'gui' : 'cli';
+                    }
+                    if (RTH.runInBackground !== undefined) {
+                        this.runInBackground = !RTH.runInBackground == false;
+                    }
+                } catch (e) {
+                    throw new Error(e);
+                }
+            }
+        }
+
+        if (type && ['cli', 'gui'].includes(type)) {
+            this.type = type;
+        }
+        if (this.type === 'gui') {
+            this.runInBackground = false;
+        } else if (runInBackground) {
+            this.runInBackground = runInBackground != false;
+        }
+
         this.modules = {};
+        this.modules['child_process'] = {
+            exports: child_process
+        }
 
         this.debugConsole = new Console();
         this.proxyConsole = this.options.allowedConsoleOutput == true ? new Proxy(this.debugConsole.console, {
@@ -171,7 +240,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                 } else if (Object.keys(console).includes(prop)) {
                     console.trace();
                     console.log(console[prop], prop);
-                    console.warn.apply(obj, [`%cWRT%c > %c${this.runtimeID}`, consoleStyle, 'color:inherit;', consoleStyle, `console.${String(prop)} is not supported in WRT Environment.`]);
+                    logger.warn(`console.${String(prop)} is not supported in WRT Environment.`);
                     return () => { };
                 };
             },
@@ -183,14 +252,24 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         });
 
         // Shared APIs
-        const process = new Process(this.__dirname);
+        const process = new Process(this.__dirname, this.type);
+        process.on('change:title', (e) => {
+            tasklist.update(this.runtimeID, 'title', e.value);
+            this._emit('change:process.title', { value: e.value, runtimeID: this.runtimeID });
+        })
+        if (this.type === 'cli') {
+            process.title = this.__filename;
+        }
+
         this.process = new Proxy(process, {
             set: (target, prop, value) => {
                 if (prop === 'title') {
-                    this.title = value;
-                    process.title = value;
-                    tasklist.update(this.runtimeID, 'title', value);
-                    this._emit('change:process.title', { value, runtimeID: this.runtimeID });
+                    if (this.title != value) {
+                        this.title = value;
+                        process.title = value;
+                        tasklist.update(this.runtimeID, 'title', value);
+                        this._emit('change:process.title', { value, runtimeID: this.runtimeID });
+                    }
                 } else {
                     target[prop] = value;
                 }
@@ -243,7 +322,6 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                 })
             }, 1000);*/
         })
-
 
         tasklist.add(this.runtimeID, this);
         WRTEvtEmitter._emit('create', {
@@ -318,21 +396,30 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
     }
 
     /**
-     * @param {*} modulePath 
-     * @returns {Promise<any>}
+     * @typedef {Object} requireAsyncIOptions
+     * @property {string} modulePath
+     * @property {string} [dirname]
      */
-    async requireAsync(modulePath) {
-        if (!this.modules[modulePath]) {
-            const __dirname = fsUtils.dirname(modulePath);
-            const code = await fs.readFileAsText(modulePath);
-            const res = await this._run({
-                __dirname: __dirname,
-                __filename: modulePath,
-                code
-            });
-            this.modules[modulePath] = res.ctx.module;
-        }
-        return this.modules[modulePath].exports;
+
+    /**
+     * @param {requireAsyncIOptions} param0 
+     * @returns 
+     */
+    async requireAsync({ modulePath, dirname = '' }) {
+        if (this.modules[modulePath]) return this.modules[modulePath].exports;
+
+        const resolved = fsUtils.resolve(dirname, modulePath);
+        if (this.modules[resolved]) return this.modules[resolved].exports;
+
+        const __dirname = fsUtils.dirname(resolved);
+        const code = await fs.readFileAsText(resolved);
+        const res = await this._run({
+            __dirname: __dirname,
+            __filename: resolved,
+            code
+        });
+        this.modules[resolved] = res.ctx.module;
+        return this.modules[resolved].exports;
     }
     kill() {
         this.process.kill();
@@ -340,6 +427,8 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
     async _run({
         __dirname, __filename, code
     }) {
+        // const token = this[_token];
+        // const tokenIsTrusted = this.isTrusted;
         const module = { exports: {} };
         const fs = IDBFS(__filename, __dirname);
         const ctx = {
@@ -348,7 +437,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
             __filename: __filename,
             __dirname: __dirname,
             process: this.process,
-            requireAsync: (modulePath) => this.requireAsync(fsUtils.resolve(__dirname, modulePath)),
+            requireAsync: (modulePath) => this.requireAsync({ modulePath, dirname: __dirname }),
             module: module,
             exports: module.exports,
 
@@ -359,7 +448,16 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
             setTimeout: this.proxyTimeout.set,
             clearTimeout: this.proxyTimeout.clear,
             setInterval: this.proxyInterval.set,
-            clearInterval: this.proxyInterval.clear
+            clearInterval: this.proxyInterval.clear,
+
+            // token: {
+            //     get isTrusted() {
+            //         return tokenIsTrusted;
+            //     },
+            //     get value() {
+            //         return token;
+            //     }
+            // }
         }
 
         // System APIs ( e.g. appRegistry, commandRegistry, etc. )

@@ -2,12 +2,14 @@ import backgroundImage from "./desktop/backgroundImage.js";
 import ModuleManager from "../moduleManager.js";
 import { IDBFS } from "../../shared/fs.js";
 import Taskbar from "./taskbar/taskbar.js";
-import { loading, viewport } from "../core/viewport.js";
+import { loading, viewport, winbowsIcon } from "../core/viewport.js";
 import lockScreen from "../core/lockScreen.js";
 import Logger, { WinbowsDebugLog } from "../core/log.js";
 import { desktopEl } from "./desktop/init.js";
 import timer from "../core/timer.js";
 import desktop from "./desktop/desktop.js";
+import { delay, getJsonFromURL, randomID, safeEscape } from "../../shared/utils.ts";
+import SystemInformation from "../core/sysInfo.js";
 // import Copilot from "./copilot/chat.js";
 
 export default async function init() {
@@ -24,7 +26,8 @@ export default async function init() {
         __filename: 'C:/Winbows/System/explorer.wrt',
         options: {
             keepAlive: true
-        }
+        },
+        icon: winbowsIcon
     });
     pseudoProcess.process.title = 'Explorer';
     pseudoProcess.main();
@@ -32,25 +35,82 @@ export default async function init() {
     timer.mark('Explorer process');
 
     loading.textWithProgress('Initializing Taskbar...', 30);
-
     const taskbar = await Taskbar();
-    pseudoProcess.process.on('exit', () => {
-        logger.warn('Explorer process exited');
-        taskbar.taskbar.remove();
-        taskbar.controlPanel.panel.remove();
-        taskbar.controlPanel.sidebar.remove();
-        desktopEl.remove();
-        backgroundImage.backgroundEl.remove();
-    })
-    loading.textWithProgress('Initializing Desktop...', 36);
 
+    loading.textWithProgress('Initializing Desktop...', 36);
     await desktop.init();
     desktop.update();
     timer.mark('Desktop');
 
+    const System = ModuleManager.get('System');
     const Explorer = {
         backgroundImage,
-        taskbar
+        taskbar,
+        FilePicker: function (wrt) {
+            const contextWrt = wrt;
+            const wrts = [];
+            contextWrt.process.on('exit', () => {
+                wrts.forEach(wrt => {
+                    wrt.kill();
+                })
+            })
+
+            return async function ({
+                accept = ['*'],
+                multiple = false
+            } = {}) {
+                if (!wrt.apis.WApplication) throw new Error('The WApplication API is not available in the current environment.');
+
+                const WApplication = contextWrt.apis.WApplication;
+                const { app, BrowserWindow } = WApplication;
+                const id = 'system://explorer-file-picker/' + randomID(256);
+                const channel = System.processAPIs.IPC.listen(id);
+
+                const win = new BrowserWindow({
+                    x: 0,
+                    y: 0,
+                    width: 640,
+                    height: 450,
+                    fullscreenable: false,
+                    maximizable: false,
+                    minimizable: false,
+                    snappable: false,
+                    mica: false,
+                    title: 'File Picker'
+                }, {
+                    env: {
+                        pipe: id
+                    }
+                });
+                win.load('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/filePicker.js');
+
+
+                // const explorerWrt = new WRT({
+                //     __filename: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/filePicker.wrt',
+                //     code: await fs.readFileAsText('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/filePicker.wrt'),
+                // })
+                // explorerWrt.process.env.pipe = id;
+                // explorerWrt.main();
+                // wrts.push(explorerWrt);
+
+                return new Promise((res, rej) => {
+                    channel.on('data', (e) => {
+                        const dt = e.data;
+                        if (dt.type === 'cancel') {
+                            res([]);
+                            channel.close();
+                        }
+                        if (dt.type === 'confirm') {
+                            res(dt.items);
+                            channel.close();
+                        }
+                    })
+                })
+            }
+        },
+        FileSaver: function () {
+            // ...
+        }
     }
     logger.info('Explorer APIs registered');
     ModuleManager.register('Explorer', Explorer, 'original');
@@ -60,12 +120,19 @@ export default async function init() {
 
             this.mountAPI({
                 name: 'Explorer',
-                api: Explorer
+                api: {
+                    backgroundImage: Explorer.backgroundImage,
+                    taskbar: Explorer.taskbar,
+                    FilePicker: Explorer.FilePicker(this),
+                    FileSaver: Explorer.FileSaver(this)
+                }
             });
         }
     }, 'explorer');
     timer.mark('API registration');
 
+    // Copilot
+    //loading.textWithProgress('Loading Copilot...', 42);
     //timer.group('Copilot');
     //const copilot = await Copilot();
     //window.copilot = copilot;
@@ -93,7 +160,13 @@ export default async function init() {
     loading.textWithProgress('Loading Background Image...', 60);
 
     try {
+        const d = Date.now() - SystemInformation.startTime;
+        const r = 500;
+        if (d < r) {
+            await delay(r - d);
+        }
         await backgroundImage.set(localStorage.getItem('WINBOWS_BACKGROUND_IMAGE') || 'C:/Winbows/bg/img0.jpg');
+        await delay(200);
         logger.info("Background image has been set successfully");
     } catch (e) {
         logger.error('Failed to set background image\n', e);
@@ -148,12 +221,81 @@ export default async function init() {
 
         const shell = new System.ShellInstance(pseudoProcess.process);
         shell.execCommand('info');
-        shell.execCommand('cmd');
-        shell.execCommand('debuglog-parser');
-        shell.execCommand('explorer --path=C:/');
+        //shell.execCommand('cmd');
+        //shell.execCommand('debuglog-parser');
+        //shell.execCommand('explorer --path=C:/');
+
+        const params = getJsonFromURL();
+        if (params.command) {
+            const warning = document.createElement('div');
+            const warningWindow = document.createElement('div');
+            const warningHeader = document.createElement('div');
+            const warningContent = document.createElement('div');
+            const warningFooter = document.createElement('div');
+            const warningContinueButton = document.createElement('button');
+            const warningCancelButton = document.createElement('button');
+
+            warningHeader.innerHTML = `Are you sure you want to execute the command "${safeEscape(params.command)}" parsed from the URL?`;
+            warningContent.innerHTML = `Executing a command from an unknown source may pose a serious risk to your system or data security. Please carefully verify the trustworthiness of the source and make sure you fully understand the possible consequences before proceeding.`;
+            warningCancelButton.innerHTML = 'Cancel';
+            warningContinueButton.innerHTML = 'Continue';
+
+            warning.className = 'execute-command-warning';
+            warningWindow.className = 'execute-command-warning-window';
+            warningHeader.className = 'execute-command-warning-header';
+            warningContent.className = 'execute-command-warning-content';
+            warningFooter.className = 'execute-command-warning-footer';
+            warningContinueButton.className = 'execute-command-warning-button outline';
+            warningCancelButton.className = 'execute-command-warning-button';
+
+            /*
+            warning.style = 'position: fixed;top: 0px;left: 0px;width: 100vw;height: var(--winbows-screen-height);display: flex;align-items: center;justify-content: center;background-color: rgba(0, 0, 0, 0.5);z-index: 99999;font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, Oxygen-Sans, Ubuntu, Cantarell, &quot;Helvetica Neue&quot;, sans-serif;color:#000;';
+            warningWindow.style = 'display: flex;flex-direction: column;align-items: center;justify-content: center;background-color: rgb(255, 255, 255);padding: 2rem 4rem;border-radius: 1.5rem;box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;max-width: min(600px, -2rem + 100vw);width: 100%;max-height: min(calc(var(--winbows-screen-height) * 80%), calc(var(--winbows-screen-height) - 2rem));overflow: auto;';
+            warningHeader.style = 'font-size: 175%;font-weight: 600;margin: .5rem 0 1.5rem;';
+            warningFooter.style = 'display: flex;gap: .5rem;';
+            warningCancelButton.style = 'color: rgb(0, 103, 192);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 1px solid rgb(0, 103, 192);margin-top: 1.5rem;font-family: inherit;font-weight: 600;min-width: 8rem;background: #fff;'
+            warningContinueButton.style = 'color: rgb(255, 255, 255);margin-bottom: 0.5rem;padding: 0.625rem 1.25rem;background: rgb(0, 103, 192);border-radius: 0.5rem;font-size: 1rem;text-decoration: none;cursor: pointer;user-select: none;-webkit-user-drag: none;outline: 0px;border: 1px solid rgb(0, 103, 192);margin-top: 1.5rem;font-family: inherit;font-weight: 600;min-width: 8rem;';*/
+
+            warning.appendChild(warningWindow);
+            warningWindow.appendChild(warningHeader);
+            warningWindow.appendChild(warningContent);
+            warningWindow.appendChild(warningFooter);
+            warningFooter.appendChild(warningCancelButton);
+            warningFooter.appendChild(warningContinueButton);
+            viewport.root.appendChild(warning);
+
+            warningCancelButton.addEventListener('click', () => {
+                warning.remove();
+            })
+            warningContinueButton.addEventListener('click', () => {
+                warning.remove();
+                shell.execCommand(params.command);
+            })
+        }
+
+        // shell.execCommand('node C:/User/Documents/sdk-v1/examples/downloadfile.wrt');
+        // shell.execCommand('C:/User/Documents/sdk-v1/examples/downloadfile.wrt');
+        // shell.execCommand('C:/User/Documents/sdk-v1/examples/calculator.wrt');
+        // shell.execCommand('C:/User/Documents/sdk-v1/examples/copilot.wrt');
+        // shell.execCommand('C:/User/Documents/sdk-v1/examples/cheapwordle.wrt');
+
+        await shell.execCommand('"C:/User/Documents/sdk-v1/examples/setup-beta-env.wrt"');
+        shell.execCommand('explorer --path=C:/User/Documents/sdk-v1/examples/');
+
+        fs.downloadFile('C:/User/Documents/sdk-v1/examples/calculator.wrt');
 
         // WinbowsDebugLog.export();
     })
+
+    pseudoProcess.process.on('exit', () => {
+        logger.warn('Explorer process exited');
+        taskbar.taskbar.remove();
+        taskbar.controlPanel.panel.remove();
+        taskbar.controlPanel.sidebar.remove();
+        desktopEl.remove();
+        backgroundImage.backgroundEl.remove();
+    })
+
     logger.info('Lock screen initialized');
     timer.mark('Lock screen');
     logger.info('Explorer initialized');

@@ -1,6 +1,6 @@
 import { IDBFS } from "../../../shared/fs.js";
 import WinUI from "../../../lib/winui/winui.js";
-import * as utils from "../../../shared/utils.js";
+import * as utils from "../../../shared/utils.ts";
 import ModuleManager from "../../moduleManager.js";
 import { viewport } from "../../core/viewport.js";
 import lockScreenObj from "../../core/lockScreen.js";
@@ -239,6 +239,9 @@ export default function StartMenu(icon) {
             }, {
                 name: 'Settings',
                 app: 'settings'
+            }, {
+                name: 'Node.js',
+                app: 'node'
             }
         ];
 

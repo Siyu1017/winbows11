@@ -1,4 +1,4 @@
-import { EventEmitter } from "../../../shared/utils.js";
+import { EventEmitter } from "../../../shared/utils.ts";
 import { viewport } from "../../core/viewport.js";
 import ModuleManager from "../../moduleManager.js";
 

@@ -69,7 +69,8 @@ function init(type = "normal") {
         code: '',
         options: {
             keepAlive: true
-        }
+        },
+        icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwcHgiIGhlaWdodD0iODAwcHgiIHZpZXdCb3g9IjAgMCAxNSAxNSIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTAgMi41QzAgMS42NzE1NyAwLjY3MTU3MyAxIDEuNSAxSDEzLjVDMTQuMzI4NCAxIDE1IDEuNjcxNTcgMTUgMi41VjEyLjVDMTUgMTMuMzI4NCAxNC4zMjg0IDE0IDEzLjUgMTRIMS41QzAuNjcxNTczIDE0IDAgMTMuMzI4NCAwIDEyLjVWMi41Wk01Ljc5MjkzIDcuNTAwMDFMMy4xNDY0OCA0Ljg1MzU2TDMuODUzNTkgNC4xNDY0NUw3LjIwNzE0IDcuNTAwMDFMMy44NTM1OSAxMC44NTM2TDMuMTQ2NDggMTAuMTQ2NUw1Ljc5MjkzIDcuNTAwMDFaTTEyIDExSDhWMTBIMTJWMTFaIiBmaWxsPSIjODg4Ii8+PC9zdmc+'
     }).process;
     process.title = 'Devtool: Terminal';
     const ShellInstance = ModuleManager.get('System').ShellInstance;

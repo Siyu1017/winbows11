@@ -27,7 +27,7 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
     margin-block-end: 1em;
     margin-inline-start: 0px;
     margin-inline-end: 0px;
-">Welcome to Winbows11, which allows you to experience Windows11 animations and themes on web pages, and has a file system built using IndexedDB. Happy using it~</div>
+">Welcome to the Winbows 11 Beta version. Here, you can experience new features of Winbows 11 that are about to be released, but please note that its stability is lower and unexpected errors or crashes may occur. <span style="font-weight:600;">Please make sure to back up any files you have stored on it.</span></div>
 <div style="
     font-weight: 600;
     font-size: 1.5rem;

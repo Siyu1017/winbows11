@@ -308,8 +308,8 @@ async function setupTab(browserWindow, tab, page) {
                     if (header == url) return;
                     changeTitle(header);
                 })
-                iframe.src = url;
                 showIframe();
+                iframe.src = url;
             }
         }
     }
@@ -317,8 +317,9 @@ async function setupTab(browserWindow, tab, page) {
     async function updatePage(e) {
         let path = e.path;
 
+        iframe.src = 'about:blank';
         const isLocalFileURL = isLocalFile(path);
-        pathStripSearch.value = path;
+        pathStripSearch.value = path == 'edge://home' ? '' : path;
         update();
 
         if (path.trim() == '' || path.trim() == 'edge://home') {
@@ -361,8 +362,8 @@ async function setupTab(browserWindow, tab, page) {
                 } catch (e) {
                     changeTitle(path);
                 }
-                iframe.src = path;
                 showIframe();
+                iframe.src = path;
             })
             */
             try {
@@ -373,8 +374,8 @@ async function setupTab(browserWindow, tab, page) {
             } catch (e) {
                 changeTitle(path);
             }
-            iframe.src = path;
             showIframe();
+            iframe.src = path;
         }
         return;
     }

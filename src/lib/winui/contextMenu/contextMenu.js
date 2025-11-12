@@ -1,3 +1,4 @@
+import { viewport } from '../../../os/core/viewport.js';
 import './contextMenu.css';
 
 var icons = {
@@ -1548,7 +1549,7 @@ function contextMenu(items, config = {}) {
         }
         container.style.zIndex = '1';
         if (createdContainer == false) {
-            document.body.appendChild(container);
+            viewport.root.appendChild(container);
             generateMenu(container, items, config);
         }
         createdContainer = true;

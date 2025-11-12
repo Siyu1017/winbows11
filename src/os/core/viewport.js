@@ -1,16 +1,33 @@
-import { EventEmitter } from "../../shared/utils.js";
+import { EventEmitter, getJsonFromURL } from "../../shared/utils.ts";
 
 // Viewport
 document.body.innerHTML = '';
 document.body.style.background = 'transparent';
 
 // Root element
+const noStretch = !!getJsonFromURL()['no-stretch'];
+const res = [1920, 1080];
 const root = document.createElement('div');
 root.className = 'root';
 document.body.appendChild(root);
 
-root.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
+if (noStretch) {
+    document.body.style.background = '#000';
+    root.style.setProperty('--viewport-width', res[0] + 'px');
+    root.style.setProperty('--viewport-height', res[1] + 'px');
+    root.style.transformOrigin = 'center';
+    root.style.transform = `translate(-50%, -50%) scale(${Math.min(root.offsetWidth / res[0], root.offsetHeight / res[1])})`;
+    root.style.left = '50%';
+    root.style.top = '50%';
+    root.style.overflow = 'hidden';
+    root.style.width = 'var(--viewport-width)';
+    root.style.height = 'var(--viewport-height)';
+}
+
+window.addEventListener('contextmenu', (e) => {
+    if (root.contains(e.target)) {
+        e.preventDefault();
+    }
 })
 
 // Screen of winbows
@@ -23,8 +40,13 @@ screenElement.appendChild(appWrapper);
 
 const viewportEventEmitter = new EventEmitter();
 function updateScreenSize() {
-    root.style.setProperty('--viewport-width', root.offsetWidth + 'px');
-    root.style.setProperty('--viewport-height', root.offsetHeight + 'px');
+    if (!noStretch) {
+        root.style.setProperty('--viewport-width', root.offsetWidth + 'px');
+        root.style.setProperty('--viewport-height', root.offsetHeight + 'px');
+    } else {
+        root.style.transform = `translate(-50%, -50%) scale(${Math.min(document.body.offsetWidth / res[0], document.body.offsetHeight / res[1])})`;
+    }
+
     viewportEventEmitter._emit('resize', {
         width: root.offsetWidth,
         height: root.offsetHeight
@@ -72,34 +94,35 @@ loadingTextStrip.className = 'winbows-loading-text-strip';
 loadingContainer.appendChild(loadingImage);
 viewport.root.appendChild(loadingContainer);
 
-try {
+export const winbowsIcon = (function () {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const size = 300;
     const gap = size / 32;
     const cellSize = (size - gap * 3) / 2;
-
     canvas.width = size;
     canvas.height = size;
-
     ctx.fillStyle = '#0067c0';
     ctx.fillRect(gap, gap, cellSize, cellSize);
     ctx.fillRect(gap, cellSize + gap * 2, cellSize, cellSize);
     ctx.fillRect(cellSize + gap * 2, gap, cellSize, cellSize);
     ctx.fillRect(cellSize + gap * 2, cellSize + gap * 2, cellSize, cellSize);
 
-    loadingImage.style.backgroundImage = `url(${canvas.toDataURL()})`;
-} catch (e) { }
+    return canvas.toDataURL();
+})();
+
+loadingImage.style.backgroundImage = `url(${winbowsIcon})`;
 
 function text(content) {
     const loadingText = document.createElement('div');
     loadingText.textContent = content;
     loadingText.className = 'winbows-loading-text';
     loadingTextStrip.appendChild(loadingText);
-    loadingTextStrip.scrollTo({
-        top: loadingTextStrip.scrollHeight,
-        behavior: "smooth"
-    })
+    loadingTextStrip.style.transform = `translateY(-${loadingTextStrip.offsetHeight - 24}px)`;
+    // loadingTextStrip.scrollTo({
+    //     top: loadingTextStrip.scrollHeight,
+    //     behavior: "smooth"
+    // })
     return loadingText;
 }
 
@@ -124,23 +147,55 @@ if (window.modes?.dev == false && window.needsUpdate == false) {
 text('Starting Winbows11...');
 
 let progress = 0;
-const updateProgressId = setInterval(function () {
-    progress += Math.random() * 1 + 0.2;
-    if (progress > 90) {
-        progress = 90;
-    }
+let current = 0;
+let target = 0;
+const easeFn = t => t;
+const easeDuration = 50;
+
+let isRunning = false;
+let startRenderTime = 0;
+function render() {
+    startRenderTime = Date.now();
+    if (isRunning === true) return;
+    renderer();
+}
+
+function renderer() {
+    const n = Date.now();
+    const p = (n - startRenderTime) / easeDuration;
+    const v = easeFn(p);
+
+    progress = current + (target - current) * (v < 0 ? 0 : v > 1 ? 1 : v)
     loadingProgressBar.style.width = progress + '%';
+
+    if (p < 1) {
+        requestAnimationFrame(renderer);
+    }
+}
+
+const updateProgressId = setInterval(function () {
+    current = progress;
+    target += Math.random() * .2 + .2;
+    if (target > 99) {
+        target = 99;
+    }
+    render();
+
 }, 200);
 function setProgress(p) {
     if (p >= 0 && p <= 100) {
-        progress = p;
-        loadingProgressBar.style.width = progress + '%';
+        current = progress;
+        target = p;
+        render();
+        // loadingProgressBar.style.width = progress + '%';
     }
 }
 function textWithProgress(t, p) {
     if (p >= 0 && p <= 100) {
-        progress = p;
-        loadingProgressBar.style.width = progress + '%';
+        current = progress;
+        target = p;
+        render();
+        // loadingProgressBar.style.width = progress + '%';
     }
     text(t);
 }

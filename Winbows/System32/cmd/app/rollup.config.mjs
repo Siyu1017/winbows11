@@ -13,7 +13,28 @@ export default [{
         file: `./dist/index.js`,
         format: 'es',
         banner: `/*!
- * WRT Terminal App Demo
+ * Winbows Command Prompt
+ * Copyright (c) Microhard ${new Date().getFullYear()}
+ * Github : Siyu1017/winbows11
+ */`,
+        plugins: [terser()]
+    },
+    plugins: [
+        resolve(),
+        commonjs(),
+        postcss({
+            minimize: true
+        })
+    ],
+    external: []
+}, {
+    input: `./src/container.js`,
+    output: {
+        name: '_',
+        file: `./dist/container.js`,
+        format: 'es',
+        banner: `/*!
+ * Winbows Command Prompt
  * Copyright (c) Microhard ${new Date().getFullYear()}
  * Github : Siyu1017/winbows11
  */`,

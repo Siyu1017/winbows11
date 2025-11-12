@@ -1,9 +1,8 @@
-import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import "xterm/css/xterm.css";
 
 const style = document.createElement('style');
-style.innerHTML = `.window-content * {color: #fff;font: 1rem monospace;white-space:pre-wrap;line-height: 1.12;} .window-content,.window-toolbar{background:rgb(30, 30, 30) !important;} *::selection{ background:#fff;color:#000} .xterm { height: inherit;}`;
+style.innerHTML = `.window-content * {color: #fff;font: 1rem monospace;white-space:pre-wrap;line-height: 1.12;} .window-content,.window-toolbar{background:rgb(18, 18, 18) !important;} *::selection{ background:#fff;color:#000} .xterm { height: inherit;}`;
 document.head.appendChild(style);
 
 browserWindow.setTheme('dark');
@@ -40,14 +39,16 @@ function applyHexColor(term, hex) {
     }
 }
 
-const shell = new ShellInstance(process);
-const term = new Terminal({
+const shell = new ShellInstance(process, {
+    isTTY: true
+});
+const term = new WinUI.Terminal({
     cols: 80,
     rows: 24,
     convertEol: true,
     cursorBlink: true,
     theme: {
-        background: 'rgb(30, 30, 30)',
+        background: 'rgb(18, 18, 18)',
         foreground: '#d4d4d4'
     }
 });
@@ -57,7 +58,6 @@ await shell.execCommand('cd C:/');
 
 term.loadAddon(fitAddon);
 term.open(container);
-term.write(`Winbows11 [Version ${System.information.version}]\n(c) Microhard Corporation. All rights reserved.\n\nType \"help\" for available commands.\n`);
 
 /*
 let progress = 0;
@@ -82,9 +82,12 @@ let cursor = 0;
 let lastCols = term.cols;
 let inputHistory = [];
 let inputHistoryIndex = 0;
+let selection = '';
+let cli = {};
 
 let normalBuffer = '';
 let promptBuffer = '';
+let cliBuffer = '';
 
 function replaceInput() {
     const pwd = `${path.normalize(shell.root + shell.pwd)}>`;
@@ -181,6 +184,8 @@ function updateNormalContent() {
 }
 
 async function handleNormalInput(data) {
+    if (data.length == 0) return;
+
     switch (data) {
         case '\x1B[A':  // Up
             if (inputHistoryIndex > 0) {
@@ -247,7 +252,33 @@ async function handleNormalInput(data) {
 
             // Execute command
             try {
-                await shell.execCommand(normalBuffer);
+                const res = await shell.execCommand(normalBuffer);
+                if (res.type === 'cli') {
+                    inputType = 'cli';
+                    cliBuffer = '';
+                    cursor = 0;
+
+                    cli = res;
+
+                    res.stdout.on('data', dt => {
+                        term.write(dt);
+                    })
+                    res.stderr.on('data', dt => {
+                        writeHexColor(term, dt, '#ff796d');
+                    })
+                    res.process.on('exit', () => {
+                        term.write('\r\r\n');
+
+                        startInNewLine = true;
+                        beginningText = `${path.normalize(shell.root + shell.pwd)}>`;
+                        term.write(beginningText);
+                        cursor = 0;
+                        normalBuffer = '';
+                        inputType = 'normal';
+                    })
+
+                    return;
+                }
             } catch (e) {
                 console.error(e);
             }
@@ -282,23 +313,6 @@ async function handleNormalInput(data) {
             term.write('\x1b[0J');
             updateCommandInput(cursor, cursor, normalBuffer);
             return;
-
-            const toWrite = normalBuffer.slice(cursor);
-            const matched = normalBuffer.match(/\S+/);
-            if (matched) {
-                const endIndex = matched.index + matched[0].length;
-                if (endIndex > cursor) {
-                    applyHexColor(term, '#ffc96d');
-                    term.write(toWrite.slice(0, endIndex - cursor));
-                    applyHexColor(term);
-                    term.write(toWrite.slice(endIndex - cursor));
-                } else {
-                    term.write(toWrite);
-                }
-            } else {
-                term.write(toWrite);
-            }
-            term.write(`\x1b[${beginningText.length + cursor + 1}G`);
         }
     } else {
         // Normal input
@@ -309,24 +323,6 @@ async function handleNormalInput(data) {
         term.write('\x1b[0J');
         updateCommandInput(orgCursor, cursor, normalBuffer);
         return;
-
-        const toWrite = normalBuffer.slice(orgCursor);
-        const matched = normalBuffer.match(/\S+/);
-        if (matched) {
-            const endIndex = matched.index + matched[0].length;
-            if (endIndex > orgCursor) {
-                applyHexColor(term, '#ffc96d');
-                term.write(toWrite.slice(0, endIndex - orgCursor));
-                applyHexColor(term);
-                term.write(toWrite.slice(endIndex - orgCursor));
-            } else {
-                term.write(toWrite);
-            }
-        } else {
-            term.write(toWrite);
-        }
-
-        term.write(`\x1b[${beginningText.length + cursor + 1}G`);
     }
 }
 
@@ -354,35 +350,68 @@ function handlePromptInput(data) {
     }
 }
 
-// Handle input
-term.onData(async (data) => {
-    if (inputType == 'normal') return handleNormalInput(data);
-    if (inputType == 'prompt') return handlePromptInput(data);
-});
-
-// Not to use this
-term.attachCustomKeyEventHandler(async (e) => {
-    return;
-    if (e.ctrlKey && e.key === 'a') { // Ctrl+A
-        term.selectAll();
+term.attachCustomKeyEventHandler((e) => {
+    if (e.ctrlKey && ['c', 'v', 'a'].includes(e.key.toLowerCase())) {
         return false;
-    }
-    if (e.ctrlKey && e.key === 'c') { // Ctrl+C
-        const text = term.getSelection();
-        navigator.clipboard.writeText(text);
-        return false;
-    }
-    if (e.ctrlKey && e.key === 'v') {
-        const text = await navigator.clipboard.readText();
-        if (inputType === 'normal') {
-            normalBuffer = normalBuffer.slice(0, cursor) + text + normalBuffer.slice(cursor);
-            cursor += text.length;
-        } else if (inputType === 'prompt') {
-            promptBuffer += text;
-            term.write(text);
-        }
     }
     return true;
+});
+
+term.onKey(async ({ domEvent }) => {
+    const e = domEvent;
+
+    if (e.ctrlKey && e.key.toLowerCase() === 'a') {
+        term.selectAll();
+        e.preventDefault();
+        return;
+    }
+
+    if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        const selection = term.getSelection();
+        if (selection) await navigator.clipboard.writeText(selection);
+        return;
+    }
+
+    // Not to handle ctrl+v
+});
+
+shell.on('dispose', code => {
+    browserWindow.close();
+})
+
+fitAddon.fit();
+const observer = new ResizeObserver(() => {
+    fitAddon.fit();
+})
+observer.observe(container);
+
+term.onData(async (data) => {
+    if (inputType === 'cli') {
+        if (cli.stdin?.isPaused?.()) return;
+        if (cli.stdin.isRaw) return cli.stdin.write(data);
+        if (data == '\r') {
+            cliBuffer += data;
+            cli.stdin.write(cliBuffer);
+            cliBuffer = '';
+        } else if (data === '\u007F') {
+            // Backspace
+            if (cliBuffer.length > 0) {
+                cliBuffer = cliBuffer.slice(0, -1);
+                term.write('\b \b');
+            }
+        } else {
+            const orgCursor = cursor;
+            cliBuffer = cliBuffer.slice(0, cursor) + data + cliBuffer.slice(cursor);
+            cursor += data.length;
+
+            term.write('\x1b[0J');
+            updateCommandInput(orgCursor, cursor, cliBuffer);
+        }
+        return;
+    }
+    if (inputType === 'normal') return await handleNormalInput(data);
+    if (inputType === 'prompt') return handlePromptInput(data);
 });
 
 shell.stdout.on('data', dt => {
@@ -398,20 +427,12 @@ shell.on('input', (e) => {
     inputType = 'prompt';
     promptType = e.type;
 })
-shell.on('dispose', code => {
-    browserWindow.close();
-})
 shell.stdout.on('clear', () => {
     term.clear();
     startInNewLine = false;
 })
 
-fitAddon.fit();
-const observer = new ResizeObserver(() => {
-    fitAddon.fit();
-})
-observer.observe(container);
-
+term.write(`Winbows11 [Version ${System.information.version}]\n(c) Microhard Corporation. All rights reserved.\n\nType \"help\" for available commands.\n`);
 beginningText = `${path.normalize(shell.root + shell.pwd)}>`;
 term.write('\r\n' + beginningText);
 inputType = 'normal';

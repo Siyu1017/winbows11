@@ -1,3 +1,5 @@
+//! $RTH={"type":"cli"}
+
 const shell = new ShellInstance(process);
 
 console.info(ShellInstance, this);

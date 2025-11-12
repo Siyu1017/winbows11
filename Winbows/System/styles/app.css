@@ -11,7 +11,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1);
+    box-shadow: 0 0 8px 4px rgba(0, 0, 0, .1), 0 0 0px 1px rgba(255, 255, 255, .06);
     font-family: var(--winbows-font-default);
     color: #000;
     --tabview-tab-separator-color: rgba(0, 0, 0, .1);

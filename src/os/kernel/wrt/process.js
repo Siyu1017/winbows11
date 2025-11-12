@@ -1,4 +1,4 @@
-import { EventEmitter } from "../../../shared/utils.js";
+import { EventEmitter } from "../../../shared/utils.ts";
 import stdio from "../../lib/stdio.js";
 import crashHandler from "../../core/crashHandler.js";
 import { IDBFS, fsUtils } from "../../../shared/fs.js";
@@ -6,7 +6,7 @@ import Logger from "../../core/log.js";
 
 const fs = IDBFS('~KERNEL');
 const logger = new Logger({
-    module: 'Kernel.Process'
+    module: 'Process'
 })
 
 function createNextTick() {
@@ -34,7 +34,7 @@ export function generateEnv() {
         APPDATA: 'C:/User/AppData/Local',
         COMPUTERNAME: 'SUPERCOMPUTER',
         LOCALAPPDATA: 'C:/User/AppData/Local',
-        NUMBER_OF_PROCESSORS: navigator.hardwareConcurrency,
+        NUMBER_OF_PROCESSORS: `${navigator.hardwareConcurrency}`,
         OS: 'Winbows_NT',
         ProgramFiles: 'C:/Program Files',
         SystemDrive: 'C:',
@@ -93,7 +93,7 @@ const processes = new ((() => {
  * @param {string} cwd 
  * @returns 
  */
-function Process(cwd) {
+function Process(cwd, type) {
     const eventEmitter = new EventEmitter();
     this.on = eventEmitter.on.bind(eventEmitter);
     this.off = eventEmitter.off.bind(eventEmitter);
@@ -102,11 +102,17 @@ function Process(cwd) {
     const pid = processes.findVacant();
     if (pid == -1) {
         logger.error(new Error('The maximum number of processes has been reached'));
-        return;
+        throw new Error('The maximum number of processes has been reached');
     }
 
     // Initialize
-    this.env = generateEnv();
+    this.env = new Proxy(generateEnv(), {
+        set: (obj, prop, value) => {
+            if (typeof prop !== 'string') return false;
+            obj[prop] = value === undefined ? undefined : String(value);
+            return true;
+        }
+    });
     this.argv0 = '~wrt';
     this.argv = [this.argv0];
     this.platform = 'win32';
@@ -116,7 +122,7 @@ function Process(cwd) {
     let _cwd = cwd || 'C:/';
     let alive = true;
     if (!fs.exists(_cwd)) {
-        console.warn(`The specified working directory ${_cwd} could not be found.`);
+        logger.warn(`The specified working directory ${_cwd} could not be found.`);
         _cwd = () => 'C:/';
     }
 
@@ -133,9 +139,15 @@ function Process(cwd) {
     })
 
     // Standard IO
-    this.stderr = new stdio.OutputStream();
-    this.stdin = new stdio.InputStream();
-    this.stdout = new stdio.OutputStream();
+    if (type === 'gui') {
+        this.stderr = new stdio.OutputStream();
+        this.stdin = new stdio.InputStream();
+        this.stdout = new stdio.OutputStream();
+    } else if (type === 'cli') {
+        this.stderr = new stdio.tty.OutputStream();
+        this.stdin = new stdio.tty.InputStream();
+        this.stdout = new stdio.tty.OutputStream();
+    }
 
     /**
      * @param {Function} cb 
@@ -209,6 +221,20 @@ function Process(cwd) {
     }
 
     processes.add(pid, this);
+
+    return new Proxy(this, {
+        set: (target, prop, value) => {
+            if (prop === 'title') {
+                if (this.title != value) {
+                    this.title = value;
+                    eventEmitter._emit('change:title', { value });
+                }
+            } else {
+                target[prop] = value;
+            }
+            return true;
+        }
+    });
 }
 
 export { Process, processes };

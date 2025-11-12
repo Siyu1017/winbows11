@@ -1,11 +1,12 @@
 import SystemInformation from "../core/sysInfo.js";
 import { WRT as _WRT, tasklist } from "./wrt/core.js";
-import { EventEmitter, getJsonFromURL, randomID } from "../../shared/utils.js";
+import { EventEmitter, getJsonFromURL, randomID } from "../../shared/utils.ts";
 import initializeSystem from "../system/system.js";
 import crashHandler from "../core/crashHandler.js";
 import ModuleManager from "../moduleManager.js";
 import Logger from "../core/log.js";
 import timer from "../core/timer.js";
+import { winbowsIcon } from "../core/viewport.js";
 
 async function main() {
     // TODO: i18n
@@ -18,7 +19,11 @@ async function main() {
 
     // nd => no devtool flag
     const params = getJsonFromURL()
-    if (SystemInformation.mode == 'development' && !params['nd'] || params['dev']) {
+    if (
+        !!!params['no-stretch'] &&
+        !!!params['no-devtool'] &&
+        (SystemInformation.mode == 'development' || params['dev'])
+    ) {
         const Devtool = (await import("../devtool/devtool.js")).default;
         const { devtool } = Devtool();
 
@@ -42,12 +47,15 @@ async function main() {
          */
 
         class PipeClient extends EventEmitter {
-            constructor(server) {
+            constructor(server, owner) {
                 super();
+
+                if (!owner) return;
 
                 this.server = server;
                 this.clientId = randomID(12);
                 this.closed = false;
+                this.owner = owner;
 
                 // Connect to server
                 this.server.connect(this);
@@ -75,7 +83,8 @@ async function main() {
                     type: 'data',
                     from: 'client',
                     data: message,
-                    clientId: this.clientId
+                    clientId: this.clientId,
+                    owner: this.owner
                 })
             }
 
@@ -84,7 +93,8 @@ async function main() {
                     type: 'disconnect',
                     from: 'client',
                     data: this.clientId,
-                    clientId: this.clientId
+                    clientId: this.clientId,
+                    owner: this.owner
                 })
             }
 
@@ -93,6 +103,13 @@ async function main() {
                 this.disconnect();
                 this.closed = true;
                 this.clientId = null;
+                this._emit('close', {
+                    type: 'close',
+                    from: 'client',
+                    data: this.clientId,
+                    clientId: this.clientId,
+                    owner: this.owner
+                })
             }
 
             /**
@@ -105,15 +122,18 @@ async function main() {
                     type: 'data',
                     from: data.from === 'server' ? 'server' : data.from === 'client' ? 'client' : 'unknown',
                     data: data.data,
-                    clientId: data.clientId ?? null
+                    clientId: data.clientId ?? null,
+                    owner: this.owner
                 });
             }
         }
 
         // Pipe ( Server side )
         class Pipe extends EventEmitter {
-            constructor(pipeName) {
+            constructor(pipeName, owner) {
                 super();
+
+                if (!owner) return;
 
                 if (pipes.has(pipeName)) {
                     throw new Error(`Pipe ${pipeName} already exists`);
@@ -121,6 +141,7 @@ async function main() {
 
                 this.pipeName = pipeName;
                 this.clients = new Map();
+                this.owner = owner;
 
                 pipes.set(pipeName, this);
             }
@@ -138,7 +159,8 @@ async function main() {
                         type: evt,
                         from: dt.from,
                         data: dt.data,
-                        clientId: dt.clientId
+                        clientId: dt.clientId,
+                        owner: dt.owner
                     })
                 } else if (evt === 'disconnect') {
                     if (!dt.clientId || !this.clients.has(dt.clientId)) throw new Error(`Client ${dt.clientId} does not exist.`);
@@ -147,7 +169,8 @@ async function main() {
                         type: evt,
                         from: dt.from,
                         data: dt.clientId,
-                        clientId: dt.clientId
+                        clientId: dt.clientId,
+                        owner: dt.owner
                     })
                 } else {
                     super._emit(evt, dt);
@@ -169,7 +192,8 @@ async function main() {
                         type: 'data',
                         from: 'server',
                         data: message,
-                        clientId: null
+                        clientId: null,
+                        owner: this.owner
                     });
                 } else {
                     this.broadcast(message);
@@ -186,7 +210,8 @@ async function main() {
                         type: 'data',
                         from: 'server',
                         data: message,
-                        clientId: null
+                        clientId: null,
+                        owner: this.owner
                     });
                 })
             }
@@ -201,7 +226,8 @@ async function main() {
                     type: 'disconnect',
                     from: 'server',
                     data: clientId,
-                    clientId: null
+                    clientId: null,
+                    owner: this.owner
                 })
             }
             close() {
@@ -213,7 +239,8 @@ async function main() {
                     type: 'close',
                     from: 'server',
                     data: null,
-                    clientId: null
+                    clientId: null,
+                    owner: this.owner
                 });
             }
 
@@ -226,7 +253,8 @@ async function main() {
                     type: 'connect',
                     from: 'server',
                     data: clientId,
-                    clientId: null
+                    clientId: null,
+                    owner: this.owner
                 })
 
                 return client;
@@ -250,7 +278,7 @@ async function main() {
 
             // Server side
             listen(pipeName) {
-                const pipe = new Pipe(pipeName);
+                const pipe = new Pipe(pipeName, this.runtimeID);
 
                 this.servers.push(pipe);
                 pipe.on('close', () => {
@@ -265,7 +293,7 @@ async function main() {
                 const server = pipes.get(pipeName);
                 if (!server) throw new Error(`Pipe ${pipeName} not found`);
 
-                const client = new PipeClient(server);
+                const client = new PipeClient(server, this.runtimeID);
                 this.clients.push(client);
                 client.on('close', () => {
                     this.clients = this.clients.filter(c => c !== client);
@@ -340,18 +368,11 @@ async function main() {
     const pseudoProcess = new WRT({
         __filename: "C:/Winbows/System/kernel/kernel.js",
         code: `//! Kernel pseudo-process
-IPC.listen("MyPipe", (msg) => {
-  if (msg.type === "connect") {
-    console.log("%c[Server] %cClient connected!", "color:rgb(255 146 122)", "");
-    msg.reply.send("Welcome Client!");
-  } else {
-    console.log("%c[Server] %cMsg from client:", "color:rgb(255 146 122)", "", msg.data);
-    msg.reply.send(\`Server received: $\{msg.data\}\`);
-  }
-});`,
+`,
         options: {
             keepAlive: true
-        }
+        },
+        icon: winbowsIcon
     });
     pseudoProcess.process.title = 'Winbows NT Kernel';
     pseudoProcess.process.on('exit', (code) => {

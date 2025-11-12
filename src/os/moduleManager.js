@@ -1,4 +1,4 @@
-import { EventEmitter } from "../shared/utils.js";
+import { EventEmitter } from "../shared/utils.ts";
 import Logger from "./core/log.js";
 
 const modules = new Map();

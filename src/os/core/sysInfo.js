@@ -20,5 +20,10 @@ Object.defineProperty(SystemInformation, 'mode', {
     writable: false,
     configurable: false
 })
+Object.defineProperty(SystemInformation, 'startTime', {
+    value: Date.now(),
+    writable: false,
+    configurable: false
+})
 
 export default SystemInformation;

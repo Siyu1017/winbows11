@@ -1,9 +1,10 @@
 import { desktopEl, desktopItemsEl } from "./init.js";
-import * as utils from "../../../shared/utils.js";
+import * as utils from "../../../shared/utils.ts";
 import { fallbackImage } from "../../core/fallback.js";
 import { IDBFS, fsUtils } from "../../../shared/fs.js";
 import WinUI from "../../../lib/winui/winui.js";
 import ModuleManager from "../../moduleManager.js";
+import { viewport } from "../../core/viewport.js";
 
 const desktop = {
     init
@@ -297,7 +298,7 @@ async function init(params) {
                 })
             } else {
                 var isImage = file.type.startsWith('image/');
-                fs.getFileURL(window.fileIcons.getIcon(path)).then(url => {
+                fs.getFileURL(System.fileIcons.getIcon(path)).then(url => {
                     setIcon(url);
                     if (isImage) {
                         try {
@@ -501,7 +502,7 @@ async function init(params) {
                                 await myFont.load();
 
                                 window.document.fonts.add(myFont);
-                                root.style.setProperty('--winbows-font-default', fontName);
+                                viewport.root.style.setProperty('--winbows-font-default', fontName);
 
                             } catch (error) {
                                 console.error('Failed to load font', error);
@@ -595,11 +596,11 @@ async function init(params) {
                             detail = {
                                 name: name,
                                 action: () => {
-                                    var defaultViewer = System.FileViewers.getDefaultViewer(path);
+                                    var defaultViewer = System.fileViewers.getDefaultViewer(path);
                                     if (defaultViewer != null) {
                                         System.shell.execCommand(defaultViewer.script)//.start(`const FILE_PATH="${path}";`);
                                     } else {
-                                        System.shell.execCommand('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt')//.start(`const FILE_PATH="${path}";`);
+                                        System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=\"${path}\"`);
                                     }
                                 }
                             };
@@ -861,7 +862,7 @@ async function init(params) {
         })
     })
 
-    var defaultShortcuts = [{
+    const defaultShortcuts = [{
         path: 'C:/User/Desktop/desktop.link',
         content: {
             icon: 'C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/icons/desktop.ico',

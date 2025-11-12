@@ -1,0 +1,59 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+async function input(promptText) {
+    process.stdin.resume();
+    process.stdout.write(promptText);
+
+    return new Promise(resolve => {
+        process.stdin.once('data', dt => {
+            process.stdin.pause();
+            resolve(dt);
+            process.stdout.write('\n');
+        });
+    })
+}
+
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+const url = await input("Enter the URL to download: ");
+const patterns = ['\\', '|', '/', '-'];
+let current = 0;
+
+process.stdout.write('\n');
+
+function loading() {
+    process.stdout.write('\r\x1b[0J' + patterns[current] + ' Downloading ' + '.'.repeat(current));
+    current++;
+    if (current >= patterns.length) {
+        current = 0;
+    }
+}
+const startT = Date.now();
+const id = setInterval(loading, 200);
+let content = null;
+
+await fetch(url).then(async res => {
+    const now = Date.now();
+    if (now - startT < 3000) {
+        await delay(3000 - now + startT);
+    }
+    clearInterval(id);
+    process.stdout.write('\r\x1b[0J');
+    process.stdout.write('Content-Type: ' + res.headers.get('content-type') + '\n');
+    process.stdout.write('Content-Length: ' + res.headers.get('content-length') + '\n');
+    process.stdout.write('Date: ' + res.headers.get('date') + '\n');
+    process.stdout.write('Last-Modified: ' + res.headers.get('last-modified') + '\n');
+    process.stdout.write('ETag: ' + res.headers.get('etag') + '\n');
+    process.stdout.write('\n');
+
+    return res.blob();
+}).then(async res => {
+    content = res;
+})
+
+const f = await input('Enter the path to save the file: ');
+console.log(f)
+await fs.writeFile(f.trim().replace(/\r/, ''), content);
+process.stdout.write('File saved!\n')

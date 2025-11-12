@@ -68,9 +68,9 @@ const apps = {
         entryScript: 'C:/Winbows/SystemApps/Microhard.Winbows.MicrohardStore/app.wrt'
     },
     'cmd': {
-        basePath: 'C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/',
+        basePath: 'C:/Winbows/System32/cmd/',
         icon: 'C:/Winbows/icons/applications/novelty/terminal.ico',
-        entryScript: 'C:/User/Documents/sdk-v1/examples/wrt-terminal-app-demo/app.wrt'
+        entryScript: 'C:/Winbows/System32/cmd/cmd.wrt'
     },
     'notepad': {
         basePath: 'C:/Program Files/Notepad/',
@@ -133,6 +133,11 @@ const apps = {
         icon: 'C:/Winbows/icons/files/program.ico',
         entryScript: 'C:/User/Documents/sdk-v1/examples/winbows-debuglog-parser-demo/app.wrt'
     },
+    'node': {
+        basePath: 'C:/Program Files/nodejs/',
+        icon: 'C:/Program Files/nodejs/node.ico',
+        entryScript: 'C:/Program Files/nodejs/node.wrt'
+    }
 };
 
 // Initialize

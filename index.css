@@ -235,8 +235,8 @@ body {
 
 .winbows-loading-text {
     color: #fff;
-    height: 1.5rem;
     text-align: center;
+    height: 1.5rem;
 }
 
 .winbows-loading-text-container {
@@ -245,25 +245,30 @@ body {
     font-size: 100%;
     position: absolute;
     bottom: 8rem;
+    height: 1.5rem;
+    overflow: hidden;
+    background: #000;
 }
 
 .winbows-loading-text-strip {
-    height: 1.5rem;
     overflow: hidden;
+    transition: transform .2s ease-in-out;
 }
 
 .winbows-loading-text-shadow-top {
-    background: linear-gradient(to top, transparent 70%, rgba(0, 0, 0, 0.5) 100%);
+    background: linear-gradient(to top, transparent 70%, rgba(0, 0, 0, 1) 100%);
     width: -webkit-fill-available;
     height: -webkit-fill-available;
     position: absolute;
+    z-index: 1;
 }
 
 .winbows-loading-text-shadow-bottom {
-    background: linear-gradient(to bottom, transparent 70%, rgba(0, 0, 0, 0.5) 100%);
+    background: linear-gradient(to bottom, transparent 70%, rgba(0, 0, 0, 1) 100%);
     width: -webkit-fill-available;
     height: -webkit-fill-available;
     position: absolute;
+    z-index: 1;
 }
 
 .winbows-loading .winbows-loading-spinner {
@@ -338,6 +343,23 @@ body {
     background: #fff;
     transition: all .05s ease-in-out;
     border-radius: inherit;
+}
+
+@media screen and (max-height: 576px) {
+    .winbows-loading-image {
+        min-width: 150px;
+        min-height: 150px;
+        width: 150px;
+        height: 150px;
+    }
+
+    .winbows-loading-text-container {
+        bottom: 5.5rem;
+    }
+
+    .winbows-loading-progress {
+        bottom: 4rem;
+    }
 }
 
 .lock-screen-container,
@@ -482,6 +504,34 @@ body {
 
 .lock-screen-signin-button:hover {
     background: rgb(210 210 210 / 18%);
+}
+
+@media screen and (max-height: 652px) {
+    .lock-screen-signin-avatar {
+        width: 8rem;
+        height: 8rem;
+        min-width: 8rem;
+        min-height: 8rem;
+    }
+
+    .lock-screen-signin-username {
+        margin-top: 1rem;
+    }
+
+    .lock-screen-signin-button {
+        margin-top: 0;
+        margin-bottom: 2rem;
+    }
+}
+
+@media screen and (max-height: 432px) {
+    .lock-screen-signin {
+        gap: 1rem;
+    }
+
+    .lock-screen-signin-username {
+        margin-top: 0;
+    }
 }
 
 .screen {
@@ -633,9 +683,17 @@ body {
     box-shadow: 0 0 0px 1.5px rgba(0, 0, 0, .1);
 }
 
+[data-theme="dark"] .desktop-item:hover {
+    background: rgba(255, 255, 255, .08);
+}
+
 .desktop-item.active {
-    background: rgba(255, 255, 255, .3);
+    background: rgba(255, 255, 255, .2);
     box-shadow: 0 0 0px 1.5px rgba(0, 0, 0, .1);
+}
+
+[data-theme="dark"] .desktop-item.active {
+    background: rgba(255, 255, 255, .13);
 }
 
 .taskbar {
@@ -2526,6 +2584,7 @@ body {
     justify-content: center;
     gap: .25rem;
     overflow: hidden;
+    padding-right: .25rem;
 }
 
 .taskview-mask-controlbar-info-icon {
@@ -2582,4 +2641,69 @@ body {
     to {
         opacity: 1;
     }
+}
+
+.execute-command-warning {
+    position: fixed;
+    top: 0px;
+    left: 0px;
+    width: var(--viewport-width);
+    height: var(--viewport-height);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    color: rgb(0, 0, 0);
+}
+
+.execute-command-warning-window {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(255, 255, 255);
+    padding: 2rem 3rem;
+    border-radius: 2rem;
+    box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 1rem;
+    max-width: min(600px, -2rem + var(--viewport-width));
+    width: 100%;
+    max-height: min(calc(var(--viewport-height) * 80%), calc(var(--viewport-height) - 2rem));
+    overflow-y: auto;
+}
+
+.execute-command-warning-header {
+    font-size: 150%;
+    font-weight: 600;
+    margin: 0.5rem 0px 1rem;
+}
+
+.execute-command-warning-footer {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.execute-command-warning-button {
+    margin-bottom: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-drag: none;
+    outline: 0px;
+    margin-top: 1.5rem;
+    font-family: inherit;
+    font-weight: 600;
+    min-width: 8rem;
+    color: rgb(255, 255, 255);
+    background: rgb(0, 103, 192);
+    border: 1px solid rgb(0, 103, 192);
+}
+
+.execute-command-warning-button.outline {
+    color: rgb(0, 103, 192);
+    border: 1px solid rgb(0, 103, 192);
+    background: rgb(255, 255, 255);
 }

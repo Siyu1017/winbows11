@@ -1,5 +1,5 @@
 import { IDBFS } from "../../shared/fs.js";
-import { EventEmitter } from "../../shared/utils.js";
+import { EventEmitter } from "../../shared/utils.ts";
 
 const fs = new IDBFS();
 const cache = {};

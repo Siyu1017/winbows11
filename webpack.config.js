@@ -3,6 +3,7 @@ import webpack from 'webpack'
 import fs from 'fs';
 import TerserPlugin from 'terser-webpack-plugin';
 import pkg from "./package.json" assert { type: "json" };
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 
 const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
@@ -21,6 +22,11 @@ export default [
         module: {
             rules: [
                 {
+                    test: /\.ts$/,
+                    use: "ts-loader",
+                    exclude: /node_modules/,
+                },
+                {
                     test: /\.css$/,
                     use: [
                         {
@@ -33,6 +39,9 @@ export default [
                 }
             ]
         },
+        resolve: {
+            extensions: [".ts", ".js"]
+        },
         optimization: {
             minimize: true,
             minimizer: [
@@ -42,6 +51,7 @@ export default [
             ],
         },
         plugins: [
+            new ForkTsCheckerWebpackPlugin(),
             new webpack.DefinePlugin({
                 __BUILD_ID__: `"${BUILD_ID}"`,
                 __VERSION__: `"${pkg.version}"`,

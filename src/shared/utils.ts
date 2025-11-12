@@ -1,19 +1,27 @@
-export function getJsonFromURL(url) {
+export function getJsonFromURL(url: string): Record<string, any> {
     if (!url) url = location.search;
     var query = url.substr(1);
-    var result = {};
+    var result: Record<string, any> = {};
     query.split("&").forEach(function (part) {
-        var item = part.split("=");
-        result[item[0]] = decodeURIComponent(item[1]);
+        const i = part.indexOf('=');
+        if (i === -1) {
+            result[part] = true;
+        } else {
+            try {
+                result[part.slice(0, i)] = decodeURIComponent(part.slice(i + 1));
+            } catch (e) {
+                result[part.slice(0, i)] = part.slice(i + 1);
+            }
+        }
     });
     return result;
 }
 
-export function getType(val) {
+export function getType(val: any): string {
     return Object.prototype.toString.call(val);
 }
 
-export function randomID(count, chars) {
+export function randomID(count: number, chars: string): string {
     var chars = chars || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
         result = '',
         length = chars.length;
@@ -29,20 +37,15 @@ export function getStackTrace() {
     try {
         throw new Error('');
     } catch (error) {
-        stack = error.stack || '';
+        stack = (error as Error).stack || '';
     }
 
     stack = stack.split('\n').map(function (line) { return line.trim(); });
     return stack.splice(stack[0] == 'Error' ? 2 : 1);
 }
 
-/**
- * Parse the args like ["FOO=1", "BAR=test"] to { FOO: "1", BAR: "test" }
- * @param {string[]} args
- * @returns {Record<string, string>}
- */
-export function parseKeyValueArgs(args) {
-    const result = {};
+export function parseKeyValueArgs(args: string[]): Record<string, string> {
+    const result: Record<string, string> = {};
     for (const arg of args) {
         const [key, value] = arg.split("=", 2);
         if (key && value !== undefined) {
@@ -52,7 +55,7 @@ export function parseKeyValueArgs(args) {
     return result;
 }
 
-export function isElement(obj) {
+export function isElement(obj: any): boolean {
     try {
         return obj instanceof HTMLElement;
     }
@@ -63,11 +66,11 @@ export function isElement(obj) {
     }
 }
 
-export function isString(val) {
+export function isString(val: any): boolean {
     return getType(val) === '[object String]';
 }
 
-export function isJSON(item) {
+export function isJSON(item: any): boolean {
     let value = typeof item !== "string" ? JSON.stringify(item) : item;
     try {
         value = JSON.parse(value);
@@ -78,16 +81,16 @@ export function isJSON(item) {
     return typeof value === "object" && value !== null;
 }
 
-export function isObject(obj) {
+export function isObject(obj: any): boolean {
     var type = typeof obj;
     return type === 'function' || type === 'object' && !!obj;
 };
 
-export function isNumber(value) {
+export function isNumber(value: any): boolean {
     return typeof value === 'number' && isFinite(value);
 }
 
-export function isFunction(fn) {
+export function isFunction(fn: any): boolean {
     return typeof fn === 'function';
 }
 
@@ -96,8 +99,8 @@ export function isFunction(fn) {
  * @param {Element} element 
  * @returns {Object}
  */
-export function getPosition(element) {
-    function offset(el) {
+export function getPosition(element: Element): { x: number, y: number } {
+    function offset(el: Element) {
         var rect = el.getBoundingClientRect(),
             scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
             scrollTop = window.pageYOffset || document.documentElement.scrollTop;
@@ -106,15 +109,15 @@ export function getPosition(element) {
     return { x: offset(element).left, y: offset(element).top };
 }
 
-export function capitalizeFirstLetter(val) {
+export function capitalizeFirstLetter(val: any): string {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
 }
 
-export function replaceHTMLTags(content = '') {
+export function replaceHTMLTags(content: string = ''): string {
     return content.replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
-export function toNumber(val) {
+export function toNumber(val: any): number {
     if (isNumber(val)) return val;
 
     const temp = isFunction(val?.valueOf) ? val.valueOf() : val;
@@ -123,18 +126,18 @@ export function toNumber(val) {
     return +val;
 }
 
-export function getPointerPosition(e) {
-    let x = e.pageX;
-    let y = e.pageY;
+export function getPointerPosition(e: MouseEvent | TouchEvent | PointerEvent): { x: number, y: number } {
+    let x = (e as PointerEvent).pageX;
+    let y = (e as PointerEvent).pageY;
     if (e.type.startsWith('touch')) {
-        var touch = e.touches[0] || e.changedTouches[0];
+        var touch = (e as TouchEvent).touches[0] || (e as TouchEvent).changedTouches[0];
         x = touch.pageX;
         y = touch.pageY;
     }
     return { x: x + window.scrollX, y: y + window.scrollY };
 }
 
-export function formatBytes(bytes, decimals = 2) {
+export function formatBytes(bytes: number, decimals: number = 2): string {
     if (bytes === 0) return '0 Bytes';
 
     const k = 1024;
@@ -144,11 +147,11 @@ export function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
 }
 
-export function loadImage(url) {
+export function loadImage(url: string) {
     return new Promise(async (resolve, reject) => {
         var img = new Image();
         img.onload = async () => {
-            return resolve();
+            return resolve(void 0);
         }
         img.onerror = async (err) => {
             return reject(err);
@@ -157,7 +160,7 @@ export function loadImage(url) {
     })
 }
 
-export function canvasClarifier(canvas, ctx, width, height) {
+export function canvasClarifier(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, width?: number, height?: number) {
     const originalSize = {
         width: (width ? width : canvas.offsetWidth),
         height: (height ? height : canvas.offsetHeight)
@@ -172,67 +175,80 @@ export function canvasClarifier(canvas, ctx, width, height) {
     }
 }
 
-export function getImageTheme(img) {
+export function getImageTheme(img: HTMLCanvasElement | HTMLVideoElement | ImageBitmap | OffscreenCanvas): 'light' | 'dark' {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    canvas.width = img.width;
-    canvas.height = img.height;
+    if (ctx) {
+        canvas.width = img.width;
+        canvas.height = img.height;
 
-    ctx.drawImage(img, 0, 0, img.width, img.height);
+        ctx.drawImage(img, 0, 0, img.width, img.height);
 
-    const imageData = ctx.getImageData(0, 0, img.width, img.height);
-    const pixels = imageData.data;
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const pixels = imageData.data;
 
-    let totalBrightness = 0;
+        let totalBrightness = 0;
 
-    for (let i = 0; i < pixels.length; i += 4) {
-        const r = pixels[i];
-        const g = pixels[i + 1];
-        const b = pixels[i + 2];
+        for (let i = 0; i < pixels.length; i += 4) {
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
 
-        const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
-        totalBrightness += brightness;
+            const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+            totalBrightness += brightness;
+        }
+
+        const averageBrightness = totalBrightness / (img.width * img.height);
+
+        const threshold = 128;
+        if (averageBrightness > threshold) {
+            return 'light';
+        } else {
+            return 'dark';
+        }
     }
-
-    const averageBrightness = totalBrightness / (img.width * img.height);
-
-    const threshold = 128;
-    if (averageBrightness > threshold) {
-        return 'light';
-    } else {
-        return 'dark';
-    }
+    return 'light';
 }
 
-export function delay(ms) {
+export function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export function safeEscape(html) {
+export function safeEscape(html: string): string {
     return html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 export class EventEmitter {
-    constructor() {
-        this.listeners = new Map();
-    }
+    private listeners: Map<string, Function[]> = new Map();
 
-    on(eventName, handler) {
+    constructor() { }
+
+    on(eventName: string, handler: Function) {
         if (!this.listeners.has(eventName)) {
             this.listeners.set(eventName, []);
         }
-        this.listeners.get(eventName).push(handler);
+        (this.listeners.get(eventName) as Function[]).push(handler);
     }
 
-    off(eventName, handler) {
+    off(eventName: string, handler: Function) {
         if (!this.listeners.has(eventName)) return;
-        const index = this.listeners.get(eventName).indexOf(handler);
+        const index = (this.listeners.get(eventName) as Function[]).indexOf(handler);
         if (index === -1) return;
-        this.listeners.get(eventName).splice(index, 1);
+        (this.listeners.get(eventName) as Function[]).splice(index, 1);
     }
 
-    _emit(eventName, ...args) {
+    once(eventName: string, handler: Function) {
+        const onceHandler = (...args: any[]) => {
+            this.off(eventName, onceHandler);
+            handler(...args);
+        };
+        this.on(eventName, onceHandler);
+    }
+
+    protected emit = this._emit;
+
+    protected _emit(eventName: string, ...args: any[]) {
         const handlers = this.listeners.get(eventName);
         if (handlers) {
             for (const fn of handlers.slice()) {
@@ -245,7 +261,7 @@ export class EventEmitter {
         }
     }
 
-    _list(eventName) {
+    _list(eventName: string): Function[] {
         const ls = this.listeners.get(eventName);
         return ls ? [...ls] : [];
     }

@@ -1,0 +1,43 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Command Prompt'
+
+app.on('window-all-closed', () => {
+    app.quit();
+});
+
+app.on('ready', async () => {
+    const windowConf = {
+        width: 800,
+        height: 600,
+        title: 'Command Prompt'
+    }
+
+    if (process.env.pipe) {
+        windowConf.x = 'center';
+        windowConf.y = 'center';
+        mainWindow = new BrowserWindow(windowConf, {
+            env: {
+                pipe: process.env.pipe
+            }
+        });
+    } else {
+        mainWindow = new BrowserWindow(windowConf);
+    }
+
+    await mainWindow.load(process.env.pipe ? './app/dist/container.js' : './app/dist/index.js');
+
+    const childWrt = mainWindow.wrt;
+});
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}
+
+process.exit();

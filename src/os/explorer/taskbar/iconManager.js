@@ -1,5 +1,5 @@
 import { IDBFS } from "../../../shared/fs.js";
-import { EventEmitter, getPosition, getStackTrace, randomID } from "../../../shared/utils.js";
+import { EventEmitter, getPosition, getStackTrace, randomID } from "../../../shared/utils.ts";
 import { fallbackImage } from "../../core/fallback.js";
 import Logger from "../../core/log.js";
 import timer from "../../core/timer.js";
@@ -46,7 +46,7 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         }
     }
     const pinnedIcons = [
-        'explorer', 'edge', 'store', 'cmd', 'info'
+        'explorer', 'edge', 'store', 'cmd'
     ]
 
     const downEvts = ["mousedown", "touchstart", "pointerdown"];
@@ -199,8 +199,8 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         })
     })
 
-    let focusedIconIds = [];        // App icons and system icons
-    let lastClickedIconId = null;   // App icons and system icons
+    let lastClickedIconId = null;   // For app icons and system icons
+    let focusedIconIds = [];        // App icons only
     let activeWindows = [];         // App icons only
     let iconRepository = {};        // AppID => Icon
     let systemIcons = [];
@@ -317,7 +317,7 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
             }
 
             const id = win?.id;
-            if (this.windows[id]) return;
+            if (this.windows[id] || win.type === 'sub-window') return;
             this.windows[id] = {
                 ...win,
                 active: true,

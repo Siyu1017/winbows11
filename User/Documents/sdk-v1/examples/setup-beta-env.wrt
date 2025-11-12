@@ -1,0 +1,19 @@
+const files = [
+    "./calculator.wrt",
+    "./cheapwordle.wrt",
+    "./downloadfile.wrt",
+    "./guessnumber.wrt"
+];
+
+let errors = 0;
+for (const file of files) {
+    try {
+        await fs.downloadFile(file);
+    } catch (e) {
+        console.log(e);
+        errors++;
+    }
+}
+
+process.stdout.write(`${files.length - errors}/${files.length} files downloaded successfully.`);
+process.exit();

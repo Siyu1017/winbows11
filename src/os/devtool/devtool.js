@@ -1,4 +1,4 @@
-import * as utils from "../../shared/utils.js";
+import * as utils from "../../shared/utils.ts";
 import WinbowsDevtool from "../../lib/winbows-devtool/dist/index.js";
 import "../../lib/winbows-devtool/dist/index.css";
 import { viewport } from "../core/viewport.js";
@@ -9,6 +9,7 @@ import performanceMonitor from "./performance-monitor.js";
 import tasks from "./tasks.js";
 import terminal from "./terminal.js";
 import Logger from "../core/log.js";
+import { UserData } from "./userData.ts";
 // import i18n from "../i18n/i18n.js";
 
 const { root } = viewport;
@@ -36,6 +37,7 @@ export default function Devtool() {
     const tabview = new Tabview(devContainer);
     const footer = document.createElement('div');
     const devtool = new WinbowsDevtool();
+    const lastClicked = UserData.get('tabview.last_clicked');
 
     resizer.className = 'winbows-devtool-resizer';
     content.className = 'winbows-devtool-content';
@@ -154,6 +156,8 @@ export default function Devtool() {
             })
         }
     })
+
+    tabview.select(lastClicked);
 
     devtool.console.info("Winbows Devtool Version:", devtool.version);
 

@@ -1,4 +1,4 @@
-import { getJsonFromURL } from '../shared/utils.js';
+import { getJsonFromURL } from '../shared/utils.ts';
 import rom from '../os/core/rom.js';
 
 console.log(`winbows11 v${version}`);

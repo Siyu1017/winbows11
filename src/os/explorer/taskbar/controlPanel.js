@@ -126,9 +126,9 @@ export function ControlPanel(taskbarControls) {
         name: 'night-light',
         change: (status) => {
             if (status == 'enabled') {
-                nightLightOverlay.style.opacity = '.8';
+                viewport.root.style.filter = 'sepia(.67) hue-rotate(345deg)'
             } else {
-                nightLightOverlay.style.opacity = '0';
+                viewport.root.style.filter = 'unset';
             }
         }
     }, {

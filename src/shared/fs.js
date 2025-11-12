@@ -57,9 +57,17 @@ function randomID(count, chars) {
 function isBlob(obj) {
     return Object.prototype.toString.call(obj) === "[object Blob]"
 };
+function visualizeInvisible(str) {
+    return [...str].map(ch => {
+        const code = ch.codePointAt(0);
+        return (code < 0x20 || code > 0x7E)
+            ? '\\u' + code.toString(16).toUpperCase().padStart(4, '0')
+            : ch;
+    }).join('');
+}
 const fsUtils = {
     sep: '/',
-    normalize(p) {
+    normalize(p = '') {
         const parts = p.split(/[/\\]+/);
         const stack = [];
 
@@ -84,21 +92,21 @@ const fsUtils = {
         }
         return fsUtils.normalize(resolved);
     },
-    dirname(p) {
+    dirname(p = '') {
         const normalized = fsUtils.normalize(p);
         const parts = normalized.split('/');
         parts.pop();
         return fsUtils.toDirFormat(parts.length > 1 ? parts.join('/') : '/');
     },
-    basename(p) {
+    basename(p = '') {
         return fsUtils.normalize(p).split('/').pop();
     },
-    extname(p) {
+    extname(p = '') {
         const base = fsUtils.basename(p);
         const dotIndex = base.lastIndexOf('.');
         return dotIndex > 0 ? base.slice(dotIndex) : '';
     },
-    isAbsolute(p) {
+    isAbsolute(p = '') {
         return p.startsWith('/') || /^[A-Za-z]:[\\/]/.test(p);
     },
     relative(from, to) {
@@ -113,7 +121,7 @@ const fsUtils = {
         return '../'.repeat(fromParts.length) + toParts.join('/');
     },
     parsePath(v) {
-        v = v.replaceAll('\\', '/');
+        v = v.replaceAll(/\\/g, '/');
         const match = /^([a-zA-Z]):\//.exec(v);
         const disk = match ? match[1].toUpperCase() : 'C';
         let path = v.replace(/^([a-zA-Z]):/, '');
@@ -121,7 +129,7 @@ const fsUtils = {
         path = !path.endsWith('/') && v.endsWith('/') ? path + '/' : path;;
         return { disk, path };
     },
-    toDirFormat(path) {
+    toDirFormat(path = '') {
         return path.endsWith('/') ? path : path + '/';
     },
     isValidAbsolutePath(path) {
@@ -449,8 +457,12 @@ function put(store, data) {
 
 // ========================= File table ========================= //
 async function updateFileTable(disk) {
-    localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
-    scheduleUpdateFileTable(disk);
+    try {
+        scheduleUpdateFileTable(disk);
+        localStorage.setItem(localStoragePrefix + disk + ':', JSON.stringify(fileTables[disk]));
+    } catch (e) {
+        console.error('Failed to update fileTable in localStorage:', e);
+    }
 }
 
 // For idb
