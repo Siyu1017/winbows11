@@ -1458,7 +1458,7 @@ async function Main() {
             },
             'winbows11-beta': {
                 path: 'C:/Program Files/Winbows11 Beta/',
-                icon: 'C:/favicon.ico',
+                icon: 'C:/Program Files/Winbows11 Beta/icon.png',
                 script: 'C:/Program Files/Winbows11 Beta/app.wexe'
             }
         },
