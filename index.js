@@ -1455,6 +1455,11 @@ async function Main() {
                 path: 'C:/Program Files/Notepad/',
                 icon: 'C:/Program Files/Notepad/favicon.ico',
                 script: 'C:/Program Files/Notepad/app.wexe'
+            },
+            'winbows11-beta': {
+                path: 'C:/Program Files/Winbows11 Beta/',
+                icon: 'C:/favicon.ico',
+                script: 'C:/Program Files/Winbows11 Beta/app.wexe'
             }
         },
         install: () => { },

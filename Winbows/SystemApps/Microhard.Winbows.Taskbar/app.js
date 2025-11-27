@@ -608,6 +608,9 @@
             }, {
                 name: 'Settings',
                 app: 'settings'
+            }, {
+                name: 'Winbows11 Beta',
+                app: 'winbows11-beta'
             }
         ];
         pinnedList.forEach(pinned => {
