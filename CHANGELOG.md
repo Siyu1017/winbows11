@@ -4,6 +4,12 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## v1.0.0
+
+### Added
+
+- First stable release
+
 ## v1.0.0-rc.1
 
 ### Added
