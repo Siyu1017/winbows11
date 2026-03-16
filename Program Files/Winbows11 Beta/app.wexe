@@ -1,0 +1,7 @@
+;(async () => {
+    await System.requestAccessWindow('./window.js', {
+        title: 'Winbows11 Beta',
+        x: 'center',
+        y: 'center'
+    })
+})();

@@ -17,6 +17,17 @@ style.href = await fs.getFileURL('./window.css');
 document.head.appendChild(style);
 
 document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items: center;justify-content: center;"><div style="padding: 1.5rem;overflow: auto;height: 100%;">
+<a href="#" data-action="run winbows11-beta" style="
+    background: linear-gradient(to left, rgb(41 169 217), rgb(36 104 239));
+    border-radius: .75rem;
+    padding: .75rem 1rem;
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    user-select: none;
+    display: block;
+    text-decoration: none;
+">Try Winbows11 Beta</a>
 <div style="
     font-weight: 600;
     font-size: 1.5rem;
