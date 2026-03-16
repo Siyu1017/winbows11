@@ -109,38 +109,48 @@ term.open(container);
 fitAddon.fit();
 observer.observe(container);
 
-const pipe = process.env.pipe;
-const ipc = IPC.connect(pipe);
+let wrt = null;
+if (process.env.pipe) {
+    const pipe = process.env.pipe;
+    const ipc = IPC.connect(pipe);
 
-const wrt = await (async () => {
-    return new Promise(resolve => {
-        ipc.on('data', (e) => {
-            const dt = e.data;
-            if (dt.type == 'check') {
-                console.log(token.value, dt.data, token)
-                if (dt.data !== token.value || !token.isTrusted) {
-                    return process.exit();
+    wrt = await (async () => {
+        return new Promise(resolve => {
+            ipc.on('data', (e) => {
+                const dt = e.data;
+                if (dt.type == 'check') {
+                    console.log(token.value, dt.data, token)
+                    if (dt.data !== token.value || !token.isTrusted) {
+                        return process.exit();
+                    }
+                    ipc.send({
+                        type: 'ready'
+                    })
                 }
-                ipc.send({
-                    type: 'ready'
-                })
-            }
-            if (dt.type == 'data') {
-                const wrt = dt.data;
-                resolve(wrt);
+                if (dt.type == 'data') {
+                    const wrt = dt.data;
+                    resolve(wrt);
 
-                browserWindow.changeTitle(wrt.__filename);
-                console.info('Got WRT:', wrt)
-            }
+                    browserWindow.changeTitle(wrt.__filename);
+                    // console.info('Got WRT:', wrt)
+                }
+            })
+            ipc.send({
+                type: 'ready'
+            })
+            // ipc.send({
+            //     type: 'check'
+            // })
         })
-        ipc.send({
-            type: 'ready'
-        })
-        // ipc.send({
-        //     type: 'check'
-        // })
-    })
-})();
+    })();
+} else {
+    const shell = new ShellInstance(process, {
+        isTTY: true
+    });
+    const evaluation = await shell.execCommand(process.args.c || process.args.k);
+    wrt = evaluation.data;
+    browserWindow.changeTitle(wrt.__filename);
+}
 
 let cursorPos = [0, 0];
 let alive = true;
@@ -158,6 +168,10 @@ wrt.process.on('exit', () => {
     if (alive === false) return;
     term.write('\r\r\nPress any key to continue...');
     alive = false;
+
+    if (process.args.c) {
+        process.exit();
+    }
 })
 process.on('exit', () => {
     alive = false;
@@ -297,7 +311,7 @@ term.onKey(async ({ domEvent }) => {
 });
 
 term.onData(async (data) => {
-    console.info("Received data:", data, countVisibleChars(data));
+    // console.info("Received data:", data, countVisibleChars(data));
 
     if (_waiting == 'kill') {
         wrt.kill();

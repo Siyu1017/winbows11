@@ -5,9 +5,12 @@ import appRegistry from "../appRegistry.js";
 import SystemInformation from "../../core/sysInfo.js";
 import ModuleManager from "../../moduleManager.js";
 import { tasklist } from "../../kernel/wrt/core.js";
-import { processes } from "../../kernel/wrt/process.js";
+import { processes } from "../../kernel/wrt/process.ts";
 import { viewport } from "../../core/viewport.js";
 import { stat } from "../../core/stat.js";
+
+const INTERNAL_COMMAND_PREFIX = 'internal:';
+const INTERNAL_CATEGORY = '@internal';
 
 /**
  * @callback CommandHandler
@@ -428,7 +431,7 @@ commandRegistry.register('taskkill', {
                     const p = processes.get(Number(arg));
                     console.log(p)
                     if (p) {
-                        p.kill();
+                        p.exitCode = 0;
                         shell.stdout.write(`Process with pid ${arg} has been terminated.\n`);
                     }
                 } catch (e) {
@@ -461,18 +464,20 @@ commandRegistry.register('start', {
             return true;
         }
 
-        const app = appRegistry.getInfo(uri.scheme);
+        const app = appRegistry.getInfoByName(uri.scheme);
         if (!app || !app.entryScript) {
-            shell.stderr.write(`Can not found file ${uri.scheme}.\n`);
+            shell.stderr.write(`Can not found scheme: ${uri.scheme}.\n`);
             return false;
         }
 
         try {
             const WRT = ModuleManager.get('WRT')
-            const wrt = new WRT();
-            wrt.runFile(app.entryScript, {
-                uri
+            const wrt = new WRT({
+                __filename: app.entryScript,
+                code: await shell.fs.readFileAsText(app.entryScript),
+                argv: [`--path="${uri.path}"`]
             });
+            wrt.main();
             return true;
         } catch (e) {
             shell.stderr.write(e.message + '\n');
@@ -658,6 +663,7 @@ commandRegistry.register('help', {
 
         const categories = commandRegistry.categories.keys();
         for (const category of categories) {
+            if (category === INTERNAL_CATEGORY) continue;
             shell.stdout.write(`\n\n${commandRegistry.categories.get(category).title}`);
             for (const cmd of commandRegistry.commands.keys()) {
                 if (commandRegistry.commands.get(cmd).category === category) {
@@ -713,6 +719,48 @@ commandRegistry.register('nothing', {
                 return new Promise(r => setTimeout(r, parts[i].duration));
             })();
         }
+
+        return true;
+    }
+})
+
+// ============== Internal commands ============== //
+commandRegistry.addCategory(INTERNAL_CATEGORY, {
+    title: ''
+})
+
+commandRegistry.register(`${INTERNAL_COMMAND_PREFIX}animation-speed`, {
+    description: 'Set animation speed. (For development use only)',
+    usage: `${INTERNAL_COMMAND_PREFIX}animation-speed <multiplier>`,
+    options: {
+        '<multiplier>': 'Specifies the animation speed multiplier.'
+    },
+    category: INTERNAL_CATEGORY,
+    handler: ({ args }, shell) => {
+        const multiplier = Number(args[0]);
+        if (isNaN(multiplier)) {
+            shell.stderr.write(`Usage: ${INTERNAL_COMMAND_PREFIX}animation-speed <multiplier>\n`);
+            return false;
+        }
+
+        const animateProfiles = ModuleManager.get('BrowserWindow.internal.animationProfiles');
+        for (const k of Object.keys(animateProfiles)) {
+            animateProfiles[k].duration = animateProfiles[k].base * multiplier;
+        }
+
+        return true;
+    }
+})
+
+commandRegistry.register(`${INTERNAL_COMMAND_PREFIX}wipe-data`, {
+    description: 'Wipe all user data. (For development use only)',
+    usage: `${INTERNAL_COMMAND_PREFIX}wipe-data`,
+    category: INTERNAL_CATEGORY,
+    handler: async ({ args }, shell) => {
+        await shell.fs.rm("C:/", {
+            recursive: true,
+            force: true
+        });
 
         return true;
     }

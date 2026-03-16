@@ -1,5 +1,5 @@
 import { fsUtils, IDBFS } from "../../../shared/fs.js";
-import { Process } from "./process.js";
+import { Process } from "./process.ts";
 import * as utils from "../../../shared/utils.ts";
 import Console from "../../../lib/winbows-devtool/dist/index.js";
 import crashHandler from "../../core/crashHandler.js";
@@ -8,7 +8,8 @@ import ModuleManager from "../../moduleManager.js";
 import minimistJs from "../../../lib/minimist.js/index.js";
 import { stat } from "../../core/stat.js";
 import Logger from "../../core/log.js";
-import { child_process } from "./child_process.ts";
+import { child_process } from "./lib/child_process.ts";
+import _process from "./lib/process.js";
 
 const logger = new Logger({
     module: 'WRT'
@@ -183,6 +184,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         this.options = {};
         this.options.allowedConsoleOutput = options?.allowedConsoleOutput ?? SystemInformation.mode == 'development' ? true : false;
         this.options.keepAlive = options?.keepAlive ?? false;
+        this.options.withConsoleWindow = false;
 
         // Runtime type
         this.type = 'cli';
@@ -202,12 +204,15 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
 
             if (headers['$RTH']) {
                 try {
-                    const RTH = JSON.parse(headers['$RTH']);
-                    if (RTH.type) {
-                        this.type = RTH.type === 'gui' ? 'gui' : 'cli';
+                    const header = JSON.parse(headers['$RTH']);
+                    if (header.type) {
+                        this.type = header.type === 'gui' ? 'gui' : 'cli';
                     }
-                    if (RTH.runInBackground !== undefined) {
-                        this.runInBackground = !RTH.runInBackground == false;
+                    if (header.runInBackground !== undefined) {
+                        this.runInBackground = !header.runInBackground == false;
+                    }
+                    if (header.withConsoleWindow !== undefined) {
+                        this.options.withConsoleWindow = header.withConsoleWindow == true;
                     }
                 } catch (e) {
                     throw new Error(e);
@@ -226,8 +231,14 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
 
         this.modules = {};
         this.modules['child_process'] = {
-            exports: child_process
+            exports: child_process(this.process)
         }
+        this.modules['process'] = {
+            exports: _process(this.process)
+        }
+        // this.modules['ipc'] = {
+        //     exports: _ipc(this.ipc)
+        // }
 
         this.debugConsole = new Console();
         this.proxyConsole = this.options.allowedConsoleOutput == true ? new Proxy(this.debugConsole.console, {
@@ -251,6 +262,37 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
             }
         });
 
+        if (this.options.withConsoleWindow) {
+            const WRT = ModuleManager.get('WRT');
+            const file = 'C:/Winbows/System32/internal/com.winbows.console/app.wrt';
+            if (this.__filename != file) {
+                const System = ModuleManager.get('System');
+                const pipeName = `kernel://winbows-console/` + utils.randomID(64);
+                const ipc = System.processAPIs.IPC.listen(pipeName);
+
+                fs.readFileAsText(file).then(code => {
+                    const wrt = new WRT({ code, __filename: file });
+                    wrt.process.env.pipe = pipeName;
+                    wrt.main();
+
+                    ipc.on('data', (e) => {
+                        if (e.data.type === 'ready') {
+                            ipc.send({
+                                type: 'data',
+                                data: {
+                                    console: this.debugConsole,
+                                    runtimeID: this.runtimeID
+                                }
+                            })
+                            setTimeout(() => {
+                                ipc.close();
+                            })
+                        }
+                    })
+                })
+            }
+        }
+
         // Shared APIs
         const process = new Process(this.__dirname, this.type);
         process.on('change:title', (e) => {
@@ -260,13 +302,11 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         if (this.type === 'cli') {
             process.title = this.__filename;
         }
-
         this.process = new Proxy(process, {
             set: (target, prop, value) => {
                 if (prop === 'title') {
                     if (this.title != value) {
                         this.title = value;
-                        process.title = value;
                         tasklist.update(this.runtimeID, 'title', value);
                         this._emit('change:process.title', { value, runtimeID: this.runtimeID });
                     }
@@ -422,7 +462,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         return this.modules[resolved].exports;
     }
     kill() {
-        this.process.kill();
+        this.process.exitCode = 0;
     };
     async _run({
         __dirname, __filename, code
@@ -465,11 +505,13 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
 
         this.fsManager.add(__filename, fs);
 
-        const fn = new Function(`return (async function() {\nconst {${Object.keys(ctx).join(',')}}=this;\n${code}\n});\n//# sourceURL=${__filename}`)();
-
-        return {
-            evaluation: await fn.call(ctx),
-            ctx
+        try {
+            const fn = new Function(`return (async function() {\nconst {${Object.keys(ctx).join(',')}}=this;\n${code}\n});\n//# sourceURL=${__filename}`)();
+            const evaluation = await fn.call(ctx);
+            return { evaluation, ctx, error: null };
+        } catch (error) {
+            console.error(error);
+            return { evaluation: null, ctx, error };
         }
     }
 }

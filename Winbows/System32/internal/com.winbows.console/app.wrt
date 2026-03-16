@@ -1,0 +1,35 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Console';
+
+app.on('window-all-closed', () => {
+    app.quit();
+});
+
+app.on('ready', async () => {
+    if (!process.env.pipe) return process.exitCode = 1;
+
+    mainWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        title: process.title
+    }, {
+        env: {
+            pipe: process.env.pipe || ''
+        }
+    });
+
+    await mainWindow.load('./app/dist/index.js');
+});
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}
+
+process.exit();

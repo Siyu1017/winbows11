@@ -9,7 +9,8 @@ import performanceMonitor from "./performance-monitor.js";
 import tasks from "./tasks.js";
 import terminal from "./terminal.js";
 import Logger from "../core/log.js";
-import { UserData } from "./userData.ts";
+import { UserData, UserPreference } from "./userData.ts";
+import VFS from "./vfs.js";
 // import i18n from "../i18n/i18n.js";
 
 const { root } = viewport;
@@ -45,7 +46,7 @@ export default function Devtool() {
     devContainer.style = `right: 0; top: 0; width: ${realWidth}px; height: var(--winbows-screen-height);`;
     footer.className = 'winbows-devtool-footer';
 
-    footer.textContent = `Winbows Devtool v${devtool.version} (c) Siyu1017 2025`
+    footer.textContent = `Winbows Devtool v${devtool.version} (c) Siyu1017`
 
     document.body.appendChild(devContainer);
     devContainer.appendChild(resizer);
@@ -143,6 +144,12 @@ export default function Devtool() {
         content: terminal,
         closable: false
     })
+    const vfsTab = tabview.add({
+        id: 'vfs',
+        title: 'VFS', //i18n.t('devtool.tab.terminal'),
+        content: VFS,
+        closable: false
+    })
 
     tabview.select('console');
     tabview.on('select', id => {
@@ -165,9 +172,11 @@ export default function Devtool() {
         const logger = new Logger({
             module: 'Network'
         })
+        //if (!UserPreference.get('console.disabled')?.includes("network")) {
         window.HMGR.on('NIC:REQUEST:RECEIVED', (e) => {
             logger.info(`${e.isThisTab != true ? `From client [${e.fromClientId || 'UNKNOWN'}]\n` : ''}${e.method} ${e.url} ${e.status}`);
         })
+        //}
     }
 
     [

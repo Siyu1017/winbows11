@@ -25,10 +25,12 @@ class InputStream extends EventEmitter {
 
     pause() {
         this[_paused] = true;
+        this._emit('pause');
     }
 
     resume() {
         this[_paused] = false;
+        this._emit('resume');
     }
 
     write(data) {
@@ -59,9 +61,12 @@ class OutputStream extends EventEmitter {
     constructor() {
         super();
         this.buffer = [];
+        this[_closed] = false;
     }
 
     write(data) {
+        if (this[_closed]) return;
+
         this.buffer.push(data);
         this._emit('data', data);
     }
@@ -77,6 +82,13 @@ class OutputStream extends EventEmitter {
     clear() {
         this.buffer = [];
         this._emit('clear');
+    }
+
+    destroy() {
+        if (this[_closed]) return;
+        this[_closed] = true;
+
+        this._emit('close');
     }
 }
 
@@ -167,7 +179,7 @@ tty.OutputStream = class extends OutputStream {
 // TODO: Readable ( stdin ) and Writable ( stdout, stderr ) Stream, TTY
 
 export default {
-    InputStream,
-    OutputStream,
+    InputStream: InputStream,
+    OutputStream: OutputStream,
     tty: tty
 }

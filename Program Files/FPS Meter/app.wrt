@@ -11,6 +11,7 @@ app.on('ready', () => {
         title: 'FPS Meter',
         width: 300,
         height: 150,
+        minHeight: 150,
         resizable: false,
         showOnTop: true
     });

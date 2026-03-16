@@ -149,6 +149,8 @@ export default function Taskview(icon) {
             win.browserWindow.window.style.borderRadius = `0px 0px ${borderRadius}px ${borderRadius}px`;
             win.micaContainer.style.borderRadius = `0px 0px ${borderRadius}px ${borderRadius}px`;
             win.container.style.transition = 'none';
+            win.container.style.visibility = 'visible';
+            win.container.hidden = false;
             win.animate({
                 to: {
                     x,

@@ -15,8 +15,20 @@ import timer, { getDuration, marks } from "../core/timer.js";
 import fileViewers from "./fileViewer.js";
 import fileIcons from "./fileIcon.js";
 import { loading, winbowsIcon } from "../core/viewport.js";
+import { tester as VFS_TESTER } from "../fs/core/vfs.test.js";
 
 async function init() {
+    try {
+        // await VFS_TESTER();
+    } catch (e) {
+        console.warn('Initialization interrupted.\nTo proceed, call the proceed() function manually.');
+        await (function () {
+            return new Promise(resolve => {
+                window.proceed = resolve;
+            });
+        })();
+    }
+
     loading.textWithProgress('Initializing System...', 12);
 
     const logger = new Logger({
@@ -95,6 +107,9 @@ async function init() {
         if (pseudoProcess.alive == false) return;
         System.shell = new ShellInstance(pseudoProcess.process);
         System.shell.on('dispose', setupShell);
+        System.shell.stderr.on('data', (dt) => {
+            logger.error(dt);
+        })
     }
     setupShell();
     timer.mark('System process');

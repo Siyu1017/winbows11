@@ -21,8 +21,8 @@ export function getType(val: any): string {
     return Object.prototype.toString.call(val);
 }
 
-export function randomID(count: number, chars: string): string {
-    var chars = chars || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+export function randomID(count: number, spec?: string): string {
+    let chars = spec || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
         result = '',
         length = chars.length;
     for (let i = 0; i < count; i++) {
@@ -211,6 +211,11 @@ export function getImageTheme(img: HTMLCanvasElement | HTMLVideoElement | ImageB
     return 'light';
 }
 
+export function isPromise(obj: any): boolean {
+    return !!obj && (typeof obj === 'object' || typeof obj === 'function') &&
+        typeof obj.then === 'function';
+}
+
 export function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -246,7 +251,7 @@ export class EventEmitter {
         this.on(eventName, onceHandler);
     }
 
-    protected emit = this._emit;
+    emit = this._emit;
 
     protected _emit(eventName: string, ...args: any[]) {
         const handlers = this.listeners.get(eventName);
@@ -261,7 +266,7 @@ export class EventEmitter {
         }
     }
 
-    _list(eventName: string): Function[] {
+    protected _list(eventName: string): Function[] {
         const ls = this.listeners.get(eventName);
         return ls ? [...ls] : [];
     }

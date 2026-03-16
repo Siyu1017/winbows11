@@ -3,7 +3,7 @@ import { fsUtils, IDBFS } from "../../../shared/fs.js";
 import { commandRegistry } from "./commandRegistry.js";
 import stdio from "../../lib/stdio.js";
 import { EventEmitter, randomID } from "../../../shared/utils.ts";
-import { generateEnv } from "../../kernel/wrt/process.js";
+import { generateEnv } from "../../kernel/wrt/process.ts";
 import appRegistry from "../appRegistry.js";
 import ModuleManager from "../../moduleManager.js";
 import parseArgsStringToArgv from 'string-argv';
@@ -11,7 +11,7 @@ import parseArgsStringToArgv from 'string-argv';
 const reservedEnvKeys = Object.keys(generateEnv());
 const _queue = new WeakMap();
 const _queueRunning = new WeakMap();
-const _handleCLI = Symbol('handleCLI')
+const _handleCLI = Symbol('handleCLI');
 
 export class ShellInstance extends EventEmitter {
     constructor(process, {
@@ -310,9 +310,14 @@ export class ShellInstance extends EventEmitter {
     async dispose(exitCode) {
         if (!this.active) return;
         exitCode = exitCode || 0;
+
+        this.stderr.destroy();
+        this.stdin.destroy();
+        this.stdout.destroy();
+
         this.active = false;
         this.fs.quit?.();
-        this.stdout.write?.(`ShellInstance exited with code ${exitCode}\n`);
+        // this.stdout.write?.(`ShellInstance exited with code ${exitCode}\n`);
         this._emit('dispose', exitCode);
     }
 } 

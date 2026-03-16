@@ -1,53 +1,10 @@
 const fs = require('fs');
 const path = require('path');
-const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
+
+const BUILD_ID = process.env.BUILD_ID || fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
 
-function walk(dir, done) {
-    var results = [];
-    if (dir.includes('node_modules')) return done(null, []);
-    fs.readdir(dir, function (err, list) {
-        if (err) return done(err);
-        var i = 0;
-        (function next() {
-            var file = list[i++];
-            if (!file) return done(null, results);
-            file = path.resolve(dir, file);
-            fs.stat(file, function (err, stat) {
-                if (stat && stat.isDirectory()) {
-                    walk(file, function (err, res) {
-                        results = results.concat(res);
-                        next();
-                    });
-                } else {
-                    results.push(file.replace(__dirname, 'C:'));
-                    next();
-                }
-            });
-        })();
-    });
-};
-
-async function getDirectorySize(directory) {
-    let totalSize = 0;
-
-    const files = await fs.promises.readdir(directory, { withFileTypes: true });
-
-    for (const file of files) {
-        const filePath = path.join(directory, file.name);
-
-        if (file.isDirectory() && !filePath.includes('node_modules')) {
-            totalSize += await getDirectorySize(filePath);
-        } else {
-            const stats = await fs.promises.stat(filePath);
-            totalSize += stats.size;
-        }
-    }
-
-    return totalSize;
-}
-
-var table = [
+const defauleTable = [
     'C:/build.json',
     'C:/index.html',
     'C:/index.css',
@@ -60,6 +17,45 @@ var table = [
     'C:/package-lock.json'
 ];
 
+async function generateTable(entries, exclude = ['src', 'node_modules']) {
+    let totalSize = 0;
+    let fileTable = [];
+
+    async function readdir(directory) {
+        const files = await fs.promises.readdir(directory, { withFileTypes: true });
+        for (const file of files) {
+            const filePath = path.join(directory, file.name);
+
+            if (file.isDirectory()) {
+                if (!exclude.includes(file.name))
+                    await readdir(filePath);
+            } else {
+                const stats = await fs.promises.stat(filePath);
+                totalSize += stats.size;
+                fileTable.push(filePath.replace(__dirname, 'C:').replace(/\\/g, '/'));
+            }
+        }
+    }
+
+    for (const entry of entries) {
+        await readdir(entry);
+    }
+
+    return { totalSize, fileTable };
+}
+
+async function calculateDefaultTableSize() {
+    const items = defauleTable.map(i => i.replace('C:', __dirname));
+    let size = 0;
+
+    for (const item of items) {
+        const stats = await fs.promises.stat(item);
+        size += stats.size;
+    }
+
+    return size;
+}
+
 function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -70,53 +66,31 @@ function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
-walk(__dirname + '/Program Files', function (err, results1) {
-    if (err) throw err;
-    results1.forEach(function (file, i) {
-        results1[i] = file.replaceAll('\\', '/');
+generateTable([__dirname + '/Program Files', __dirname + '/Winbows', __dirname + '/User']).then(async ({ fileTable, totalSize }) => {
+    const table = [...fileTable, ...defauleTable];
+    const size = totalSize + await calculateDefaultTableSize()
+    const buildTime = new Date().getTime();
+    const detail = {
+        build_id: BUILD_ID,
+        build_time: buildTime,
+        size: size,
+        table: table,
+    }
+
+    fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
+        if (err) return console.log(err);
+        return ''
     });
-    table = table.concat(results1);
-    walk(__dirname + '/Winbows', async function (err, results2) {
-        if (err) throw err;
-        results2.forEach(function (file, i) {
-            results2[i] = file.replaceAll('\\', '/');
-        });
-        table = table.concat(results2);
-        walk(__dirname + '/User', async function (err, results3) {
-            if (err) throw err;
-            results3.forEach(function (file, i) {
-                results3[i] = file.replaceAll('\\', '/');
-            });
-            table = table.concat(results3);
 
-            (async () => {
-                const buildTime = new Date().getTime();
-                const totalSize = await getDirectorySize(__dirname + '/Program Files') + await getDirectorySize(__dirname + '/Winbows') + await getDirectorySize(__dirname + '/User');
+    fs.writeFile(__dirname + '/build-fetch.json', JSON.stringify({
+        size: size,
+        build_time: buildTime,
+        build_id: BUILD_ID
+    }), function (err) {
+        if (err) return console.log(err);
+        return ''
+    })
 
-                const detail = {
-                    build_id: BUILD_ID,
-                    build_time: buildTime,
-                    size: totalSize,
-                    table: table,
-                }
-
-                fs.writeFile(__dirname + '/build.json', JSON.stringify(detail), function (err) {
-                    if (err) return console.log(err);
-                    return ''
-                });
-
-                fs.writeFile(__dirname + '/build-fetch.json', JSON.stringify({
-                    size: totalSize,
-                    build_time: buildTime,
-                    build_id: BUILD_ID
-                }), function (err) {
-                    if (err) return console.log(err);
-                    return ''
-                })
-
-                console.log(`Build ID: ${BUILD_ID}`)
-                console.log(`Total size: ${formatBytes(totalSize)}`)
-            })();
-        });
-    });
+    console.log(`Build ID: ${BUILD_ID}`);
+    console.log(`Total size: ${formatBytes(size)}`);
 });

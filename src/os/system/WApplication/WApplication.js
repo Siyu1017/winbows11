@@ -173,6 +173,12 @@ function register(ctx) {
                 mainWindow = this.browserWindow;
             }
 
+            Object.defineProperty(this.browserWindow, 'type', {
+                value: this[_WINDOW_CONFIG].type,
+                writable: false,
+                configurable: false
+            })
+
             this.wrt.process.on('exit', () => {
                 this.browserWindow.close();
                 resolve?.();

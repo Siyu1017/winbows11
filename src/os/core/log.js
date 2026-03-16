@@ -8,7 +8,7 @@ const Log = (function () {
     let logs = [];
     let startTime = Date.now();
     let lastTime = startTime;
-    let version = 1;
+    let version = 2;
 
     function getType(obj) {
         const type = typeof obj;
@@ -58,46 +58,49 @@ const Log = (function () {
             let res;
 
             if (type == 'object') {
+                // \object{\object_pair{key="",val=""},...}
+                // \object{circular=\boolean{"true"}}
                 if (seen.has(data)) {
-                    return '"[Circular]"';
+                    return '\\object{circular=\\boolean{\"true\"}}';
                 }
                 seen.add(data);
-                res = {};
-                Reflect.ownKeys(data).forEach(k => {
-                    res[k] = traversal(data[k]);
-                })
+                res = `\\object{${Reflect.ownKeys(data).map(k => {
+                    return `\\object_pair{key=\"${String(k)}\",val=${traversal(data[k])}}`
+                }).join(",")}}`
             } else if (type === 'array') {
-                res = data.map(traversal);
+                // \array{"",...}
+                res = `\\array{${data.map(v => {
+                    return traversal(v);
+                }).join(",")}}`;
             } else if (type === 'map') {
-                res = {};
-                data.keys().forEach((key, i) => {
-                    res[i] = {
-                        key,
-                        value: traversal(data.get(key))
-                    }
-                })
+                // \map{\map_pair{key="",val=""},...}
+                res = `\\map{${data.keys().map((key, i) => {
+                    return `\\map_pair{key=\"${key}\",val=${traversal(data.get(key))}}`;
+                }).join?.(",") || ""}}`;
             } else if (type === 'set') {
-                res = {};
-                data.values().forEach((value, i) => {
-                    res[i] = { value: traversal(value) }
-                })
+                // \set{"",...}
+                res = `\\set{${data.values().map((value, i) => {
+                    return `${traversal(value)}`;
+                }).join?.(",") || ""}}`
             } else if (type === 'file') {
+                // \file{lastModified="",lastModifiedDate="",...}
                 const props = ["lastModified", "lastModifiedDate", "name", "size", "type", "webkitRelativePath"];
-                res = {};
-                props.forEach((prop) => {
-                    const value = data[prop];
-                    res[prop] = traversal(value);
-                })
+                res = `\\file{${props.map(prop => {
+                    return `${prop}=${traversal(value)}`;
+                }).join(",")}}`
             } else if (type === 'blob') {
+                // \blob{size="",type=""}
                 const props = ["size", "type"];
-                res = {};
-                props.forEach((prop) => {
-                    const value = data[prop];
-                    res[prop] = traversal(value);
-                })
+                res = `\\blob{${props.map(prop => {
+                    return `${prop}=${traversal(value)}`
+                }).join(",")}}}`
             } else if (type === 'string') {
-                res = data;
+                // "..."
+                res = `"${data.replace(/\\comma/, "\\\\comma").replace(/\,/gi, "\\comma")}"`;
             } else if (type == 'function') {
+                // \class{name=""}
+                // \arrow_func{async=\boolean{""}}
+                // \func{async=\boolean{""},generator=\boolean{""},name=""}
                 const fnCode = functionToCode(data);
                 const cName = data.constructor?.toString().toLowerCase() || '';
                 const isArrow = !data.prototype && !/^(?:async\s+)?function/.test(fnCode);
@@ -106,35 +109,38 @@ const Log = (function () {
                 const isClass = (fnCode || '').trim().startsWith('class');
                 res = '';
                 if (isClass) {
-                    res = `class ${data.prototype?.constructor?.name}`;
+                    res = `\\class{name="${data.prototype?.constructor?.name}"}`;
                 } else if (isArrow) {
-                    res = `${isAsync ? `async` : ''} () => {}`;
+                    res = `\\arrow_func{async=\\boolean{\"${isAsync}\"}}`;
                 } else {
-                    res += isAsync ? `async ` : '';
-                    res += 'ƒ';
-                    res += isGenerator ? `*` : '';
-                    res += ` ${data.name && fnCode.match(/function([\s\S]*?)\(.*?\)/)?.[1]?.replace('*', '').trim() ? data.name : ''}()`;
+                    res = `\\func{async=\\boolean{\"${isAsync}\"},generator=\\boolean{\"${isGenerator}\"},name=\"${data.name && fnCode.match(/function([\s\S]*?)\(.*?\)/)?.[1]?.replace('*', '').trim() ? data.name : ''}\"}`;
                 }
             } else if (isElement(data)) {
+                // \element{name="",id="",classname=""}
                 const id = data.id;
                 const classArr = [...data.classList];
                 const className = (classArr.length > 0 ? '.' : '') + classArr.join('.');
-                res = data.tagName.toLowerCase() + (id ? `#${id}` : '') + className;
+                res = `\\element{name=\"${data.tagName.toLowerCase()}\",id=\"${id}\",classname=\"${className}\"}`;
             } else if (type == 'error') {
-                res = `Error[${data.message}]`;
+                // \error{name="",message=""}
+                res = `\\err{name=\"${data.name}\",message=\"${data.message}\"}`;
             } else if ([
                 // Normal types
                 'number', 'boolean', 'null', 'undefined', 'symbol',
                 // Other types
                 'date', 'regexp'
             ].includes(type)) {
-                res = String(data);
+                // \<T>{""}
+                res = `\\${type}{\"${String(data)}\"}`;
             } else {
                 // Show type only
-                res = capitalizeFirstLetter(type);
+                // \unknown_obj{"T"}
+                res = `\\unknown_obj{\"${capitalizeFirstLetter(type)}\"}`;
             }
             return res;
         }
+
+        return traversal(data);
 
         try {
             return JSON.stringify(traversal(data));
@@ -158,19 +164,18 @@ const Log = (function () {
             time: new Date().toISOString(),
             sum: Math.round(sum),
             delta: Math.round(delta),
-            msg: log.msg,
             module: log.module,
             level,
-            data: log.data ? toJSONstr(log.data) : null
+            args: log.args.map(toJSONstr)
         };
 
         logs.push(entry);
 
         if (level === 'FATAL') {
-            if (typeof log.msg === 'string') {
-                crashHandler(new Error(log.msg));
+            if (typeof log.args[0] === 'string') {
+                crashHandler(new Error(log.args[0]));
             } else {
-                crashHandler(log.msg);
+                crashHandler(log.args);
             }
         }
 
@@ -178,14 +183,14 @@ const Log = (function () {
 
         if (level === 'INFO' || (SystemInformation.mode === 'development' && level === 'DEBUG')) {
             // INFO, DEBUG ( Only shown during development )
-            console.log(`%c${entry.time} Σ${entry.sum}ms Δ${entry.delta}ms\n%c[${log.module}]: %c${log.msg}`, 'color: rgb(154 154 154);'
-                , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', log.data ? log.data : '');
+            console.log(`%c${entry.time} Σ${entry.sum}ms Δ${entry.delta}ms\n%c[${log.module}]:%c`, 'color: rgb(154 154 154);'
+                , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', ...log.args);
         } else if (level === 'WARN') {
             // WARN
-            console.warn(`[${log.module}]: ${log.msg}`, log.data ? log.data : '')
+            console.warn(`[${log.module}]:`, ...log.args)
         } else if (level === 'ERROR' || level === 'FATAL') {
             // ERROR, FATAL
-            console.error(`[${log.module}]: ${log.msg}`, log.data ? log.data : '')
+            console.error(`[${log.module}]:`, ...log.args)
         }
     }
 
@@ -213,42 +218,37 @@ class Logger {
         if (!module || typeof module != 'string') return;
         this.module = module;
     }
-    debug(msg, data = null) {
+    debug(...args) {
         Log.append({
-            msg,
-            data,
+            args,
             module: this.module,
             level: 'debug'
         })
     }
-    info(msg, data = null) {
+    info(...args) {
         Log.append({
-            msg,
-            data,
+            args,
             module: this.module,
             level: 'info'
         })
     }
-    warn(msg, data = null) {
+    warn(...args) {
         Log.append({
-            msg,
-            data,
+            args,
             module: this.module,
             level: 'warn'
         })
     }
-    error(msg, data = null) {
+    error(...args) {
         Log.append({
-            msg,
-            data,
+            args,
             module: this.module,
             level: 'error'
         })
     }
-    fatal(msg, data = null) {
+    fatal(...args) {
         Log.append({
-            msg,
-            data,
+            args,
             module: this.module,
             level: 'fatal'
         })

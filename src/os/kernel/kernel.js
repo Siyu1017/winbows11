@@ -7,6 +7,7 @@ import ModuleManager from "../moduleManager.js";
 import Logger from "../core/log.js";
 import timer from "../core/timer.js";
 import { winbowsIcon } from "../core/viewport.js";
+import options from "../core/options.js";
 
 async function main() {
     // TODO: i18n

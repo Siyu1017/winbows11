@@ -1232,4 +1232,14 @@ window.fsUtils = fsUtils;
 Object.freeze(window.IDBFS);
 Object.freeze(window.fsUtils);
 
+// const driver = new IndexedDBDriver({ id: "test-driver" });
+// await driver.init();
+
+// const vfs = new VFS(driver);
+// await vfs.init();
+
+//const IDBFS = function (_, __dirname = "") {
+//    return vfs;
+//}
+
 export { IDBFS, fsUtils };

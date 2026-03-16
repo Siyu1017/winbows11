@@ -221,6 +221,7 @@ export default async function init() {
 
         const shell = new System.ShellInstance(pseudoProcess.process);
         shell.execCommand('info');
+        //shell.execCommand('%temp%/snippet.wrt');
         //shell.execCommand('cmd');
         //shell.execCommand('debuglog-parser');
         //shell.execCommand('explorer --path=C:/');
@@ -279,10 +280,13 @@ export default async function init() {
         // shell.execCommand('C:/User/Documents/sdk-v1/examples/copilot.wrt');
         // shell.execCommand('C:/User/Documents/sdk-v1/examples/cheapwordle.wrt');
 
-        await shell.execCommand('"C:/User/Documents/sdk-v1/examples/setup-beta-env.wrt"');
-        shell.execCommand('explorer --path=C:/User/Documents/sdk-v1/examples/');
+        //await shell.execCommand('"C:/User/Documents/sdk-v1/examples/setup-beta-env.wrt"');
+        //shell.execCommand('explorer --path=C:/User/Documents/sdk-v1/examples/');
+        // shell.execCommand('"C:/User/Documents/sdk-v1/tests/shell.test.wrt"');
+        // shell.execCommand('"C:/User/Documents/sdk-v1/examples/bad-apple/script.wrt"');
+        //shell.execCommand('debuglog-parser');
 
-        fs.downloadFile('C:/User/Documents/sdk-v1/examples/calculator.wrt');
+        //fs.downloadFile('C:/User/Documents/sdk-v1/examples/calculator.wrt');
 
         // WinbowsDebugLog.export();
     })

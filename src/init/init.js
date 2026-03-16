@@ -238,7 +238,7 @@ Object.defineProperty(window.modes, 'dev', {
         }
 
         console.log(buildId)
-        if (localBuildId != buildId && !getJsonFromURL()['embed']) {
+        if (localBuildId != buildId && !getJsonFromURL()['skip_installation']) {
             // needs to update
             window.needsUpdate = true;
 

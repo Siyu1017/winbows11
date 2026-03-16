@@ -1,5 +1,5 @@
 import { IDBFS } from "../../../shared/fs.js";
-import { EventEmitter, getPosition, getStackTrace, randomID } from "../../../shared/utils.ts";
+import { EventEmitter, getPosition, getStackTrace, isPromise, randomID } from "../../../shared/utils.ts";
 import { fallbackImage } from "../../core/fallback.js";
 import Logger from "../../core/log.js";
 import timer from "../../core/timer.js";
@@ -97,6 +97,9 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         } else {
             fs.getFileURL(app.icon).then(url => {
                 thumbnailIcon.style.backgroundImage = `url(${url})`;
+            }).catch(e => {
+                thumbnailIcon.style.backgroundImage = `url(${fallbackImage})`;
+                console.error(e)
             })
         }
         thumbnailTitle.innerHTML = app.title;
@@ -489,7 +492,11 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
     for (let i = 0; i < pinnedIcons.length; i++) {
         const appData = appRegistry.getInfoByName(pinnedIcons[i]);
         pinnedIcons[i] = appRegistry.generateProfile(appData.appName, appData.basePath, appData.entryScript);
-        pinnedIcons[i].preloadedIcon = await fs.getFileURL(pinnedIcons[i].icon);
+        try {
+            pinnedIcons[i].preloadedIcon = await fs.getFileURL(pinnedIcons[i].icon);
+        } catch (e) {
+            pinnedIcons[i].preloadedIcon = fallbackImage;
+        }
     }
 
     async function init() {
@@ -532,6 +539,36 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         taskbarIcons.style.width = 'revert-layer';
     }
 
+    let waitingList = {};
+    async function generateIcon({
+        appId, owner, type, icon
+    }) {
+        if (iconRepository[appId]) return false;
+        if (waitingList[appId]) {
+            return new Promise((rs, rj) => {
+                waitingList[appId].on('ok', rs);
+                waitingList[appId].on('error', rj);
+            })
+        }
+        const eventEmitter = new EventEmitter();
+        waitingList[appId] = eventEmitter;
+
+        try {
+            if (icon.toUpperCase().startsWith('C:/')) {
+                icon = await fs.getFileURL(icon);
+            }
+        } catch (e) {
+            eventEmitter._emit('error', e);
+            icon = fallbackImage;
+        }
+
+        iconRepository[appId] = new Icon({
+            owner, type, icon
+        })
+
+        waitingList[appId] = null;
+    }
+
     timer.groupEnd();
 
     return {
@@ -539,11 +576,12 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         async getIcon(appData) {
             const appId = appData.appId;
             if (!iconRepository[appId]) {
-                iconRepository[appId] = new Icon({
+                await generateIcon({
+                    appId: appId,
                     type: appData.type,
                     owner: appId,
-                    icon: await fs.getFileURL(appData.icon),
-                });
+                    icon: appData.icon,
+                })
             }
             return iconRepository[appId];
         },

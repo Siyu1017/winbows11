@@ -10,7 +10,7 @@
     "checkJs": false,
     "outDir": "dist",
     "types": [
-      "./types/globals"
+      "./types/wrt/index.d.ts"
     ],
     // "noEmit": true,
     // "allowImportingTsExtensions": true
@@ -21,9 +21,12 @@
   ],
   "include": [
     "User/**/*.js",
+    "User/**/*.wrt",
     "Program Files/**/*.js",
+    "Program Files/**/*.wrt",
     "Winbows/**/*.js",
+    "Winbows/**/*.wrt",
     "src/**/*.js",
-    "src/**/*.ts", "src/os/devtool/userData.ts",
+    "src/**/*.ts"
   ]
 }

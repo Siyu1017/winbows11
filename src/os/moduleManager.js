@@ -42,7 +42,7 @@ const ModuleManager = {
     deregister(name, tag) {
         const mod = modules.get(name);
         if (!mod) {
-            throw new Error(`Module ${name} not found`);
+            throw new Error(`Module '${name}' not found`);
         }
 
         if (tag) {
@@ -92,7 +92,7 @@ const ModuleManager = {
     get(name, tag) {
         const mod = modules.get(name);
         if (!mod) {
-            logger.warn(`Module ${name} not found`);
+            logger.warn(`Module '${name}' not found`);
             return null;
         }
 

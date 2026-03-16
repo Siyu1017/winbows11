@@ -79,30 +79,191 @@ input.addEventListener('change', function (event) {
                 info[key.trim()] = value.trim();
             });
             devtool.console.info(`Version: ${info.VERSION}\nContent type: ${info.TYPE}`);
+
+            if (info.VERSION === '1') {
+                handle_v1(lines);
+            } else if (info.VERSION === '2') {
+                handle_v2(lines);
+            }
         } else {
             // If the first line is not an information line, put it back to lines
             devtool.console.warn('No log information found in the log file.');
             lines.unshift(informationLine);
         }
-
-        try {
-            while (lines.length) {
-                const log = JSON.parse(lines.shift());
-                if (log.data) {
-                    try {
-                        log.data = JSON.parse(log.data);
-                    } catch (e) {
-                        // Not JSON, keep as is
-                        console.error('Error parsing log data JSON:', e);
-                    }
-                }
-                devtool.console.log(`%c${log.time} Σ${log.sum}ms Δ${log.delta}ms\n%c[${log.module}/${log.level}]: %c${log.msg}`, 'color: rgb(154 154 154);'
-                    , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', log.data ? log.data : '');
-                await new Promise(resolve => setTimeout(resolve));
-            }
-        } catch (error) {
-            console.error('Error parsing JSON:', error);
-        }
     };
     reader.readAsText(file);
 });
+
+async function handle_v1(lines) {
+    try {
+        while (lines.length) {
+            const log = JSON.parse(lines.shift());
+            if (log.data) {
+                try {
+                    log.data = JSON.parse(log.data);
+                } catch (e) {
+                    // Not JSON, keep as is
+                    console.error('Error parsing log data JSON:', e);
+                }
+            }
+            devtool.console.log(`%c${log.time} Σ${log.sum}ms Δ${log.delta}ms\n%c[${log.module}/${log.level}]: %c${log.msg}`, 'color: rgb(154 154 154);'
+                , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', log.data ? log.data : '');
+            await new Promise(resolve => setTimeout(resolve));
+        }
+    } catch (error) {
+        console.error('Error parsing JSON:', error);
+    }
+}
+
+async function handle_v2(lines) {
+    function extractParams(str) {
+        const params = {};
+        let defaultParam;
+
+        let levels = [];
+        let data;
+        let cursor = 0;
+
+        if (str[cursor] === '\\') {
+            let type = '';
+            let char = str[++cursor];
+            while (char !== '{') {
+                if (['"', '}'].includes(str[cursor])) throw new Error(`unexpected token '${str[cursor]}' at line ${1}, col ${cursor}`);
+                type += char;
+                char = str[++cursor];
+                if (cursor > str.length - 1) throw new Error(`'}' expected`);
+            }
+
+        }
+        for (let cursor = 0; cursor < str.length; cursor++) {
+            const char = str[cursor];
+            if (char === '\\') {
+                if (str[cursor + 1] == '\\') {
+                    cursor++;
+                    continue;
+                }
+                levels.push('cmd');
+            }
+            if (levels[levels.length - 1] === 'cmd' && char === '{') {
+                levels.splice(levels.length - 1, 1, 'param');
+            }
+            if (levels[levels.length - 1] === 'param' && char === '"') {
+                levels.push('string');
+            }
+            if (levels[levels.length - 1] === 'string' && char === '"') {
+                levels.splice(-1, 1);
+            }
+
+        }
+
+        paramArr.forEach(kv => {
+            let state = '';
+            let opening = -1;
+            let type = '';
+
+            for (let cursor = 0; cursor < kv.length; cursor++) {
+                const char = kv[cursor];
+                if (char === '\\' && kv[cursor + 1] === '\\') {
+                    cursor++;
+                    continue;
+                }
+                if (char === '\\') {
+                    state = 'cmd_opening';
+                    opening = cursor;
+                }
+                if (char === '{' && kv[cursor - 1] !== '\\') {
+                    if (state === 'cmd_opening') {
+                        state = 'param_opening';
+                    }
+                }
+
+
+                if (state === 'cmd_opening') {
+                    type += char;
+                }
+            }
+        })
+    }
+    const parsers = {
+        'object': (str) => {
+            const params = str.split(',');
+            params.forEach()
+        }
+    }
+    function structureParser(type, params) {
+        if (type === 'object') {
+            return {}
+        } else if (type === 'array') {
+            return [];
+        } else if (type === 'map') {
+            return new Map();
+        } else if (type === 'set') {
+            return new Set();
+        } else if (type === 'file') {
+            return new File();
+        } else if (type === 'blob') {
+            return new Blob();
+        } else if (type === 'class') {
+            const func = function () { };
+            func.prototype.__proto__ = Object;
+            return func;
+        } else if (type === 'arrow_func') {
+            return params.async === true ? async () => { } : () => { };
+        } else if (type === 'func') {
+            return
+        } else if (type === 'err') {
+            return new Error();
+        }
+    }
+
+    function argParser(arg) {
+        const UNKNOWN_STRUCTURE = "__unknown__"
+        let levels = [];
+        let structure = UNKNOWN_STRUCTURE;
+        let target = [];
+        let param = null;
+
+        if (arg.length === 0) return undefined;
+        if (arg[0] === '"' && arg[arg.length - 1] === '"') return arg.slice(1, arg.length - 1);
+        if (arg[0] !== '\\') throw new Error(`unexpected token '${arg[0]}' at line ${1}, col ${0}`);
+
+        for (let cursor = 1; cursor < arg.length; cursor++) {
+            let char = arg[cursor];
+
+            if (structure === UNKNOWN_STRUCTURE && ["}", "\\", '"'].includes(char)) {
+                throw new Error(`unexpected token '${char}' at line 1, col ${cursor}`);
+            }
+            if (structure === UNKNOWN_STRUCTURE && ['{'].includes(char)) {
+                if (arg[arg.length - 1] !== '}') throw new Error(`'}' expected`);
+                console.info(`arg type: ${arg.slice(1, cursor)}`);
+                const type = arg.slice(1, cursor);
+                const param = arg.slice(cursor + 1, arg.length - 1);
+                structure = structureParser(type, param);
+                break;
+                // return structureParser(arg.slice(1, cursor), arg.slice(cursor + 1, arg.length - 1));
+            }
+        }
+
+        return structure;
+    }
+
+    try {
+        while (lines.length) {
+            const log = JSON.parse(lines.shift());
+            if (log.data) {
+                try {
+                    log.data = JSON.parse(log.data);
+                } catch (e) {
+                    // Not JSON, keep as is
+                    console.error('Error parsing log data JSON:', e);
+                }
+            }
+
+            devtool.console.log(`%c${log.time} Σ${log.sum}ms Δ${log.delta}ms\n%c[${log.module}/${log.level}]:%c`, 'color: rgb(154 154 154);'
+                , 'color: rgb(192 170 251);font-weight:bold;', 'color: unset;font-weight:bold;', ...log.args.map(argParser));
+            await new Promise(resolve => setTimeout(resolve));
+        }
+    } catch (error) {
+        console.error('Error parsing JSON:', error);
+    }
+}

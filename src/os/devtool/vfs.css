@@ -1,0 +1,33 @@
+.vfs-btn {
+    background: #a7cbff;
+    color: #000;
+    padding: .5rem .75rem;
+    border-radius: 99rem;
+    border: 0;
+    user-select: none;
+}
+
+.vfs-test-record {
+    white-space: pre-wrap;
+    border-radius: .5rem;
+    padding: .5rem .75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.vfs-test-record:hover {
+    background: rgba(255, 255, 255, .1);
+}
+
+.vfs-test-record-info {
+    white-space: pre-wrap;
+}
+
+.vfs-test-record-btn {
+    background: rgb(255, 44, 44);
+    padding: .5rem 1rem;
+    border-radius: .25rem;
+    cursor: pointer;
+    user-select: none;
+}

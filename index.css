@@ -411,6 +411,7 @@ body {
     flex-direction: column;
     padding: 8rem;
     color: #ededed;
+    transition: all .4s ease-in-out;
 }
 
 .lock-screen-time {
@@ -469,7 +470,8 @@ body {
 }
 
 .lock-screen.signin .lock-screen-main {
-    opacity: 0;
+    /* opacity: 0; */
+    transform: translateY(-100%);
 }
 
 .lock-screen-signin-avatar {
@@ -1311,8 +1313,8 @@ body {
 .browser-window-container[data-maximized="true"] {
     /*width: 100vw;
     height: calc(var(--viewport-height) - var(--taskbar-height));*/
-    top: 0;
-    left: 0;
+    /*top: 0;
+    left: 0;*/
 }
 
 .browser-window-snap-preview {

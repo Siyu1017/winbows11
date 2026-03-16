@@ -5,7 +5,7 @@ import TerserPlugin from 'terser-webpack-plugin';
 import pkg from "./package.json" assert { type: "json" };
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 
-const BUILD_ID = fs.readFileSync('build.txt', 'utf-8');
+const BUILD_ID = process.env.BUILD_ID || fs.readFileSync('build.txt', 'utf-8');
 if (!BUILD_ID) throw new Error('An error occurred while reading build id');
 
 export default [

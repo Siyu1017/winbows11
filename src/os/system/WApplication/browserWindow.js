@@ -65,27 +65,48 @@ const events = {
 const animateProfiles = {
     'window-show': {
         func: cubicBezier(.04, .73, .16, 1),
-        duration: 150
+        duration: 150,
+        base: 150
     },
     'window-hide': {
         func: cubicBezier(.77, -0.02, .98, .59),
-        duration: 150
+        duration: 150,
+        base: 150
     },
     'window-open': {
         func: cubicBezier(.42, 0, .58, 1),
-        duration: 100
+        duration: 100,
+        base: 100
     },
     'window-close': {
         func: cubicBezier(.42, 0, .58, 1),
-        duration: 100
+        duration: 100,
+        base: 100
     },
     'taskview-in': {
         func: cubicBezier(0, .87, .21, 1),
-        duration: 200
+        duration: 200,
+        base: 200
     },
     'taskview-out': {
         func: cubicBezier(.37, 1.03, 1, 1),
-        duration: 150
+        duration: 150,
+        base: 150
+    },
+    'window-maximize': {
+        func: cubicBezier(.8, .01, .28, .99),
+        duration: 200,
+        base: 200
+    },
+    'window-unmaximize': {
+        func: cubicBezier(.8, .01, .28, .99),
+        duration: 200,
+        base: 200
+    },
+    'no-animation': {
+        func: t => 1,
+        duration: 0,
+        base: 0
     }
 };
 
@@ -391,6 +412,17 @@ export class BrowserWindow extends EventEmitter {
         this.browserWindow.toolbar.className = 'window-toolbar';
         this.browserWindow.content.className = 'window-content';
 
+        this.realWidth = this.width;
+        this.realHeight = this.height;
+        if (this.realWidth < this.minWidth) {
+            this.realWidth = this.minWidth;
+        }
+        if (this.realHeight < this.minHeight) {
+            this.realHeight = this.minHeight;
+        }
+        this.browserWindow.window.style.width = this.realWidth + 'px';
+        this.browserWindow.window.style.height = this.realHeight + 'px';
+
         this.shadowRoot.appendChild(this.browserWindow.window);
         this.browserWindow.window.appendChild(this.browserWindow.toolbar);
         this.browserWindow.window.appendChild(this.browserWindow.content);
@@ -618,7 +650,7 @@ export class BrowserWindow extends EventEmitter {
             from: {
                 scaleX: .9,
                 scaleY: .9,
-                opacity: 0
+                // opacity: 0
             },
             to: {
                 x: this.x,
@@ -648,6 +680,10 @@ export class BrowserWindow extends EventEmitter {
             .then(url => {
                 this.icon = url;
                 this.toolbarIcon.style.backgroundImage = `url(${url})`;
+            }).catch(e => {
+                console.error(e);
+                this.icon = fallbackImage;
+                this.toolbarIcon.style.backgroundImage = `url(${fallbackImage})`;
             });
 
         this.toolbarTitle.innerHTML = utils.replaceHTMLTags(this.title);
@@ -1181,7 +1217,7 @@ ${this.animationData.stat.scaleY}
                 y: viewport.height - 48 - 8 - height * (1 - scale) / 2 - windowHeight,
                 scaleX: scale,
                 scaleY: scale,
-                opacity: 0
+                // opacity: 0
             },
             profile: 'window-hide'
         });
@@ -1191,6 +1227,7 @@ ${this.animationData.stat.scaleY}
             if (this.isMinimized == true && condition?.() !== false) {
                 this.container.style.setProperty('z-index', '-1', 'important');
                 this.container.style.setProperty('visibility', 'hidden');
+                this.container.hidden = true;
             }
         }, animateProfiles['window-hide'].duration);
     }
@@ -1209,6 +1246,8 @@ ${this.animationData.stat.scaleY}
         }
         this.isMinimized = false;
         this.container.style.transition = 'none';
+        this.container.hidden = false;
+        this.container.style.visibility = 'visible';
         this.focus();
         this.animate({
             to: {
@@ -1232,23 +1271,36 @@ ${this.animationData.stat.scaleY}
         this.originalSnapSide = 'f';
         this.isMaximized = true;
         this.container.setAttribute('data-maximized', 'true');
-        this.container.style.transform = `translate(0px,0px)`;
+        //this.container.style.transform = `translate(0px,0px)`;
         this.realX = 0;
         this.realY = 0;
         // hostElement.style.width = 'var(--viewport-width)';
         // hostElement.style.height = 'calc(var(--viewport-height) - var(--taskbar-height))';
 
         if (animation == true) {
-            this.container.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-            this.browserWindow.window.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+            this.container.style.transition = `all ${animateProfiles['window-unmaximize'].duration}ms cubic-bezier(.8,.01,.28,.99)`;
+            this.browserWindow.window.style.transition = `all ${animateProfiles['window-unmaximize'].duration}ms cubic-bezier(.8,.01,.28,.99)`;
+            this.container.style.transitionProperty = 'width, height, border-radius';
+            this.browserWindow.window.style.transitionProperty = 'width, height, border-radius';
             setTimeout(() => {
-                this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                //this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                 this.browserWindow.window.style.transition = 'none';
             }, 200)
         } else {
-            this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+            //this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
             this.browserWindow.window.style.transition = 'none';
         }
+
+        this.animate({
+            to: {
+                x: 0,
+                y: 0,
+                scaleX: 1,
+                scaleY: 1,
+                opacity: 1
+            },
+            profile: animation === true ? 'window-maximize' : 'no-animation'
+        });
 
         this.browserWindow.window.style.width = 'var(--viewport-width)';
         this.browserWindow.window.style.height = 'calc(var(--viewport-height) - var(--taskbar-height))';
@@ -1265,21 +1317,35 @@ ${this.animationData.stat.scaleY}
         this.originalSnapSide = '';
         this.isMaximized = false;
         this.container.removeAttribute('data-maximized');
-        this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
+        //this.container.style.transform = `translate(${this.x}px,${this.y}px)`;
         this.realX = this.x;
         this.realY = this.y;
 
         if (animation == true) {
-            this.container.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
-            this.browserWindow.window.style.transition = 'all 200ms cubic-bezier(.8,.01,.28,.99)';
+            this.container.style.transition = `all ${animateProfiles['window-unmaximize'].duration}ms cubic-bezier(.8,.01,.28,.99)`;
+            this.browserWindow.window.style.transition = `all ${animateProfiles['window-unmaximize'].duration}ms cubic-bezier(.8,.01,.28,.99)`;
+            this.container.style.transitionProperty = 'width, height, border-radius';
+            this.browserWindow.window.style.transitionProperty = 'width, height, border-radius';
+
             setTimeout(() => {
-                this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+                //this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
                 this.browserWindow.window.style.transition = 'none';
             }, 200)
         } else {
-            this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
+            //this.container.style.transition = 'transform 100ms ease-in-out, opacity 100ms ease-in-out';
             this.browserWindow.window.style.transition = 'none';
         }
+
+        this.animate({
+            to: {
+                x: this.x,
+                y: this.y,
+                scaleX: 1,
+                scaleY: 1,
+                opacity: 1
+            },
+            profile: animation === true ? 'window-unmaximize' : 'no-animation'
+        });
 
         this.browserWindow.window.style.width = this.width + 'px';
         this.browserWindow.window.style.height = this.height + 'px';
@@ -1313,7 +1379,7 @@ ${this.animationData.stat.scaleY}
 
         setTimeout(() => {
             this.container.remove();
-        }, 200);
+        }, animateProfiles['window-close'].duration);
     }
 
     changeTitle = (title = 'App') => {
@@ -1721,3 +1787,6 @@ ${this.animationData.stat.scaleY}
         return { Tab, on };
     }
 }
+
+ModuleManager.register('BrowserWindow', BrowserWindow, 'original');
+ModuleManager.register('BrowserWindow.internal.animationProfiles', animateProfiles, 'original');

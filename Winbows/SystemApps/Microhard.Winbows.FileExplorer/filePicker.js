@@ -23,18 +23,24 @@ document.body.classList.add('winui-no-background');
 
 const styles = ['./window.css', './filePicker.css', './pages/style.css'];
 
-const promises = [];
 for (let i in styles) {
-    promises.push(new Promise(async (resolve, reject) => {
-        let style = document.createElement('link');
-        style.rel = 'stylesheet';
-        style.type = 'text/css';
-        style.href = await fs.getFileURL(path.resolve(styles[i]));
-        document.head.appendChild(style);
-        resolve();
-    }))
+    await(function () {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let style = document.createElement('link');
+                style.rel = 'stylesheet';
+                style.type = 'text/css';
+                style.href = await fs.getFileURL(path.resolve(styles[i]));
+                document.head.appendChild(style);
+                resolve();
+            } catch (e) {
+                console.error(e);
+            }
+        })
+    })();
 }
-await Promise.allSettled(promises);
+
+console.log(this)
 
 const pipe = process.env.pipe;
 const channel = IPC.connect(pipe);
