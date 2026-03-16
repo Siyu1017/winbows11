@@ -1,0 +1,240 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+async function input(promptText) {
+    process.stdin.resume();
+    process.stdout.write(promptText);
+
+    return new Promise(resolve => {
+        process.stdin.once('data', dt => {
+            process.stdin.pause();
+            resolve(dt);
+            process.stdout.write('\n');
+        });
+    })
+}
+
+function hexToRgb(hex) {
+    const bigint = parseInt(hex.replace('#', ''), 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return [r, g, b];
+}
+
+function hexColor(text, hex) {
+    const [r, g, b] = hexToRgb(hex);
+    return `\x1b[48;2;${r};${g};${b}m${text}\x1b[0m`;
+}
+
+const guessed = {};
+const color = {
+    correct_position: '#538d4e',
+    wrong_position: '#b59f3b',
+    not_in_word: '#3a3a3c',
+    not_guessed: '#818384'
+}
+
+!"ABCDEFGHIJKLMNOPQRSTUVWXYZ".split('').forEach(ch => {
+    guessed[ch] = 'not_guessed';
+});
+
+function colorizeGuess(guess, answer) {
+    const result = [];
+    const answerArr = answer.split("");
+    const used = Array(answer.length).fill(false);
+
+    for (let i = 0; i < guess.length; i++) {
+        if (guess[i] === answer[i]) {
+            const char = guess[i].toUpperCase();
+            guessed[char] = 'correct_position';
+            result[i] = hexColor(` ${char} `, '#538d4e');
+            used[i] = true;
+        }
+    }
+
+    for (let i = 0; i < guess.length; i++) {
+        if (!result[i]) {
+            const idx = answerArr.findIndex(
+                (ch, j) => ch === guess[i] && !used[j]
+            );
+            const char = guess[i].toUpperCase();
+            if (idx !== -1) {
+                if (guessed[char] !== 'correct_position') {
+                    guessed[char] = 'wrong_position';
+                }
+                result[i] = hexColor(` ${char} `, '#b59f3b');
+                used[idx] = true;
+            } else {
+                if (guessed[char] === 'not_guessed') {
+                    guessed[char] = 'not_in_word';
+                }
+                result[i] = hexColor(` ${char} `, '#3a3a3c');
+            }
+        }
+    }
+
+    return result.join("");
+}
+
+function keyboardStatus() {
+    const paddingLeft = 1;
+    const keyboardStyle = [1, 1, 2, 2, 2];  // padding(t, b, l, r), gap
+    const layout = [
+        'qwertyuiop',
+        'asdfghjkl',
+        'zxcvbnm'
+    ]
+
+    process.stdout.write('\n');
+    for (let i = 0; i < layout.length; i++) {
+        const topPadding = keyboardStyle[0];
+        const bottomPadding = keyboardStyle[1];
+        const leftPadding = keyboardStyle[2];
+        const rightPadding = keyboardStyle[3];
+        const gap = keyboardStyle[4];
+        const chars = layout[i].split('');
+
+        for (let j = 0; j < topPadding; j++) {
+            process.stdout.write(' '.repeat(paddingLeft + i * 3));
+            for (let k = 0; k < chars.length; k++) {
+                const char = chars[k].toUpperCase();
+                process.stdout.write(hexColor(' '.repeat(leftPadding + rightPadding + 1), color[guessed[char]]));
+                if (gap > 0) {
+                    process.stdout.write(' '.repeat(gap));
+                }
+            }
+
+            process.stdout.write('\n');
+        }
+
+        process.stdout.write(' '.repeat(paddingLeft + i * 3));
+        for (let j = 0; j < chars.length; j++) {
+            const char = chars[j].toUpperCase();
+            process.stdout.write(hexColor(' '.repeat(leftPadding) + `${char}` + ' '.repeat(rightPadding), color[guessed[char]]));
+            if (gap > 0) {
+                process.stdout.write(' '.repeat(gap));
+            }
+        }
+        process.stdout.write('\n');
+
+        for (let j = 0; j < bottomPadding; j++) {
+            process.stdout.write(' '.repeat(paddingLeft + i * 3));
+            for (let k = 0; k < chars.length; k++) {
+                const char = chars[k].toUpperCase();
+                process.stdout.write(hexColor(' '.repeat(leftPadding + rightPadding + 1), color[guessed[char]]));
+                if (gap > 0) {
+                    process.stdout.write(' '.repeat(gap));
+                }
+            }
+            process.stdout.write('\n');
+        }
+
+        process.stdout.write('\n');
+    }
+}
+
+const words = [
+    "aback", "abase", "abate", "abbey", "abbot", "abhor", "abide", "abled", "abode", "abort", "about", "above", "abuse", "abyss",
+    "acorn", "acrid", "actor", "acute", "adapt", "adept", "admit", "adopt", "adore", "adult", "affix", "after", "again", "agent",
+    "agile", "aging", "agree", "ahead", "aisle", "alarm", "album", "alert", "alike", "alive", "allow", "alone", "along", "aloof",
+    "aloud", "alpha", "altar", "alter", "amaze", "amber", "amend", "amiss", "among", "ample", "angel", "anger", "angle", "angry",
+    "ankle", "annex", "annoy", "apple", "apply", "apron", "arbor", "arena", "argue", "arise", "armor", "aroma", "array", "arrow",
+    "aside", "asset", "atlas", "attic", "audio", "audit", "awake", "award", "aware", "awful", "axial", "azure",
+    "bacon", "badge", "badly", "bagel", "baker", "balmy", "banjo", "barge", "basin", "batch", "beach", "beard", "beast", "began",
+    "begin", "begun", "being", "belly", "below", "bench", "berry", "beset", "bible", "bingo", "birth", "black", "blade", "blame",
+    "blank", "blast", "blaze", "bleed", "blend", "bless", "blind", "blink", "bliss", "block", "blood", "bloom", "blown", "blues",
+    "board", "boast", "bonus", "boost", "booth", "bound", "brain", "brake", "brand", "brass", "brave", "bread", "break", "breed",
+    "brick", "bride", "brief", "bring", "brisk", "broad", "broke", "brook", "brown", "brush", "buddy", "build", "built", "bulky",
+    "bunny", "buyer", "cabin", "cable", "candy", "canoe", "carve", "carry", "catch", "cause", "cease", "chain", "chair", "chalk",
+    "champ", "chant", "chaos", "charm", "chart", "chase", "cheap", "check", "cheer", "chess", "chest", "chief", "child", "chili",
+    "chill", "china", "choir", "chose", "chunk", "cigar", "claim", "class", "clean", "clear", "clerk", "click", "climb", "clock",
+    "clone", "close", "cloth", "cloud", "clown", "coach", "coast", "color", "coral", "could", "count", "court", "cover", "crack",
+    "craft", "crane", "crash", "crawl", "crazy", "cream", "creek", "creep", "crime", "crisp", "cross", "crowd", "crown", "crude",
+    "cruel", "crush", "curve", "cycle", "daily", "dance", "dated", "dealt", "death", "debut", "delay", "depth", "devil", "diary",
+    "diner", "dirty", "disco", "ditch", "dodge", "doing", "donor", "doubt", "dozen", "draft", "drain", "drama", "drawn", "dream",
+    "dress", "drift", "drink", "drive", "droid", "drove", "drown", "druid", "eager", "early", "earth", "eight", "elbow", "elect",
+    "elite", "empty", "enemy", "enjoy", "enter", "entry", "equal", "error", "event", "every", "exact", "exile", "exist", "extra",
+    "fable", "facet", "faint", "fairy", "faith", "false", "fancy", "favor", "feast", "fence", "fetch", "fever", "fiber", "field",
+    "fifth", "fifty", "fight", "final", "first", "flame", "flash", "fleet", "flesh", "float", "flock", "flood", "floor", "flora",
+    "flour", "fluid", "focus", "force", "forge", "forth", "found", "frame", "fraud", "fresh", "front", "frost", "fruit", "funny",
+    "giant", "given", "glass", "glide", "globe", "glory", "glove", "grace", "grade", "grain", "grand", "grant", "grape", "graph",
+    "grass", "grave", "great", "green", "greet", "grill", "gross", "group", "guard", "guess", "guest", "guide", "habit", "happy",
+    "harsh", "heart", "heavy", "hello", "hobby", "honey", "honor", "horse", "hotel", "house", "hover", "human", "humor", "hurry",
+    "ideal", "image", "imply", "index", "inner", "input", "issue", "ivory", "jelly", "jewel", "joint", "judge", "juice", "juicy",
+    "knife", "knock", "known", "label", "labor", "large", "laser", "later", "laugh", "layer", "learn", "lemon", "level", "light",
+    "limit", "linen", "liver", "local", "logic", "loose", "lucky", "lunar", "lunch", "magic", "major", "maker", "maple", "march",
+    "match", "maybe", "metal", "meter", "might", "minor", "model", "money", "month", "moral", "motor", "mount", "mouse", "mouth",
+    "movie", "music", "naive", "nasty", "nerve", "never", "night", "noble", "north", "novel", "nurse", "ocean", "offer", "often",
+    "onion", "order", "other", "outer", "owner", "paint", "panel", "party", "pause", "peace", "pearl", "phase", "phone", "photo",
+    "piano", "pilot", "pitch", "place", "plain", "plane", "plant", "plate", "point", "power", "press", "price", "pride", "prime",
+    "print", "proof", "proud", "quick", "quiet", "queen", "radio", "raise", "range", "rapid", "reach", "react", "ready", "realm",
+    "rebel", "refer", "relax", "reply", "rival", "river", "robot", "rough", "round", "royal", "ruler", "rural", "scale", "scene",
+    "scope", "score", "screw", "sense", "serve", "shade", "shake", "shall", "shape", "share", "sharp", "sheep", "sheet", "shelf",
+    "shell", "shift", "shine", "shirt", "shock", "shoot", "shore", "short", "shown", "sight", "silly", "skill", "skirt", "sleep",
+    "slice", "slide", "slope", "small", "smart", "smile", "smoke", "snake", "sneak", "snowy", "solid", "sound", "south", "space",
+    "spare", "speak", "speed", "spend", "spice", "spike", "spine", "spite", "split", "spoon", "sport", "stage", "stair", "stand",
+    "start", "state", "steam", "steel", "steep", "stick", "still", "stock", "stone", "store", "storm", "story", "strap", "straw",
+    "stuck", "style", "sugar", "sunny", "sweet", "swing", "table", "taste", "teach", "thank", "their", "theme", "there", "these",
+    "thing", "think", "third", "those", "three", "throw", "tight", "tiger", "title", "today", "token", "tooth", "topic", "total",
+    "touch", "tough", "track", "trade", "train", "trend", "trial", "trick", "truck", "truth", "twice", "under", "union", "until",
+    "unite", "urban", "upper", "usual", "vague", "value", "vapor", "video", "vital", "voice", "vowel", "waste", "watch", "water",
+    "weary", "weird", "wheel", "where", "which", "while", "white", "whole", "whose", "woman", "world", "worry", "worse", "worst",
+    "worth", "would", "wound", "write", "wrong", "young", "youth"
+];
+const answer = words[Math.floor(Math.random() * words.length)];
+const maxTries = 6;
+
+const whiteBlock = hexColor('    ', '#ffffff');
+const yellowBlock = hexColor('    ', color.wrong_position);
+const greenBlock = hexColor('    ', color.correct_position);
+const emptyBlock = '    ';
+
+process.stdout.write(`
+  ${whiteBlock}  ${whiteBlock}  ${whiteBlock}
+  ${whiteBlock}  ${whiteBlock}  ${whiteBlock}    ██╗    ██╗ ██████╗ ██████╗ ██████╗ ██╗     ███████╗
+  ${emptyBlock}  ${emptyBlock}  ${emptyBlock}    ██║    ██║██╔═══██╗██╔══██╗██╔══██╗██║     ██╔════╝
+  ${whiteBlock}  ${yellowBlock}  ${greenBlock}    ██║ █╗ ██║██║   ██║██████╔╝██║  ██║██║     █████╗  
+  ${whiteBlock}  ${yellowBlock}  ${greenBlock}    ██║███╗██║██║   ██║██╔══██╗██║  ██║██║     ██╔══╝  
+  ${emptyBlock}  ${emptyBlock}  ${emptyBlock}    ╚███╔███╔╝╚██████╔╝██║  ██║██████╔╝███████╗███████╗
+  ${greenBlock}  ${greenBlock}  ${greenBlock}     ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚══════╝
+  ${greenBlock}  ${greenBlock}  ${greenBlock}
+\n\n`);
+process.stdout.write("Guess the 5-letter word!\nType \"/status\" for keyboard status.\n");
+
+for (let attempt = 1; attempt <= maxTries; attempt++) {
+    const guess = (await input(`\nAttempt ${attempt}/${maxTries}: `)).toLowerCase().trim();
+
+    if (guess.startsWith('/')) {
+        if (guess === '/status') {
+            keyboardStatus();
+            attempt--;
+            continue;
+        } else {
+            process.stdout.write("Unknown command.\n");
+            attempt--;
+            continue;
+        }
+    }
+
+    if (guess.length !== 5) {
+        process.stdout.write("Must be 5 letters.\n");
+        attempt--;
+        continue;
+    }
+
+    if (!/[a-zA-Z]{5}/.test(guess)) {
+        process.stdout.write("Not a valid word.\n");
+        attempt--;
+        continue;
+    }
+
+    const result = colorizeGuess(guess, answer);
+    process.stdout.write(result + "\n");
+
+    if (guess === answer) {
+        process.stdout.write(`\nYou guessed it in ${attempt} tries!`);
+        return;
+    }
+}
+
+process.stdout.write(`\nOut of tries! The word was "${answer.toUpperCase()}".`);

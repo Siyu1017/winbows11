@@ -1,4 +1,4 @@
-export default {
+module.exports = {
     "/accessibility": "Accessibility",
     "/accounts": "Accounts",
     "/applications": "Applications",

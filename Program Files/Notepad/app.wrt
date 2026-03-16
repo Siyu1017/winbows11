@@ -1,0 +1,27 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Notepad';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
+        title: 'Notepad',
+        x: 120,
+        y: 60,
+        mica: true
+    });
+    mainWindow.load('./window.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

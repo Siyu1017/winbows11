@@ -1,0 +1,75 @@
+//! $RTH={"type":"cli","runInBackground":false}
+// Original: https://github.com/g-otn/bad-apple-browser-console/blob/master/public/play.js
+
+const JSZip = await requireAsync('./lib/jszip.min.js');
+const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+/*
+James Edwards
+June 23, 2010
+https://www.sitepoint.com/creating-accurate-timers-in-javascript/
+*/
+function doTimer(length, resolution, oninstance, oncomplete) {
+    var steps = (length / 100) * (resolution / 10),
+        speed = length / steps,
+        count = 0,
+        start = new Date().getTime();
+
+    function instance() {
+        if (count++ == steps) {
+            oncomplete(steps, count);
+        }
+        else {
+            oninstance(steps, count);
+
+            // Modification: add stop switch
+            if (window.stopTimer) return;
+
+            var diff = (new Date().getTime() - start) - (count * speed);
+            window.setTimeout(instance, (speed - diff));
+        }
+    }
+
+    window.setTimeout(instance, speed);
+}
+
+const fps = 30, msPerFrame = 1000 / fps;
+let frames;
+
+const load = async () => {
+    process.stdout.write('Loading frame data...\n');
+    const data = await fs.downloadFile('./braille.zip');
+    process.stdout.write('Unzipping frames...\n');
+    const zip = await JSZip.loadAsync(data);
+    process.stdout.write('Loading frames...\n');
+    await zip.file('braille.txt')
+        .async('string')
+        .then((content) => {
+            frames = content.split('\n\n');
+            delete frames[frames.length - 1]; // Delete last empty 'frame' created by split command
+            process.stdout.write('Loaded\n');
+        });
+};
+
+const play = async () => {
+    process.stdout.write('\x1b[1J\x1b[;H');
+    // start printing
+    process.stdout.write('\x1b[1J\x1b[;H' + frames[0]);
+    return new Promise(resolve => {
+        doTimer(frames.length * msPerFrame, fps, (steps, count) => {
+            if (frames[count + 1]) {
+                if (isFirefox && (msPerFrame * count) % 6000 < msPerFrame) {
+                    // Firefox console slows down a bit if console isn't cleared once in a while
+                    // console.clear();
+                }
+                process.stdout.write('\x1b[1J\x1b[;H' + frames[count + 1]);
+                console.log(frames[count + 1]);
+            } else {
+                process.exit();
+            }
+        }, resolve);
+    });
+};
+
+await load();
+await play();

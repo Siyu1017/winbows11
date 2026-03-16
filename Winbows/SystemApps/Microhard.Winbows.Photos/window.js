@@ -1,10 +1,20 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
-var photoPath = datas.file;
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+}
+
+var photoPath = process.args['path'] || '';
 
 var supportedExtensions = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico"];
 var supportedMimeTypes = {
@@ -49,7 +59,7 @@ function chooseFile(message) {
 
     return new Promise((resolve, reject) => {
         document.querySelector('[data-bind="run"]').addEventListener('click', async function () {
-            var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.wexe').start();
+            var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.wrt').start();
             process.worker.addEventListener('message', (e) => {
                 if (e.data.token != process.token) return;
                 if (e.data.type == 'confirm') {
@@ -74,7 +84,7 @@ function check() {
         try {
             var photoBlob = await fs.readFile(photoPath);
             var photoBlobType = mineTypeToExtension(photoBlob ? photoBlob.type : '');
-            var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
+            var photoExtension = photoBlobType ? photoBlobType : path.extname(photoPath);
             var photoURL = URL.createObjectURL(photoBlob);
             if (!supportedExtensions.includes(photoExtension)) {
                 resolve(chooseFile(`<div>Unsupported file type ( ${photoExtension} )</div><br>`));
@@ -92,7 +102,7 @@ await check();
 
 var photoBlob = await fs.readFile(photoPath);
 var photoBlobType = mineTypeToExtension(photoBlob ? photoBlob.type : '');
-var photoExtension = photoBlobType ? photoBlobType : window.fs.getFileExtension(photoPath);
+var photoExtension = photoBlobType ? photoBlobType : path.extname(photoPath);
 var photoURL = URL.createObjectURL(photoBlob);
 
 var debuggerMode = false;
@@ -576,7 +586,7 @@ image.onload = () => {
     x = viewerCanvas.offsetWidth / 2 - image.width / 2;
     y = viewerCanvas.offsetHeight / 2 - image.height / 2;
     viewerActionbarInfoResolution.textContent = `${image.naturalWidth} x ${image.naturalHeight}`;
-    viewerActionbarInfoSize.textContent = window.utils.formatBytes(photoBlob.size);
+    viewerActionbarInfoSize.textContent = formatBytes(photoBlob.size);
     render();
     animate = false;
 

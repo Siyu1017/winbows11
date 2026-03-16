@@ -15,7 +15,7 @@ const {
 
 /**
  * @typedef {object} Etag
- * @property {function(): string} toString
+ * @property {() => string} toString
  */
 
 /**
@@ -26,17 +26,19 @@ const {
  * @returns {void}
  */
 
+/** @typedef {EXPECTED_ANY} Data */
+
 /**
  * @callback GotHandler
- * @param {any} result
- * @param {function(Error=): void} callback
+ * @param {TODO} result
+ * @param {(err?: Error) => void} callback
  * @returns {void}
  */
 
 /**
  * @param {number} times times
- * @param {function(Error=): void} callback callback
- * @returns {function(Error=): void} callback
+ * @param {(err?: Error) => void} callback callback
+ * @returns {(err?: Error) => void} callback
  */
 const needCalls = (times, callback) => err => {
 	if (--times === 0) {
@@ -51,9 +53,9 @@ const needCalls = (times, callback) => err => {
 class Cache {
 	constructor() {
 		this.hooks = {
-			/** @type {AsyncSeriesBailHook<[string, Etag | null, GotHandler[]], any>} */
+			/** @type {AsyncSeriesBailHook<[string, Etag | null, GotHandler[]], Data>} */
 			get: new AsyncSeriesBailHook(["identifier", "etag", "gotHandlers"]),
-			/** @type {AsyncParallelHook<[string, Etag | null, any]>} */
+			/** @type {AsyncParallelHook<[string, Etag | null, Data]>} */
 			store: new AsyncParallelHook(["identifier", "etag", "data"]),
 			/** @type {AsyncParallelHook<[Iterable<string>]>} */
 			storeBuildDependencies: new AsyncParallelHook(["dependencies"]),

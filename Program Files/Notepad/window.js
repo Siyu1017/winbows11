@@ -1,7 +1,27 @@
+var theme = System.theme.get()
+browserWindow.setTheme(theme);
+if (theme == 'dark') {
+    document.documentElement.classList.add('winui-dark');
+} else {
+    document.documentElement.classList.remove('winui-dark');
+}
+
+System.theme.onChange(theme => {
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+    }
+})
+
+document.body.classList.add('winui');
+document.body.classList.add('winui-no-background');
+
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-fs.getFileURL(utils.resolvePath('./window.css')).then(url => {
+fs.getFileURL(path.resolve('./window.css')).then(url => {
     style.href = url;
 });
 document.head.appendChild(style);
@@ -10,7 +30,7 @@ var tabview = browserWindow.useTabview();
 var tab = new tabview.Tab({
     icon: false
 });
-setupPage(tab);
+setupPage(tab, process.args.path);
 
 document.body.classList.add('winui');
 
@@ -21,6 +41,26 @@ tabview.on('requestCreateTab', (e) => {
     });
     setupPage(tab);
 })
+
+function randomID(count, chars) {
+    var chars = chars || 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
+        result = '',
+        length = chars.length;
+    for (let i = 0; i < count; i++) {
+        result += chars.charAt(Math.floor(Math.random() * length));
+    }
+    return result;
+};
+
+function getPosition(element) {
+    function offset(el) {
+        var rect = el.getBoundingClientRect(),
+            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+    }
+    return { x: offset(element).left, y: offset(element).top };
+}
 
 // Simple editor
 function createEditor(target) {
@@ -208,8 +248,8 @@ function createEditor(target) {
     return { editor, getValue, setValue, on };
 }
 
-async function setupPage(tab) {
-    tab.changeHeader('Untitled');
+async function setupPage(tab, file) {
+    tab.changeTitle('Untitled');
 
     var container = tab.getContainer();
     var menubar = document.createElement('div');
@@ -224,7 +264,7 @@ async function setupPage(tab) {
     container.appendChild(editorContainer);
     menubar.appendChild(menubarItems);
 
-    var filePath = datas.page || '';
+    var filePath = file || '';
     var fileContent = '';
     var editor = createEditor(editorContainer);
 
@@ -234,15 +274,15 @@ async function setupPage(tab) {
         }).then(res => {
             fileContent = res;
             editor.setValue(fileContent);
-            tab.changeHeader(window.parent.utils.getFileName(filePath));
+            tab.changeTitle(path.basename(filePath));
         })
     }
 
     editor.on('change', () => {
         if (fileContent != editor.getValue()) {
-            tab.changeHeader('● ' + (filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled'));
+            tab.changeTitle('● ' + (filePath != '' ? path.basename(filePath) : 'Untitled'));
         } else {
-            tab.changeHeader(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
+            tab.changeTitle(filePath != '' ? path.basename(filePath) : 'Untitled');
         }
     })
 
@@ -256,29 +296,35 @@ async function setupPage(tab) {
                     fileContent = '';
                     filePath = '';
                     editor.setValue(fileContent);
-                    tab.changeHeader('Untitled');
+                    tab.changeTitle('Untitled');
                 }
             }, {
                 text: 'Open File...',
                 action: async () => {
-                    var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseFile.js').start();
-                    process.worker.addEventListener('message', async (e) => {
-                        if (e.data.token != process.token) return;
-                        if (e.data.type == 'confirm') {
-                            filePath = e.data.items[0];
-                            process.exit(0);
-                            await fs.readFile(filePath).then(async res => {
-                                return res.text()
-                            }).then(content => {
-                                fileContent = content;
-                                editor.setValue(fileContent);
-                                tab.changeHeader(window.parent.utils.getFileName(filePath));
-                            })
-                        }
-                        if (e.data.type == 'cancel') {
-                            process.exit(0);
-                        }
+                    const items = await Explorer.FilePicker();
+                    filePath = items[0];
+                    if (!filePath) return;
+
+                    await fs.readFile(filePath).then(async res => {
+                        return res.text()
+                    }).then(content => {
+                        fileContent = content;
+                        editor.setValue(fileContent);
+                        tab.changeTitle(path.basename(filePath));
                     })
+
+                    // Pipe.on('data', async (e) => {
+                    //     if (e.data.type == 'confirm') {
+                    //         filePath = e.data.items[0];
+                    //         await path.readFile(filePath).then(async res => {
+                    //             return res.text()
+                    //         }).then(content => {
+                    //             fileContent = content;
+                    //             editor.setValue(fileContent);
+                    //             tab.changeTitle(path.basename(filePath));
+                    //         })
+                    //     }
+                    // })
                 }
             }, {
                 text: 'Save',
@@ -287,37 +333,38 @@ async function setupPage(tab) {
                         fs.writeFile(filePath, new Blob([editor.getValue()], {
                             type: 'text/plain;charset=utf-8'
                         })).then(() => {
-                            tab.changeHeader(filePath != '' ? window.parent.utils.getFileName(filePath) : 'Untitled');
+                            tab.changeTitle(filePath != '' ? path.basename(filePath) : 'Untitled');
                         })
                     } else {
-                        var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/saveFile.js').start();
-                        process.worker.addEventListener('message', (e) => {
-                            if (e.data.token != process.token) return;
-                            if (e.data.type == 'confirm') {
-                                // e.data.items[0];
-                                process.exit(0);
-                            }
-                            if (e.data.type == 'cancel') {
-                                process.exit(0);
-                            }
-                        })
+                        //const pipeName = '__notepad__filesaver__' + randomID(256);
+                        //const Pipe = IPC.listen(pipeName);
+                        //await System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/saveFile.wrt --pipe=${pipeName}`);
+
+                        //Pipe.on('data', (e) => {
+                        //    if (e.data.type == 'confirm') {
+                        //        filePath = e.data.items[0];
+                        //        fs.writeFile(filePath, new Blob([editor.getValue()], {
+                        //            type: 'text/plain;charset=utf-8'
+                        //        })).then(() => {
+                        //            tab.changeTitle(filePath != '' ? path.basename(filePath) : 'Untitled');
+                        //        })
+                        //    }
+                        //})
                     }
                 }
 
             }, {
                 text: 'Save As...',
                 action: async () => {
-                    var process = await new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/saveFile.js').start();
-                    process.worker.addEventListener('message', (e) => {
-                        if (e.data.token != process.token) return;
-                        if (e.data.type == 'confirm') {
-                            // e.data.items[0];
-                            process.exit(0);
-                        }
-                        if (e.data.type == 'cancel') {
-                            process.exit(0);
-                        }
-                    })
+                    //const pipeName = '__notepad__filesaver__' + randomID(256);
+                    //const Pipe = IPC.listen(pipeName);
+                    //await System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/saveFile.wrt --pipe=${pipeName}`);
+
+                    //Pipe.on('data', (e) => {
+                    //    if (e.data.type == 'confirm') {
+
+                    //    }
+                    //})
                 }
             }, {
                 type: 'separator'
@@ -357,6 +404,16 @@ async function setupPage(tab) {
                 role: 'selectall'
             }
         ]
+    }, {
+        text: 'View',
+        menu: [
+            {
+                text: 'Font',
+                action: () => {
+
+                }
+            }
+        ]
     }];
 
     var pointerdown = false;
@@ -374,8 +431,7 @@ async function setupPage(tab) {
         })
         function show() {
             menubarItem.classList.add('active');
-            var position = window.utils.getPosition(menubarItem);
-            menu.container.style.setProperty('--contextmenu-bg', 'rgb(249, 249, 249)');
+            const position = getPosition(menubarItem);
             menu.open(position.x, position.y + menubarItem.offsetHeight + 4, 'left-top');
         }
         function hide() {

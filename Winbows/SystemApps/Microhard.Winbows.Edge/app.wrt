@@ -1,0 +1,22 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Microhard Edge';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow();
+    mainWindow.load('./window.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

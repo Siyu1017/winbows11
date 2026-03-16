@@ -1,0 +1,39 @@
+//! $RTH={"type":"cli"}
+
+const shell = new ShellInstance(process);
+
+console.info(ShellInstance, this);
+
+shell.stdout.on('data', dt => {
+    /*let styles = [];
+    dt = dt.replace(/(?:\s*)(\S+)=(\S+)/g, (match, p1, p2) => {
+        styles = styles.concat(['color:rgb(140 197 255)','color:unset','color:#ff8b1c','color:unset']);
+        return `%c${p1}%c=%c${p2}%c`;
+    })
+    console.log('[STDOUT] ' + dt, ...styles);*/
+    console.log('[STDOUT]', dt);
+})
+shell.stderr.on('data', dt => {
+    console.error('[STDERR]', dt);
+})
+shell.on('dispose', code => {
+    console.log('Shell exited with code:', code)
+})
+
+// Enable execution time display
+await shell.execCommand('set SHOW_EXEC_TIME=1');
+
+// Print the original env variables
+await shell.execCommand('env');
+
+// Display available command
+await shell.execCommand('help');
+
+// Change the pwd to parent directory
+await shell.execCommand('cd ../unknown');
+
+// Display the env variables again
+await shell.execCommand('env');
+
+// Dispose the shell instance
+shell.dispose();

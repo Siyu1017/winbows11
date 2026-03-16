@@ -20,15 +20,16 @@ const {
 /** @typedef {import("../declarations/WebpackOptions").ResolveOptions} WebpackResolveOptions */
 /** @typedef {import("../declarations/WebpackOptions").ResolvePluginInstance} ResolvePluginInstance */
 
-/** @typedef {WebpackResolveOptions & {dependencyType?: string, resolveToContext?: boolean }} ResolveOptionsWithDependencyType */
+/** @typedef {WebpackResolveOptions & { dependencyType?: string, resolveToContext?: boolean }} ResolveOptionsWithDependencyType */
 /**
  * @typedef {object} WithOptions
- * @property {function(Partial<ResolveOptionsWithDependencyType>): ResolverWithOptions} withOptions create a resolver with additional/different options
+ * @property {(options: Partial<ResolveOptionsWithDependencyType>) => ResolverWithOptions} withOptions create a resolver with additional/different options
  */
 
 /** @typedef {Resolver & WithOptions} ResolverWithOptions */
 
 // need to be hoisted on module level for caching identity
+/** @type {ResolveOptionsWithDependencyType} */
 const EMPTY_RESOLVE_OPTIONS = {};
 
 /**
@@ -39,7 +40,7 @@ const convertToResolveOptions = resolveOptionsWithDepType => {
 	const { dependencyType, plugins, ...remaining } = resolveOptionsWithDepType;
 
 	// check type compat
-	/** @type {Partial<ResolveOptions>} */
+	/** @type {Partial<ResolveOptionsWithDependencyType>} */
 	const partialOptions = {
 		...remaining,
 		plugins:
@@ -56,20 +57,22 @@ const convertToResolveOptions = resolveOptionsWithDepType => {
 	}
 	// These weird types validate that we checked all non-optional properties
 	const options =
-		/** @type {Partial<ResolveOptions> & Pick<ResolveOptions, "fileSystem">} */ (
+		/** @type {Partial<ResolveOptionsWithDependencyType> & Pick<ResolveOptionsWithDependencyType, "fileSystem">} */ (
 			partialOptions
 		);
 
-	return removeOperations(
-		resolveByProperty(options, "byDependency", dependencyType),
-		// Keep the `unsafeCache` because it can be a `Proxy`
-		["unsafeCache"]
+	return /** @type {ResolveOptions} */ (
+		removeOperations(
+			resolveByProperty(options, "byDependency", dependencyType),
+			// Keep the `unsafeCache` because it can be a `Proxy`
+			["unsafeCache"]
+		)
 	);
 };
 
 /**
  * @typedef {object} ResolverCache
- * @property {WeakMap<object, ResolverWithOptions>} direct
+ * @property {WeakMap<ResolveOptionsWithDependencyType, ResolverWithOptions>} direct
  * @property {Map<string, ResolverWithOptions>} stringified
  */
 

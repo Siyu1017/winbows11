@@ -1,0 +1,34 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+process.title = 'Open with...';
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
+        width: 360,
+        height: 540,
+        x: 'center',
+        y: 'center',
+        fullscreenable: false,
+        resizable: false,
+        closable: false,
+        minimizable: false,
+        title: 'Open with...',
+        mica: true,
+        theme: 'system'
+    });
+    mainWindow.load('./chooseViewerWindow.js');
+
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

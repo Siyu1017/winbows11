@@ -31,7 +31,7 @@ browserWindow.addEventListener('dragstart', (e) => {
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('../Microhard.Winbows.Edge/window.css'));
+style.href = await fs.getFileURL(path.resolve('../Microhard.Winbows.Edge/window.css'));
 document.head.appendChild(style);
 
 function isLocalFile(page) {
@@ -159,14 +159,14 @@ async function createTab(page, active = true) {
         "move": ["mousemove", "touchmove", "pointermove"],
         "end": ["mouseup", "touchend", "pointerup", "blur"]
     }
-    var properties = { changeHeader, changeIcon, close, focus, blur, tab, id };
+    var properties = { changeTitle, changeIcon, close, focus, blur, tab, id };
     tabs[id] = properties;
 
     function moveNodeToIndex(nodeIndex, targetIndex, container) {
         const children = Array.from(container.children);
 
         if (nodeIndex < 0 || nodeIndex >= children.length || targetIndex < 0 || targetIndex >= children.length) {
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.error('索引超出範圍');
             }
             return;
@@ -184,7 +184,7 @@ async function createTab(page, active = true) {
 
     function moveArrayItem(arr, fromIndex, toIndex) {
         if (fromIndex < 0 || fromIndex >= arr.length || toIndex < 0 || toIndex >= arr.length) {
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.error('索引超出範圍');
             }
             return;
@@ -193,7 +193,7 @@ async function createTab(page, active = true) {
         const item = arr.splice(fromIndex, 1)[0];
         arr.splice(toIndex, 0, item);
 
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(arr, item)
         }
 
@@ -349,7 +349,7 @@ async function createTab(page, active = true) {
     function changeIcon(icon) {
         tabIcon.style.backgroundImage = `url(${icon})`;
     }
-    function changeHeader(header) {
+    function changeTitle(header) {
         tabHeader.innerHTML = header;
     }
 
@@ -572,7 +572,7 @@ async function createTab(page, active = true) {
         viewerTitle.innerHTML = '';
         viewerList.innerHTML = '';
         var exists = fs.exists(currentPage);
-        changeHeader(currentPage);
+        changeTitle(currentPage);
         if (!exists.exists) {
             viewerList.innerHTML = 'File not found.';
             showViewer();
@@ -631,7 +631,7 @@ async function createTab(page, active = true) {
                 var url = await fs.getFileURL(currentPage);
                 getHeader(url).then(header => {
                     if (header == url) return;
-                    changeHeader(header);
+                    changeTitle(header);
                 })
                 iframe.src = url;
                 showIframe();
@@ -643,7 +643,7 @@ async function createTab(page, active = true) {
     const host = 'https://winbows11-proxy-api.vercel.app';
 
     async function getPage() {
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(currentPage);
         }
 
@@ -655,7 +655,7 @@ async function createTab(page, active = true) {
 
         if (currentPage.trim() == '') {
             showEdgePages();
-            changeHeader('New Tab');
+            changeTitle('New Tab');
         } else if (isLocalFileURL == true) {
             handleLocalURL(currentPage);
         } else {
@@ -686,10 +686,10 @@ async function createTab(page, active = true) {
                 var url = URL.createObjectURL(blob);
                 try {
                     getHeader(url).then(header => {
-                        changeHeader(header);
+                        changeTitle(header);
                     })
                 } catch (e) {
-                    changeHeader(url);
+                    changeTitle(url);
                 }
                 iframe.src = url;
                 iframe.onload = () => {
@@ -699,10 +699,10 @@ async function createTab(page, active = true) {
             }).catch(e => {
                 try {
                     getHeader(url).then(header => {
-                        changeHeader(header);
+                        changeTitle(header);
                     })
                 } catch (e) {
-                    changeHeader(url);
+                    changeTitle(url);
                 }
                 iframe.src = url;
                 iframe.onload = () => {

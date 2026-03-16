@@ -1,8 +1,9 @@
-const express = require("express");
+import express from 'express';
+
 const app = express();
 
-app.use(express.static(__dirname), (req, res, next) => {
-    res.status(404).sendFile(__dirname + '/404.html');
+app.use(express.static('./'), (req, res, next) => {
+    res.status(404).sendFile('./404.html');
 })
 
 app.listen(3000, function () {

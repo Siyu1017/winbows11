@@ -137,6 +137,7 @@
     font-family: var(--winbows-font-default);
     font-size: inherit;
     font-weight: inherit;
+    color: inherit;
 }
 
 .simple-editor-line {
@@ -148,5 +149,44 @@
 .simple-editor::selection,
 .simple-editor *::selection {
     background: rgb(211 227 253);
+    color: unset;
+}
+
+[data-theme="dark"] {
+    --border-color: rgb(255 255 255 / 10%);
+    --label-color: rgb(132, 132, 132);
+    backdrop-filter: blur(80px) saturate(6);
+    background: rgb(20 20 20 / 71%);
+    box-shadow: 0 0 0 1px rgb(51 51 51);
+}
+
+[data-theme="dark"] .window-content,
+[data-theme="dark"] .window-toolbar {
+    background: transparent;
+}
+
+[data-theme="dark"] .menubar {
+    background: rgb(50 50 50 / 58%);
+}
+
+[data-theme="dark"] .tabview-tabstrip-tab.active {
+    --bg: rgb(50 50 50 / 58%);
+}
+
+[data-theme="dark"] .menubar-item:hover {
+    background: rgba(255, 255, 255, .05)
+}
+
+[data-theme="dark"] .menubar-item.active {
+    background: rgba(255, 255, 255, .075);
+}
+
+[data-theme="dark"] .simple-editor {
+    background: rgb(30, 30, 30);
+}
+
+[data-theme="dark"] .simple-editor::selection,
+[data-theme="dark"] .simple-editor *::selection {
+    background: rgba(59, 134, 255, 0.422);
     color: unset;
 }

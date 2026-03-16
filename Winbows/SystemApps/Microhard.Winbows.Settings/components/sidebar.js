@@ -1,7 +1,6 @@
-import { fs } from 'winbows/fs';
-import { Link } from './link.js';
-import { router } from '../_router.js';
-import { sidebarItems } from '../sidebarItems.js';
+const { Link } = await requireAsync('./link.js');
+const { router } = await requireAsync('../_router.js');
+const { sidebarItems } = await requireAsync('../sidebarItems.js');
 
 // await fs.init();
 
@@ -74,7 +73,7 @@ function sidebar() {
         pageItem.setAttribute('href', item.path);
         pageItem.addEventListener('click', async () => {
             currentPage = item.path;
-            if (window.debuggerMode == true) {
+            if (window.modes.debug == true) {
                 console.log(`Navigating to ${item.path}`);
             }
         });
@@ -86,7 +85,7 @@ function sidebar() {
 
     router.on('change', (e) => {
         const path = e.path;
-        if (window.debuggerMode == true) {
+        if (window.modes.debug == true) {
             console.log(path);
         }
         Object.values(sidebarItems).forEach(item => {
@@ -102,4 +101,4 @@ function sidebar() {
     return sidebarContainer;
 }
 
-export { sidebar };
+module.exports = { sidebar };

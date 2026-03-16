@@ -1,4 +1,15 @@
-export function SettingItemCollapsible(data, collapsedContent) {
+function isElement(obj) {
+    try {
+        return obj instanceof HTMLElement;
+    }
+    catch (e) {
+        return (typeof obj === "object") &&
+            (obj.nodeType === 1) && (typeof obj.style === "object") &&
+            (typeof obj.ownerDocument === "object");
+    }
+}
+
+function SettingItemCollapsible(data, collapsedContent) {
     const SettingItemCollapsibleContainer = document.createElement("div");
     const settingItemCollapsible = document.createElement("div");
     const settingItemDetail = document.createElement("div");
@@ -50,8 +61,8 @@ export function SettingItemCollapsible(data, collapsedContent) {
             parts.forEach(part => {
                 const rowPart = document.createElement("div");
                 rowPart.className = "setting-item-collapsible-collapsed-content-row-part";
-                part.forEach(item  => {
-                    if (utils.isElement(item)) {
+                part.forEach(item => {
+                    if (isElement(item)) {
                         rowPart.appendChild(item);
                     }
                 })
@@ -59,7 +70,9 @@ export function SettingItemCollapsible(data, collapsedContent) {
             })
             settingItemCollapsedContent.appendChild(rowElement);
         })
-    } 
+    }
 
     return SettingItemCollapsibleContainer;
 }
+
+module.exports = { SettingItemCollapsible };

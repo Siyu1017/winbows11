@@ -1,6 +1,5 @@
-import { fs } from 'winbows/fs';
-
 // "null" refers to the group separator
+const fsUtils = path;
 const caches = {};
 const pageDatas = [
     {
@@ -13,27 +12,27 @@ const pageDatas = [
         icon: './icons/gallery.ico'
     }, null, {
         title: 'Desktop',
-        path: 'C:/Users/Admin/Desktop',
+        path: 'C:/User/Desktop',
         icon: './icons/desktop.ico'
     }, {
         title: 'Downloads',
-        path: 'C:/Users/Admin/Downloads',
+        path: 'C:/User/Downloads',
         icon: './icons/downloads.ico'
     }, {
         title: 'Documents',
-        path: 'C:/Users/Admin/Documents',
+        path: 'C:/User/Documents',
         icon: './icons/documents.ico'
     }, {
         title: 'Pictures',
-        path: 'C:/Users/Admin/Pictures',
+        path: 'C:/User/Pictures',
         icon: './icons/pictures.ico'
     }, {
         title: 'Music',
-        path: 'C:/Users/Admin/Music',
+        path: 'C:/User/Music',
         icon: './icons/music.ico'
     }, {
         title: 'Videos',
-        path: 'C:/Users/Admin/Videos',
+        path: 'C:/User/Videos',
         icon: './icons/videos.ico'
     }, null, {
         title: 'This PC',
@@ -45,6 +44,210 @@ const pageDatas = [
         icon: './icons/network.ico'
     }
 ];
+
+async function chooseViewer(__path) {
+    const win = new WApplication.BrowserWindow({
+        width: 360,
+        height: 540,
+        x: 'center',
+        y: 'center',
+        fullscreenable: false,
+        resizable: false,
+        closable: false,
+        minimizable: false,
+        title: 'Open with...',
+        mica: true,
+        theme: 'system'
+    });
+    const { browserWindow, document } = await win.expose();
+
+    const style = document.createElement('link');
+    style.rel = 'stylesheet';
+    style.type = 'text/css';
+    style.href = await fs.getFileURL(path.resolve('./chooseViewerWindow.css'));
+    document.head.appendChild(style);
+
+    function getCategoryString() {
+        const file = __path || '';
+        const extension = path.extname(file);
+        if (extension != '') {
+            return `${extension}`;
+        } else {
+            return `[${file.split('/').pop()}]`;
+        }
+    }
+
+    const extension = path.extname(__path || '');
+
+    var selected = null;
+
+    var container = document.createElement('div');
+    var header = document.createElement('div');
+    var content = document.createElement('div');
+    // var recommended = document.createElement('div');
+    // var recommendedLabel = document.createElement('div');
+    // var moreOption = document.createElement('div');
+    // var moreOptionLabel = document.createElement('div');
+    var footer = document.createElement('div');
+    var alwaysButton = document.createElement('button');
+    var onceButton = document.createElement('button');
+
+    header.innerHTML = `Select the application to open the ${getCategoryString()} file`;
+    // recommendedLabel.innerHTML = 'Suggested apps';
+    // moreOptionLabel.innerHTML = 'More options';
+    alwaysButton.innerHTML = 'Always';
+    onceButton.innerHTML = 'Once';
+
+    container.className = 'container';
+    header.className = 'header';
+    content.className = 'content';
+    // recommended.className = 'recommended';
+    // recommendedLabel.className = 'recommended-label';
+    // moreOption.className = 'more-option';
+    // moreOptionLabel.className = 'more-option-label';
+    footer.className = 'footer';
+    alwaysButton.className = 'footer-button';
+    onceButton.className = 'footer-button';
+
+    alwaysButton.disabled = true;
+    onceButton.disabled = true;
+
+    document.body.appendChild(container);
+    container.appendChild(header);
+    container.appendChild(content);
+    container.appendChild(footer);
+    // content.appendChild(recommended);
+    // content.appendChild(moreOption);
+    // recommended.appendChild(recommendedLabel);
+    // moreOption.appendChild(moreOptionLabel);
+    footer.appendChild(alwaysButton);
+    footer.appendChild(onceButton);
+
+    var theme = System.theme.get()
+    browserWindow.setTheme(theme);
+    if (theme == 'dark') {
+        document.documentElement.classList.add('winui-dark');
+    } else {
+        document.documentElement.classList.remove('winui-dark');
+    }
+
+    System.theme.onChange(theme => {
+        browserWindow.setTheme(theme);
+        if (theme == 'dark') {
+            document.documentElement.classList.add('winui-dark');
+        } else {
+            document.documentElement.classList.remove('winui-dark');
+        }
+    })
+
+    var self = false;
+    var focus = false;
+
+    browserWindow.addEventListener('focus', (e) => {
+        focus = true;
+    })
+
+    browserWindow.addEventListener('blur', (e) => {
+        if (focus == true) {
+            return focus = false;
+        }
+        if (self == true) return;
+        self = true;
+        browserWindow.close();
+    })
+
+    const viewers = System.fileViewers.getViewers(__path);
+
+    Object.keys(viewers).forEach(viewer => {
+        var item = document.createElement('div');
+        var itemIcon = document.createElement('div');
+        var itemName = document.createElement('div');
+        var app = appRegistry.getInfoByPath(viewers[viewer].script);
+
+        item.className = 'viewer';
+        itemIcon.className = 'viewer-icon';
+        itemName.className = 'viewer-name';
+        itemName.innerHTML = viewers[viewer].name;
+        fs.getFileURL(app.icon).then(url => {
+            itemIcon.style.backgroundImage = `url(${url})`;
+        })
+        item.addEventListener('click', () => {
+            document.querySelectorAll('.viewer.active').forEach(active => {
+                active.classList.remove('active');
+            })
+            item.classList.add('active');
+            alwaysButton.disabled = false;
+            onceButton.disabled = false;
+            selected = viewer;
+        })
+        content.appendChild(item);
+        item.appendChild(itemIcon);
+        item.appendChild(itemName);
+    })
+
+    if (extension == '') {
+        alwaysButton.remove();
+    }
+
+    browserWindow.setMovable(header);
+    browserWindow.setSnappable(false);
+
+    alwaysButton.addEventListener('click', () => {
+        if (selected == null) return;
+        if (extension == '') {
+            return;
+        }
+        if (window.modes.debug == true) {
+            console.log(selected)
+        }
+        System.fileViewers.setDefaultViewer(extension, selected);
+        System.shell.execCommand(`"${viewers[selected].script}" --path="${__path}"`);
+        self = true;
+        browserWindow.close();
+    })
+
+    onceButton.addEventListener('click', () => {
+        if (selected == null) return;
+        System.shell.execCommand(`"${viewers[selected].script}" --path="${__path}"`);
+        self = true;
+        browserWindow.close();
+    })
+}
+
+function getPosition(element) {
+    function offset(el) {
+        var rect = el.getBoundingClientRect(),
+            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+    }
+    return { x: offset(element).left, y: offset(element).top };
+}
+
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(decimals)) + ' ' + sizes[i];
+}
+
+function canvasClarifier(canvas, ctx, width, height) {
+    const originalSize = {
+        width: (width ? width : canvas.offsetWidth),
+        height: (height ? height : canvas.offsetHeight)
+    }
+    var ratio = window.devicePixelRatio || 1;
+    canvas.width = originalSize.width * ratio;
+    canvas.height = originalSize.height * ratio;
+    ctx.scale(ratio, ratio);
+    if (originalSize.width != canvas.offsetWidth || originalSize.height != canvas.offsetHeight) {
+        canvas.style.width = originalSize.width + 'px';
+        canvas.style.height = originalSize.height + 'px';
+    }
+}
 
 function capitalizeFirstLetter(val) {
     return String(val).charAt(0).toUpperCase() + String(val).slice(1);
@@ -86,13 +289,13 @@ function getData(path) {
         }
     }
     return {
-        title: capitalizeFirstLetter(fsUtils.basename(path)),
+        title: fsUtils.basename(path),
         icon: 'C:/Winbows/icons/folders/folder.ico',
         active: pageDatas.filter(t => t != null).find(t => t.path == 'pages://this_pc').active
     }
 }
 
-export async function setupTab(browserWindow, tab, page = 'pages://home') {
+async function setupTab(browserWindow, tab, page = 'pages://home') {
     // Path
     var pathStrip = document.createElement('div');
     var pathStripActions = document.createElement('div');
@@ -187,7 +390,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     /*
     getData(currentPage).then(pageData => {
-        tab.changeHeader(pageData.title);
+        tab.changeTitle(pageData.title);
         tab.changeIcon(pageData.icon);
     });
     getPage(currentPage);
@@ -196,14 +399,15 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
     setSidebar(true);
 
-    const module = await browserWindow.import('./_router.js');
-    const router = module.router;
+    const router = (await requireAsync('./_router.js'))(tab.id);
     let pageContents = {};
+    let winTitle = 'File Explorer';
+
+    tab.on('focus', () => {
+        browserWindow.changeTitle(winTitle);
+    })
 
     async function updatePage(e) {
-        if (window.debuggerMode == true) {
-            console.log('change', e.path, 'from', tab.id);
-        }
         const path = e.path.includes('?') ? e.path.slice(e.path.indexOf('?')) : e.path;
         //const pageItem = Object.values(pageListItems).filter(item => item.path === path);
         //if (pageItem.length == 0) return;
@@ -236,15 +440,15 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                 itemViewer.className = 'explorer-item-viewer';
                 footerPageItems.innerHTML = `${fs.disks.length} Items`;
                 for (var i = 0; i < fs.disks.length; i++) {
-                    var disk = fs.disks[i];
-                    var stat = fs.stat(disk + ':/');
-                    var itemElement = document.createElement('div');
-                    var iconElement = document.createElement('div');
-                    var infoElement = document.createElement('div');
-                    var diskName = document.createElement('div');
-                    var totalSizeBar = document.createElement('div');
-                    var usedSizeBar = document.createElement('div');
-                    var usedSizeText = document.createElement('div');
+                    const disk = fs.disks[i];
+                    const stat = fs.stat(disk + ':/');
+                    const itemElement = document.createElement('div');
+                    const iconElement = document.createElement('div');
+                    const infoElement = document.createElement('div');
+                    const diskName = document.createElement('div');
+                    const totalSizeBar = document.createElement('div');
+                    const usedSizeBar = document.createElement('div');
+                    const usedSizeText = document.createElement('div');
 
                     itemElement.className = 'explorer-viewer-disk-item';
                     iconElement.className = 'explorer-viewer-disk-icon';
@@ -272,20 +476,20 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         router.push(disk + ':/');
                     })
 
-                    var size = stat.length;
+                    const size = stat.length;
 
                     navigator.storage.estimate().then(quota => {
                         usedSizeBar.style.width = size / quota.quota * 100 + '%';
-                        usedSizeText.innerHTML = `${window.utils.formatBytes(size)} / ${window.utils.formatBytes(quota.quota)}`;
+                        usedSizeText.innerHTML = `${formatBytes(size)} / ${formatBytes(quota.quota)}`;
                     })
 
-                    footerPageSize.innerHTML = window.utils.formatBytes(size);
+                    footerPageSize.innerHTML = formatBytes(size);
                 }
                 pageContent = itemViewer;
             } else {
                 try {
-                    const module = await browserWindow.import(`./pages/` + path.replace('pages://', '') + '.js');
-                    pageContents[path] = module.default(router);
+                    const page = await requireAsync(`./pages/` + path.replace('pages://', '') + '.js');
+                    pageContents[path] = page(router);
                     pageContent = pageContents[path] || document.createElement('div');
                 } catch (e) {
                     // Page not found
@@ -308,9 +512,13 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
         try {
             const pageData = getData(path);
-            tab.changeHeader(pageData.title);
+            tab.changeTitle(pageData.title);
+            browserWindow.changeTitle(pageData.title + ' - File Explorer');
+            winTitle = pageData.title + ' - File Explorer';
+
             getImageURL(pageData.icon).then(url => {
                 tab.changeIcon(url);
+                browserWindow.changeIcon(url);
             })
             pageData.active();
         } catch (e) { }
@@ -374,7 +582,6 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         sidebar.querySelectorAll('.explorer-sidebar-item.active').forEach(active => {
                             active.classList.remove('active');
                         })
-                        // TODO : Set the page of item
                         //currentPage = item.path;
                         router.push(item.path);
                         //addToHistory(currentPage);
@@ -491,7 +698,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
             selected = [];
             createdItems.forEach(item => {
-                var position = window.utils.getPosition(item.item);
+                var position = getPosition(item.item);
                 var itemWidth = item.item.offsetWidth;
                 var itemHeight = item.item.offsetHeight;
 
@@ -520,17 +727,17 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
 
         function selectionEnd(e) {
             selecting = false;
-            window.utils.canvasClarifier(canvas, ctx);
+            canvasClarifier(canvas, ctx);
         }
 
         function render() {
-            window.utils.canvasClarifier(canvas, ctx);
+            canvasClarifier(canvas, ctx);
             if (selecting == false) return;
 
-            var viewer = viewerContainer.querySelector('.explorer-item-viewer');
+            const viewer = viewerContainer.querySelector('.explorer-item-viewer');
             if (!viewer) return;
 
-            var position = window.utils.getPosition(canvas);
+            const position = getPosition(canvas);
 
             ctx.save();
             ctx.beginPath();
@@ -680,20 +887,20 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         itemName.className = 'explorer-viewer-item-name';
 
         if (details.type == 'application/winbows-link') {
-            fs.getFileAsText(path).then(content => {
+            fs.readFileAsText(path).then(content => {
                 try {
                     const link = JSON.parse(content);
                     itemIcon.style.backgroundImage = `url(${link.icon})`;
                     itemIcon.classList.add('shortcut');
                     itemName.innerHTML = link.name;
                     item.addEventListener('click', (e) => {
-                        window.System.Shell(link.command);
+                        System.shell.execCommand(link.command);
                     })
                     getImageURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
                         itemIcon.style.setProperty('--shortcut-icon', `url(${url})`);
                     })
                 } catch (e) {
-                    getImageURL(window.fileIcons.getIcon(path)).then(url => {
+                    getImageURL(System.fileIcons.getIcon(path)).then(url => {
                         itemIcon.style.backgroundImage = `url(${url})`;
                     })
                     itemName.innerHTML = fsUtils.basename(path);
@@ -701,7 +908,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                 }
             })
         } else {
-            getImageURL(window.fileIcons.getIcon(path)).then(url => {
+            getImageURL(System.fileIcons.getIcon(path)).then(url => {
                 itemIcon.style.backgroundImage = `url(${url})`;
                 if (details.type.startsWith('image/')) {
                     try {
@@ -709,26 +916,23 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                             itemIcon.style.backgroundImage = `url(${url})`;
                         })
                     } catch (e) {
-                        if (window.debuggerMode == true) {
-                            console.log('Failed to load image.');
-                        }
+                        console.error(e);
                     }
                 }
             })
             itemName.innerHTML = details.name;
             item.addEventListener('click', () => {
-                if (['.wexe'].includes(window.utils.getFileExtension(path))) {
-                    new Process(path).start();
+                if (['.wrt'].includes(fsUtils.extname(path))) {
+                    System.shell.execCommand(path);
                     return;
                 }
-                var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                var defaultViewer = System.fileViewers.getDefaultViewer(path);
                 if (defaultViewer != null) {
-                    new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                    System.shell.execCommand(`"${defaultViewer.script}" --path="${path}"`);
                 } else {
-                    if (window.debuggerMode == true) {
-                        console.log('./chooseViewer.wexe')
-                    }
-                    new Process(fs.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
+                    chooseViewer(path);
+
+                    // System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path="${path}"`);
                 }
             })
         }
@@ -747,15 +951,15 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     }, */{
                     className: "open",
                     text: "Open",
+                    icon: 'open-in-new-window',
                     action: () => {
-                        var defaultViewer = window.System.FileViewers.getDefaultViewer(path);
+                        var defaultViewer = System.fileViewers.getDefaultViewer(path);
                         if (defaultViewer != null) {
-                            new Process(defaultViewer.script).start(`const FILE_PATH="${path}";`);
+                            System.shell.execCommand(`${defaultViewer.script} --path="${path}"`);
                         } else {
-                            if (window.debuggerMode == true) {
-                                console.log('./chooseViewer.wexe')
-                            }
-                            new Process(fs.resolvePath('./chooseViewer.wexe')).start(`const FILE_PATH="${path}";`);
+                            chooseViewer(path);
+
+                            //System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path="${path}"`);
                         }
                     }
                 }, {
@@ -763,7 +967,9 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     className: "open-with",
                     text: "Open with...",
                     action: () => {
-                        new Process('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wexe').start(`const FILE_PATH="${path}";`);
+                        chooseViewer(path);
+
+                        //System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path="${path}"`);
                     }
                 }, {
                     icon: "delete",
@@ -779,12 +985,13 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             if (details.type.startsWith('image/')) {
                 items.push({
                     className: "set-as-background",
+                    icon: 'photo',
                     text: "Set as background",
                     action: async () => {
-                        await window.setBackgroundImage(path);
+                        await Explorer.backgroundImage.set(path);
                     }
                 })
-            } else if (details.type.search('javascript') > -1 || window.utils.getFileExtension(path) == '.wexe') {
+            } else if (details.type.search('javascript') > -1 || fsUtils.extname(path) == '.wrt') {
                 items.push({
                     className: "run-as-an-app",
                     icon: 'window-snipping',
@@ -793,7 +1000,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         new Process(path).start();
                     }
                 })
-            } else if (window.utils.getFileExtension(path) == '.wbsf') {
+            } else if (fsUtils.extname(path) == '.wbsf') {
                 items.push({
                     icon: 'window-snipping',
                     text: 'Run file',
@@ -805,7 +1012,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         })
                     }
                 })
-            } else if (fontExtensions.includes(window.utils.getFileExtension(path))) {
+            } else if (fontExtensions.includes(fsUtils.extname(path))) {
                 items.push({
                     className: "set-as-default-font",
                     icon: 'font',
@@ -821,7 +1028,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                             window.document.body.style.setProperty('--winbows-font-default', fontName);
 
                         } catch (error) {
-                            if (window.debuggerMode == true) {
+                            if (window.modes.debug == true) {
                                 console.error('Failed to load font', error);
                             }
                         }
@@ -890,7 +1097,7 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
             } catch (e) { };
         }))
         footerPageItems.innerHTML = `${items.length} Items`;
-        footerPageSize.innerHTML = window.utils.formatBytes(pageStat.length);
+        footerPageSize.innerHTML = formatBytes(pageStat.length);
 
         if (items.length == 0) {
             const el = document.createElement('span');
@@ -910,9 +1117,11 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                     name: fsUtils.basename(path)
                 }, path)
             } else {
-                if (window.debuggerMode == true) {
+                /*
+                if (window.modes.debug == true) {
                     console.log(stat.mimeType)
                 }
+                    */
                 await createFileItem(itemViewer, {
                     name: fsUtils.basename(path),
                     type: stat.mimeType
@@ -939,20 +1148,24 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         event.preventDefault();
         dropZone.classList.remove('dragover');
 
-        var completed = 0;
-        var total = 0;
-        var target = router.getCurrentRoute();
+        let completed = 0;
+        let total = 0;
+        let target = router.getCurrentRoute();
 
         if (target == '' || target.startsWith('pages://')) return;
         if (!target.endsWith('/')) {
             target += '/';
         }
 
-        if (window.debuggerMode == true) {
+        /*
+        if (window.modes.debug == true) {
             console.log(currentPage, target)
         }
+            */
 
         const items = event.dataTransfer.items;
+        // console.info(items, target);
+
         total = items.length;
         for (let i = 0; i < items.length; i++) {
             const item = items[i].webkitGetAsEntry();
@@ -976,9 +1189,10 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
                         const fullPath = `${target}${filePath}`;
                         await fs.writeFile(fullPath, blob).then(() => {
                             completed++;
-                            if (window.debuggerMode == true) {
+                            /*
+                            if (window.modes.debug == true) {
                                 console.log(`File: ${file.name} (Type: ${file.type}, Size: ${file.size} bytes)`);
-                            }
+                            }*/
                             if (completed == total) {
                                 getPage(currentPage);
                             }
@@ -1016,3 +1230,5 @@ export async function setupTab(browserWindow, tab, page = 'pages://home') {
         }
     });
 }
+
+module.exports = { setupTab };

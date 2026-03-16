@@ -1,0 +1,167 @@
+.winui-contextmenu-container {
+    position: fixed;
+    --contextmenu-bg: #fff;
+    --contextmenu-color: #000;
+    --contextmenu-border: 1px solid rgba(0, 0, 0, .1);
+    --contextmenu-hover: rgba(0, 0, 0, .08);
+    --contextmenu-active: rgba(0, 0, 0, .12);
+    --contextmenu-separator-bg: rgba(0, 0, 0, .1);
+    --contextmenu-backdrop-filter: initial;
+    --contextmenu-icon-width: 1rem;
+    --contextmenu-icon-height: 1rem;
+    --contextmenu-icon-size: .875rem;
+    --contextmenu-text-size: .75rem;
+    --contextmenu-expand-width: 1rem;
+    --contextmenu-expand-height: 1rem;
+    --contextmenu-expand-size: .875rem;
+    --contextmenu-maxwidth: 20rem;
+    --contextmenu-maxheight: 1.5rem;
+    --contextmenu-item-padding: .375rem .75rem;
+    --contextmenu-label-padding: .375rem .75rem;
+}
+
+[data-theme="dark"] .winui-contextmenu-container {
+    --contextmenu-bg: rgb(30, 30, 30);
+    --contextmenu-color: #fff;
+    --contextmenu-border: 1px solid rgba(255, 255, 255, .08);
+    --contextmenu-hover: rgba(255, 255, 255, .05);
+    --contextmenu-active: rgba(255, 255, 255, .1);
+    --contextmenu-separator-bg: rgba(255, 255, 255, .08);
+}
+
+.winui-contextmenu-container,
+.winui-contextmenu-container * {
+    font-family: var(--winbows-font-default);
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+    box-sizing: border-box;
+}
+
+.winui-contextmenu-menu-layer {
+    height: fit-content;
+}
+
+.winui-contextmenu-menu {
+    backdrop-filter: var(--contextmenu-backdrop-filter);
+    -webkit-backdrop-filter: var(--contextmenu-backdrop-filter);
+    background: var(--contextmenu-bg);
+    display: flex;
+    box-shadow: rgba(0, 0, 0, 0.12) 0px 4px 16px 4px;
+    border: var(--contextmenu-border);
+    border-radius: .5rem;
+    flex-direction: column;
+    padding: .25rem;
+    gap: .25rem;
+    transition: all .2s ease-in-out;
+}
+
+.winui-contextmenu-menu-separator {
+    height: 1.5px;
+    width: 100%;
+    background: var(--contextmenu-separator-bg);
+}
+
+.winui-contextmenu-menu-item,
+.winui-contextmenu-menu-label {
+    display: flex;
+    border-radius: .25rem;
+    cursor: default;
+    position: relative;
+    transition: all .1s ease-in-out;
+    align-items: center;
+    max-width: var(--contextmenu-maxwidth);
+    max-height: var(--contextmenu-maxheight);
+}
+
+.winui-contextmenu-menu-item {
+    padding: var(--contextmenu-item-padding);
+}
+
+.winui-contextmenu-menu-label {
+    padding: var(--contextmenu-label-padding);
+}
+
+.winui-contextmenu-menu-item.disabled {
+    pointer-events: none;
+    opacity: .5;
+}
+
+.winui-contextmenu-menu-item.selected:before {
+    content: '';
+    background: var(--winbows-primary-color);
+    border-radius: 99px;
+    width: .25rem;
+    height: 50%;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.winui-contextmenu-menu-item:hover,
+.winui-contextmenu-menu-item.selected {
+    background: var(--contextmenu-hover);
+}
+
+.winui-contextmenu-menu-item:active,
+.winui-contextmenu-menu-item.active {
+    background: var(--contextmenu-active);
+}
+
+.winui-contextmenu-menu-icon {
+    width: var(--contextmenu-icon-width);
+    height: var(--contextmenu-icon-height);
+    min-width: var(--contextmenu-icon-width);
+    min-height: var(--contextmenu-icon-height);
+    font-family: var(--winbows-font-icon);
+    font-size: var(--contextmenu-icon-size);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.winui-contextmenu-menu-text {
+    font-size: var(--contextmenu-text-size);
+    white-space: nowrap;
+    width: -webkit-fill-available;
+    padding: 0 .5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.winui-contextmenu-menu-label .winui-contextmenu-menu-text {
+    padding: 0;
+}
+
+.winui-contextmenu-menu-expand {
+    width: var(--contextmenu-expand-width);
+    height: var(--contextmenu-expand-height);
+    min-width: var(--contextmenu-expand-width);
+    min-height: var(--contextmenu-expand-height);
+    flex: 1;
+    text-align: right;
+    margin-left: auto;
+    position: sticky;
+    right: 0;
+    padding: 0 .5rem;
+}
+
+.winui-contextmenu-menu-expand::before {
+    width: var(--contextmenu-expand-width);
+    height: var(--contextmenu-expand-height);
+    min-width: var(--contextmenu-expand-width);
+    min-height: var(--contextmenu-expand-height);
+    font-size: var(--contextmenu-expand-size);
+    content: '\e76c';
+    font-family: var(--winbows-font-icon);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.winui-contextmenu-submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+}

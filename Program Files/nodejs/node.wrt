@@ -1,0 +1,23 @@
+const f = process.argv[2] || '';
+const ext = path.extname(f);
+
+process.stderr.write('Node.js is currently unavailable.');
+process.exit(1);
+return;
+
+if (['.js', '.wrt'].includes(ext)) {
+    try {
+        const shell = new ShellInstance(process, {
+            isTTY: true
+        });
+        shell.stderr.on('data', e => {
+            process.stderr.write(e);
+        })
+        await shell.execCommand(`"${f}"`);
+        process.stdout.write('Executed successfully')
+    } catch (e) {
+        process.stderr.write(e);
+    }
+} else {
+    process.stderr.write(`Unsupported file extension: ${ext}`);
+}

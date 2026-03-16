@@ -1,0 +1,30 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+process.title = 'Info';
+
+let mainWindow;
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
+        title: 'Info',
+        width: 320,
+        height: 450,
+        maximizable: false,
+        mica: true,
+        theme: 'system'
+    });
+    mainWindow.load('./window.js');
+
+    /*
+    mainWindow.on('closed', () => {
+        mainWindow = null;
+    });*/
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}

@@ -1,0 +1,24 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+app.on('ready', () => {
+    mainWindow = new BrowserWindow({
+        title: 'Visual Studio Code'
+    });
+    mainWindow.load('./window.js');
+
+    /*mainWindow.on('closed', () => {
+        mainWindow = null;
+    });*/
+})
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}
+
+process.exit();

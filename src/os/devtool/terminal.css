@@ -1,0 +1,20 @@
+.devtool-terminal {
+    padding: .5rem;
+    overflow: hidden;
+    height: 100%;
+    padding-right: 0;
+}
+
+.devtool-terminal * {
+    font-family: monospace;
+}
+
+.devtool-terminal-container {
+    height: 100%;
+    overflow: hidden;
+    display: block;
+}
+
+.xterm {
+    height: inherit;
+}

@@ -1,0 +1,20 @@
+{
+    "devtool.tab.console": "主控台",
+    "devtool.tab.performance-monitor": "效能監控工具",
+    "devtool.tab.storage": "儲存空間",
+    "devtool.tab.tasks": "處理程序",
+    "devtool.tab.terminal": "終端機",
+
+    "lockscreen.username": "Admin",
+    "lockscreen.signin": "登入",
+
+    "browserwindow.toolbarcontextmenu.restore": "還原",
+    "browserwindow.toolbarcontextmenu.minimize": "最小化",
+    "browserwindow.toolbarcontextmenu.close": "關閉",
+    "browserwindow.toolbarcontextmenu.maximize": "最大化",
+
+    "startmenu.menu.lock": "鎖定",
+    "startmenu.menu.sleep": "睡眠",
+    "startmenu.menu.shutdown": "關機",
+    "startmenu.menu.restart": "重新啟動"
+}

@@ -3,6 +3,8 @@ document.documentElement.style = `
     height: 450px;
 `
 
+process.title = 'Info';
+
 browserWindow.setSnappable(false);
 
 document.documentElement.classList.add('winui');
@@ -11,7 +13,7 @@ document.documentElement.classList.add('winui-no-background');
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL('./window.css');
 document.head.appendChild(style);
 
 document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items: center;justify-content: center;"><div style="padding: 1.5rem;overflow: auto;height: 100%;">
@@ -51,29 +53,17 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 ">
 <li style="
     margin: .5rem 0;
-">✨New IDBFS✨</li>
-<li style="
-    margin: .5rem 0;
     
-">Dark theme<br><button style="
-    cursor: pointer;
-    background: #0067c0;
-    padding: .5rem 1rem;
-    border-radius: .5rem;
-    border:0;
-    outline:none;
-    font:inherit;
-    color:#fff;
-    margin-top:.5rem;=
-    width: fit-content;
-    user-select: none;
-    " onclick="setBackgroundImage('C:/Winbows/bg/img19.jpg');">Apply dark theme</button></li>
+">Dark theme</li>
 <li style="
     margin: .5rem 0;
 ">Window animation</li>
 <li style="
     margin: .5rem 0;
-">Mica effect ( Beta )</li>
+">Mica effect</li>
+<li style="
+    margin: .5rem 0;
+">Taskview</li>
 <!--li style="
     margin: .5rem 0;
 ">Rearrange app icons in the taskbar</li-->
@@ -106,11 +96,11 @@ document.body.innerHTML = `<div style="width:100%;height:100%;display:flex;align
 
 document.querySelectorAll('[data-action]').forEach(el => {
     el.addEventListener('click', () => {
-        window.System.Shell(el.getAttribute('data-action'))
+        new ShellInstance().execCommand(el.getAttribute('data-action'))
     })
 })
 
-var theme = window.System.theme.get()
+var theme = System.theme.get()
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -120,7 +110,7 @@ if (theme == 'dark') {
     document.documentElement.classList.remove('dark');
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');

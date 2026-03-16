@@ -1,0 +1,40 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+const shell = new ShellInstance(process);
+shell.stdout.on('data', dt => {
+    process.stdout.write(dt);
+})
+shell.stderr.on('data', dt => {
+    process.stderr.write(dt);
+})
+shell.stdin.on('resume', () => process.stdin.resume());
+shell.stdin.on('pause', () => process.stdin.pause());
+process.stdin.on('data', dt => {
+    if (shell.stdin.isPaused()) return;
+    shell.stdin.write(dt);
+})
+
+async function delay(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
+
+function hexToRgb(hex) {
+    const bigint = parseInt(hex.replace('#', ''), 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return [r, g, b];
+}
+
+function coloredText(text, hex) {
+    const [r, g, b] = hexToRgb(hex);
+    return `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`;
+}
+
+const testCommands = ['pwd', 'cmd -c "C:/User/Documents/sdk-v1/tests/shell.test.target.wrt"', 'help', 'cd C:/User/Documents/sdk-v1/tests/', 'dir /s', 'md testdir/innerdir/innerdir2', 'rd testdir/innerdir /s', 'del testdir /s/q', 'tasklist', 'set TEST_ENV=true', 'env', 'unset TEST_ENV', 'pwd', 'ver', 'echo "TEST"', 'nothing', `taskkill /pid ${process.pid}`];
+
+for (const cmd of testCommands) {
+    process.stdout.write(`\n${shell.getPwd()}>${cmd.replaceAll(/^\s*?\S+/g, t => coloredText(t, '#ffc96d'))}\n`);
+    await shell.execCommand(cmd);
+    await delay(100);
+}

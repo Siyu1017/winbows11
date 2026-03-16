@@ -1,8 +1,8 @@
-import { router } from "./_router.js";
-import { sidebar } from './components/sidebar.js';
-import titles from './meta.js';
+const { router } = await requireAsync("./_router.js");
+const { sidebar } = await requireAsync('./components/sidebar.js');
+const titles = await requireAsync('./meta.js');
 
-var theme = window.System.theme.get();
+var theme = System.theme.get();
 browserWindow.setTheme(theme);
 if (theme == 'dark') {
     document.documentElement.classList.add('winui-dark');
@@ -12,7 +12,7 @@ if (theme == 'dark') {
     document.documentElement.style = `background: rgb(249 249 249 / 94%);-webkit-backdrop-filter: blur(120px) saturate(2);backdrop-filter: blur(120px) saturate(2);`;
 }
 
-window.System.theme.onChange(theme => {
+System.theme.onChange(theme => {
     browserWindow.setTheme(theme);
     if (theme == 'dark') {
         document.documentElement.classList.add('winui-dark');
@@ -34,7 +34,7 @@ for (let i in styles) {
         let style = document.createElement('link');
         style.rel = 'stylesheet';
         style.type = 'text/css';
-        style.href = await fs.getFileURL(utils.resolvePath(styles[i]));
+        style.href = await fs.getFileURL(styles[i]);
         document.head.appendChild(style);
         resolve();
     }))
@@ -42,7 +42,7 @@ for (let i in styles) {
 for (let i in Object.keys(fonts)) {
     promises.push(new Promise(async (resolve, reject) => {
         var key = Object.keys(fonts)[i];
-        var font = new FontFace(key, `url(${await fs.getFileURL(utils.resolvePath(fonts[key]))})`);
+        var font = new FontFace(key, `url(${await fs.getFileURL(fonts[key])})`);
         await font.load();
         window.document.fonts.add(font);
         resolve();
@@ -77,8 +77,6 @@ document.documentElement.classList.add('winui');
 document.documentElement.classList.add('winui-no-background');
 browserWindow.setImmovable(backButton);
 
-console.log(document)
-
 var appSidebar = document.createElement('div');
 var appPage = document.createElement('div');
 appSidebar.className = 'app-sidebar';
@@ -104,20 +102,17 @@ router.on('change', async (e) => {
     if (path == '/') {
         return router.replace('/home');
     }
-    if (window.debuggerMode == true) {
-        console.log('change', path);
-    }
     let page = pageContents[path];
     if (!pageContents[path]) {
         if (navbar.contains(backButton)) {
             navbar.replaceChild(loadingSpinner, backButton);
         }
         try {
-            const module = await browserWindow.import(`./pages/` + path + '.js');
-            pageContents[path] = module.default();
+            const module = await requireAsync(`./pages/` + path + '.js');
+            pageContents[path] = module();
             page = pageContents[path] || document.createElement('div');
         } catch (e) {
-            console.log(e);
+            console.error(e);
             var el = document.createElement('div');
             el.innerHTML = 'Not found!';
             page = el;
@@ -136,15 +131,18 @@ router.on('change', async (e) => {
         }
     }
 
-    pageTitle.innerHTML = titles[path] || capitalizeFirstLetter(path.split('/').slice(-1));
+    const title = titles[path] || capitalizeFirstLetter(path.split('/').slice(-1));
+    pageTitle.innerHTML = title;
+    browserWindow.changeTitle(`${title} - Settings`);
+    
     pageContainer.replaceChildren(...[page]);
     if (navbar.contains(loadingSpinner)) {
         navbar.replaceChild(backButton, loadingSpinner);
     }
 })
 
-if (pathInApp.length > 0 && typeof pathInApp == "string") {
-    router.push(pathInApp);
+if (process.args['path']) {
+    router.push(process.args['path']);
 } else {
     router.push('/home');
 }
@@ -152,13 +150,13 @@ if (pathInApp.length > 0 && typeof pathInApp == "string") {
 var sidebarElement = sidebar();
 appSidebar.appendChild(sidebarElement);
 
-// const sidebar = await import(await fs.getFileURL(utils.resolvePath('./components/sidebar.js'))).then(module => module.sidebar());
+// const sidebar = await import(await fs.getFileURL(path.resolve('./components/sidebar.js'))).then(module => module.sidebar());
 
 // const app = browserWindow.useFrameWork('pages@latest');
-// const router = app.useRouter(utils.resolvePath('./pages'));
+// const router = app.useRouter(path.resolve('./pages'));
 
 // router.on('change', async (page, details) => {
-//     app.render([utils.resolvePath('./components/sidebar.js'), page]);
+//     app.render([path.resolve('./components/sidebar.js'), page]);
 // })
 
 // app.listen(3000, () => {

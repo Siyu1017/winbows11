@@ -1,11 +1,11 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 ; (async () => {
-    var filePath = datas.file || 'C:/build.json';
+    var filePath = process.args.path || 'C:/build.json';
     var fileURL = await fs.getFileURL(filePath);
     var fileContent = '';
     await fetch(fileURL).then(res => {
@@ -16,7 +16,7 @@ document.head.appendChild(style);
         return;
     })
 
-    browserWindow.changeTitle(`${window.utils.getFileName(filePath)} - JSON Viewer`)
+    browserWindow.changeTitle(`${path.basename(filePath)} - JSON Viewer`)
 
     // JSON Viewer
     'use strict';

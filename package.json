@@ -1,13 +1,4 @@
 {
-  "dependencies": {
-    "clean-webpack-plugin": "^4.0.0",
-    "css-loader": "^7.1.2",
-    "express": "^4.19.2",
-    "path": "^0.12.7",
-    "style-loader": "^4.0.0",
-    "terser-webpack-plugin": "^5.3.10",
-    "webpack": "^5.95.0"
-  },
   "name": "winbows11",
   "version": "1.0.0",
   "description": "Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!",
@@ -15,10 +6,13 @@
   "directories": {
     "test": "tests"
   },
+  "type": "module",
   "scripts": {
-    "setup": "node build.js",
-    "test": "node build.js && node server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "start:dev": "node dev-server.js",
+    "build:prod": "node buildID.js && cross-env NODE_ENV=production concurrently \"rollup -c\" \"webpack --mode production\" \"node build.cjs\"",
+    "build:dev": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c\" \"webpack --mode development\" \"node build.cjs\"",
+    "build:watch": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c -w\" \"webpack --mode development --watch\""
   },
   "repository": {
     "type": "git",
@@ -38,5 +32,47 @@
   "bugs": {
     "url": "https://github.com/Siyu1017/winbows11/issues"
   },
-  "homepage": "https://github.com/Siyu1017/winbows11#readme"
+  "homepage": "https://github.com/Siyu1017/winbows11#readme",
+  "dependencies": {
+    "@huggingface/transformers": "^3.7.4",
+    "@xenova/transformers": "^2.17.2",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/xterm": "^5.5.0",
+    "clean-webpack-plugin": "^4.0.0",
+    "express": "^5.1.0",
+    "micromatch": "^4.0.8",
+    "onnxruntime-web": "^1.23.0",
+    "string-argv": "^0.3.2",
+    "uri-js": "^4.4.1",
+    "url": "^0.11.4",
+    "xterm": "^5.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/node": "^24.3.0",
+    "chalk": "^5.6.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.0.0",
+    "css-loader": "^7.1.2",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
+    "monaco-editor": "^0.52.2",
+    "nodemon": "^3.1.10",
+    "path": "^0.12.7",
+    "postcss": "^8.5.6",
+    "rollup": "^4.53.2",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.14",
+    "ts-loader": "^9.5.4",
+    "typescript": "^5.9.3",
+    "webpack": "^5.100.1",
+    "webpack-cli": "^6.0.1"
+  }
 }

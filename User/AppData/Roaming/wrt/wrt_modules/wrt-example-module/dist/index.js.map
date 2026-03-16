@@ -1,0 +1,1 @@
+{"version":3,"file":"index.js","sources":["../src/index.js"],"sourcesContent":["let { app, BrowserWindow } = WApplication;\r\n\r\nmodule.exports = {\r\n    app,\r\n    BrowserWindow\r\n};"],"names":["app","BrowserWindow","WApplication","module","exports"],"mappings":";;;;;AAAA,IAAIA,IAAEA,EAAGC,cAAEA,GAAkBC,aAE7BC,OAAOC,QAAU,CACbJ,MACAC"}

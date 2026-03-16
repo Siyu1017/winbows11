@@ -4,8 +4,16 @@
     position: relative;
 }
 
+.window.dark .window-content {
+    background: #131313;
+}
+
+.window.dark svg {
+    color: #efefef;
+}
+
 .window-toolbar {
-    background: transparent;
+    background: transparent !important;
     position: absolute;
     pointer-events: all;
     z-index: 9;
@@ -19,7 +27,7 @@
 
 .controls-container {
     position: fixed;
-    top: 0;
+    bottom: 0rem;
     left: 0;
     right: 0;
     padding: 2rem;
@@ -31,16 +39,21 @@
 }
 
 .controls {
-    background: #fff;
+    background: #ffffff;
     box-shadow: 0px 2px 16px 4px rgba(0, 0, 0, .1);
-    border-radius: .5rem;
-    padding: .375rem;
+    border-radius: 1rem;
+    padding: .5rem;
     width: fit-content;
     display: flex;
     flex-direction: row;
     align-items: center;
     gap: .375rem;
     pointer-events: all;
+}
+
+.dark .controls {
+    background: #1e1e1e;
+    box-shadow: 0px 2px 16px 4px rgba(0, 0, 0, .05);
 }
 
 .controls,
@@ -62,7 +75,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    border-radius: .375rem;
+    border-radius: .5rem;
     border: 0;
     outline: 0;
     background: none;
@@ -73,15 +86,27 @@
     pointer-events: none;
 }
 
+.dark .control:disabled svg {
+    color: #aaa;
+}
+
 .control:hover {
     background: rgb(242, 242, 242);
+}
+
+.dark .control:hover {
+    background: rgba(255,255,255,.08);
 }
 
 .control.active {
     background: rgb(229, 229, 229);
 }
 
+.dark .control.active {
+    background: rgba(255, 255, 255, .13);
+}
+
 .control-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.125rem;
+    height: 1.125rem;
 }

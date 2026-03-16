@@ -1,0 +1,49 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+async function input(promptText) {
+    process.stdin.resume();
+    process.stdout.write(promptText);
+
+    return new Promise(resolve => {
+        process.stdin.once('data', dt => {
+            process.stdin.pause();
+            resolve(dt);
+            process.stdout.write('\n');
+        });
+    })
+}
+
+process.stdout.write(` ╔══════════════════════╗
+ ║ Number Guessing Game ║
+ ╚══════════════════════╝\n\n`);
+process.stdout.write("Guess a number between 1 and 100!\n");
+
+const secret_number = Math.floor(Math.random() * 100) + 1;
+let attempts = 0;
+
+while (true) {
+    const guess = await input("\nEnter your guess (or 'q' to quit): ");
+
+    if (guess.toLowerCase() === "q") {
+        process.stdout.write("Game exited.\n");
+        break;
+    }
+
+    if (!/^\d+$/.test(guess)) {
+        process.stdout.write("Please enter a valid number.\n");
+        continue;
+    }
+
+    const num = Number(guess);
+    attempts++;
+
+    if (num < secret_number) {
+        process.stdout.write("Too low!\n");
+    } else if (num > secret_number) {
+        process.stdout.write("Too high!\n");
+    } else {
+        process.stdout.write(`Correct! The number was ${secret_number}.\n`);
+        process.stdout.write(`You took ${attempts} attempts.\n`);
+        break;
+    }
+}

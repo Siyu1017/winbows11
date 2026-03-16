@@ -1,14 +1,14 @@
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
-style.href = await fs.getFileURL(utils.resolvePath('./window.css'));
+style.href = await fs.getFileURL(path.resolve('./window.css'));
 document.head.appendChild(style);
 
 ; (async () => {
-    var editor = await fs.getFileURL(utils.resolvePath('./editor.html'));
-    var filePath = datas.file || 'C:/Program Files/VSCode/window.js';
-    var fileBlob = await fs.readFile(filePath);
-    var fileType = fileBlob.type;
+    const editor = await fs.getFileURL(path.resolve('./editor.html'));
+    const filePath = process.args.path || 'C:/Program Files/VSCode/window.js';
+    const fileBlob = await fs.readFile(filePath);
+    const fileType = fileBlob.type;
 
     document.body.innerHTML = `<style>
 			iframe {
@@ -19,16 +19,14 @@ document.head.appendChild(style);
 		</style>
         `;
 
-    var iframe = document.createElement('iframe');
-    var loading = document.createElement('div');
+    const iframe = document.createElement('iframe');
+    const loading = document.createElement('div');
     loading.className = 'loading';
     loading.innerHTML = '<svg class="loading-spinner" width="48" height="48" viewBox="0 0 16 16"><circle cx="8px" cy="8px" r="7px"></circle></svg><div>Loading...</div></div>';
     iframe.src = editor;
     document.body.appendChild(iframe);
     document.body.appendChild(loading);
-
-    console.log(datas)
-
+    
     iframe.onload = async () => {
         loading.remove();
 
@@ -54,7 +52,7 @@ document.head.appendChild(style);
                 });
             }
         });
-    
+
         document.addEventListener('check', (e) => {
             console.log(e)
         })

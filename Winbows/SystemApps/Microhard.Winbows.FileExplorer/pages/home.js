@@ -1,6 +1,4 @@
-import { fs } from 'winbows/fs';
-
-export default function main(router) {
+module.exports = function main(router) {
     var home = document.createElement('div');
     var quickAccess = document.createElement('div');
     var quickAccessHeader = document.createElement('div');
@@ -13,7 +11,7 @@ export default function main(router) {
 
     quickAccessHeader.innerHTML = 'Quick Access';
 
-    fs.getFileAsText('../quickaccess.json').then(res => {
+    fs.readFileAsText('../quickaccess.json').then(res => {
         JSON.parse(res).forEach(item => {
             var quickAccessItem = document.createElement('div');
             var quickAccessItemIcon = document.createElement('div');

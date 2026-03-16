@@ -17,15 +17,9 @@ Just like Windows11, **Winbows11** lets you experience Windows11 UI and animatio
 
 Windows11 is currently in development, so some features are not available yet, but don’t worry, they will be there soon!
 
-## Star this project!!!
+# Star this Repo
 
-If you think this project is good, please star this project, thanks!
-
-## Updates
-
-- Upload file to Desktop or File Explorer ( Your file won't be uploaded to the server )
-- Set an image file as background image
-- Set a font file as Winbows default font
+If you find this repository useful or interesting, please give it a star! It helps a lot and is greatly appreciated. Thanks for your support! 😘
 
 ## Features
 
@@ -39,15 +33,16 @@ If you think this project is good, please star this project, thanks!
 - [x] Maximize, minimize, full screen window
 - [x] Microhard Edge
 - [x] Right click menu
-- [x] Upload file to desktop
 - [x] Image Viewer
 - [x] JSON Viewer
 - [x] Contextmenu
 - [x] Snap windows
 - [x] Font and background customization
 - [x] Process desktop items in batches
-- [ ] Search Menu and Task View
-- [ ] Microhard Store
 - [x] Settings
+- [x] Task View
+- [ ] Upload file to desktop
+- [ ] Search Menu
+- [ ] Microhard Store
 - [ ] Media player
 - [ ] i18n

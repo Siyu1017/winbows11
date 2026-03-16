@@ -1,0 +1,46 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+const message = process.args['m'] || '';
+
+async function input(promptText) {
+    process.stdin.resume();
+    process.stdout.write(promptText);
+
+    return new Promise(resolve => {
+        process.stdin.once('data', dt => {
+            process.stdin.pause();
+            resolve(dt);
+            process.stdout.write('\n');
+        });
+    })
+}
+
+async function conversation(message) {
+    const start = Date.now();
+    const patterns = ['\\', '|', '/', '-'];
+    function loading() {
+        process.stdout.write('\r\x1b[0J' + patterns[current] + ' Generating response' + '.'.repeat(current));
+        current++;
+        if (current >= patterns.length) {
+            current = 0;
+        }
+    }
+    //const id = setInterval(loading, 200);
+
+    const response = await window.copilot.generateText(message, process.stdout);
+    const now = Date.now();
+
+    //clearInterval(id);
+    //process.stdout.write('\r\x1b[0J');
+    process.stdout.write(`\n\nResponse generated in ${((now - start) / 1000).toFixed(2)}s\n\n`);
+}
+
+if (message) {
+    await conversation(message);
+} else {
+    let msg = '';
+    while (msg = await input("> ")) {
+        await conversation(msg);
+    }
+}
+

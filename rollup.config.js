@@ -1,0 +1,62 @@
+import typescript from "@rollup/plugin-typescript";
+import terser from "@rollup/plugin-terser";
+import fs from 'fs';
+import pkg from "./package.json" assert { type: "json" };
+import commonjs from "@rollup/plugin-commonjs";
+import { nodeResolve } from "@rollup/plugin-node-resolve";
+import chalk from 'chalk';
+
+const BUILD_ID = process.env.BUILD_ID || fs.readFileSync('build.txt', 'utf-8');
+if (!BUILD_ID) throw new Error('An error occurred while reading build id');
+
+// Remove old kernel files
+fs.rmSync('Winbows/System/kernel', { recursive: true, force: true });
+
+const builtinModules = fs.readdirSync('./User/AppData/Roaming/wrt/wrt_modules/', {
+    withFileTypes: true
+});
+const builtinModuleDatas = {
+    version: 1,
+    packages: {}
+};
+for (const mod of builtinModules) {
+    if (!mod.isDirectory()) continue;
+    try {
+        const jsonText = fs.readFileSync('./User/AppData/Roaming/wrt/wrt_modules/' + mod.name + '/package.json', 'utf-8');
+        const modInfo = JSON.parse(jsonText);
+        modInfo.pd = mod.name;
+        builtinModuleDatas.packages[mod.name] = modInfo;
+    } catch (e) {
+        console.warn(chalk.redBright(chalk.bold('[WrtPackageManager]: Failed to read file', './User/AppData/Roaming/wrt/wrt_modules/' + mod + '/package.json')))
+    }
+}
+fs.writeFileSync('./User/AppData/Roaming/wrt/wrt_modules/packages.json', JSON.stringify(builtinModuleDatas), 'utf-8')
+
+export default [{
+    input: `src/init/init.js`,
+    output: {
+        name: '_',
+        file: `Winbows/System/kernel/init.js`,
+        format: 'iife',
+        banner: `/*!
+ * Winbows11 - ${BUILD_ID}
+ * Copyright (c) Microhard ${new Date().getFullYear()}
+ * Github : Siyu1017/winbows11
+ */`,
+        intro: `const buildId="${BUILD_ID}",version="${pkg.version}";`
+    },
+    plugins: [
+
+        nodeResolve({
+            extensions: [".js", ".ts"],
+        }),
+        typescript({
+            include: ['src/**/*'],
+            outDir: 'Winbows/System/kernel/',
+            declaration: false,
+            allowImportingTsExtensions: true
+        }),
+        commonjs(),
+        terser()
+    ]
+}];

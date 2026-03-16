@@ -7,37 +7,37 @@ var processed = 0;
 var title = 'Loading...';
 var stopped = false;
 
-browserWindow.worker.addEventListener('message', (e) => {
-    // console.log('Message received');
-    // console.log('WINDOW', e.data.type)
-    if (!e.data.token == TOKEN) return;
-    if (e.data.type == 'init') {
-        // console.log('init');
-        return init();
-    }
-    if (e.data.type == 'transfer') {
-        // console.log(e.data, 'transfer', files);
-        if (!e.data.files || !e.data.target) {
-            clearInterval(update);
-        }
-        if (files == null) {
-            // console.log(1)
-            title = e.data.title;
-            files = e.data.files;
-            target = e.data.target;
-            total = files.length;
-            return handleFiles();
-        }
-        return;
-    }
-})
+// browserWindow.worker.addEventListener('message', (e) => {
+//     // console.log('Message received');
+//     // console.log('WINDOW', e.data.type)
+//     if (!e.data.token == TOKEN) return;
+//     if (e.data.type == 'init') {
+//         // console.log('init');
+//         return init();
+//     }
+//     if (e.data.type == 'transfer') {
+//         // console.log(e.data, 'transfer', files);
+//         if (!e.data.files || !e.data.target) {
+//             clearInterval(update);
+//         }
+//         if (files == null) {
+//             // console.log(1)
+//             title = e.data.title;
+//             files = e.data.files;
+//             target = e.data.target;
+//             total = files.length;
+//             return handleFiles();
+//         }
+//         return;
+//     }
+// })
 
 var style = document.createElement('link');
 style.rel = 'stylesheet';
 style.type = 'text/css';
 document.head.appendChild(style);
 
-fs.getFileURL(utils.resolvePath('./fileTransferWindow.css')).then(url => {
+fs.getFileURL(path.resolve('./fileTransferWindow.css')).then(url => {
     style.href = url;
 });
 

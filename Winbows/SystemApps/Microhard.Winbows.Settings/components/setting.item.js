@@ -1,6 +1,6 @@
-import { Link } from "./link.js";
+const { Link } = await requireAsync('./link.js');
 
-export function SettingItem(data) {
+function SettingItem(data) {
     const link = Link(data.href);
     const settingItem = document.createElement("div");
     const settingItemIcon = document.createElement("div");
@@ -8,7 +8,7 @@ export function SettingItem(data) {
     const settingItemTitle = document.createElement("div");
     const settingItemDescription = document.createElement("div");
     const settingItemOpenIcon = document.createElement("div");
-    
+
     settingItem.className = "setting-item";
     settingItemIcon.className = "setting-item-icon";
     settingItemDetail.className = "setting-item-detail";
@@ -30,6 +30,8 @@ export function SettingItem(data) {
     if (data.openable != false) {
         settingItem.appendChild(settingItemOpenIcon);
     }
-    
+
     return link;
 }
+
+module.exports = { SettingItem }

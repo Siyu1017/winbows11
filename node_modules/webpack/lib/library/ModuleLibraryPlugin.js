@@ -8,6 +8,7 @@
 const { ConcatSource } = require("webpack-sources");
 const RuntimeGlobals = require("../RuntimeGlobals");
 const Template = require("../Template");
+const ConcatenatedModule = require("../optimize/ConcatenatedModule");
 const propertyAccess = require("../util/propertyAccess");
 const AbstractLibraryPlugin = require("./AbstractLibraryPlugin");
 
@@ -18,9 +19,14 @@ const AbstractLibraryPlugin = require("./AbstractLibraryPlugin");
 /** @typedef {import("../Compilation").ChunkHashContext} ChunkHashContext */
 /** @typedef {import("../Compiler")} Compiler */
 /** @typedef {import("../Module")} Module */
+/** @typedef {import("../Module").BuildMeta} BuildMeta */
 /** @typedef {import("../javascript/JavascriptModulesPlugin").StartupRenderContext} StartupRenderContext */
 /** @typedef {import("../util/Hash")} Hash */
-/** @template T @typedef {import("./AbstractLibraryPlugin").LibraryContext<T>} LibraryContext<T> */
+
+/**
+ * @template T
+ * @typedef {import("./AbstractLibraryPlugin").LibraryContext<T>} LibraryContext<T>
+ */
 
 /**
  * @typedef {object} ModuleLibraryPluginOptions
@@ -30,7 +36,10 @@ const AbstractLibraryPlugin = require("./AbstractLibraryPlugin");
 /**
  * @typedef {object} ModuleLibraryPluginParsed
  * @property {string} name
+ * @property {string | string[]=} export
  */
+
+const PLUGIN_NAME = "ModuleLibraryPlugin";
 
 /**
  * @typedef {ModuleLibraryPluginParsed} T
@@ -48,6 +57,45 @@ class ModuleLibraryPlugin extends AbstractLibraryPlugin {
 	}
 
 	/**
+	 * Apply the plugin
+	 * @param {Compiler} compiler the compiler instance
+	 * @returns {void}
+	 */
+	apply(compiler) {
+		super.apply(compiler);
+
+		compiler.hooks.thisCompilation.tap(PLUGIN_NAME, compilation => {
+			const { exportsDefinitions } =
+				ConcatenatedModule.getCompilationHooks(compilation);
+			exportsDefinitions.tap(PLUGIN_NAME, (definitions, module) => {
+				// If we have connections not all modules were concatenated, so we need the wrapper
+				const connections =
+					compilation.moduleGraph.getIncomingConnections(module);
+
+				for (const connection of connections) {
+					if (connection.originModule) {
+						return false;
+					}
+				}
+
+				// Runtime and splitting chunks now requires the wrapper too
+				for (const chunk of compilation.chunkGraph.getModuleChunksIterable(
+					module
+				)) {
+					if (
+						!chunk.hasRuntime() ||
+						compilation.chunkGraph.getNumberOfEntryModules(chunk) > 1
+					) {
+						return false;
+					}
+				}
+
+				return true;
+			});
+		});
+	}
+
+	/**
 	 * @param {LibraryOptions} library normalized library option
 	 * @returns {T | false} preprocess as needed by overriding
 	 */
@@ -60,7 +108,8 @@ class ModuleLibraryPlugin extends AbstractLibraryPlugin {
 		}
 		const _name = /** @type {string} */ (name);
 		return {
-			name: _name
+			name: _name,
+			export: library.export
 		};
 	}
 
@@ -74,34 +123,117 @@ class ModuleLibraryPlugin extends AbstractLibraryPlugin {
 	renderStartup(
 		source,
 		module,
-		{ moduleGraph, chunk },
+		{ moduleGraph, chunk, codeGenerationResults },
 		{ options, compilation }
 	) {
 		const result = new ConcatSource(source);
-		const exportsInfo = moduleGraph.getExportsInfo(module);
+		const exportsInfo = options.export
+			? [
+					moduleGraph.getExportInfo(
+						module,
+						Array.isArray(options.export) ? options.export[0] : options.export
+					)
+				]
+			: moduleGraph.getExportsInfo(module).orderedExports;
+		const definitions =
+			/** @type {BuildMeta} */
+			(module.buildMeta).exportsFinalName || {};
+		/** @type {string[]} */
+		const shortHandedExports = [];
+		/** @type {[string, string][]} */
 		const exports = [];
 		const isAsync = moduleGraph.isAsync(module);
+
 		if (isAsync) {
 			result.add(
 				`${RuntimeGlobals.exports} = await ${RuntimeGlobals.exports};\n`
 			);
 		}
-		for (const exportInfo of exportsInfo.orderedExports) {
+
+		const varType = compilation.outputOptions.environment.const
+			? "const"
+			: "var";
+
+		for (const exportInfo of exportsInfo) {
 			if (!exportInfo.provided) continue;
-			const varName = `${RuntimeGlobals.exports}${Template.toIdentifier(
-				exportInfo.name
-			)}`;
-			result.add(
-				`var ${varName} = ${RuntimeGlobals.exports}${propertyAccess([
-					/** @type {string} */
-					(exportInfo.getUsedName(exportInfo.name, chunk.runtime))
-				])};\n`
-			);
-			exports.push(`${varName} as ${exportInfo.name}`);
+
+			let shouldContinue = false;
+
+			const reexport = exportInfo.findTarget(moduleGraph, _m => true);
+
+			if (reexport) {
+				const exp = moduleGraph.getExportsInfo(reexport.module);
+
+				for (const reexportInfo of exp.orderedExports) {
+					if (
+						reexportInfo.provided === false &&
+						reexportInfo.name !== "default" &&
+						reexportInfo.name === /** @type {string[]} */ (reexport.export)[0]
+					) {
+						shouldContinue = true;
+					}
+				}
+			}
+
+			if (shouldContinue) continue;
+
+			const originalName = exportInfo.name;
+			const usedName =
+				/** @type {string} */
+				(exportInfo.getUsedName(originalName, chunk.runtime));
+			/** @type {string | undefined} */
+			const definition = definitions[usedName];
+			const finalName =
+				definition ||
+				`${RuntimeGlobals.exports}${Template.toIdentifier(originalName)}`;
+
+			if (!definition) {
+				result.add(
+					`${varType} ${finalName} = ${RuntimeGlobals.exports}${propertyAccess([
+						usedName
+					])};\n`
+				);
+			}
+
+			if (
+				finalName &&
+				(finalName.includes(".") ||
+					finalName.includes("[") ||
+					finalName.includes("("))
+			) {
+				if (exportInfo.isReexport()) {
+					const { data } = codeGenerationResults.get(module, chunk.runtime);
+					const topLevelDeclarations =
+						(data && data.get("topLevelDeclarations")) ||
+						(module.buildInfo && module.buildInfo.topLevelDeclarations);
+
+					if (topLevelDeclarations && topLevelDeclarations.has(originalName)) {
+						const name = `${RuntimeGlobals.exports}${Template.toIdentifier(originalName)}`;
+						result.add(`${varType} ${name} = ${finalName};\n`);
+						shortHandedExports.push(`${name} as ${originalName}`);
+					} else {
+						exports.push([originalName, finalName]);
+					}
+				} else {
+					exports.push([originalName, finalName]);
+				}
+			} else {
+				shortHandedExports.push(
+					definition && finalName === originalName
+						? finalName
+						: `${finalName} as ${originalName}`
+				);
+			}
 		}
-		if (exports.length > 0) {
-			result.add(`export { ${exports.join(", ")} };\n`);
+
+		if (shortHandedExports.length > 0) {
+			result.add(`export { ${shortHandedExports.join(", ")} };\n`);
 		}
+
+		for (const [exportName, final] of exports) {
+			result.add(`export ${varType} ${exportName} = ${final};\n`);
+		}
+
 		return result;
 	}
 }

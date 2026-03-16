@@ -1,4 +1,14 @@
-export function Select(options = [], handler = function () { }) {
+function getPosition(element) {
+    function offset(el) {
+        var rect = el.getBoundingClientRect(),
+            scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+            scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        return { top: rect.top + scrollTop, left: rect.left + scrollLeft }
+    }
+    return { x: offset(element).left, y: offset(element).top };
+}
+
+function Select(options = [], handler = function () { }) {
     const selectElement = document.createElement('div');
     const selectText = document.createElement('div');
     const selectExpand = document.createElement('div');
@@ -33,7 +43,7 @@ export function Select(options = [], handler = function () { }) {
     selectText.innerText = selected.text || 'Please select...';
 
     selectElement.addEventListener('click', (e) => {
-        const position = utils.getPosition(selectElement);
+        const position = getPosition(selectElement);
         const menu = WinUI.contextMenu(options, {
             showIcon: false
         })
@@ -60,3 +70,5 @@ export function Select(options = [], handler = function () { }) {
 
     return selectElement;
 }
+
+module.exports = { Select }

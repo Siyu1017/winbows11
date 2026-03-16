@@ -9,7 +9,7 @@ const Generator = require("../Generator");
 const { WEBASSEMBLY_MODULE_TYPE_SYNC } = require("../ModuleTypeConstants");
 const WebAssemblyExportImportedDependency = require("../dependencies/WebAssemblyExportImportedDependency");
 const WebAssemblyImportDependency = require("../dependencies/WebAssemblyImportDependency");
-const { compareModulesByIdentifier } = require("../util/comparators");
+const { compareModulesByIdOrIdentifier } = require("../util/comparators");
 const memoize = require("../util/memoize");
 const WebAssemblyInInitialChunkError = require("./WebAssemblyInInitialChunkError");
 
@@ -32,7 +32,7 @@ const PLUGIN_NAME = "WebAssemblyModulesPlugin";
 
 /**
  * @typedef {object} WebAssemblyModulesPluginOptions
- * @property {boolean} [mangleImports] mangle imports
+ * @property {boolean=} mangleImports mangle imports
  */
 
 class WebAssemblyModulesPlugin {
@@ -89,7 +89,7 @@ class WebAssemblyModulesPlugin {
 
 					for (const module of chunkGraph.getOrderedChunkModulesIterable(
 						chunk,
-						compareModulesByIdentifier
+						compareModulesByIdOrIdentifier(chunkGraph)
 					)) {
 						if (module.type === WEBASSEMBLY_MODULE_TYPE_SYNC) {
 							const filenameTemplate =

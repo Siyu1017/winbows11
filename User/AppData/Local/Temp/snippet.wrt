@@ -1,0 +1,21 @@
+//! $RTH={"type":"cli","runInBackground":false}
+
+const shell = new ShellInstance(process);
+
+function hexToRgb(hex) {
+    const bigint = parseInt(hex.replace('#', ''), 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return [r, g, b];
+}
+
+function coloredText(text, hex) {
+    const [r, g, b] = hexToRgb(hex);
+    return `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`;
+}
+
+process.stdout.write('so ahhhhh')
+//const cmd = 'internal:animation-speed 10'
+//process.stdout.write(`\n${shell.getPwd()}>${cmd.replaceAll(/^\s*?\S+/g, t => coloredText(t, '#ffc96d'))}\n`);
+//await shell.execCommand(cmd);

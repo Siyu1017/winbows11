@@ -6,16 +6,18 @@
 "use strict";
 
 const NormalModule = require("./NormalModule");
+const { DEFAULTS } = require("./config/defaults");
 const createHash = require("./util/createHash");
 const memoize = require("./util/memoize");
 
+/** @typedef {import("../declarations/WebpackOptions").DevtoolModuleFilenameTemplate} DevtoolModuleFilenameTemplate */
+/** @typedef {import("../declarations/WebpackOptions").HashFunction} HashFunction */
 /** @typedef {import("./ChunkGraph")} ChunkGraph */
 /** @typedef {import("./Module")} Module */
 /** @typedef {import("./RequestShortener")} RequestShortener */
-/** @typedef {typeof import("./util/Hash")} Hash */
 
 /** @typedef {string | RegExp | (string | RegExp)[]} Matcher */
-/** @typedef {{test?: Matcher, include?: Matcher, exclude?: Matcher }} MatchObject */
+/** @typedef {{ test?: Matcher, include?: Matcher, exclude?: Matcher }} MatchObject */
 
 const ModuleFilenameHelpers = module.exports;
 
@@ -75,11 +77,11 @@ const getBefore = (strFn, token) => () => {
 /**
  * Returns a function that returns a hash of the string
  * @param {ReturnStringCallback} strFn the function to get the string
- * @param {string | Hash=} hashFunction the hash function to use
+ * @param {HashFunction=} hashFunction the hash function to use
  * @returns {ReturnStringCallback} a function that returns the hash of the string
  */
 const getHash =
-	(strFn, hashFunction = "md4") =>
+	(strFn, hashFunction = DEFAULTS.HASH_FUNCTION) =>
 	() => {
 		const hash = createHash(hashFunction);
 		hash.update(strFn());
@@ -88,36 +90,14 @@ const getHash =
 	};
 
 /**
- * Returns a function that returns the string with the token replaced with the replacement
- * @param {string|RegExp} test A regular expression string or Regular Expression object
- * @returns	{RegExp} A regular expression object
- * @example
- * ```js
- * const test = asRegExp("test");
- * test.test("test"); // true
- *
- * const test2 = asRegExp(/test/);
- * test2.test("test"); // true
- * ```
- */
-const asRegExp = test => {
-	if (typeof test === "string") {
-		// Escape special characters in the string to prevent them from being interpreted as special characters in a regular expression. Do this by
-		// adding a backslash before each special character
-		test = new RegExp(`^${test.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")}`);
-	}
-	return test;
-};
-
-/**
  * @template T
  * Returns a lazy object. The object is lazy in the sense that the properties are
  * only evaluated when they are accessed. This is only obtained by setting a function as the value for each key.
  * @param {Record<string, () => T>} obj the object to convert to a lazy access object
- * @returns {object} the lazy access object
+ * @returns {T} the lazy access object
  */
 const lazyObject = obj => {
-	const newObj = {};
+	const newObj = /** @type {T} */ ({});
 	for (const key of Object.keys(obj)) {
 		const fn = obj[key];
 		Object.defineProperty(newObj, key, {
@@ -138,20 +118,20 @@ const lazyObject = obj => {
 
 const SQUARE_BRACKET_TAG_REGEXP = /\[\\*([\w-]+)\\*\]/gi;
 
+/** @typedef {((context: TODO) => string)} ModuleFilenameTemplateFunction */
+/** @typedef {string | ModuleFilenameTemplateFunction} ModuleFilenameTemplate */
+
 /**
  * @param {Module | string} module the module
- * @param {TODO} options options
- * @param {object} contextInfo context info
- * @param {RequestShortener} contextInfo.requestShortener requestShortener
- * @param {ChunkGraph} contextInfo.chunkGraph chunk graph
- * @param {string | Hash=} contextInfo.hashFunction the hash function to use
+ * @param {{ namespace?: string, moduleFilenameTemplate?: ModuleFilenameTemplate }} options options
+ * @param {{ requestShortener: RequestShortener, chunkGraph: ChunkGraph, hashFunction?: HashFunction }} contextInfo context info
  * @returns {string} the filename
  */
 ModuleFilenameHelpers.createFilename = (
 	// eslint-disable-next-line default-param-last
 	module = "",
 	options,
-	{ requestShortener, chunkGraph, hashFunction = "md4" }
+	{ requestShortener, chunkGraph, hashFunction = DEFAULTS.HASH_FUNCTION }
 ) => {
 	const opts = {
 		namespace: "",
@@ -163,6 +143,7 @@ ModuleFilenameHelpers.createFilename = (
 				})
 	};
 
+	/** @type {ReturnStringCallback} */
 	let absoluteResourcePath;
 	let hash;
 	/** @type {ReturnStringCallback} */
@@ -177,7 +158,8 @@ ModuleFilenameHelpers.createFilename = (
 			(memoize(() => requestShortener.shorten(module)));
 		identifier = shortIdentifier;
 		moduleId = () => "";
-		absoluteResourcePath = () => module.split("!").pop();
+		absoluteResourcePath = () =>
+			/** @type {string} */ (module.split("!").pop());
 		hash = getHash(identifier, hashFunction);
 	} else {
 		shortIdentifier = memoize(() =>
@@ -192,7 +174,7 @@ ModuleFilenameHelpers.createFilename = (
 		absoluteResourcePath = () =>
 			module instanceof NormalModule
 				? module.resource
-				: module.identifier().split("!").pop();
+				: /** @type {string} */ (module.identifier().split("!").pop());
 		hash = getHash(identifier, hashFunction);
 	}
 	const resource =
@@ -225,7 +207,7 @@ ModuleFilenameHelpers.createFilename = (
 	}
 
 	// TODO webpack 6: consider removing alternatives without dashes
-	/** @type {Map<string, function(): string>} */
+	/** @type {Map<string, () => string>} */
 	const replacements = new Map([
 		["identifier", identifier],
 		["short-identifier", shortIdentifier],
@@ -284,7 +266,7 @@ ModuleFilenameHelpers.createFilename = (
  * @template T
  * @param {T[]} array the array with duplicates to be replaced
  * @param {(duplicateItem: T, duplicateItemIndex: number, numberOfTimesReplaced: number) => T} fn callback function to generate new values for the duplicate items
- * @param {(firstElement:T, nextElement:T) => -1 | 0 | 1} [comparator] optional comparator function to sort the duplicate items
+ * @param {(firstElement:T, nextElement:T) => -1 | 0 | 1=} comparator optional comparator function to sort the duplicate items
  * @returns {T[]} the array with duplicates replaced
  * @example
  * ```js
@@ -335,14 +317,18 @@ ModuleFilenameHelpers.replaceDuplicates = (array, fn, comparator) => {
  * ModuleFilenameHelpers.matchPart("foo.js", [/^baz/, /^bar/]); // false
  * ```
  */
-ModuleFilenameHelpers.matchPart = (str, test) => {
+const matchPart = (str, test) => {
 	if (!test) return true;
-
 	if (Array.isArray(test)) {
-		return test.map(asRegExp).some(regExp => regExp.test(str));
+		return test.some(test => matchPart(str, test));
 	}
-	return asRegExp(test).test(str);
+	if (typeof test === "string") {
+		return str.startsWith(test);
+	}
+	return test.test(str);
 };
+
+ModuleFilenameHelpers.matchPart = matchPart;
 
 /**
  * Tests if a string matches a match object. The match object can have the following properties:
