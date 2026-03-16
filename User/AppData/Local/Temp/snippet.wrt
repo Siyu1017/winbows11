@@ -15,6 +15,7 @@ function coloredText(text, hex) {
     return `\x1b[38;2;${r};${g};${b}m${text}\x1b[0m`;
 }
 
-const cmd = 'internal:animation-speed 10'
-process.stdout.write(`\n${shell.getPwd()}>${cmd.replaceAll(/^\s*?\S+/g, t => coloredText(t, '#ffc96d'))}\n`);
-await shell.execCommand(cmd);
+process.stdout.write('so ahhhhh')
+//const cmd = 'internal:animation-speed 10'
+//process.stdout.write(`\n${shell.getPwd()}>${cmd.replaceAll(/^\s*?\S+/g, t => coloredText(t, '#ffc96d'))}\n`);
+//await shell.execCommand(cmd);
