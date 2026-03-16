@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+## v1.0.0-rc.1
+
 ### Added
 
 - You can now run interactive CLI applications within the terminal
