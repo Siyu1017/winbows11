@@ -1,7 +1,9 @@
 import WinUI from "../../../lib/winui/winui.js";
 import * as utils from "../../../shared/utils.ts";
-import { IDBFS } from "../../../shared/fs.js";
+import { getMountedSystemFS } from "../../fs/systemFs.ts";
+import { getFileURL } from "../../fs/fileUrl.ts";
 import { EventEmitter } from "../../../shared/utils.ts";
+import { cubicBezier } from "../../../shared/animationEngine.js";
 import { viewport } from "../../core/viewport.js";
 import appRegistry from "../appRegistry.js";
 import { fallbackImage } from "../../core/fallback.js";
@@ -10,7 +12,21 @@ import ModuleManager from "../../moduleManager.js";
 import WindowManager from "./windowManager.js";
 // import i18n from "../../i18n/i18n.js";
 
-const fs = IDBFS("~SYSTEM");
+let fs;
+function getFs() { return fs ??= getMountedSystemFS(); }
+function setVFSBackgroundImage(element, source) {
+    if (!source) return;
+    if (!/^C:\//i.test(source)) {
+        element.style.backgroundImage = `url(${source})`;
+        return;
+    }
+    getFileURL(getFs(), source)
+        .then(url => { element.style.backgroundImage = `url(${url})`; })
+        .catch(error => {
+            console.error(error);
+            element.style.backgroundImage = `url(${fallbackImage})`;
+        });
+}
 const { appWrapper, screenElement } = viewport;
 const snapMargin = 12;
 
@@ -21,85 +37,56 @@ const snapPreview = document.createElement('div');
 snapPreview.className = 'browser-window-snap-preview';
 appWrapper.appendChild(snapPreview);
 
-function cubicBezier(p1x, p1y, p2x, p2y) {
-    return function (t) {
-        const cx = 3 * p1x;
-        const bx = 3 * (p2x - p1x) - cx;
-        const ax = 1 - cx - bx;
-
-        const cy = 3 * p1y;
-        const by = 3 * (p2y - p1y) - cy;
-        const ay = 1 - cy - by;
-
-        const x = ((ax * t + bx) * t + cx) * t;
-        const y = ((ay * t + by) * t + cy) * t;
-
-        return y;
-    };
-}
-
-function derivative(f, epsilon = 1e-5) {
-    return t => (f(t + epsilon) - f(t)) / epsilon;
-}
-
-function invertEasingNewton(easeFn, derivativeFn, value, guess = 0.5, iterations = 5) {
-    let t = guess;
-    if (!derivativeFn) {
-        derivativeFn = derivative(easeFn);
-    }
-    for (let i = 0; i < iterations; i++) {
-        const y = easeFn(t) - value;
-        const dy = derivativeFn(t);
-        t -= y / dy;
-        if (t < 0) t = 0;
-        if (t > 1) t = 1;
-    }
-    return t;
-}
-
 const events = {
     "start": ["mousedown", "touchstart", "pointerdown"],
     "move": ["mousemove", "touchmove", "pointermove"],
     "end": ["mouseup", "touchend", "pointerup", "blur"]
 }
+
+// The old easing implementation evaluated the Y bezier directly at time t.
+// x1 = 1/3 and x2 = 2/3 make a CSS bezier's X curve linear, preserving that
+// visual timing while using the standards-compliant cubicBezier helper.
+const legacyProfileX1 = 1 / 3;
+const legacyProfileX2 = 2 / 3;
+
 const animateProfiles = {
     'window-show': {
-        func: cubicBezier(.04, .73, .16, 1),
+        func: cubicBezier(legacyProfileX1, .73, legacyProfileX2, 1),
         duration: 150,
         base: 150
     },
     'window-hide': {
-        func: cubicBezier(.77, -0.02, .98, .59),
+        func: cubicBezier(legacyProfileX1, -0.02, legacyProfileX2, .59),
         duration: 150,
         base: 150
     },
     'window-open': {
-        func: cubicBezier(.42, 0, .58, 1),
+        func: cubicBezier(legacyProfileX1, 0, legacyProfileX2, 1),
         duration: 100,
         base: 100
     },
     'window-close': {
-        func: cubicBezier(.42, 0, .58, 1),
+        func: cubicBezier(legacyProfileX1, 0, legacyProfileX2, 1),
         duration: 100,
         base: 100
     },
     'taskview-in': {
-        func: cubicBezier(0, .87, .21, 1),
+        func: cubicBezier(legacyProfileX1, .87, legacyProfileX2, 1),
         duration: 200,
         base: 200
     },
     'taskview-out': {
-        func: cubicBezier(.37, 1.03, 1, 1),
+        func: cubicBezier(legacyProfileX1, 1.03, legacyProfileX2, 1),
         duration: 150,
         base: 150
     },
     'window-maximize': {
-        func: cubicBezier(.8, .01, .28, .99),
+        func: cubicBezier(legacyProfileX1, .01, legacyProfileX2, .99),
         duration: 200,
         base: 200
     },
     'window-unmaximize': {
-        func: cubicBezier(.8, .01, .28, .99),
+        func: cubicBezier(legacyProfileX1, .01, legacyProfileX2, .99),
         duration: 200,
         base: 200
     },
@@ -117,24 +104,9 @@ const icons = {
     maximize: 'C:/Winbows/icons/controls/maximize.png'
 };
 
-const iconKeys = Object.keys(icons)
-for (let i = 0; i < iconKeys.length; i++) {
-    const key = iconKeys[i];
-    try {
-        icons[key] = await fs.getFileURL(icons[key]);
-    } catch (e) {
-        icons[key] = fallbackImage;
-        console.error(e);
-    }
-}
-
-const defaultStyle = await (async () => {
-    try {
-        return await fs.getFileURL('C:/Winbows/System/styles/app.css');
-    } catch (e) {
-        crashHandler(e);
-    }
-})();
+// This module is imported before boot. Do not touch IndexedDB here: resource
+// URLs are resolved after the system volume has passed the migration gate.
+const defaultStyle = await getFileURL(getFs(),'C:/Winbows/System/styles/app.css');
 
 const resizerConfig = {
     'browser-window-resizer-top': 'vertical',
@@ -287,6 +259,7 @@ export class BrowserWindow extends EventEmitter {
         // Status
         this.isMaximized = false;
         this.isMinimized = false;
+        this.isClosed = false;
         this.immovableElements = [];
         this.originalSnapSide = '';
         this.originalPosition = {};
@@ -335,6 +308,8 @@ export class BrowserWindow extends EventEmitter {
         this.mica = options.mica ?? false;
         this.showOnTop = options.showOnTop ?? false;
         this.theme = options.theme ?? 'light';
+        this.parentWindow = options.parentWindow ?? null;
+        this.modal = options.modal === true;
 
         this.minWidth = options.minWidth ?? 300;
         this.minHeight = options.minHeight ?? 180;
@@ -357,9 +332,9 @@ export class BrowserWindow extends EventEmitter {
 
         this.icon = options.icon ?? appRegistry.getIcon('');
         this.title = options.title ?? 'App';
-        this.type = options.type === 'sub-window' ? options.type : 'main-window';
+        this.type = ['sub-window', 'popup'].includes(options.type) ? options.type : 'main-window';
 
-        if (this.type === 'sub-window') {
+        if (this.type === 'sub-window' || this.type === 'popup') {
             this.fullscreenable = false;
             this.maximizable = false;
             this.minimizable = false;
@@ -676,7 +651,7 @@ export class BrowserWindow extends EventEmitter {
         this.closeImage.className = 'window-toolbar-button-icon';
 
         // Load icon image
-        fs.getFileURL(this.icon)
+        if (this.icon) getFileURL(getFs(), this.icon)
             .then(url => {
                 this.icon = url;
                 this.toolbarIcon.style.backgroundImage = `url(${url})`;
@@ -687,9 +662,9 @@ export class BrowserWindow extends EventEmitter {
             });
 
         this.toolbarTitle.innerHTML = utils.replaceHTMLTags(this.title);
-        this.minimizeImage.style.backgroundImage = `url(${icons.minimize})`;
-        this.maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
-        this.closeImage.style.backgroundImage = `url(${icons.close})`;
+        setVFSBackgroundImage(this.minimizeImage, icons.minimize);
+        setVFSBackgroundImage(this.maximizeImage, icons.maxmin);
+        setVFSBackgroundImage(this.closeImage, icons.close);
 
         this.minimizeButton.addEventListener('click', () => {
             this.minimize();
@@ -794,8 +769,15 @@ export class BrowserWindow extends EventEmitter {
         })
 
         this.container.addEventListener('pointerdown', (e) => {
+            const modal = WindowManager.getModal(this);
+            if (modal) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                modal.focus();
+                return;
+            }
             this._emit('focus');
-        })
+        }, true)
 
         this.on('focus', this.focus);
         this.on('blur', this.blur);
@@ -835,12 +817,16 @@ export class BrowserWindow extends EventEmitter {
     }
 
     focus = () => {
+        if (this.isClosed) return;
         maxZIndex++;
         this.container.style.zIndex = maxZIndex;
         this.container.style.pointerEvents = 'all';
         this.container.style.visibility = 'visible';
         this.windowContent.style.pointerEvents = 'unset';
         this.container.classList.add('active');
+
+        const modal = WindowManager.getModal(this);
+        if (modal) modal.focus();
     }
 
     blur = () => {
@@ -850,69 +836,56 @@ export class BrowserWindow extends EventEmitter {
 
     animate = ({
         from,
-        to,
+        to = {},
         profile
     }) => {
-        if (profile) {
-            this.animationData.profile = animateProfiles[profile];
+        const now = Date.now();
+        const nextProfile = profile ? animateProfiles[profile] : this.animationData.profile;
+        if (!nextProfile) throw new Error(`Unknown animation profile: ${profile}`);
+
+        let x, y, scaleX, scaleY, opacity;
+        if (this.animationData.isRunning) {
+            // Capture the old animation before changing its profile or target.
+            const elapsed = now - this.animationData.from.ts;
+            const t = Math.min(Math.max(elapsed / this.animationData.profile.duration, 0), 1);
+            const p = this.animationData.profile.func(t);
+            x = this.animationData.from.x + (this.animationData.to.x - this.animationData.from.x) * p;
+            y = this.animationData.from.y + (this.animationData.to.y - this.animationData.from.y) * p;
+            scaleX = this.animationData.from.scaleX + (this.animationData.to.scaleX - this.animationData.from.scaleX) * p;
+            scaleY = this.animationData.from.scaleY + (this.animationData.to.scaleY - this.animationData.from.scaleY) * p;
+            opacity = this.animationData.from.opacity + (this.animationData.to.opacity - this.animationData.from.opacity) * p;
+        } else {
+            const style = getComputedStyle(this.container);
+            x = 0;
+            y = 0;
+            scaleX = 1;
+            scaleY = 1;
+            opacity = Number(style.opacity);
+
+            if (style.transform.startsWith("matrix(")) {
+                const transform = decompose2DMatrix(style.transform);
+                x = transform.translateX;
+                y = transform.translateY;
+                scaleX = transform.scaleX;
+                scaleY = transform.scaleY;
+            }
+        }
+
+        if (from) {
+            x = from.x ?? x;
+            y = from.y ?? y;
+            scaleX = from.scaleX ?? scaleX;
+            scaleY = from.scaleY ?? scaleY;
+            opacity = from.opacity ?? opacity;
         }
 
         Object.keys(to).forEach(CSSKey => {
             if (/[A-z]/gi.test(CSSKey[0])) {
                 this.animationData.to[CSSKey] = to[CSSKey];
             }
-        })
+        });
 
-        const cT = getComputedStyle(this.container).transform;
-        const cO = getComputedStyle(this.container).opacity;
-        let opacity = Number(cO);
-        let x = 0, y = 0, scaleX = 1, scaleY = 1;
-
-        if (cT.startsWith("matrix(")) {
-            const transform = decompose2DMatrix(cT);
-            x = transform.translateX;
-            y = transform.translateY;
-            scaleX = transform.scaleX;
-            scaleY = transform.scaleY;
-
-            // Handle interrupted animation
-            const originalT = this.animationData.stat.__t;
-            if (this.animationData.isRunning == true && originalT > 0 && originalT < 1) {
-                const originalX = this.animationData.stat.__x;
-                const currentFunc = this.animationData.profile.func;
-                const t = invertEasingNewton(currentFunc, derivative(currentFunc), originalX, originalT);
-                const duration = this.animationData.profile.duration;
-
-                this.animationData.stat.__t = t;
-                this.animationData.stat.__x = currentFunc(this.animationData.stat.__t);
-
-                // console.info('Animation interrupted, Original x:', originalX, ', Current x:', this.animationData.stat.__x, ', Original t:', originalT, ', Current t:', t);
-
-                this.animationData.from.x = this.animationData.stat.x;
-                this.animationData.from.y = this.animationData.stat.y;
-                this.animationData.from.scaleX = this.animationData.stat.scaleX;
-                this.animationData.from.scaleY = this.animationData.stat.scaleY;
-                this.animationData.from.opacity = this.animationData.stat.opacity;
-                this.animationData.from.ts = Date.now() - duration * this.animationData.stat.t;
-                this.animationData.to.ts = this.animationData.from.ts + duration;
-
-                if (this.animationData.isRunning == false) {
-                    this.animateRunner();
-                }
-                return;
-            }
-        }
-
-        if (from) {
-            x = from.x || x;
-            y = from.y || y;
-            scaleX = from.scaleX || scaleX;
-            scaleY = from.scaleY || scaleY;
-            opacity = from.opacity || opacity;
-        }
-
-        const now = Date.now();
-
+        this.animationData.profile = nextProfile;
         this.animationData.from.x = x;
         this.animationData.from.y = y;
         this.animationData.from.scaleX = scaleX;
@@ -920,6 +893,13 @@ export class BrowserWindow extends EventEmitter {
         this.animationData.from.opacity = opacity;
         this.animationData.from.ts = now;
         this.animationData.to.ts = now + this.animationData.profile.duration;
+        this.animationData.stat.__t = 0;
+        this.animationData.stat.__x = 0;
+        this.animationData.stat.x = x;
+        this.animationData.stat.y = y;
+        this.animationData.stat.scaleX = scaleX;
+        this.animationData.stat.scaleY = scaleY;
+        this.animationData.stat.opacity = opacity;
 
         if (this.animationData.isRunning == false) {
             this.animateRunner();
@@ -1015,7 +995,7 @@ ${this.animationData.stat.scaleY}
                 this.browserWindow.window.style.borderRadius = 'revert-layer';
                 this.micaContainer.style.borderRadius = 'revert-layer';
 
-                this.maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
+                setVFSBackgroundImage(this.maximizeImage, icons.maxmin);
                 this.isMaximized = false;
                 this.originalSnapSide = '';
             }
@@ -1309,7 +1289,7 @@ ${this.animationData.stat.scaleY}
 
         this.browserWindow.window.style.borderRadius = '0';
         this.micaContainer.style.borderRadius = '0';
-        this.maximizeImage.style.backgroundImage = `url(${icons.maximize})`;
+        setVFSBackgroundImage(this.maximizeImage, icons.maximize);
         this.updateMica();
     }
 
@@ -1354,11 +1334,13 @@ ${this.animationData.stat.scaleY}
 
         this.browserWindow.window.style.borderRadius = 'revert-layer';
         this.micaContainer.style.borderRadius = 'revert-layer';
-        this.maximizeImage.style.backgroundImage = `url(${icons.maxmin})`;
+        setVFSBackgroundImage(this.maximizeImage, icons.maxmin);
         this.updateMica();
     }
 
     close = () => {
+        if (this.isClosed) return;
+        this.isClosed = true;
         if (window.modes.debug == true) {
 
         }
@@ -1518,10 +1500,14 @@ ${this.animationData.stat.scaleY}
         }
 
         const setBrowserWindowIcon = (icon) => {
+            if (!icon) {
+                this.changeIcon(fallbackImage);
+                return;
+            }
             if (icon?.startsWith?.('blob:')) {
                 this.changeIcon(icon);
             } else {
-                fs.getFileURL(icon).then(url => {
+                getFileURL(getFs(), icon).then(url => {
                     this.changeIcon(url);
                 })
             }

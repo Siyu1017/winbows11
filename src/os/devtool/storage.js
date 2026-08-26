@@ -1,9 +1,10 @@
 import "./storage.css";
 //import { apis } from "../kernelRuntime.js";
-import { fsUtils, IDBFS } from "../../shared/fs.js";
+import fsUtils from "../fs/path.ts";
+import { getMountedSystemFS } from "../fs/systemFs.ts";
 
 //const { fs } = apis;
-const fs = IDBFS('~DEVTOOL');
+const fs = getMountedSystemFS();
 
 const storage = document.createElement('div');
 const root = document.createElement('div');
@@ -45,16 +46,17 @@ async function getContent(dir, parent) {
     }
 
     for (const item of items) {
+        const path = fsUtils.join(dir, item);
         stats.push({
-            name: fsUtils.basename(item),
-            path: item,
-            ...await fs.stat(item)
+            name: fsUtils.basename(path),
+            path,
+            stat: await fs.stat(path)
         })
     }
 
     stats.sort((a, b) => {
-        if (a.type != b.type) {
-            return a.type == 'directory' ? -1 : 1;
+        if (a.stat.isDirectory() !== b.stat.isDirectory()) {
+            return a.stat.isDirectory() ? -1 : 1;
         }
 
         return a.name.localeCompare(b.name);
@@ -73,7 +75,7 @@ async function getContent(dir, parent) {
         overviewText.className = 'devtool-storage-item-overview-text';
         content.className = 'devtool-storage-item-content';
 
-        if (stat.type == 'directory') {
+        if (stat.stat.isDirectory()) {
             let append = false;
             overview.addEventListener('click', () => {
                 if (append == true) {
@@ -86,7 +88,7 @@ async function getContent(dir, parent) {
             })
             overviewIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-folder-icon lucide-folder"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`;
         } else {
-            const date = new Date(stat.lastModifiedTime);
+            const date = stat.stat.mtime;
             let dateString = '';
             if (isNaN(date)) {
                 dateString = 'Invalid date';
@@ -95,7 +97,7 @@ async function getContent(dir, parent) {
                 const time = (date.format("hh") < 13 ? date.format("hh:mm") : new Date(date.getTime() - 12 * 1000 * 60 * 60).format("hh:mm")) + (date.format("hh") < 12 ? ' AM' : ' PM');
                 dateString = day + ' ' + time;
             }
-            overview.setAttribute('data-tooltip', `Length: ${stat.length}\nLast modified: ${dateString}`)
+            overview.setAttribute('data-tooltip', `Length: ${stat.stat.size}\nLast modified: ${dateString}`)
             overviewIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-icon lucide-file"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>`;
         }
         overviewText.textContent = stat.name;

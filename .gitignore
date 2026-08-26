@@ -1,9 +1,8 @@
-tests/*
-node_modules/*
-dev/*
-logs/*
-vite.config.js
+tests
+node_modules
+dev
+logs
+/assets
 .vercel
 *.test.js
 *.test.html
-build.txt

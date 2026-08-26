@@ -1,4 +1,5 @@
-import { IDBFS } from "../../../shared/fs.js";
+import { getMountedSystemFS } from "../../fs/systemFs.ts";
+import { getFileURL } from "../../fs/fileUrl.ts";
 import WinUI from "../../../lib/winui/winui.js";
 import * as utils from "../../../shared/utils.ts";
 import ModuleManager from "../../moduleManager.js";
@@ -8,7 +9,7 @@ import timer from "../../core/timer.js";
 // import i18n from "../../i18n/i18n.js";
 
 export default function StartMenu(icon) {
-    const fs = IDBFS('~EXPLORER');
+    const fs = getMountedSystemFS();
     const downEvts = ["mousedown", "touchstart", "pointerdown"];
 
     const startMenuContainer = document.createElement('div');
@@ -81,7 +82,7 @@ export default function StartMenu(icon) {
     footerProfileUsername.className = 'start-menu-footer-profile-username';
     footerPowerButton.className = 'start-menu-footer-power-button';
 
-    fs.getFileURL('C:/Winbows/icons/user.png').then(url => {
+    getFileURL(fs, 'C:/Winbows/icons/user.png').then(url => {
         footerProfileAvatar.style.backgroundImage = `url(${url})`;
     })
     footerProfileUsername.innerHTML = utils.replaceHTMLTags('Admin');
@@ -256,7 +257,7 @@ export default function StartMenu(icon) {
             itemName.className = 'start-menu-pinned-app-name';
 
             itemName.innerHTML = utils.replaceHTMLTags(pinned.name);
-            fs.getFileURL(info.icon).then(url => {
+            getFileURL(fs, info.icon).then(url => {
                 itemIcon.style.backgroundImage = `url(${url})`;
             })
             item.addEventListener('click', (e) => {

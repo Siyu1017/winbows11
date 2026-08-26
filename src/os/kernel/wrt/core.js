@@ -1,4 +1,6 @@
-import { fsUtils, IDBFS } from "../../../shared/fs.js";
+import path from "../../fs/path.ts";
+import { createSystemFS } from "../../fs/systemFs.ts";
+import { setNodeFSCwd } from "../../fs/nodeFs.ts";
 import { Process } from "./process.ts";
 import * as utils from "../../../shared/utils.ts";
 import Console from "../../../lib/winbows-devtool/dist/index.js";
@@ -14,7 +16,10 @@ import _process from "./lib/process.js";
 const logger = new Logger({
     module: 'WRT'
 })
-const fs = IDBFS("~KERNEL");
+// Boot owns the initial mount/migration decision. WRT accesses it only through
+// the Node-style filesystem after that mount has completed.
+const getSystemFS = (cwd = 'C:/') => createSystemFS(cwd);
+
 const consoleStyle = 'color:#fff;background:#0067c0;padding:2px 4px;border-radius:4px; font-weight: normal;';
 const tasklist = new ((() => {
     const tasks = new Map();
@@ -140,7 +145,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
     }
 
     constructor({
-        code = '', __filename, __dirname, options = {}, argv = [], type, runInBackground, icon, // token
+        code = '', __filename, __dirname, options = {}, argv = [], type, runInBackground, icon, parentProcess, processOptions = {}, // token
     }) {
         super();
 
@@ -150,13 +155,9 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
 
         if (__filename && typeof __filename === 'string') {
             this.__filename = __filename;
-            if (__dirname && fs.exists(fsUtils.toDirFormat(__dirname))) {
-                this.__dirname = __dirname;
-            } else {
-                this.__dirname = fsUtils.dirname(__filename);
-            }
+            this.__dirname = __dirname || path.dirname(__filename);
         } else {
-            this.__filename = 'wrt://snippets/anonymous_' + this.runtimeID;
+            this.__filename = 'C:/wrt/snippets/anonymous_' + this.runtimeID;
             this.__dirname = 'C:/';
         }
 
@@ -214,6 +215,22 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                     if (header.withConsoleWindow !== undefined) {
                         this.options.withConsoleWindow = header.withConsoleWindow == true;
                     }
+                    if (header.icon && !this.icon) {
+                        const iconPath = path.join(this.__dirname, header.icon);
+                        getSystemFS(this.process.cwd()).then(fs => {
+                            try {
+                                fs.exists(iconPath).then(() => {
+                                    fs.readFile(iconPath).then(data => {
+                                        const blob = new Blob([data]);
+                                        const url = URL.createObjectURL(blob);
+                                        this.icon = url;
+                                    })
+                                })
+                            } catch (e) {
+                                logger.warn(`Unable to set the icon ${header.icon}: ${e?.message || String(e)}`)
+                            }
+                        })
+                    }
                 } catch (e) {
                     throw new Error(e);
                 }
@@ -228,17 +245,6 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         } else if (runInBackground) {
             this.runInBackground = runInBackground != false;
         }
-
-        this.modules = {};
-        this.modules['child_process'] = {
-            exports: child_process(this.process)
-        }
-        this.modules['process'] = {
-            exports: _process(this.process)
-        }
-        // this.modules['ipc'] = {
-        //     exports: _ipc(this.ipc)
-        // }
 
         this.debugConsole = new Console();
         this.proxyConsole = this.options.allowedConsoleOutput == true ? new Proxy(this.debugConsole.console, {
@@ -270,7 +276,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                 const pipeName = `kernel://winbows-console/` + utils.randomID(64);
                 const ipc = System.processAPIs.IPC.listen(pipeName);
 
-                fs.readFileAsText(file).then(code => {
+                getSystemFS(this.process.cwd()).then(fs => fs.readFile(file, 'utf-8')).then(code => {
                     const wrt = new WRT({ code, __filename: file });
                     wrt.process.env.pipe = pipeName;
                     wrt.main();
@@ -294,7 +300,17 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         }
 
         // Shared APIs
-        const process = new Process(this.__dirname, this.type);
+        const process = new Process({
+            cwd: processOptions.cwd ?? this.__dirname,
+            name: processOptions.name ?? path.basename(this.__filename),
+            type: processOptions.type ?? this.type,
+            ppid: processOptions.ppid ?? parentProcess?.pid ?? 0,
+            env: processOptions.env,
+            isTTY: processOptions.isTTY,
+            stdin: processOptions.stdin,
+            stdout: processOptions.stdout,
+            stderr: processOptions.stderr
+        });
         process.on('change:title', (e) => {
             tasklist.update(this.runtimeID, 'title', e.value);
             this._emit('change:process.title', { value: e.value, runtimeID: this.runtimeID });
@@ -316,6 +332,34 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                 return true;
             }
         });
+
+        this.modules = {};
+        this.modules['child_process'] = {
+            exports: child_process(this.process, async ({ file, args, cwd, env, parent, stdin, stdout, stderr }) => {
+                const childFS = await getSystemFS(cwd);
+                const resolvedFile = path.resolve(cwd, file);
+                if (!await childFS.exists(resolvedFile)) throw new Error(`Program not found: ${resolvedFile}`);
+                const childCode = await childFS.readFile(resolvedFile, 'utf-8');
+                return new WinbowsNodejsRuntime({
+                    code: childCode,
+                    __filename: resolvedFile,
+                    __dirname: path.dirname(resolvedFile),
+                    argv: args,
+                    type: 'cli',
+                    parentProcess: parent,
+                    processOptions: { cwd, env, stdin, stdout, stderr, ppid: parent.pid, type: 'cli' }
+                });
+            })
+        }
+        this.modules['process'] = {
+            exports: _process(this.process)
+        }
+        this.modules['fs'] = { exports: null };
+        this.modules['node:fs'] = this.modules['fs'];
+        this.modules['fs/promises'] = { exports: null };
+        this.modules['node:fs/promises'] = this.modules['fs/promises'];
+        this.modules['path'] = { exports: path };
+        this.modules['node:path'] = this.modules['path'];
 
         // Title
         this.title = process.title;
@@ -382,11 +426,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
                 if (opts && {}.toString.call(opts) === '[object Object]') {
                     if (opts.__filename && typeof opts.__filename === 'string') {
                         this.__filename = opts.__filename;
-                        if (opts.__dirname && fs.exists(fsUtils.toDirFormat(opts.__dirname))) {
-                            this.__dirname = opts.__dirname;
-                        } else {
-                            this.__dirname = fsUtils.dirname(this.__filename);
-                        }
+                        this.__dirname = opts.__dirname || path.dirname(this.__filename);
                     }
                     if (opts.code) {
                         mC = opts.code;
@@ -448,11 +488,12 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
     async requireAsync({ modulePath, dirname = '' }) {
         if (this.modules[modulePath]) return this.modules[modulePath].exports;
 
-        const resolved = fsUtils.resolve(dirname, modulePath);
+        const runtimeFS = await getSystemFS(dirname || this.process.cwd());
+        const resolved = path.resolve(dirname || this.process.cwd(), modulePath);
         if (this.modules[resolved]) return this.modules[resolved].exports;
 
-        const __dirname = fsUtils.dirname(resolved);
-        const code = await fs.readFileAsText(resolved);
+        const __dirname = path.dirname(resolved);
+        const code = await runtimeFS.readFile(resolved, 'utf-8');
         const res = await this._run({
             __dirname: __dirname,
             __filename: resolved,
@@ -470,10 +511,15 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         // const token = this[_token];
         // const tokenIsTrusted = this.isTrusted;
         const module = { exports: {} };
-        const fs = IDBFS(__filename, __dirname);
+        // Programs receive a process-scoped NodeFS view that resolves relative
+        // paths against process.cwd().
+        const runtimeFS = await getSystemFS(this.process.cwd());
+        this.process.on('change:cwd', (event) => setNodeFSCwd(runtimeFS, event.value));
+        this.modules['fs'].exports = runtimeFS;
+        this.modules['fs/promises'].exports = runtimeFS.promises;
         const ctx = {
             // Private APIs
-            fs: fs,
+            fs: runtimeFS,
             __filename: __filename,
             __dirname: __dirname,
             process: this.process,
@@ -482,7 +528,7 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
             exports: module.exports,
 
             // Shared APIs
-            path: fsUtils,
+            path: path,
             runtimeID: this.runtimeID,
             console: this.proxyConsole,
             setTimeout: this.proxyTimeout.set,
@@ -503,10 +549,12 @@ class WinbowsNodejsRuntime extends utils.EventEmitter {
         // System APIs ( e.g. appRegistry, commandRegistry, etc. )
         Object.assign(ctx, this.apis);
 
-        this.fsManager.add(__filename, fs);
-
         try {
-            const fn = new Function(`return (async function() {\nconst {${Object.keys(ctx).join(',')}}=this;\n${code}\n});\n//# sourceURL=${__filename}`)();
+            // Resolve WRT APIs from the runtime context without declaring them as lexical
+            // bindings. Renderer scripts may legitimately declare names such as
+            // `browserWindow` or `process`; destructuring `this` would make those
+            // declarations a SyntaxError before the script can run.
+            const fn = new Function(`return (async function() {\nwith (this) {\n${code}\n}\n});\n//# sourceURL=${encodeURIComponent(__filename)}`)();
             const evaluation = await fn.call(ctx);
             return { evaluation, ctx, error: null };
         } catch (error) {

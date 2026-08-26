@@ -1,4 +1,4 @@
-import { fsUtils } from "../../../shared/fs.js";
+import fsUtils from "../../fs/path.ts";
 import { capitalizeFirstLetter, parseKeyValueArgs } from "../../../shared/utils.ts";
 import { formatTwoColumns, parseURI, terminalTable } from "./shellUtils.js";
 import appRegistry from "../appRegistry.js";
@@ -11,6 +11,37 @@ import { stat } from "../../core/stat.js";
 
 const INTERNAL_COMMAND_PREFIX = 'internal:';
 const INTERNAL_CATEGORY = '@internal';
+
+function resolveShellPath(shell, input) {
+    let path = fsUtils.resolve(
+        fsUtils.normalize(shell.root + shell.pwd),
+        fsUtils.resolveEnvPath(input)
+    );
+    // Keep the canonical drive root spelling for FS IO.
+    if (/^[A-Za-z]:$/.test(path)) path += '/';
+    if (!path?.toUpperCase().startsWith(shell.root)) {
+        throw new Error(`Access denied: ${input}`);
+    }
+    return path;
+}
+
+function resolveShellDirectory(shell, input) {
+    return fsUtils.toDirFormat(resolveShellPath(shell, input));
+}
+
+function readStdin(shell) {
+    let content = '';
+    let chunk;
+    while ((chunk = shell.stdin.read()) !== null) content += String(chunk);
+    return content;
+}
+
+async function readTextFile(shell, input) {
+    const path = resolveShellPath(shell, input);
+    if (!await shell.fs.exists(path)) throw new Error(`File not found: ${input}`);
+    if ((await shell.fs.stat(path)).isDirectory()) throw new Error(`Path is a directory: ${input}`);
+    return shell.fs.readFile(path, 'utf-8');
+}
 
 /**
  * @callback CommandHandler
@@ -100,6 +131,9 @@ const commandRegistry = new CommandRegistry();
 commandRegistry.addCategory('built-in', {
     title: 'Built-in commands'
 })
+commandRegistry.addCategory('file', { title: 'File commands' });
+commandRegistry.addCategory('text', { title: 'Text commands' });
+commandRegistry.addCategory('system', { title: 'System commands' });
 
 //=========== File and directory operations ===========//
 
@@ -111,9 +145,12 @@ commandRegistry.register(['cd', 'chdir'], {
         '[..]': 'Specifies that you want to change to the parent folder.'
     },
     category: 'built-in',
-    handler: ({ args }, shell) => {
+    handler: async ({ args }, shell) => {
         let target = args[0];
-        if (!target) return true;
+        if (!target) {
+            shell.stdout.write(shell.getPwd() + '\n');
+            return true;
+        }
 
         target = fsUtils.resolveEnvPath(target);
         const resolvedDir = fsUtils.resolve(fsUtils.normalize(shell.root + shell.pwd), target);
@@ -123,7 +160,7 @@ commandRegistry.register(['cd', 'chdir'], {
             shell.stderr.write(`Invalid directory: ${target}\n`);
             return false;
         }
-        if (!shell.fs.exists(dir)) {
+        if (!await shell.fs.exists(dir)) {
             shell.stderr.write(`Directory not found: ${target}\n`);
             return false;
         }
@@ -132,8 +169,11 @@ commandRegistry.register(['cd', 'chdir'], {
             return false;
         }
 
-        const pwd = fsUtils.resolve(shell.pwd, dir);
-        shell.pwd = fsUtils.parsePath(pwd).path;
+        if (!(await shell.fs.stat(dir)).isDirectory()) {
+            shell.stderr.write(`Not a directory: ${target}\n`);
+            return false;
+        }
+        shell.setCwd(dir);
         return true;
     }
 });
@@ -141,7 +181,7 @@ commandRegistry.register(['cd', 'chdir'], {
 // List directory
 commandRegistry.register('dir', {
     description: 'Displays a list of a directory\'s files and subdirectories.',
-    usage: 'dir [/a] [/s] [/b]',
+    usage: 'dir [path] [/a] [/s] [/b]',
     options: {
         '/a': '',
         '/s': 'Lists every occurrence of the specified file name within the specified directory and all subdirectories.',
@@ -153,6 +193,7 @@ commandRegistry.register('dir', {
         let displaySubdir = false;
         let displayMinimally = false;
         let argString = args.join(' ');
+        const target = args.find(arg => !arg.startsWith('/')) || '.';
 
         // Display all types
         if (/\/[aA]/i.test(argString)) displayAll = true;
@@ -163,27 +204,51 @@ commandRegistry.register('dir', {
         // No header
         if (/\/[bB]/i.test(argString)) displayMinimally = true;
 
-        const contents = await shell.fs.readdir(fsUtils.normalize(shell.root + shell.pwd), {
-            recursive: displaySubdir
-        });
-        for (const path of contents) {
-            const name = fsUtils.basename(path);
-            if (displayMinimally) {
-                shell.stdout.write(name + '\n');
-            } else {
-                const stat = shell.fs.stat(path);
-                const date = new Date(stat.lastModifiedTime);
-                let dateString = '';
-                if (isNaN(date)) {
-                    dateString = 'Invalid date';
-                } else {
-                    const day = date.format("yyyy/MM/dd");
-                    const time = (date.format("hh") < 13 ? date.format("hh:mm") : new Date(date.getTime() - 12 * 1000 * 60 * 60).format("hh:mm")) + (date.format("hh") < 12 ? ' AM' : ' PM');
-                    dateString = day + ' ' + time;
-                }
-                shell.stdout.write(dateString + '\t' + (stat.type == 'directory' ? '<DIR>\t\t' : '\t' + stat.length + '\t') + name + '\n');
+        let directory;
+        try {
+            directory = resolveShellDirectory(shell, target);
+            if (!await shell.fs.exists(directory) || !(await shell.fs.stat(directory)).isDirectory()) {
+                throw new Error(`Directory not found: ${target}`);
             }
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
         }
+        // Stream entries as they are discovered.  Collecting a recursive
+        // `readdir()` result first makes `dir C:/ /s` appear frozen until the
+        // whole disk has been traversed.
+        const printDirectory = async (currentDirectory) => {
+            const entries = await shell.fs.readdir(currentDirectory);
+            for (const name of entries) {
+                const path = fsUtils.resolve(currentDirectory, name);
+                // A stat is still required for recursive traversal; avoid it
+                // for a non-recursive bare listing.
+                const stat = displaySubdir || !displayMinimally
+                    ? await shell.fs.stat(path)
+                    : null;
+
+                if (displayMinimally) {
+                    shell.stdout.write(name + '\n');
+                } else {
+                    const date = stat.mtime;
+                    let dateString = '';
+                    if (isNaN(date)) {
+                        dateString = 'Invalid date';
+                    } else {
+                        const day = date.format("yyyy/MM/dd");
+                        const time = (date.format("hh") < 13 ? date.format("hh:mm") : new Date(date.getTime() - 12 * 1000 * 60 * 60).format("hh:mm")) + (date.format("hh") < 12 ? ' AM' : ' PM');
+                        dateString = day + ' ' + time;
+                    }
+                    shell.stdout.write(dateString + '\t' + (stat.isDirectory() ? '<DIR>\t\t' : '\t' + stat.size + '\t') + name + '\n');
+                }
+
+                if (displaySubdir && stat.isDirectory()) {
+                    await printDirectory(path);
+                }
+            }
+        };
+
+        await printDirectory(directory);
 
         return true;
     }
@@ -212,7 +277,7 @@ commandRegistry.register(['md', 'mkdir'], {
             shell.stderr.write(`Invalid directory: ${dirname}\n`);
             return false;
         }
-        if (shell.fs.exists(dir)) {
+        if (await shell.fs.exists(dir)) {
             shell.stderr.write(`Directory already exists: ${dirname}\n`);
             return false;
         }
@@ -256,7 +321,7 @@ commandRegistry.register(['rd', 'rmdir'], {
             shell.stderr.write(`Invalid directory: ${dirname}\n`);
             return false;
         }
-        if (!shell.fs.exists(dir)) {
+        if (!await shell.fs.exists(dir)) {
             shell.stderr.write(`Directory not found: ${dirname}\n`);
             return false;
         }
@@ -352,6 +417,144 @@ commandRegistry.register(['del', 'erase'], {
         return true;
     }
 })
+
+commandRegistry.register(['copy', 'cp'], {
+    description: 'Copies a file to another location.',
+    usage: 'copy <source> <destination>',
+    category: 'file',
+    handler: async ({ args }, shell) => {
+        if (args.length !== 2) {
+            shell.stderr.write('Usage: copy <source> <destination>\n');
+            return false;
+        }
+        try {
+            const source = resolveShellPath(shell, args[0]);
+            const destination = resolveShellPath(shell, args[1]);
+            if (!await shell.fs.exists(source) || (await shell.fs.stat(source)).isDirectory()) {
+                throw new Error(`File not found: ${args[0]}`);
+            }
+            await shell.fs.writeFile(destination, await shell.fs.readFile(source));
+            shell.stdout.write('        1 file(s) copied.\n');
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register(['move', 'mv'], {
+    description: 'Moves a file or directory to another location.',
+    usage: 'move <source> <destination>',
+    category: 'file',
+    handler: async ({ args }, shell) => {
+        if (args.length !== 2) {
+            shell.stderr.write('Usage: move <source> <destination>\n');
+            return false;
+        }
+        try {
+            const source = resolveShellPath(shell, args[0]);
+            const destination = resolveShellPath(shell, args[1]);
+            if (!await shell.fs.exists(source)) throw new Error(`Path not found: ${args[0]}`);
+            await shell.fs.rename(source, destination);
+            shell.stdout.write('        1 item(s) moved.\n');
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register(['ren', 'rename'], {
+    description: 'Renames a file or directory.',
+    usage: 'ren <path> <new-name>',
+    category: 'file',
+    handler: async ({ args }, shell) => {
+        if (args.length !== 2 || /[\\/]/.test(args[1])) {
+            shell.stderr.write('Usage: ren <path> <new-name>\n');
+            return false;
+        }
+        try {
+            const source = resolveShellPath(shell, args[0]);
+            const destination = fsUtils.resolve(fsUtils.dirname(source), args[1]);
+            if (!await shell.fs.exists(source)) throw new Error(`Path not found: ${args[0]}`);
+            await shell.fs.rename(source, destination);
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register(['type', 'cat'], {
+    description: 'Displays the contents of one or more text files.',
+    usage: 'type|cat <file> [file...]',
+    category: 'text',
+    handler: async ({ args }, shell) => {
+        if (!args.length) {
+            shell.stderr.write('Usage: type|cat <file> [file...]\n');
+            return false;
+        }
+        try {
+            for (const file of args) {
+                const content = await readTextFile(shell, file);
+                shell.stdout.write(content);
+                if (content && !content.endsWith('\n')) shell.stdout.write('\n');
+            }
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register('touch', {
+    description: 'Creates an empty file or updates a file timestamp.',
+    usage: 'touch <file>',
+    category: 'file',
+    handler: async ({ args }, shell) => {
+        if (args.length !== 1) {
+            shell.stderr.write('Usage: touch <file>\n');
+            return false;
+        }
+        try {
+            const path = resolveShellPath(shell, args[0]);
+            if (await shell.fs.exists(path) && (await shell.fs.stat(path)).isDirectory()) throw new Error(`Path is a directory: ${args[0]}`);
+            const content = await shell.fs.exists(path) ? await shell.fs.readFile(path) : new Uint8Array();
+            await shell.fs.writeFile(path, content);
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register('tree', {
+    description: 'Graphically displays the directory structure.',
+    usage: 'tree [path]',
+    category: 'file',
+    handler: async ({ args }, shell) => {
+        try {
+            const root = resolveShellDirectory(shell, args[0] || '.');
+            if (!await shell.fs.exists(root) || !(await shell.fs.stat(root)).isDirectory()) throw new Error(`Directory not found: ${args[0] || '.'}`);
+            shell.stdout.write(root + '\n');
+            const entries = await shell.fs.readdir(root, { recursive: true });
+            for (const entry of entries.sort()) {
+                const relative = entry.slice(root.length).replace(/^\//, '');
+                const depth = relative.split('/').length - 1;
+                shell.stdout.write(`${'  '.repeat(depth)}${fsUtils.basename(entry)}\n`);
+            }
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
 
 //=========== System info and management ===========//
 
@@ -474,7 +677,7 @@ commandRegistry.register('start', {
             const WRT = ModuleManager.get('WRT')
             const wrt = new WRT({
                 __filename: app.entryScript,
-                code: await shell.fs.readFileAsText(app.entryScript),
+                code: await shell.fs.readFile(app.entryScript, 'utf-8'),
                 argv: [`--path="${uri.path}"`]
             });
             wrt.main();
@@ -496,6 +699,11 @@ commandRegistry.register('set', {
     },
     category: 'built-in',
     handler: ({ args }, shell) => {
+        if (!args.length) {
+            const env = shell.getAllEnv();
+            for (const [key, value] of Object.entries(env)) shell.stdout.write(`${key}=${value}\n`);
+            return true;
+        }
         const kv = parseKeyValueArgs(args);
         if (Object.keys(kv).length === 0) {
             shell.stderr.write('Usage: set <name>=<value>\n');
@@ -627,10 +835,209 @@ commandRegistry.register('echo', {
     },
     category: 'built-in',
     handler: ({ args, flag }, shell) => {
+        if (args.length === 0) {
+            shell.stdout.write('\n');
+            return true;
+        }
         shell.stdout.write(args.join(' ') + '\n');
         return true;
     }
 })
+
+commandRegistry.register('more', {
+    description: 'Displays text from a file or pipeline input.',
+    usage: 'more [file]',
+    category: 'text',
+    handler: async ({ args }, shell) => {
+        try {
+            const content = args.length ? await readTextFile(shell, args[0]) : readStdin(shell);
+            if (!content && !args.length) return true;
+            shell.stdout.write(content);
+            if (content && !content.endsWith('\n')) shell.stdout.write('\n');
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register('sort', {
+    description: 'Sorts lines from a file or pipeline input.',
+    usage: 'sort [/r] [file]',
+    category: 'text',
+    handler: async ({ args }, shell) => {
+        try {
+            const reverse = args.some(arg => /^\/r$/i.test(arg));
+            const file = args.find(arg => !/^\//.test(arg));
+            const content = file ? await readTextFile(shell, file) : readStdin(shell);
+            const lines = content.split(/\r?\n/).filter((line, index, all) => line || index < all.length - 1);
+            lines.sort((a, b) => a.localeCompare(b));
+            if (reverse) lines.reverse();
+            shell.stdout.write(lines.join('\n') + (lines.length ? '\n' : ''));
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register(['find', 'findstr'], {
+    description: 'Searches for text in a file or pipeline input.',
+    usage: 'find|findstr [/i] [/n] <text> [file]',
+    category: 'text',
+    handler: async ({ args }, shell) => {
+        const ignoreCase = args.some(arg => /^\/i$/i.test(arg));
+        const showLineNumbers = args.some(arg => /^\/n$/i.test(arg));
+        const values = args.filter(arg => !/^\/[in]$/i.test(arg));
+        if (!values.length) {
+            shell.stderr.write('Usage: find|findstr [/i] [/n] <text> [file]\n');
+            return false;
+        }
+        try {
+            const [needle, file] = values;
+            const content = file ? await readTextFile(shell, file) : readStdin(shell);
+            const matchNeedle = ignoreCase ? needle.toLocaleLowerCase() : needle;
+            let count = 0;
+            content.split(/\r?\n/).forEach((line, index) => {
+                const subject = ignoreCase ? line.toLocaleLowerCase() : line;
+                if (subject.includes(matchNeedle)) {
+                    shell.stdout.write((showLineNumbers ? `${index + 1}:` : '') + line + '\n');
+                    count++;
+                }
+            });
+            return count > 0;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register('fc', {
+    description: 'Compares the contents of two text files.',
+    usage: 'fc <file1> <file2>',
+    category: 'text',
+    handler: async ({ args }, shell) => {
+        if (args.length !== 2) {
+            shell.stderr.write('Usage: fc <file1> <file2>\n');
+            return false;
+        }
+        try {
+            const [left, right] = await Promise.all(args.map(file => readTextFile(shell, file)));
+            if (left === right) {
+                shell.stdout.write('FC: no differences encountered\n');
+                return true;
+            }
+            const leftLines = left.split(/\r?\n/);
+            const rightLines = right.split(/\r?\n/);
+            const length = Math.max(leftLines.length, rightLines.length);
+            for (let index = 0; index < length; index++) {
+                if (leftLines[index] !== rightLines[index]) {
+                    shell.stdout.write(`***** ${args[0]}\n${leftLines[index] ?? ''}\n`);
+                    shell.stdout.write(`***** ${args[1]}\n${rightLines[index] ?? ''}\n`);
+                }
+            }
+            return true;
+        } catch (error) {
+            shell.stderr.write(error.message + '\n');
+            return false;
+        }
+    }
+});
+
+commandRegistry.register('where', {
+    description: 'Locates registered commands, apps, or files in the current directory.',
+    usage: 'where <name>',
+    category: 'file',
+    handler: async ({ args }, shell) => {
+        if (args.length !== 1) {
+            shell.stderr.write('Usage: where <name>\n');
+            return false;
+        }
+        const name = args[0].toLowerCase();
+        const matches = [];
+        if (commandRegistry.has(name)) matches.push(`${name} (built-in command)`);
+        const app = appRegistry.getInfo(args[0]);
+        if (app?.entryScript) matches.push(app.entryScript);
+        const cwd = fsUtils.normalize(shell.root + shell.pwd);
+        const entries = await shell.fs.readdir(cwd);
+        for (const entry of entries) {
+            if (fsUtils.basename(entry).toLowerCase() === name) matches.push(entry);
+        }
+        if (!matches.length) {
+            shell.stderr.write(`INFO: Could not find files for the given pattern(s).\n`);
+            return false;
+        }
+        shell.stdout.write(matches.join('\n') + '\n');
+        return true;
+    }
+});
+
+commandRegistry.register('pause', {
+    description: 'Pauses execution until a key is entered.',
+    usage: 'pause',
+    category: 'built-in',
+    handler: async (_, shell) => {
+        await shell.input('Press any key to continue...', 'normal');
+        shell.stdout.write('\n');
+        return true;
+    }
+});
+
+commandRegistry.register('hostname', {
+    description: 'Displays the system host name.',
+    usage: 'hostname',
+    category: 'system',
+    handler: (_, shell) => {
+        shell.stdout.write((shell.getEnv('COMPUTERNAME') || 'WINBOWS11') + '\n');
+        return true;
+    }
+});
+
+commandRegistry.register('whoami', {
+    description: 'Displays the current user name.',
+    usage: 'whoami',
+    category: 'system',
+    handler: (_, shell) => {
+        shell.stdout.write((shell.getEnv('USERNAME') || shell.getEnv('USER') || 'User') + '\n');
+        return true;
+    }
+});
+
+commandRegistry.register('date', {
+    description: 'Displays the current date.',
+    usage: 'date',
+    category: 'system',
+    handler: (_, shell) => {
+        shell.stdout.write(new Date().toLocaleDateString() + '\n');
+        return true;
+    }
+});
+
+commandRegistry.register('time', {
+    description: 'Displays the current time.',
+    usage: 'time',
+    category: 'system',
+    handler: (_, shell) => {
+        shell.stdout.write(new Date().toLocaleTimeString() + '\n');
+        return true;
+    }
+});
+
+commandRegistry.register('systeminfo', {
+    description: 'Displays basic Winbows system information.',
+    usage: 'systeminfo',
+    category: 'system',
+    handler: (_, shell) => {
+        shell.stdout.write(`Host Name: ${shell.getEnv('COMPUTERNAME') || 'WINBOWS11'}\n`);
+        shell.stdout.write(`OS Name: Winbows11\n`);
+        shell.stdout.write(`OS Version: ${SystemInformation.version}\n`);
+        shell.stdout.write(`Current Directory: ${shell.getPwd()}\n`);
+        return true;
+    }
+});
 
 // Help
 commandRegistry.register('help', {

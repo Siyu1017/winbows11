@@ -1,4 +1,4 @@
-import { fsUtils } from "../../shared/fs.js";
+import fsUtils from "../fs/path.ts";
 
 const fileViewers = {
     // Deprecated Method : fileViewers.viewers

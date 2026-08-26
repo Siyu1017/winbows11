@@ -9,6 +9,7 @@
     "allowJs": true,
     "checkJs": false,
     "outDir": "dist",
+    "moduleDetection": "force",
     "types": [
       "./types/wrt/index.d.ts"
     ],
@@ -20,12 +21,12 @@
     "dist",
   ],
   "include": [
-    "User/**/*.js",
-    "User/**/*.wrt",
-    "Program Files/**/*.js",
-    "Program Files/**/*.wrt",
-    "Winbows/**/*.js",
-    "Winbows/**/*.wrt",
+    "public/User/**/*.js",
+    "public/User/**/*.wrt",
+    "public/Program Files/**/*.js",
+    "public/Program Files/**/*.wrt",
+    "public/Winbows/**/*.js",
+    "public/Winbows/**/*.wrt",
     "src/**/*.js",
     "src/**/*.ts"
   ]

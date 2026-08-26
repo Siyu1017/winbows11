@@ -16,7 +16,7 @@ export default function crashHandler(e) {
         const message = `System Information:\nBuild ID: ${SystemInformation.buildId}\nLocal Build ID: ${SystemInformation.localBuildId}\nWinbows Version: ${SystemInformation.version}${e ? '\n\nError Message: ' + e.message : ''}`;
         const reportURL = `https://github.com/Siyu1017/winbows11/issues/new?title=${encodeURIComponent('Kernel Error')}&body=${encodeURIComponent(`${message}\n\nStacktrace:\n` + stacktrace.join('\n'))}`;
 
-        console.clear();
+        // console.clear();
         if (e) {
             logger.fatal('[Crash]', e);
         }

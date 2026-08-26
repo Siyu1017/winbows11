@@ -38,12 +38,12 @@ export class MemoryDriver extends Driver {
 
     async read(key: string) {
         if (this._state !== DriverState.Operational) throw new Error("The driver is not available");
-        return this._storage.get(key) ?? null;
+        return this._storage.get(key)?.slice() ?? null;
     }
 
     async write(key: string, data: RawData) {
         if (this._state !== DriverState.Operational) throw new Error("The driver is not available");
-        this._storage.set(key, data);
+        this._storage.set(key, data.slice());
     }
 
     async delete(key: string) {

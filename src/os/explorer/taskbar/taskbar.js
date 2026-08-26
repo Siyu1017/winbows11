@@ -9,6 +9,15 @@ import IconManager from "./iconManager.js";
 async function Taskbar() {
     timer.group('Taskbar');
 
+    const savedAlignment = localStorage.getItem('WINBOWS_TASKBAR_ALIGNMENT');
+    const savedStyle = localStorage.getItem('WINBOWS_TASKBAR_STYLE');
+    if (savedAlignment === 'left') {
+        document.body.setAttribute('data-taskbar-align', 'left');
+    }
+    if (savedStyle === 'floating') {
+        document.body.setAttribute('data-taskbar-style', 'floating');
+    }
+
     const { screenElement } = viewport;
     const System = ModuleManager.get('System');
 

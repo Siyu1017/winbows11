@@ -8,6 +8,9 @@ declare namespace WApplication {
     }
     class BrowserWindow extends EventEmitter {
         constructor(config: BrowserWindowConfig);
+        /** Load a WRT script or render a local HTML document directly in the window. */
         load(path: string): Promise<any>;
+        /** Electron-compatible alias for `load(path)`. */
+        loadFile(path: string): Promise<any>;
     }
 }

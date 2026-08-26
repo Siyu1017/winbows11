@@ -1,10 +1,12 @@
-import { IDBFS } from "../../../shared/fs.js";
+import { getMountedSystemFS } from "../../fs/systemFs.ts";
+import { getFileURL } from "../../fs/fileUrl.ts";
 import ModuleManager from "../../moduleManager.js";
 import { viewport } from "../../core/viewport.js";
 import { getImageTheme } from "../../../shared/utils.ts";
 import { desktopEl } from "./init.js";
 
-const fs = IDBFS("~EXPLORER");
+let fs;
+function getFs() { return fs ??= getMountedSystemFS(); }
 const { screenElement } = viewport;
 
 // Bg
@@ -58,16 +60,16 @@ function get() {
  */
 async function set(image = '') {
     if (!image || image == currentBackgroundImage) return;
-    const stats = fs.stat(image);
-    if (stats.exists != true) {
-        await fs.downloadFile(image).catch(err => {
+    const fs = getFs();
+    if (!await fs.exists(image)) {
+        await fs.readFile(image).catch(err => {
             image = 'C:/Winbows/bg/img0.jpg';
             console.warn(err);
         });
     }
     currentBackgroundImage = image;
     localStorage.setItem('WINBOWS_BACKGROUND_IMAGE', currentBackgroundImage);
-    const url = await fs.getFileURL(currentBackgroundImage);
+    const url = await getFileURL(fs, currentBackgroundImage);
 
     return new Promise((resolve, reject) => {
         const img = new Image();

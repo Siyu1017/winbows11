@@ -1,7 +1,7 @@
-import { IDBFS } from "../../shared/fs.js";
+import { getMountedSystemFS } from "../fs/systemFs.ts";
 import { EventEmitter } from "../../shared/utils.ts";
 
-const fs = new IDBFS();
+const fs = getMountedSystemFS();
 const cache = {};
 const texts = [];
 const availableLangs = ['en-US', 'zh-TW'];
@@ -41,7 +41,7 @@ class I18n extends EventEmitter {
     async load(lang = "en-US") {
         if (!availableLangs.includes(lang)) return;
         if (cache[lang]) return (this.lang = lang);
-        const res = await fs.readFileAsText(`C:/Winbows/System/Locales/${lang}.json`);
+        const res = await fs.readFile(`C:/Winbows/System/Locales/${lang}.json`, 'utf-8');
         cache[lang] = JSON.parse(res);
         this.currentLang = lang;
         this._emit('change', lang);

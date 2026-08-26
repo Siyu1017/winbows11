@@ -1,0 +1,102 @@
+.personalization-section {
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    padding: .5rem;
+    user-select: none;
+}
+
+.personalization-section-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.personalization-section-description {
+    color: rgb(60, 60, 60);
+    font-size: .875rem;
+    margin-top: -.5rem;
+}
+
+.personalization-choice-grid {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: .75rem;
+}
+
+.personalization-choice {
+    background: rgb(255 255 255 / 70%);
+    border: 1px solid rgb(0 0 0 / 10%);
+    border-radius: .5rem;
+    color: inherit;
+    cursor: pointer;
+    overflow: hidden;
+    padding: .375rem;
+    text-align: left;
+}
+
+.personalization-choice:hover {
+    background: rgb(255 255 255 / 40%);
+}
+
+.personalization-choice:disabled {
+    cursor: wait;
+    opacity: .65;
+}
+
+.personalization-choice.selected {
+    border-color: var(--winbows-primary-color);
+    box-shadow: 0 0 0 1px var(--winbows-primary-color);
+}
+
+.personalization-choice-preview {
+    aspect-ratio: 16 / 9;
+    background: rgb(180 180 180);
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: .25rem;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.personalization-choice-label {
+    display: block;
+    font-size: .875rem;
+    padding: .5rem .25rem .125rem;
+}
+
+.personalization-theme-preview {
+    background: #f7f7f7;
+    color: #202020;
+}
+
+.personalization-theme-preview.dark {
+    background: #242424;
+    color: #fff;
+}
+
+.personalization-theme-preview::before {
+    background: currentColor;
+    content: '';
+    display: block;
+    height: 10%;
+    opacity: .15;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+
+[data-theme="dark"] .personalization-section-description {
+    color: rgb(170 170 170);
+}
+
+[data-theme="dark"] .personalization-choice {
+    background: rgb(255 255 255 / 8%);
+    border-color: rgb(255 255 255 / 12%);
+}
+
+[data-theme="dark"] .personalization-choice:hover {
+    background: rgb(255 255 255 / 12%);
+}

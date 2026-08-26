@@ -46,7 +46,7 @@ export default function Devtool() {
     devContainer.style = `right: 0; top: 0; width: ${realWidth}px; height: var(--winbows-screen-height);`;
     footer.className = 'winbows-devtool-footer';
 
-    footer.textContent = `Winbows Devtool v${devtool.version} (c) Siyu1017`
+    footer.textContent = `Winbows Devtool v${devtool.version}`
 
     document.body.appendChild(devContainer);
     devContainer.appendChild(resizer);
@@ -144,12 +144,12 @@ export default function Devtool() {
         content: terminal,
         closable: false
     })
-    const vfsTab = tabview.add({
-        id: 'vfs',
-        title: 'VFS', //i18n.t('devtool.tab.terminal'),
-        content: VFS,
-        closable: false
-    })
+    // const vfsTab = tabview.add({
+    //     id: 'vfs',
+    //     title: 'VFS', //i18n.t('devtool.tab.terminal'),
+    //     content: VFS,
+    //     closable: false
+    // })
 
     tabview.select('console');
     tabview.on('select', id => {

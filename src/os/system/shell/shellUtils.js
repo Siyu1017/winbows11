@@ -7,56 +7,32 @@ export function terminalTable(term, head = [], config = {
     const cols = head.length;
     const sizes = head.map(h => h.size);
     const aligns = head.map(h => h.align || 'left');
+    const gap = config?.gap || 1;
+    const truncate = (text, size) => text.length > size ? `${text.slice(0, Math.max(0, size - 1))}…` : text;
 
     term.write('\r\n');
-    for (let i = 0; i < cols; i++) {
-        const cell = head[i];
-        const cellSize = sizes[i];
-        const text = cell.text;
-        if (text.length > cellSize) {
-            term.write(`${text.slice(0, cellSize - 1)}…`);
-        } else if (cell.align == 'right') {
-            term.write(`${text.padStart(cellSize)}`);
-        } else {
-            term.write(text);
-            term.write(' '.repeat(cellSize - text.length));
-        }
-        term.write(' '.repeat(config?.gap || 1))
+    for (let index = 0; index < cols; index++) {
+        const cell = head[index];
+        const text = truncate(String(cell.text ?? ''), sizes[index]);
+        term.write((cell.align === 'right' ? text.padStart(sizes[index]) : text.padEnd(sizes[index])) + ' '.repeat(gap));
     }
 
     term.write('\r\n');
-    for (let i = 0; i < cols; i++) {
-        const cellSize = sizes[i];
-        term.write((config?.separator || '=').repeat(cellSize));
-        term.write(' '.repeat(config?.gap || 1));
+    for (let index = 0; index < cols; index++) {
+        term.write((config?.separator || '=').repeat(sizes[index]) + ' '.repeat(gap));
     }
 
     return {
         row: (cells = []) => {
-            // Start in new line
             term.write('\r\n');
-
-            for (let i = 0; i < Math.min(cells.length, cols); i++) {
-                const cell = cells[i];
-                const cellSize = sizes[i];
-                const align = cell.align || aligns[i];
-                if (cell && cell.text) {
-                    const text = String(cell.text);
-                    if (text.length > cellSize) {
-                        term.write(`${text.slice(0, cellSize - 1)}…`);
-                    } else if (align == 'right') {
-                        term.write(`${text.padStart(cellSize)}`);
-                    } else {
-                        term.write(text);
-                        term.write(' '.repeat(cellSize - text.length));
-                    }
-                    term.write(' '.repeat(config?.gap || 1))
-                } else {
-                    term.write(' '.repeat(cellSize + (config?.gap || 1)));
-                }
+            for (let index = 0; index < cols; index++) {
+                const cell = cells[index];
+                const text = cell?.text == null ? '' : truncate(String(cell.text), sizes[index]);
+                const align = cell?.align || aligns[index];
+                term.write((align === 'right' ? text.padStart(sizes[index]) : text.padEnd(sizes[index])) + ' '.repeat(gap));
             }
         }
-    }
+    };
 }
 
 export function formatTwoColumns(left, right, tabSize = 16) {

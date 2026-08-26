@@ -1,339 +1,215 @@
 import { EventEmitter } from "../../../../shared/utils";
-import { fsUtils } from "../../../../shared/fs";
-import { Process } from "../process";
+import stdio from "../../../lib/stdio";
+import { Process, type ProcessSignal } from "../process";
 
-type IChildProcessOptionsStdio = "pipe" | "ipc" | "ignore" | "inherit";
+type StdioMode = "pipe" | "ignore" | "inherit";
+type Stream = stdio.InputStream | stdio.OutputStream | stdio.tty.InputStream | stdio.tty.OutputStream;
 
-function normalizeExecArgs(command: string, options?: any, callback?: (error: Error | null, stdout: string, stderr: string) => void) {
-    if (typeof options === 'function') {
-        callback = options;
-        options = undefined;
-    }
+export type ChildRuntime = { process: Process; main: () => Promise<unknown> };
+export type ChildRuntimeFactory = (request: {
+    file: string; args: string[]; cwd: string; env: Record<string, string | undefined>; parent: Process;
+    stdin?: Stream; stdout?: Stream; stderr?: Stream;
+}) => Promise<ChildRuntime>;
 
-    options = { __proto__: null, ...options };
-    options.shell = typeof options.shell === 'string' ? options.shell : true;
+type SpawnOptions = {
+    cwd?: string;
+    env?: Record<string, string | undefined>;
+    stdio?: StdioMode | Array<StdioMode | number | null | undefined>;
+    shell?: boolean | string;
+};
+type ExecCallback = (error: Error | null, stdout: string, stderr: string) => void;
 
-    return {
-        file: command,
-        options: options,
-        callback: callback,
-    };
+const signals: Record<number, ProcessSignal> = { 2: 'SIGINT', 9: 'SIGKILL', 15: 'SIGTERM', 18: 'SIGCONT', 19: 'SIGSTOP' };
+
+function createSpawnError(file: string, cause: unknown) {
+    const error = cause instanceof Error ? cause : new Error(String(cause));
+    (error as Error & { code?: string; path?: string }).code ??= 'ENOENT';
+    (error as Error & { path?: string }).path = file;
+    return error;
 }
 
-function normalizeExecFileArgs(file: string, args: any, options?: any, callback?: (error: Error | null, stdout: string, stderr: string) => void) {
-    if (Array.isArray(args)) {
-        args = args.slice();
-    } else if (args != null && typeof args === 'object') {
-        callback = options;
-        options = args;
-        args = null;
-    } else if (typeof args === 'function') {
-        callback = args;
-        options = null;
-        args = null;
-    }
-
-    args ??= [];
-
-    if (typeof options === 'function') {
-        callback = options;
-    }
-
-    options ??= Object.freeze({ __proto__: null });
-
-    return { file, args, options, callback };
+function tokenizeCommand(command: string) {
+    const tokens = command.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) ?? [];
+    return tokens.map(token => token.replace(/^(?:"|')|(?:"|')$/g, ''));
 }
 
-function stdioStringToArray(stdio: string, channel: string) {
-    const options: (string | number)[] = [];
-
-    switch (stdio) {
-        case 'ignore':
-        case 'pipe': options.push(stdio, stdio, stdio); break;
-        case 'inherit': options.push(0, 1, 2); break;
-        default:
-            throw new Error(`The argument 'stdio' is invalid. Received ${stdio}`);
+function normalizeExecFileArgs(file: string, args?: string[] | SpawnOptions | ExecCallback, options?: SpawnOptions | ExecCallback, callback?: ExecCallback) {
+    if (!Array.isArray(args)) {
+        callback = typeof options === 'function' ? options : callback;
+        options = args as SpawnOptions | undefined;
+        args = [];
     }
-
-    if (channel) options.push(channel);
-
-    return options;
+    if (typeof options === 'function') callback = options;
+    return { file, args, options: (typeof options === 'object' ? options : {}) as SpawnOptions, callback };
 }
 
-export function child_process(process: Process) {
-    const owner_symbol = Symbol('owner');
-
-    function flushStdio(subprocess: ChildProcess) {
-        // const stdio = subprocess.stdio;
-
-        // if (stdio == null) return;
-
-        // for (let i = 0; i < stdio.length; i++) {
-        //     const stream = stdio[i];
-        //     if (!stream || !stream.readable || stream[kIsUsedAsStdio]) {
-        //         continue;
-        //     }
-        //     stream.resume();
-        // }
-    }
-
-    function maybeClose(subprocess: ChildProcess) {
-        subprocess._closesGot++;
-
-        if (subprocess._closesGot === subprocess._closesNeeded) {
-            subprocess.emit('close', subprocess.exitCode, subprocess.signalCode);
-        }
-    }
-
+/** Launches another WRT runtime; host shells and Node IPC are intentionally unsupported. */
+export function child_process(parent: Process, createRuntime: ChildRuntimeFactory) {
+    const children = new Set<ChildProcess>();
 
     class ChildProcess extends EventEmitter {
-        _closesNeeded: number;
-        _closesGot: number;
-        _handle: Process | null;
-
-        connected: boolean;
-        signalCode: string | null;
-        exitCode: number | null;
-        killed: boolean;
-        spawnfile: string | null;
+        _handle: Process | null = null;
+        connected = false;
+        signalCode: ProcessSignal | null = null;
+        exitCode: number | null = null;
+        killed = false;
+        pid: number | undefined;
+        spawnfile: string | null = null;
         spawnargs: string[] = [];
+        stdin: stdio.InputStream | stdio.tty.InputStream | null = null;
+        stdout: stdio.OutputStream | stdio.tty.OutputStream | null = null;
+        stderr: stdio.OutputStream | stdio.tty.OutputStream | null = null;
+        private closed = false;
+        private requestedSignal: ProcessSignal | null = null;
 
-        constructor(options?: Object) {
-            super();
-
-            this._closesNeeded = 1;
-            this._closesGot = 0;
-            this.connected = false;
-
-            this.signalCode = null;
-            this.exitCode = null;
-            this.killed = false;
-            this.spawnfile = null;
-
-            this._handle = new Process(options);
-            this._handle[owner_symbol] = this;
-
-            this._handle.on('exit', (exitCode: number, signalCode: string) => {
-                if (signalCode) {
-                    this.signalCode = signalCode;
-                } else {
-                    this.exitCode = exitCode;
-                }
-
-                // if (this.stdin) {
-                //     this.stdin.destroy();
-                // }
-
-                // this._handle.close();
-                this._handle = null;
-
-                if (exitCode < 0) {
-                    const syscall = this.spawnfile ? 'spawn ' + this.spawnfile : 'spawn';
-                    const err = new Error(`${syscall} ${exitCode}`);
-
-                    if (this.spawnfile)
-                        (err as any).path = this.spawnfile;
-
-                    (err as any).spawnargs = this.spawnargs.slice(1);
-                    this.emit('error', err);
-                } else {
-                    this.emit('exit', this.exitCode, this.signalCode);
-                }
-
-                // If any of the stdio streams have not been touched,
-                // then pull all the data through so that it can get the
-                // eof and emit a 'close' event.
-                // Do it on nextTick so that the user has one last chance
-                // to consume the output, if for example they only want to
-                // start reading the data once the process exits.
-                process.nextTick(flushStdio, this);
-
-                maybeClose(this);
-            });
-
-            // if (childProcessChannel.hasSubscribers) {
-            //     childProcessChannel.publish({
-            //         process: this,
-            //     });
-            // }
+        spawn(file: string, args: string[], options: SpawnOptions) {
+            this.spawnfile = file;
+            this.spawnargs = [file, ...args];
+            children.add(this);
+            void this.start(file, args, options);
+            return this;
         }
 
-        spawn(options: Object) {
+        kill(signal: ProcessSignal | number = 'SIGTERM') {
+            const normalized = typeof signal === 'number' ? signals[signal] : signal;
+            if (!normalized) throw new TypeError(`Unsupported signal: ${signal}`);
+            this.killed = true;
+            if (!this._handle) {
+                this.requestedSignal = normalized;
+                return true;
+            }
+            return this._handle.signal(normalized);
+        }
 
+        private async start(file: string, args: string[], options: SpawnOptions) {
+            try {
+                if (options.shell) throw new Error('WRT child_process does not provide a host shell; spawn a .wrt or .js program directly');
+                const cwd = options.cwd ? resolveVfsPath(parent.cwd(), options.cwd) : parent.cwd();
+                const inherited = makeStdio(parent, normalizeStdio(options.stdio));
+                const runtime = await createRuntime({
+                    file: resolveVfsPath(cwd, file), args, cwd, env: { ...parent.env, ...options.env }, parent,
+                    ...inherited.streams
+                });
+                this._handle = runtime.process;
+                this.pid = runtime.process.pid;
+                this.stdin = inherited.public.stdin ?? runtime.process.stdin;
+                this.stdout = inherited.public.stdout ?? runtime.process.stdout;
+                this.stderr = inherited.public.stderr ?? runtime.process.stderr;
+                runtime.process.on('exit', (code: number, signal: ProcessSignal | null) => this.finish(code, signal));
+                this.emit('spawn');
+                if (this.requestedSignal) runtime.process.signal(this.requestedSignal);
+                if (runtime.process.alive) {
+                    void runtime.main().catch(error => {
+                        if (runtime.process.alive) void runtime.process.exit(1);
+                        console.error(error);
+                    });
+                }
+            } catch (cause) {
+                this.emit('error', createSpawnError(file, cause));
+                this.finish(null, null);
+            }
+        }
+
+        private finish(code: number | null, signal: ProcessSignal | null) {
+            if (this.closed) return;
+            this.closed = true;
+            this._handle = null;
+            this.exitCode = code;
+            this.signalCode = signal;
+            children.delete(this);
+            this.emit('exit', code, signal);
+            this.emit('close', code, signal);
         }
     }
 
-    let emittedDEP0190Already = false;
-    let windowsVerbatimArguments = false;
-    function normalizeSpawnArguments(file: string, args?: any, options?: any) {
-        if (file.length === 0)
-            throw new Error(`The argumant \'file\' cannot be empty. Received ${file}`);
+    parent.on('exit', () => {
+        for (const child of [...children]) child.kill('SIGTERM');
+    });
 
-        if (Array.isArray(args)) {
-            args = args.slice();
-        } else if (args == null) {
-            args = [];
-        } else if (typeof args !== 'object') {
-            throw new Error(``)
-        } else {
-            options = args;
+    function spawn(file: string, args?: string[] | SpawnOptions, options?: SpawnOptions) {
+        if (!file || typeof file !== 'string') throw new TypeError("The 'file' argument must be a non-empty string");
+        if (!Array.isArray(args)) {
+            options = args ?? options;
             args = [];
         }
-
-        if (options === undefined)
-            options = Object.freeze({ __proto__: null });
-
-        options = { __proto__: null, ...options };
-        let cwd = options.cwd;
-
-        if (options.shell != null &&
-            typeof options.shell !== 'boolean' &&
-            typeof options.shell !== 'string') {
-            throw new TypeError(`The property 'shell' is in valid. Received ${options.shell}`);
-        }
-
-        if (options.shell) {
-            if (args.length > 0 && !emittedDEP0190Already) {
-                process.emitWarning(
-                    'Passing args to a child process with shell option true can lead to security ' +
-                    'vulnerabilities, as the arguments are not escaped, only concatenated.',
-                    'DeprecationWarning',
-                    'DEP0190');
-                emittedDEP0190Already = true;
-            }
-
-            const command = args.length > 0 ? `${file} ${args.join(' ')}` : file;
-            if (typeof options.shell === 'string')
-                file = options.shell;
-            else
-                file = process.env.comspec || 'cmd.exe';
-            if (/^(?:.*\\)?cmd(?:\.exe)?$/i.exec(file) !== null) {
-                args = ['-d', '-s', '-c', `"${command}"`];
-                windowsVerbatimArguments = true;
-            } else {
-                args = ['-c', command];
-            }
-        }
-
-        if (typeof options.argv0 === 'string') {
-            args.unshift(options.argv0);
-        } else {
-            args.unshift(file);
-        }
-
-        const env = options.env || { ...process.env };
-        const envPairs = [];
-
-        let envKeys: string[] = [];
-        for (const key in env) {
-            envKeys.push(key);
-        }
-
-        if (process.platform === 'win32') {
-            const sawKey = new Set();
-            envKeys = envKeys.sort().filter(
-                (key) => {
-                    const uppercaseKey = key.toUpperCase();
-                    if (sawKey.has(uppercaseKey)) {
-                        return false;
-                    }
-                    sawKey.add(uppercaseKey);
-                    return true;
-                },
-            );
-        }
-
-        for (const key of envKeys) {
-            const value = env[key];
-            if (value !== undefined) {
-                envPairs.push(`${key}=${value}`);
-            }
-        }
-
-        return {
-            __proto__: null,
-            ...options,
-            args,
-            cwd,
-            detached: !!options.detached,
-            envPairs,
-            file,
-            windowsHide: !!options.windowsHide,
-            windowsVerbatimArguments: !!windowsVerbatimArguments,
-        };
+        return new ChildProcess().spawn(file, args, options ?? {});
     }
 
-    function exec(command: string, options?: any, callback?: (error: Error | null, stdout: string, stderr: string) => void): ChildProcess {
-        const opts = normalizeExecArgs(command, options, callback);
-        return execFile(opts.file, opts.options, opts.callback);
-    }
-
-    function execFile(file: string, args?: string[], options?: any, callback?: (error: Error | null, stdout: string, stderr: string) => void): ChildProcess {
-        ({ file, args, options, callback } = normalizeExecFileArgs(file, args, options, callback));
-
-        options = {
-            __proto__: null,
-            encoding: 'utf8',
-            timeout: 0,
-            maxBuffer: 1024 * 1024,
-            killSignal: 'SIGTERM',
-            cwd: null,
-            env: null,
-            shell: false,
-            ...options,
-        };
-
-        const child = spawn(file, args, {
-            cwd: options.cwd,
-            env: options.env,
-            gid: options.gid,
-            shell: options.shell,
-            signal: options.signal,
-            uid: options.uid,
-            windowsHide: !!options.windowsHide,
-            windowsVerbatimArguments: !!options.windowsVerbatimArguments,
-        });
-
+    function execFile(file: string, args?: string[] | SpawnOptions | ExecCallback, options?: SpawnOptions | ExecCallback, callback?: ExecCallback) {
+        const normalized = normalizeExecFileArgs(file, args, options, callback);
+        const child = spawn(normalized.file, normalized.args, { ...normalized.options, stdio: normalized.options.stdio ?? 'pipe' });
+        if (normalized.callback) {
+            let callbackCalled = false;
+            const done = (error: Error | null) => {
+                if (callbackCalled) return;
+                callbackCalled = true;
+                normalized.callback!(error, child.stdout?.toString() ?? '', child.stderr?.toString() ?? '');
+            };
+            child.once('close', (code: number | null, signal: ProcessSignal | null) =>
+                done(code === 0 && !signal ? null : Object.assign(new Error(`Command failed: ${file}`), { code, signal })));
+            child.once('error', (error: Error) => done(error));
+        }
         return child;
     }
 
-    function fork(modulePath: string, args?: string[], options?: any): ChildProcess {
-        let execArgv;
-
-        if (args == null) {
-            args = [];
-        } else if (typeof args === 'object' && !Array.isArray(args)) {
-            options = args;
-            args = [];
+    function exec(command: string, options?: SpawnOptions | ExecCallback, callback?: ExecCallback) {
+        if (typeof options === 'function') {
+            callback = options;
+            options = {};
         }
-
-        options = { __proto__: null, ...options, shell: false };
-        options.execPath ||= process.execPath;
-        execArgv = options.execArgv || process.execArgv;
-
-        args = [...execArgv, modulePath, ...args];
-
-        if (typeof options.stdio === 'string') {
-            options.stdio = stdioStringToArray(options.stdio, 'ipc');
-        } else if (!Array.isArray(options.stdio)) {
-            options.stdio = stdioStringToArray(
-                options.silent ? 'pipe' : 'inherit',
-                'ipc');
-        } else if (!options.stdio.includes('ipc')) {
-            throw new Error('Forked processes must have an IPC channel');
-        }
-
-        return spawn(options.execPath, args, options);
+        const [file, ...args] = tokenizeCommand(command);
+        if (!file) throw new TypeError("The 'command' argument must not be empty");
+        return execFile(file, args, options, callback);
     }
 
-    function spawn(file: string, args?: string[], options?: any): ChildProcess {
-        options = normalizeSpawnArguments(file, args, options);
-
-        const child = new ChildProcess();
-        child.spawn(options);
-
-        return child;
+    function fork(modulePath: string, args?: string[] | SpawnOptions, options?: SpawnOptions) {
+        if (!Array.isArray(args)) {
+            options = args ?? options;
+            args = [];
+        }
+        return spawn(modulePath, args, { ...options, stdio: options?.stdio ?? 'pipe' });
     }
 
-    return { exec, execFile, fork, spawn };
+    return { ChildProcess, exec, execFile, fork, spawn };
+}
+
+function resolveVfsPath(cwd: string, value: string) {
+    const path = value.replace(/^C:\//i, '/');
+    const normalizedCwd = cwd.replace(/^C:\//i, '/');
+    const source = path.startsWith('/') ? path : `${normalizedCwd}/${path}`;
+    const parts: string[] = [];
+    for (const part of source.split('/')) {
+        if (!part || part === '.') continue;
+        if (part === '..') parts.pop();
+        else parts.push(part);
+    }
+    return `C:/${parts.join('/')}`;
+}
+
+function normalizeStdio(value: SpawnOptions['stdio']): [StdioMode, StdioMode, StdioMode] {
+    if (value === undefined || value === 'pipe') return ['pipe', 'pipe', 'pipe'];
+    if (value === 'ignore' || value === 'inherit') return [value, value, value];
+    if (!Array.isArray(value)) throw new TypeError(`Invalid stdio option: ${value}`);
+    return [0, 1, 2].map(index => {
+        const channel = value[index] ?? 'pipe';
+        if (channel === 0 || channel === 1 || channel === 2) return 'inherit';
+        if (channel === 'pipe' || channel === 'ignore' || channel === 'inherit') return channel;
+        throw new TypeError(`Invalid stdio channel at index ${index}`);
+    }) as [StdioMode, StdioMode, StdioMode];
+}
+
+function makeStdio(parent: Process, modes: [StdioMode, StdioMode, StdioMode]) {
+    const streams: { stdin?: Stream; stdout?: Stream; stderr?: Stream } = {};
+    const exposed: { stdin?: stdio.InputStream | stdio.tty.InputStream; stdout?: stdio.OutputStream | stdio.tty.OutputStream; stderr?: stdio.OutputStream | stdio.tty.OutputStream } = {};
+    const keys = ['stdin', 'stdout', 'stderr'] as const;
+    for (let index = 0; index < keys.length; index++) {
+        const key = keys[index];
+        if (modes[index] === 'inherit') {
+            streams[key] = parent[key] as Stream;
+        } else if (modes[index] === 'ignore') {
+            streams[key] = key === 'stdin' ? new stdio.InputStream() : new stdio.OutputStream();
+            if (key === 'stdin') (streams[key] as stdio.InputStream).end();
+        }
+    }
+    return { streams, public: exposed };
 }

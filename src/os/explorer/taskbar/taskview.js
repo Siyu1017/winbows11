@@ -1,84 +1,59 @@
-import { IDBFS } from "../../../shared/fs.js";
+import { safeEscape } from "../../../shared/utils.ts";
 import { viewport } from "../../core/viewport.js";
 import ModuleManager from "../../moduleManager.js";
 import { desktopEl } from "../desktop/init.js";
 
 const controlbarHeight = 32;
+const taskbarHeight = 48;
 
 function computeTaskLayout(containerWidth, containerHeight, windows) {
-    const padding = 20;
-    const targetHeight = 300;
+    if (!windows.length) return [];
+
+    const gap = 16;
+    const preferredPreviewHeight = 300;
+    const horizontalPadding = Math.min(24, Math.max(4, Math.floor(containerWidth / 12)));
+    const verticalPadding = Math.min(24, Math.max(4, Math.floor((containerHeight - controlbarHeight) / 12)));
+    const availableWidth = Math.max(1, containerWidth - horizontalPadding * 2);
+    const availableHeight = Math.max(controlbarHeight + 1, containerHeight - verticalPadding * 2);
+
+    const rows = Math.max(1, Math.floor(Math.sqrt(windows.length)));
+    const columns = Math.ceil(windows.length / rows);
+    const rowWindows = Array.from({ length: rows }, (_, row) => (
+        windows.slice(row * columns, (row + 1) * columns)
+    )).filter(row => row.length);
+    const maxHeightByViewport = (availableHeight - gap * (rowWindows.length - 1)) / rowWindows.length - controlbarHeight;
+    const maxHeightByRowWidth = Math.min(...rowWindows.map(row => {
+        const aspectRatioSum = row.reduce((sum, win) => (
+            sum + Math.max(1, win.realWidth) / Math.max(1, win.realHeight)
+        ), 0);
+        return (availableWidth - gap * (row.length - 1)) / aspectRatioSum;
+    }));
+    const previewHeight = Math.max(1, Math.min(preferredPreviewHeight, maxHeightByViewport, maxHeightByRowWidth));
+
+    const rowHeight = previewHeight + controlbarHeight;
+    const layoutHeight = rowWindows.length * rowHeight + gap * (rowWindows.length - 1);
+    let y = Math.max(verticalPadding, (containerHeight - layoutHeight) / 2);
     const layouts = [];
-    const rows = ~~Math.sqrt(windows.length);
-    const cols = Math.ceil(windows.length / rows);
-    const maxRowWidth = containerWidth - padding * 2;
-    const maxRowHeight = targetHeight;
-    const totalHeight = (rows * (maxRowHeight + controlbarHeight) - (rows - 1) * padding);
 
-    let ySum = containerHeight / 2 - totalHeight / 2;
-    if (ySum < padding + controlbarHeight) {
-        ySum = padding + controlbarHeight;
-    }
+    rowWindows.forEach(row => {
+        const rowWidth = row.reduce((sum, win) => (
+            sum + previewHeight * Math.max(1, win.realWidth) / Math.max(1, win.realHeight)
+        ), 0) + gap * (row.length - 1);
+        let x = Math.max(horizontalPadding, (containerWidth - rowWidth) / 2);
 
-    for (let i = 0; i < rows; i++) {
-        const rowLayouts = [];
-        for (let j = 0; j < cols; j++) {
-            const index = i * cols + j;
-            const win = windows[index];
-            if (!win) break;
-
-            let w = win.realWidth;
-            let h = win.realHeight;
-
-            if (h < maxRowHeight) {
-                const ratio = maxRowHeight / h;
-                w *= ratio;
-                h *= ratio;
-            }
-
-            rowLayouts.push({
-                w, h, k: w * h
-            })
-        }
-
-        let rowWidth = rowLayouts.map(b => b.w).reduce((a, b) => a + b, 0) + (rowLayouts.length - 1) * padding;
-        let rowHeight = rowLayouts.reduce((max, o) => Math.max(max, o.h), -Infinity);
-
-        while (rowWidth > maxRowWidth || rowHeight > maxRowHeight) {
-            if (rowHeight > maxRowHeight) {
-                const max = rowLayouts.reduce((max, o) => o.h > max.h ? o : max);
-                const ratio = maxRowHeight / max.h;
-                max.w *= ratio;
-                max.h = maxRowHeight;
-                max.k *= ratio
-            } else if (rowWidth > maxRowWidth) {
-                const max = rowLayouts.reduce((max, o) => o.k > max.k ? o : max);
-                let ratio = (max.w - (rowWidth - maxRowWidth)) / max.w;
-                if (ratio < 0.99) ratio = 0.99;
-                max.w *= ratio;
-                max.h *= ratio;
-                max.k *= Math.pow(ratio, 2);
-            }
-
-            rowWidth = rowLayouts.map(b => b.w).reduce((a, b) => a + b, 0) + (rowLayouts.length - 1) * padding;
-            rowHeight = rowLayouts.reduce((max, o) => Math.max(max, o.h), -Infinity);
-        }
-
-        let xSum = containerWidth / 2 - rowWidth / 2;
-        for (let j = 0; j < rowLayouts.length; j++) {
-            rowLayouts[j].x = xSum;
-            rowLayouts[j].y = ySum;
-            layouts.push(rowLayouts[j]);
-            xSum += rowLayouts[j].w + padding;
-        }
-        ySum += rowHeight + controlbarHeight + padding;
-    }
+        row.forEach(win => {
+            const h = previewHeight;
+            const w = h * Math.max(1, win.realWidth) / Math.max(1, win.realHeight);
+            layouts.push({ x, y: y + controlbarHeight, w, h });
+            x += w + gap;
+        });
+        y += rowHeight + gap;
+    });
 
     return layouts;
 }
 
 export default function Taskview(icon) {
-    const fs = IDBFS('~EXPLORER');
     const downEvts = ["mousedown", "touchstart", "pointerdown"];
     const windowManager = ModuleManager.get('WindowManager');
     const taskviewContainer = document.createElement('div');
@@ -97,7 +72,7 @@ export default function Taskview(icon) {
         const mainWindows = windows.filter(w => w.type !== 'sub-window');
         const subWindows = windows.filter(w => w.type === 'sub-window');
 
-        const layout = computeTaskLayout(viewport.width, viewport.height - 48, mainWindows);
+        const layout = computeTaskLayout(viewport.width, viewport.height - taskbarHeight, mainWindows);
         mainWindows.forEach((win, i) => {
             const w = layout[i].w;
             const h = layout[i].h;
@@ -124,7 +99,7 @@ export default function Taskview(icon) {
             mask.style.width = w + 'px';
             mask.style.height = h + controlbarHeight + 'px';
             maskControlbar.style.height = controlbarHeight + 'px';
-            maskControlbarInfoTitle.innerHTML = win.title;
+            maskControlbarInfoTitle.innerHTML = safeEscape(win.title);
             maskControlbarInfoIcon.style.backgroundImage = `url(${win.icon})`;
             mask.addEventListener('click', (e) => {
                 const IconManager = ModuleManager.get('IconManager');

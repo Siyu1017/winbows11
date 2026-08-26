@@ -1,6 +1,8 @@
 import timer from "./timer.js";
 import { loading } from "./viewport.js";
-import { IDBFS } from "../../shared/fs.js";
+import { createSystemFS, migrateSystemFilesystem } from "../fs/systemFs.ts";
+import { getFileURL } from "../fs/fileUrl.ts";
+import { hasLegacyFilesystem, showMigrationUI } from "../fs/legacyMigration.ts";
 import main from "../kernel/kernel.js";
 import Logger from "./log.js";
 import { codes } from "../../shared/events.js";
@@ -8,7 +10,13 @@ import "./stat.js";
 
 timer.mark('IDB file system');
 
-const fs = IDBFS("~BOOT");
+if (await hasLegacyFilesystem()) {
+    await showMigrationUI(async update => {
+        await migrateSystemFilesystem(update);
+    });
+}
+
+const fs = await createSystemFS();
 const logger = new Logger({
     module: 'Boot'
 })
@@ -19,7 +27,9 @@ try {
     const requires = ['C:/Winbows/System/styles/app.css'];
 
     for (const r of requires) {
-        if (!fs.exists(r)) throw new Error(`File ${r} not found`);
+        if (!await fs.exists(r)) {
+            throw new Error(`File ${r} not found`);
+        }
     }
 } catch (e) {
     // Remove installation information
@@ -41,7 +51,7 @@ try {
 }
 
 try {
-    fs.getFileURL('C:/Winbows/icons/applications/tools/start.ico').then(url => {
+    getFileURL(fs, 'C:/Winbows/icons/applications/tools/start.ico').then(url => {
         loading.image.style.backgroundImage = `url(${url})`;
     })
 } catch (e) {
@@ -49,7 +59,7 @@ try {
 }
 
 try {
-    await fs.mkdir('C:/');
+    await fs.mkdir('C:/', { recursive: true });
 } catch (e) { }
 
 // Start Winbows kernel

@@ -1,20 +1,20 @@
-import { IDBFS } from "../../../shared/fs.js";
-import { EventEmitter, getPosition, getStackTrace, isPromise, randomID } from "../../../shared/utils.ts";
+import { getMountedSystemFS } from "../../fs/systemFs.ts";
+import { getFileURL } from "../../fs/fileUrl.ts";
+import { AnimationEngine } from "../../../shared/animationEngine.js";
+import { EventEmitter, getPosition, safeEscape } from "../../../shared/utils.ts";
 import { fallbackImage } from "../../core/fallback.js";
-import Logger from "../../core/log.js";
 import timer from "../../core/timer.js";
 import { viewport } from "../../core/viewport.js";
 import ModuleManager from "../../moduleManager.js";
-import { BrowserWindow } from "../../system/WApplication/browserWindow.js";
 import StartMenu from "./startMenu.js";
 import Taskview from "./taskview.js";
 
 export default async function IconManager({ taskbarIconsApps, taskbarIconsItems, taskbarIcons }) {
     timer.group('Icon Manager');
 
-    const fs = IDBFS('~EXPLORER');
+    const fs = getMountedSystemFS();
     const System = ModuleManager.get('System');
-    const WindowManager = ModuleManager.get('WindowManager');
+    //const BrowserWindow = ModuleManager.get('BrowserWindow')
     const appRegistry = System.appRegistry;
     const systemItemOptions = {
         start: {
@@ -95,14 +95,14 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         if (app.icon.startsWith('blob:')) {
             thumbnailIcon.style.backgroundImage = `url(${app.icon})`;
         } else {
-            fs.getFileURL(app.icon).then(url => {
+            getFileURL(fs, app.icon).then(url => {
                 thumbnailIcon.style.backgroundImage = `url(${url})`;
             }).catch(e => {
                 thumbnailIcon.style.backgroundImage = `url(${fallbackImage})`;
                 console.error(e)
             })
         }
-        thumbnailTitle.innerHTML = app.title;
+        thumbnailTitle.innerHTML = safeEscape(app.title);
 
         // Thumbnail styles
         thumbnailWindow.style.padding = `${thumbnailSetting.padding.top}px ${thumbnailSetting.padding.right}px ${thumbnailSetting.padding.bottom}px ${thumbnailSetting.padding.left}px`;
@@ -202,13 +202,75 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         })
     })
 
-    let lastClickedIconId = null;   // For app icons and system icons
+    const ICON_SIZE = 40;
+    const ICON_GAP = 4;
+
+    let lastClickedIconId = null;   // Shared
     let focusedIconIds = [];        // App icons only
-    let activeWindows = [];         // App icons only
-    let iconRepository = {};        // AppID => Icon
-    let systemIcons = [];
+    const iconRepository = {};      // AppID => Icon
+    const systemIcons = [];
+    const appIcons = [];
+
+    let selectedItem = null;
+    let initialPointerPos = null;
+    let isReordering = false;
+
+    function updateAppIconPositions(draggedIcon = null) {
+        appIcons.forEach((icon, index) => {
+            icon.setOrder(index, icon !== draggedIcon);
+        });
+    }
+
+    function reorderAppIcon(draggedIcon, targetIndex) {
+        const currentIndex = appIcons.indexOf(draggedIcon);
+        if (currentIndex === -1 || currentIndex === targetIndex) return;
+
+        appIcons.splice(currentIndex, 1);
+        appIcons.splice(targetIndex, 0, draggedIcon);
+        updateAppIconPositions(draggedIcon);
+    }
+
+    document.addEventListener('pointermove', (e) => {
+        if (!initialPointerPos || !selectedItem) return;
+        const containerPos = getPosition(taskbarIconsApps);
+        const pointerDelta = e.clientX - initialPointerPos.x;
+        isReordering = true;
+
+        // if (Math.abs(pointerDelta) < 4) return;
+
+        const minCenter = ICON_SIZE / 2;
+        const maxCenter = taskbarIconsApps.offsetWidth - ICON_SIZE / 2;
+        const pointerX = Math.min(Math.max(e.clientX - containerPos.x, minCenter), maxCenter);
+        const targetIndex = Math.min(
+            Math.max(Math.floor((pointerX + ICON_GAP / 2) / (ICON_SIZE + ICON_GAP)), 0),
+            appIcons.length - 1
+        );
+
+        reorderAppIcon(selectedItem, targetIndex);
+        selectedItem.iconEl.setAttribute('data-dragging', 'true');
+        selectedItem.setDragging(true, pointerX - ICON_SIZE / 2 - selectedItem.position.x);
+    })
+
+    document.addEventListener('pointerup', (e) => {
+        if (selectedItem) {
+            if (isReordering) {
+                e.preventDefault();
+                selectedItem.suppressNextClick = true;
+            }
+            selectedItem.iconEl.setAttribute('data-dragging', 'false');
+            selectedItem.setDragging(false);
+        }
+        initialPointerPos = null;
+        selectedItem = null;
+        isReordering = false;
+    })
 
     class Icon extends EventEmitter {
+        static apps_idx = 0;
+        static system_idx = 0;
+        static nextId(type) {
+            return type === 'app' ? Icon.apps_idx++ : Icon.system_idx++;
+        }
         constructor(iconData) {
             super();
 
@@ -227,11 +289,31 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
             // data-opened -> status.enabled
             // data-openable -> type !== 'system'
 
+            this.id = Icon.nextId(this.type);
+            this.order = this.type === 'app' ? appIcons.length : systemIcons.length;
             this.iconEl = document.createElement('div');
             this.iconImageEl = document.createElement('div');
             this.iconEl.className = 'taskbar-icon';
             this.iconImageEl.className = 'taskbar-icon-image';
             this.iconEl.appendChild(this.iconImageEl);
+
+            this.iconEl.style.width = `${ICON_SIZE}px`;
+            this.iconEl.style.height = `${ICON_SIZE}px`;
+            this.position = {
+                x: this.order * (ICON_SIZE + ICON_GAP),
+                y: 0
+            }
+            this.dragOffset = 0;
+            this.isDragging = false;
+            this.isDestroyed = false;
+            this.suppressNextClick = false;
+            this.imageMotionId = 0;
+            this.iconAnimation = new AnimationEngine(this.iconEl, { profile: 'taskbar-icon-enter' });
+            this.imageAnimation = new AnimationEngine(this.iconImageEl, { profile: 'taskbar-icon-bounce-out' });
+            this.iconAnimation.animate({
+                from: { x: this.position.x, y: ICON_SIZE, opacity: 0 },
+                to: { x: this.position.x, y: this.position.y, opacity: 1 }
+            });
 
             if (typeof iconData.icon === 'string') {
                 this.iconImageEl.style.backgroundImage = `url(${iconData.icon})`;
@@ -241,6 +323,25 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
                     this.iconImageEl.style.backgroundImage = `url(${iconData.icon[theme]})`;
                 })
             }
+
+            this.iconEl.addEventListener('pointerdown', (e) => {
+                if (this.type === 'app') {
+                    initialPointerPos = {
+                        x: e.clientX,
+                        y: e.clientY
+                    }
+                }
+                selectedItem = this;
+                this.imageAnimation.cancel();
+                this.imageAnimation.animate({
+                    to: { scaleX: 0.8, scaleY: 0.8, x: 0, y: 0 },
+                    profile: 'taskbar-icon-generic'
+                });
+            })
+
+            this.iconEl.addEventListener('pointerup', () => {
+                this.setDragging(false)
+            })
 
             if (this.type === 'system') {
                 this.iconEl.setAttribute('data-openable', false);
@@ -256,10 +357,16 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
                 })
                 taskbarIconsItems.appendChild(this.iconEl);
                 systemIcons.push(this);
+                taskbarIconsItems.style.width = `${systemIcons.length * ICON_SIZE + (systemIcons.length - 1) * ICON_GAP}px`;
                 return;
             } else {
                 this.iconEl.setAttribute('data-openable', true);
+
                 this.iconEl.addEventListener('click', (e) => {
+                    if (this.suppressNextClick) {
+                        this.suppressNextClick = false;
+                        return;
+                    }
                     if (this.status.enabled == false) {
                         System.shell.execCommand(`"${this.target}"`);
                         return;
@@ -273,19 +380,21 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
                     }
 
                     if (lastClickedIconId == this.owner) {
-                        this.iconEl.setAttribute('data-toggle', 'self');
                         if (this.status.active == true) {
+                            this.playToggleAnimation('hide');
                             this.hide(Object.keys(this.windows)[0]);
                         } else {
+                            this.playToggleAnimation('show');
                             this.show(Object.keys(this.windows)[0]);
                         }
                     } else {
-                        this.iconEl.removeAttribute('data-toggle');
                         this.show(Object.keys(this.windows)[0]);
                     }
                     lastClickedIconId = this.owner;
                 })
                 taskbarIconsApps.appendChild(this.iconEl);
+                appIcons.push(this);
+                taskbarIconsApps.style.width = `${appIcons.length * ICON_SIZE + (appIcons.length - 1) * ICON_GAP}px`;
             }
 
             this.iconEl.addEventListener("pointerover", () => {
@@ -305,11 +414,42 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
 
             iconRepository[this.owner] = this;
         }
-
-        /**
-         * @param {BrowserWindow} win 
-         * @returns 
-         */
+        setDragging(isDragging, offset = 0) {
+            this.isDragging = isDragging;
+            this.dragOffset = isDragging ? offset : 0;
+            this.iconAnimation.cancel();
+            this.imageAnimation.cancel();
+            this.iconAnimation.animate({
+                to: { x: this.position.x + this.dragOffset, y: this.position.y },
+                profile: isDragging ? 'no-animation' : 'taskbar-icon-reorder'
+            });
+            this.imageAnimation.animate({
+                to: { scaleX: isDragging ? 1.3 : 1, scaleY: isDragging ? 1.3 : 1, x: 0, y: 0 },
+                profile: 'taskbar-icon-reorder'// isDragging ? 'no-animation' : 'taskbar-icon-reorder'
+            });
+        }
+        setOrder(order, animate = true) {
+            this.order = order;
+            this.position.x = order * (ICON_SIZE + ICON_GAP);
+            if (!animate || this.isDragging) return;
+            this.iconAnimation.animate({
+                to: { x: this.position.x, y: this.position.y },
+                profile: 'taskbar-icon-reorder'
+            });
+        }
+        async playToggleAnimation(direction) {
+            const motionId = ++this.imageMotionId;
+            const y = direction === 'show' ? -4 : 4;
+            await this.imageAnimation.animate({
+                to: { x: 0, y, scaleX: 1, scaleY: 1 },
+                profile: 'taskbar-icon-bounce-out'
+            });
+            if (motionId !== this.imageMotionId || this.isDragging) return;
+            await this.imageAnimation.animate({
+                to: { x: 0, y: 0, scaleX: 1, scaleY: 1 },
+                profile: 'taskbar-icon-bounce-in'
+            });
+        }
         open(win) {
             if (this.type === 'system') {
                 this.status.enabled = true;
@@ -375,9 +515,8 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
                 focusedIconIds = focusedIconIds.filter(o => o.id != winId);
             }
 
-            if (Object.keys(this.windows) == 0) {
+            if (Object.keys(this.windows).length === 0) {
                 lastClickedIconId = null;
-                this.iconEl.removeAttribute('data-toggle');
 
                 this.status.active = false;
                 this.status.focused = false;
@@ -462,15 +601,28 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
             this.iconEl.setAttribute('data-show', this.status.active);
             this.iconEl.setAttribute('data-opened', this.status.enabled);
         }
-        destroy() {
+        async destroy() {
             if (
+                this.isDestroyed ||
                 this.type !== 'app' ||
                 pinnedIcons.find(icon => icon.appId == this.owner)
             ) return;
 
             lastClickedIconId = null;
             delete iconRepository[this.owner];
-            this.iconEl.classList.add('hide');
+            this.isDestroyed = true;
+            this.iconEl.style.pointerEvents = 'none';
+            const index = appIcons.indexOf(this);
+            if (index !== -1) {
+                appIcons.splice(index, 1);
+                updateAppIconPositions();
+                taskbarIconsApps.style.width = `${appIcons.length * ICON_SIZE + Math.max(appIcons.length - 1, 0) * ICON_GAP}px`;
+            }
+            await this.iconAnimation.animate({
+                to: { x: this.position.x, y: this.position.y + ICON_SIZE, opacity: 0 },
+                profile: 'taskbar-icon-exit'
+            });
+            this.iconEl.remove();
         }
     }
 
@@ -478,10 +630,10 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         try {
             const icon = systemItemOptions[key].icon;
             if (typeof icon === 'string') {
-                systemItemOptions[key].icon = await fs.getFileURL(icon);
+                systemItemOptions[key].icon = await getFileURL(fs, icon);
             } else {
                 for (const theme of Object.keys(icon)) {
-                    systemItemOptions[key].icon[theme] = await fs.getFileURL(icon[theme]);
+                    systemItemOptions[key].icon[theme] = await getFileURL(fs, icon[theme]);
                 }
             }
         } catch (e) {
@@ -493,7 +645,7 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
         const appData = appRegistry.getInfoByName(pinnedIcons[i]);
         pinnedIcons[i] = appRegistry.generateProfile(appData.appName, appData.basePath, appData.entryScript);
         try {
-            pinnedIcons[i].preloadedIcon = await fs.getFileURL(pinnedIcons[i].icon);
+            pinnedIcons[i].preloadedIcon = await getFileURL(fs, pinnedIcons[i].icon);
         } catch (e) {
             pinnedIcons[i].preloadedIcon = fallbackImage;
         }
@@ -555,7 +707,7 @@ export default async function IconManager({ taskbarIconsApps, taskbarIconsItems,
 
         try {
             if (icon.toUpperCase().startsWith('C:/')) {
-                icon = await fs.getFileURL(icon);
+                icon = await getFileURL(fs, icon);
             }
         } catch (e) {
             eventEmitter._emit('error', e);

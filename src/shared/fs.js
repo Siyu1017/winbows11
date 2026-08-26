@@ -804,7 +804,7 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
      * @param {string} fullPath
      * @returns {Promise<Blob>} If it failed, reject a {@link CustomError}
      */
-    async function readFile(fullPath) {
+    async function readFile(fullPath, encoding) {
         const { disk, path } = parsePath(fullPath);
         if (path == '' || path.endsWith('/') || fsUtils.basename(path) == '') {
             throw {
@@ -824,6 +824,12 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
                 message: `File not found: ${fullPath}`
             };
         }
+        if (encoding && encoding != 'utf-8') {
+            throw {
+                name: '',
+                message: `Unsupported encoding: ${encoding}`
+            }
+        }
         const store = await getStore('readonly', uuid)
 
         return new Promise((resolve, reject) => {
@@ -831,7 +837,11 @@ const IDBFS = function (caller = "<anonymous>", __dirname = "") {
             request.onsuccess = async (event) => {
                 const file = event.target.result;
                 if (file) {
-                    resolve(file.v);
+                    if (encoding) {
+                        file.v.text().then(resolve);
+                    } else {
+                        resolve(file.v);
+                    }
                     // Cache blob
                     if (window.modes.dev == false) {
                         blobURLCaches[fullPath] = URL.createObjectURL(file.v);

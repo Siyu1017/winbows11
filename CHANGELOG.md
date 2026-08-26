@@ -1,228 +1,279 @@
 # Changelog
 
-All notable changes to this project will be documented here.
+All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
-## v1.0.0
+## v1.1.0-beta.1 (2026-08-26)
 
 ### Added
 
-- First stable release
+- Introduced a new volume-aware virtual filesystem architecture with a dedicated `C:` system volume
+- Added automatic migration support for data stored using the legacy filesystem
+- Added Node.js-like filesystem and `path` APIs for WRT applications
+- Added filesystem events and improved file URL handling
+- Added a kernel-managed WRT process manager with process IDs, parent process IDs, process states, and signal handling
+- Added new `stdin`, `stdout`, `stderr`, and TTY stream implementations
+- Added functional WRT child process support for `spawn()`, `exec()`, `execFile()`, and `fork()`
+- Added shell pipelines using `|`
+- Added shell output redirection using `>` and `>>`
+- Added `%NAME%` environment variable expansion
+- Added additional file and text-processing shell commands
+- Added direct local HTML rendering to `BrowserWindow`
+- Added `BrowserWindow.loadFile()`
+- Added popup window support
+- Added Seti file icons and additional editor APIs to the built-in VSCode application
+- Added generated WRT type declarations for the VSCode editor
+- Added reorderable taskbar application icons
 
-## v1.0.0-rc.1
+### Changed
 
-### Added
-
-- You can now run interactive CLI applications within the terminal
-- Add a new `Explorer.FilePicker` API for easier file browsing and selection
-- Applications now support configurable headers
-- Sub-windows are now available for GUI applications
+- Replaced the legacy filesystem integration with the new system VFS
+- Migrated system components and applications to the new filesystem APIs
+- Reworked the WRT process lifecycle and child process model
+- Reworked the shell parser and command execution pipeline
+- Moved Explorer into its own WRT GUI process with a unified process and shell lifecycle
+- Reworked Command Prompt to use the new Shell and WRT runtime
+- Improved `BrowserWindow` and window lifecycle behavior
+- Reworked the built-in VSCode editor integration
+- Consolidated the main site and kernel build pipeline around Webpack
+- Moved deployable site output under `public/`
+- Added Webpack-managed HTML templates, CSS extraction and minification, and content-hashed page assets
 
 ### Improved
 
-- Improve the loading screen to eliminate lag and provide a smoother experience
+- Improved filesystem path consistency and volume handling
+- Improved File Explorer integration with filesystem changes
+- Improved taskbar icon positioning, reordering, and animations
+- Improved Task View behavior
+- Improved WRT SDK declarations and child process examples
+- Improved application and popup window handling
+
+### Removed
+
+- Removed the legacy standalone Command application implementation
+- Removed obsolete filesystem and process integration code
+- Removed the previous standalone build ID and manifest generation flow
+
+## v1.0.0 (2026-03-16)
+
+### Added
+
+- Released the first stable version of Winbows11
+
+## v1.0.0-rc.1 (2026-03-16)
+
+### Added
+
+- Added support for running interactive CLI applications inside the terminal
+- Added the new `Explorer.FilePicker` API for easier file browsing and selection
+- Added configurable application headers
+- Added sub-window support for GUI applications
+
+### Improved
+
+- Improved the loading screen to reduce lag and provide a smoother experience
 
 ### Fixed
 
-- Fix desktop icons not displaying correctly
-- Fix minimized windows not showing in TaskView after repeated toggles
-- Fix an issue where closing a tab in a TabView window did not automatically focus the remaining tab
+- Fixed desktop icons not displaying correctly
+- Fixed minimized windows disappearing from Task View after repeated toggling
+- Fixed an issue where closing a tab in a TabView window did not automatically focus the remaining tab
 
 ## v1.0.0-beta.16 (2025-10-23)
 
 ### Added
 
-- Windows using TabView now update their title and icon when the active tab's title or icon changes, or when a tab gains focus
+- Added automatic title and icon updates for TabView windows when the active tab changes, its title or icon changes, or a tab receives focus
 
 ### Fixed
 
-- An issue where the taskbar thumbnail icon was not displayed
-- An issue where TaskView wouldn't automatically close when opening a new window
+- Fixed taskbar thumbnail icons not being displayed
+- Fixed Task View not automatically closing when a new window was opened
 
 ## v1.0.0-beta.15 (2025-10-21)
 
 ### Added
 
-- Taskbar app icons
-- Start menu
-- Window animation
-- Task view feature
+- Added taskbar application icons
+- Added the Start menu
+- Added window animations
+- Added Task View
 
 ### Fixed
 
-- Remaining time incorrectly showing a negative value after installation completed
-- Installation failure caused by incorrect build metadata
-- A bug where arguments like `--key="value"` were parsed as `{ key: '"value"' }` instead of `{ key: 'value' }`
-- An issue where the Mica background layer extended beyond the window’s viewport bounds after resizing, causing visual overflow artifacts
+- Fixed the remaining installation time incorrectly displaying a negative value after installation completed
+- Fixed installation failures caused by incorrect build metadata
+- Fixed arguments such as `--key="value"` being parsed as `{ key: '"value"' }` instead of `{ key: 'value' }`
+- Fixed the Mica background layer extending beyond the window viewport after resizing and causing visual overflow artifacts
 
 ## v1.0.0-beta.14 (2025-10-08)
 
 ### Added
 
-- Taskbar icons *(implemented in `v1.0.0-beta.15`)*
-- Setting app for WRT environment
-- Start menu *(implemented in `v1.0.0-beta.15`)*
-- Type declarations of WRT global object
+- Added taskbar icons *(implemented in `v1.0.0-beta.15`)*
+- Added the Settings application for the WRT environment
+- Added the Start menu *(implemented in `v1.0.0-beta.15`)*
+- Added type declarations for the WRT global object
 
 ### Fixed
 
-- Restore the accidentally deleted `init.js` file
-- Display issues with task icons in the DevTool Tasks tab and the Task Manager app
-- A bug in File Explorer where changing the path in one tab also changes the path in the other tab
+- Restored the accidentally deleted `init.js` file
+- Fixed task icon display issues in the Developer Tools Tasks tab and Task Manager
+- Fixed an issue in File Explorer where changing the path in one tab also changed the path in another tab
 
 ## v1.0.0-beta.13 (2025-10-05)
 
-### Breaking
+### Breaking Changes
 
-- Change the system loading process
-- Rewrite the WRT constructor and APIs
+- Changed the system loading process
+- Rewrote the WRT constructor and APIs
 
 ### Added
 
-- Debug log
-- Add System object to WRT context
-- `System.shell`, an instance of the `ShellInstance` class
-- `process.args`
+- Added debug logging
+- Added the `System` object to the WRT context
+- Added `System.shell`, an instance of the `ShellInstance` class
+- Added `process.args`
 
 ### Changed
 
-- Update devtool console to `v1.3.2`
-- Improve the `taskkill` command
+- Updated the Developer Tools console to `v1.3.2`
+- Improved the `taskkill` command
 
 ## v1.0.0-beta.12 (2025-09-12)
 
 ### Added
 
-- Add `ver` command to command registry
-- Devtool "Tasks" tab
+- Added the `ver` command to the command registry
+- Added the Developer Tools Tasks tab
 
 ### Changed
 
-- The background color of BSOD
-- Update devtool console to `v1.3.1`
+- Changed the BSOD background color
+- Updated the Developer Tools console to `v1.3.1`
 
 ## v1.0.0-beta.11 (2025-09-04)
 
 ### Added
 
-- Add icons to taskbar
-- Crash handler
+- Added icons to the taskbar
+- Added a crash handler
 
 ### Fixed
 
-- Bugs of Task Manager app
+- Fixed issues in the Task Manager application
 
 ## v1.0.0-beta.10 (2025-09-01)
 
 ### Fixed
 
-- The crash issue when opening the Edge app and Task Manager app
+- Fixed crashes when opening the Edge and Task Manager applications
 
 ## v1.0.0-beta.9 (2025-08-30)
 
 ### Added
 
-- Add minWidth and minHeight options to BrowserWindows class
+- Added `minWidth` and `minHeight` options to the `BrowserWindow` class
 
 ## v1.0.0-beta.8 (2025-08-30)
 
 ### Fixed
 
-- Theme issue of the right-click menu in the browser window toolbar
+- Fixed a theme issue in the BrowserWindow toolbar context menu
 
 ## v1.0.0-beta.7 (2025-08-29)
 
 ### Fixed
 
-- `cd` command
+- Fixed the `cd` command
 
 ## v1.0.0-beta.6 (2025-08-28)
 
 ### Added
 
-- Devtool resizer bar
+- Added a resizer bar to Developer Tools
 
 ### Fixed
 
-- Fix app window title
-- Improve mica effect performance by lowering image quality
+- Fixed application window titles
+- Improved Mica effect performance by reducing image quality
 
 ## v1.0.0-beta.5 (2025-08-28)
 
 ### Fixed
 
-- Mica effect
-- Performance tab of the devtool
+- Fixed the Mica effect
+- Fixed issues in the Developer Tools Performance tab
 
 ## v1.0.0-beta.4 (2025-08-27)
 
 ### Added
 
-- Add start command to command registry
-- app registry
+- Added the `start` command to the command registry
+- Added the application registry
 
 ### Fixed
 
-- App window size and snap preview size
+- Fixed application window sizing and Snap preview sizing
 
 ## v1.0.0-beta.3 (2025-08-26)
 
 ### Fixed
 
-- The window open animation
+- Fixed the window opening animation
 
 ## v1.0.0-beta.2 (2025-08-25)
 
 ### Changed
 
-- Integrate console window to the devtool
+- Integrated the console window into Developer Tools
 
 ## v1.0.0-beta.1 (2025-08-21)
 
 ### Added
 
-- A new code execution environment called "WRT" (Winbows node.js-like Runtime)
-- Debug console for WRT
-- New FS schema
+- Added a new code execution environment called WRT (Winbows Runtime)
+- Added a debug console for WRT
+- Added a new filesystem schema
 
 ### Changed
 
-- Codes will be executed in the WRT environment instead of in a Web Worker, and will have access to the `window` object regardless of whether the code is a background script or a content script
-- The executable file extension has been changed from `.wexe` to `.wrt`
-- The module import and export method has changed from using ES to using Node.js-like module import and export methods
+- Moved code execution from Web Workers to the WRT environment, allowing access to the `window` object from both background and content scripts
+- Changed the executable file extension from `.wexe` to `.wrt`
+- Replaced ES module-style imports and exports with Node.js-like module loading
 
 ## v0.2.0 (2025-07-04) [5d4d0ad59ac0dc4f14851ef0498f63e2c317851f]
 
 ### Added
 
-- Notepad and Settings apps
-- Mica effect ( beta )
-- Dark theme ( beta )
-- Window animation
-- Reorderable taskbar icons
+- Added the Notepad and Settings applications
+- Added the Mica effect *(beta)*
+- Added dark theme support *(beta)*
+- Added window animations
+- Added reorderable taskbar icons
 
 ## v0.1.0 (2024-10-06) [654c474cb676b8c8d06c977ce50fda321e13c5e8]
 
 ### Added
 
-- Install page
-- Desktop shortcut
-- Info app
-- Quick setting panel
-- Sidebar
-- Microhard Edge web browser
-- VSCode, Paint, Command, Task Manager, FPS Meter, Photos, Network Listener and JSON Viewer apps
-- Taskbar right-click menu
+- Added the installation page
+- Added desktop shortcuts
+- Added the Info application
+- Added the Quick Settings panel
+- Added the sidebar
+- Added the Microhard Edge web browser
+- Added VSCode, Paint, Command, Task Manager, FPS Meter, Photos, Network Listener, and JSON Viewer
+- Added the taskbar context menu
 
 ## v0.0.0 (2024-08-27) [8d04c3c1f5ee04dcf4df6ec0849917248d3998f1]
 
 ### Added
 
-- Lock screen
-- Taskbar with icons
-- Start menu
-- Desktop background image
-- File explorer app
+- Added the lock screen
+- Added a taskbar with application icons
+- Added the Start menu
+- Added desktop background support
+- Added File Explorer
 
 ## Initial commit (2024-07-14)

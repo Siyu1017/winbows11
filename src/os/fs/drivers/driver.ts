@@ -1,14 +1,17 @@
 export type RawData = Uint8Array;
 export type DriverOptions = {
     id: string;
+    /** IndexedDB object store used by this volume. */
+    storeName?: string;
 }
-export const enum DriverState {
-    Uninitialized = 0,
-    Initializing = 1,
-    Operational = 2,
-    Error = 3,
-    Closed = 4
-}
+export const DriverState = {
+    Uninitialized: 0,
+    Initializing: 1,
+    Operational: 2,
+    Error: 3,
+    Closed: 4
+} as const;
+export type DriverState = typeof DriverState[keyof typeof DriverState];
 export interface DriverCapabilities {
     readonly writable: boolean;
     readonly deletable: boolean;

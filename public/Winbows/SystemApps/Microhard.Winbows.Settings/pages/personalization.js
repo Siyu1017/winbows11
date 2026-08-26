@@ -1,0 +1,34 @@
+const { SettingItem } = await requireAsync('../components/setting.item.js');
+
+var settingItems = [
+    {
+        icon: 'e91b',
+        title: 'Background',
+        description: 'Choose a desktop background image',
+        href: '/personalization/background'
+    }, {
+        icon: 'e790',
+        title: 'Themes',
+        description: 'Choose light or dark mode',
+        href: '/personalization/themes'
+    }, {
+        icon: 'e75b',
+        title: 'Taskbar',
+        description: 'Taskbar behaviors, system pins',
+        href: '/personalization/taskbar'
+    }
+]
+
+module.exports = function main() {
+    var container = document.createElement('div');
+    container.className = 'setting-item-group';
+    for (let i in settingItems) {
+        container.appendChild(SettingItem({
+            icon: settingItems[i].icon,
+            title: settingItems[i].title,
+            description: settingItems[i].description,
+            href: settingItems[i].href
+        }))
+    }
+    return container;
+}

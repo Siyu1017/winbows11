@@ -1,5 +1,5 @@
 import { getScheme } from "./shell/shellUtils.js";
-import { fsUtils } from "../../shared/fs.js";
+import fsUtils from "../fs/path.ts";
 import Logger from "../core/log.js";
 
 const logger = new Logger({

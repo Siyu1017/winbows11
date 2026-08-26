@@ -3,11 +3,10 @@ import ModuleManager from "../moduleManager.js";
 import appRegistry from "./appRegistry.js";
 import { commandRegistry } from "./shell/commandRegistry.js";
 import { ShellInstance } from "./shell/shell.js";
-import { IDBFS } from "../../shared/fs.js";
+import { getMountedSystemFS } from "../fs/systemFs.ts";
 import ThemeManager from "./themeManager.js";
 import rom from "../core/rom.js";
 import { tasklist } from "../kernel/wrt/core.js";
-import WApplication from "./WApplication/WApplication.js";
 import initializeExplorer from "../explorer/explorer.wrt";
 import SystemInformation from "../core/sysInfo.js";
 import Logger from "../core/log.js";
@@ -15,7 +14,6 @@ import timer, { getDuration, marks } from "../core/timer.js";
 import fileViewers from "./fileViewer.js";
 import fileIcons from "./fileIcon.js";
 import { loading, winbowsIcon } from "../core/viewport.js";
-import { tester as VFS_TESTER } from "../fs/core/vfs.test.js";
 
 async function init() {
     try {
@@ -38,7 +36,8 @@ async function init() {
     timer.groupEnd();
     timer.group('System');
 
-    const fs = IDBFS('~SYSTEM');
+    const WApplication = (await import('./WApplication/WApplication.js')).default;
+    const fs = getMountedSystemFS();
     const System = {};
     System.appRegistry = appRegistry;
     System.commandRegistry = commandRegistry;
@@ -117,35 +116,8 @@ async function init() {
     ModuleManager.register('System', System, 'original');
 
     try {
-        if (!fs.exists('C:/User/')) {
-            await fs.mkdir('C:/User/');
-        }
-        if (!fs.exists('C:/User/Desktop/')) {
-            await fs.mkdir('C:/User/Desktop/');
-        }
-        if (!fs.exists('C:/User/Documents/')) {
-            await fs.mkdir('C:/User/Documents/');
-        }
-        if (!fs.exists('C:/User/Downloads/')) {
-            await fs.mkdir('C:/User/Downloads/');
-        }
-        if (!fs.exists('C:/User/Music/')) {
-            await fs.mkdir('C:/User/Music/');
-        }
-        if (!fs.exists('C:/User/Pictures/')) {
-            await fs.mkdir('C:/User/Pictures/');
-        }
-        if (!fs.exists('C:/User/Videos/')) {
-            await fs.mkdir('C:/User/Videos/');
-        }
-        if (!fs.exists('C:/User/AppData/')) {
-            await fs.mkdir('C:/User/AppData/');
-        }
-        if (!fs.exists('C:/User/AppData/Local/')) {
-            await fs.mkdir('C:/User/AppData/Local/');
-        }
-        if (!fs.exists('C:/User/AppData/Local/Temp/')) {
-            await fs.mkdir('C:/User/AppData/Local/Temp/');
+        for (const path of ['C:/User', 'C:/User/Desktop', 'C:/User/Documents', 'C:/User/Downloads', 'C:/User/Music', 'C:/User/Pictures', 'C:/User/Videos', 'C:/User/AppData', 'C:/User/AppData/Local', 'C:/User/AppData/Local/Temp']) {
+            await fs.mkdir(path, { recursive: true }).catch(error => { if (error?.code !== 'EEXIST') throw error; });
         }
     } catch (e) {
         logger.error(e);

@@ -1,7 +1,9 @@
 import { desktopEl, desktopItemsEl } from "./init.js";
 import * as utils from "../../../shared/utils.ts";
 import { fallbackImage } from "../../core/fallback.js";
-import { IDBFS, fsUtils } from "../../../shared/fs.js";
+import { getMountedSystemFS } from "../../fs/systemFs.ts";
+import { getFileURL } from "../../fs/fileUrl.ts";
+import fsUtils from "../../fs/path.ts";
 import WinUI from "../../../lib/winui/winui.js";
 import ModuleManager from "../../moduleManager.js";
 import { viewport } from "../../core/viewport.js";
@@ -10,9 +12,13 @@ const desktop = {
     init
 };
 
-async function init(params) {
-    const fs = IDBFS('~EXPLORER');
+async function init(wrt) {
+    const fs = getMountedSystemFS();
     const System = ModuleManager.get('System');
+    const BrowserWindow = ModuleManager.get('BrowserWindow');
+
+    const imageExtnames = [".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"];
+    const executableExtnames = [".wrt", ".js"];
 
     desktop.update = updateDesktop;
 
@@ -289,20 +295,20 @@ async function init(params) {
             var sameFile = setFile(updateFile);
 
             if (type == 'shortcut') {
-                fs.getFileURL('C:/Winbows/icons/emblems/shortcut.ico').then(url => {
+                getFileURL(fs, 'C:/Winbows/icons/emblems/shortcut.ico').then(url => {
                     itemIcon.style.setProperty('--item-icon', `url(${url})`);
                 })
             } else if (type == 'directory') {
-                fs.getFileURL('C:/Winbows/icons/folders/folder.ico').then(url => {
+                getFileURL(fs, 'C:/Winbows/icons/folders/folder.ico').then(url => {
                     setIcon(url);
                 })
             } else {
-                var isImage = file.type.startsWith('image/');
-                fs.getFileURL(System.fileIcons.getIcon(path)).then(url => {
+                const isImage = imageExtnames.includes(fsUtils.extname(path));
+                getFileURL(fs, System.fileIcons.getIcon(path)).then(url => {
                     setIcon(url);
                     if (isImage) {
                         try {
-                            fs.getFileURL(path).then(url => {
+                            getFileURL(fs, path).then(url => {
                                 setIcon(url);
                             })
                         } catch (e) { console.log('Failed to load image.'); }
@@ -446,20 +452,21 @@ async function init(params) {
                 }])
             }
 
-            if (file instanceof Blob && selected.length <= 1) {
-                if (file.type.startsWith('image/')) {
+            if (selected.length <= 1) {
+                const extname = fsUtils.extname(path);
+                if (imageExtnames.includes(extname)) {
                     // Alternative : item.splice(<position>,0,<item>)
                     items.push({
                         type: 'separator'
                     })
                     items.push({
-                        className: "set-as-bacckground",
+                        className: "set-as-background",
                         text: "Set as background",
                         action: async () => {
                             await window.setBackgroundImage(path);
                         }
                     })
-                } else if (file.type.search('javascript') > -1) {
+                } else if (executableExtnames.includes(extname)) {
                     items.push({
                         type: 'separator'
                     })
@@ -471,13 +478,12 @@ async function init(params) {
                             new WRT().runFile(path);
                         }
                     })
-                } else if (fsUtils.extname(path) == '.wbsf') {
+                } else if (extname == '.wbsf') {
                     items.push({
                         icon: 'window-snipping',
                         text: 'Run file',
                         action: async () => {
-                            const file = await fs.readFile(path);
-                            const script = await file.text();
+                            const script = await fs.readFile(path, 'utf-8');
                             const commands = script.split('\n').filter(t => t.trim().length > 0);
                             try {
                                 for (const command of commands) {
@@ -486,7 +492,7 @@ async function init(params) {
                             } catch (e) { };
                         }
                     })
-                } else if (['.ttf', '.otf', '.woff', '.woff2', '.eot'].includes(fsUtils.extname(path))) {
+                } else if (['.ttf', '.otf', '.woff', '.woff2', '.eot'].includes(extname)) {
                     items.push({
                         type: 'separator'
                     })
@@ -497,7 +503,7 @@ async function init(params) {
                         action: async () => {
                             try {
                                 const fontName = 'WINBOWS_FONT_' + [...Array(12)].map(() => Math.floor(Math.random() * 16).toString(16)).join('');
-                                const fontURL = await fs.getFileURL(path);
+                                const fontURL = await getFileURL(fs, path);
                                 const myFont = new FontFace(fontName, `url(${fontURL})`);
                                 await myFont.load();
 
@@ -568,12 +574,13 @@ async function init(params) {
                 }
             }
             for (let i = 0; i < items.length; i++) {
-                const stat = fs.stat(items[i]);
+                const path = fsUtils.join('C:/User/Desktop', items[i]);
+                const stat = await fs.stat(path);
                 results.push({
                     stat,
-                    path: items[i],
-                    name: fsUtils.basename(items[i]),
-                    content: stat.isFile() ? await fs.readFile(items[i]).catch(err => console.error(err)) : new Blob([])
+                    path,
+                    name: fsUtils.basename(path),
+                    content: stat.isFile() ? new Blob([await fs.readFile(path)]) : new Blob([])
                 });
             }
             if (sort == 'name') {
@@ -598,7 +605,7 @@ async function init(params) {
                                 action: () => {
                                     var defaultViewer = System.fileViewers.getDefaultViewer(path);
                                     if (defaultViewer != null) {
-                                        System.shell.execCommand(defaultViewer.script)//.start(`const FILE_PATH="${path}";`);
+                                        System.shell.execCommand(`"${defaultViewer.script}" --path=\"${path}\"`)//.start(`const FILE_PATH="${path}";`);
                                     } else {
                                         System.shell.execCommand(`C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/chooseViewer.wrt --path=\"${path}\"`);
                                     }
@@ -686,11 +693,7 @@ async function init(params) {
         }
 
         const items = e.dataTransfer.items;
-        var processed = 0;
-        var current = 'Unknown';
-        var title = 'Uploading File to Desktop...';
-        var worker;
-        var promises = [];
+        const promises = [];
 
         for (const item of items) {
             const entry = item.webkitGetAsEntry?.();
@@ -741,7 +744,6 @@ async function init(params) {
         const total = results.length;
         console.log(results, total);
 
-
         async function readEntryRecursively(entry, path = '') {
             return new Promise(async (resolve, reject) => {
                 if (entry.isFile) {
@@ -761,55 +763,110 @@ async function init(params) {
             })
         }
 
-        if (window.modes.debug == true) {
-            console.log('run', total, results);
-        }
-        new WRT().runFile('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js')/*.start()*/.then(async process => {
-            fileTransfer++;
-            worker = process.worker;
-
-            if (window.modes.debug == true) {
-                console.log(results)
+        const WApplication = wrt.WApplication;
+        const { BrowserWindow } = WApplication;
+        const id = 'system://explorer-file-transfer/' + utils.randomID(256);
+        const channel = System.processAPIs.IPC.listen(id);
+        const win = new BrowserWindow({
+            x: 0,
+            y: 0,
+            width: 480,
+            height: 250,
+            fullscreenable: false,
+            maximizable: false,
+            snappable: false,
+            resizable: false,
+            mica: false,
+            type: 'popup',
+            title: 'File Transfer'
+        }, {
+            env: {
+                pipe: id
             }
+        });
+        await win.load('C:/Winbows/SystemApps/Microhard.Winbows.FileExplorer/fileTransfer.js');
 
-            worker.postMessage({
-                type: 'init',
-                token: process.token
-            })
+        let state = {
+            title: 'Uploading File to Desktop...',
+            current: 'Unknown',
+            processed: 0,
+            total: total,
+            updateCurrent(current) {
+                this.current = current;
+                this.update();
+            },
+            updateProcessed(processed) {
+                this.processed = processed;
+                this.update();
+            },
+            update() {
+                channel.send({
+                    type: 'update',
+                    data: {
+                        title: this.title,
+                        total: this.total,
+                        current: this.current,
+                        processed: this.processed
+                    }
+                })
+            }
+        };
 
-            worker.postMessage({
-                type: 'transfer',
-                token: process.token,
-                files: results, title,
-                target: 'C:/User/Desktop/'
-            })
+        state.update();
 
-            worker.addEventListener('message', async (e) => {
-                if (!e.data.token == process.token) return;
-                // console.log('MAIN', e.data.type)
-                if (e.data.type == 'start') {
-                    worker.postMessage({
-                        type: 'init',
-                        token: process.token
-                    })
+        async function handleFiles(files) {
+            fileTransfer++;
+            for (const file of files) {
+                await handleFile(file instanceof File ? file : file.file, file.path);
+            }
+            fileTransfer--;
+            win.close();
+            if (fileTransfer === 0) {
+                updateDesktop();
+            }
+        }
+
+        async function writeFile(path, blob, exist = 0) {
+            return new Promise(async function (resolve, reject) {
+                let pathToCheck = path;
+                const ext = fsUtils.extname(path);
+                if (exist != 0) {
+                    pathToCheck = `${path.substring(0, path.length - (ext.length + 1))} (${exist})${ext ? '.' + ext : ''}`;
                 }
-                if (e.data.type == 'init') {
-                    // console.log('init')
-                    worker.postMessage({
-                        type: 'transfer',
-                        token: process.token,
-                        files: results, title,
-                        target: 'C:/User/Desktop/'
+                if (await fs.exists(pathToCheck) == false) {
+                    const dir = fsUtils.dirname(pathToCheck);
+                    if (await fs.exists(dir) == false) {
+                        await fs.mkdir(dir, { recursive: true })
+                    }
+                    await fs.writeFile(pathToCheck, blob).then(() => {
+                        resolve();
                     })
-                }
-                if (e.data.type == 'completed') {
-                    fileTransfer--;
-                    updateDesktop();
+                } else {
+                    resolve(await writeFile(path, blob, exist + 1));
                 }
             });
+        }
 
-            // process.exit();
-        });
+        function handleFile(file, path) {
+            return new Promise(function (resolve, reject) {
+                state.updateCurrent(file.name);
+
+                const filePath = (path || '') + file.name;
+                const reader = new FileReader();
+                reader.onload = async function (event) {
+                    const arrayBuffer = event.target.result;
+                    const blob = new Blob([arrayBuffer], { type: file.type });
+                    const fullPath = `${target}${filePath}`;
+                    writeFile(fullPath, blob).then(() => {
+                        state.updateProcessed(state.processed + 1);
+                        resolve();
+                    });
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        handleFiles(results);
     });
 
     desktopEl.addEventListener('contextmenu', (e) => {
@@ -895,34 +952,37 @@ async function init(params) {
     for (let i = 0; i < defaultShortcuts.length; i++) {
         let content = defaultShortcuts[i].content;
         try {
-            content.icon = await fs.getFileURL(content.icon);
+            content.icon = await getFileURL(fs, content.icon);
         } catch (e) {
             content.icon = fallbackImage;
             console.error(e);
         }
         try {
-            fs.writeFile(defaultShortcuts[i].path, new Blob([JSON.stringify(content)], {
+            await fs.writeFile(defaultShortcuts[i].path, new Blob([JSON.stringify(content)], {
                 type: 'application/winbows-link'
             }));
         } catch (e) {
             console.error('Failed to create shortcut', e);
         }
     }
+    updateDesktop();
 
     var lastTime = Date.now();
 
-    fs.on('change', (e) => {
-        if (e.path.search('C:/User/Desktop') > -1 && fileTransfer == 0) {
-            var timeout = () => {
-                var now = Date.now();
-                if (lastTime - now > 1000) {
-                    lastTime = now;
-                    updateDesktop(false);
-                }
-                clearTimeout(timeout);
-            };
-            setTimeout(timeout, 1000);
-        }
+    const isDevMode = (() => {
+        if (typeof location === 'undefined') return false;
+        const params = utils.getJsonFromURL();
+        return !!(params['dev'] || params['develop'] || params['embed']) || window.needsUpdate || window.modes?.dev == true;
+    })();
+
+    fs.watch('C:/User/Desktop', () => {
+        if (fileTransfer !== 0 || isDevMode) return;
+        setTimeout(() => {
+            const now = Date.now();
+            if (now - lastTime < 1000) return;
+            lastTime = now;
+            updateDesktop(false);
+        }, 1000);
     });
 
     desktopItemsEl.addEventListener('wheel', function (event) {

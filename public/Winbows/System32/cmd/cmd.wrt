@@ -1,0 +1,118 @@
+//! $RTH={"type":"gui"}
+
+const { app, BrowserWindow } = WApplication;
+
+let mainWindow;
+
+function quoteCommandArgument(value) {
+    const text = String(value);
+    return /[\s"']/g.test(text) ? `"${text.replaceAll('"', '\\"')}"` : text;
+}
+
+function getCommandInvocation() {
+    const argv = process.argv.slice(2);
+    const options = {
+        autoRun: true,
+        echo: true,
+        stripQuotes: false,
+        outputEncoding: 'utf8',
+        completion: 'on',
+        delayedExpansion: false
+    };
+    let mode = null;
+    let switchIndex = -1;
+
+    for (let index = 0; index < argv.length; index++) {
+        const arg = argv[index];
+        const commandMode = arg.match(/^\/(c|k)$/i) || arg.match(/^--(c|k)$/i);
+        if (commandMode) {
+            mode = commandMode[1].toLowerCase();
+            switchIndex = index;
+            break;
+        }
+        if (/^\/d$/i.test(arg)) options.autoRun = false;
+        else if (/^\/q$/i.test(arg)) options.echo = false;
+        else if (/^\/s$/i.test(arg)) options.stripQuotes = true;
+        else if (/^\/a$/i.test(arg)) options.outputEncoding = 'ansi';
+        else if (/^\/u$/i.test(arg)) options.outputEncoding = 'utf16le';
+        else if (/^\/f:(on|off)$/i.test(arg)) options.completion = arg.slice(3).toLowerCase();
+        else if (/^\/v:(on|off)$/i.test(arg)) options.delayedExpansion = /on$/i.test(arg);
+    }
+
+    if (switchIndex !== -1) {
+        let commandArgs = argv.slice(switchIndex + 1);
+        if (options.stripQuotes && commandArgs.length === 1) {
+            commandArgs = [commandArgs[0].replace(/^(?:\"([\s\S]*)\"|'([\s\S]*)')$/, '$1$2')];
+        }
+        return {
+            mode,
+            command: commandArgs.map(quoteCommandArgument).join(' '),
+            options
+        };
+    }
+
+    for (const mode of ['c', 'k']) {
+        if (typeof process.args[mode] === 'string') {
+            return { mode, command: process.args[mode], options };
+        }
+    }
+    return { mode: null, command: '', options };
+}
+
+process.title = 'Command Prompt'
+
+app.on('window-all-closed', () => {
+    app.quit();
+});
+
+app.on('ready', async () => {
+    const invocation = getCommandInvocation();
+    const windowConf = {
+        width: 800,
+        height: 600,
+        title: 'Command Prompt'
+    }
+
+    const useContainer = process.env.pipe || invocation?.mode === 'c';
+    if (useContainer) {
+        windowConf.x = 'center';
+        windowConf.y = 'center';
+        mainWindow = new BrowserWindow(windowConf, {
+            env: {
+                pipe: process.env.pipe || '',
+                command: invocation?.command || '',
+                closeAfterCommand: invocation?.mode === 'c' ? '1' : '0',
+                CMD_AUTORUN: invocation.options.autoRun ? '1' : '0',
+                CMD_ECHO: invocation.options.echo ? '1' : '0',
+                CMD_STRIP_QUOTES: invocation.options.stripQuotes ? '1' : '0',
+                CMD_OUTPUT_ENCODING: invocation.options.outputEncoding,
+                CMD_COMPLETION: invocation.options.completion,
+                CMD_DELAYED_EXPANSION: invocation.options.delayedExpansion ? '1' : '0'
+            }
+        });
+    } else {
+        mainWindow = new BrowserWindow(windowConf, {
+            env: {
+                command: invocation?.command || '',
+                CMD_AUTORUN: invocation.options.autoRun ? '1' : '0',
+                CMD_ECHO: invocation.options.echo ? '1' : '0',
+                CMD_STRIP_QUOTES: invocation.options.stripQuotes ? '1' : '0',
+                CMD_OUTPUT_ENCODING: invocation.options.outputEncoding,
+                CMD_COMPLETION: invocation.options.completion,
+                CMD_DELAYED_EXPANSION: invocation.options.delayedExpansion ? '1' : '0'
+            }
+        });
+    }
+
+    await mainWindow.load(useContainer ? './app/dist/container.js' : './app/dist/index.js');
+
+    const childWrt = mainWindow.wrt;
+});
+
+try {
+    await app.executeAsync();
+} catch (err) {
+    console.error('App crashed:', err);
+}
+
+process.exit();

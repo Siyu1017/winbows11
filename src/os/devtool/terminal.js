@@ -4,7 +4,7 @@ import "xterm/css/xterm.css";
 import SystemInformation from "../core/sysInfo.js";
 import "./terminal.css";
 import ModuleManager from "../moduleManager.js";
-import { fsUtils as path } from "../../shared/fs.js";
+import path from "../fs/path.ts";
 
 const terminal = document.createElement('div');
 const container = document.createElement('div');
@@ -88,6 +88,7 @@ function init(type = "normal") {
 
     let normalBuffer = '';
     let promptBuffer = '';
+    let promptStdin = null;
 
     function replaceInput() {
         const pwd = `${path.normalize(shell.root + shell.pwd)}>`;
@@ -310,7 +311,8 @@ function init(type = "normal") {
         if (data === '\r') {
             term.write('\r\n');
             inputType = null;
-            shell.stdin.write(promptBuffer);
+            (promptStdin || shell.stdin).write(promptBuffer);
+            promptStdin = null;
             promptBuffer = '';
             return;
         } else if (data === '\u007F') {
@@ -349,6 +351,7 @@ function init(type = "normal") {
     })
     shell.on('input', (e) => {
         promptBuffer = '';
+        promptStdin = e.stdin || shell.stdin;
         inputType = 'prompt';
         promptType = e.type;
     })

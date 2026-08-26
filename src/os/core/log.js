@@ -1,4 +1,3 @@
-import crashHandler from "./crashHandler.js";
 import SystemInformation from "./sysInfo.js";
 
 const flags = {
@@ -51,102 +50,108 @@ const Log = (function () {
     }
 
     function toJSONstr(data) {
-        const seen = new WeakSet();
-
-        function traversal(data) {
-            const type = getType(data);
-            let res;
-
-            if (type == 'object') {
-                // \object{\object_pair{key="",val=""},...}
-                // \object{circular=\boolean{"true"}}
-                if (seen.has(data)) {
-                    return '\\object{circular=\\boolean{\"true\"}}';
-                }
-                seen.add(data);
-                res = `\\object{${Reflect.ownKeys(data).map(k => {
-                    return `\\object_pair{key=\"${String(k)}\",val=${traversal(data[k])}}`
-                }).join(",")}}`
-            } else if (type === 'array') {
-                // \array{"",...}
-                res = `\\array{${data.map(v => {
-                    return traversal(v);
-                }).join(",")}}`;
-            } else if (type === 'map') {
-                // \map{\map_pair{key="",val=""},...}
-                res = `\\map{${data.keys().map((key, i) => {
-                    return `\\map_pair{key=\"${key}\",val=${traversal(data.get(key))}}`;
-                }).join?.(",") || ""}}`;
-            } else if (type === 'set') {
-                // \set{"",...}
-                res = `\\set{${data.values().map((value, i) => {
-                    return `${traversal(value)}`;
-                }).join?.(",") || ""}}`
-            } else if (type === 'file') {
-                // \file{lastModified="",lastModifiedDate="",...}
-                const props = ["lastModified", "lastModifiedDate", "name", "size", "type", "webkitRelativePath"];
-                res = `\\file{${props.map(prop => {
-                    return `${prop}=${traversal(value)}`;
-                }).join(",")}}`
-            } else if (type === 'blob') {
-                // \blob{size="",type=""}
-                const props = ["size", "type"];
-                res = `\\blob{${props.map(prop => {
-                    return `${prop}=${traversal(value)}`
-                }).join(",")}}}`
-            } else if (type === 'string') {
-                // "..."
-                res = `"${data.replace(/\\comma/, "\\\\comma").replace(/\,/gi, "\\comma")}"`;
-            } else if (type == 'function') {
-                // \class{name=""}
-                // \arrow_func{async=\boolean{""}}
-                // \func{async=\boolean{""},generator=\boolean{""},name=""}
-                const fnCode = functionToCode(data);
-                const cName = data.constructor?.toString().toLowerCase() || '';
-                const isArrow = !data.prototype && !/^(?:async\s+)?function/.test(fnCode);
-                const isAsync = cName.includes('async');
-                const isGenerator = cName.includes('generator');
-                const isClass = (fnCode || '').trim().startsWith('class');
-                res = '';
-                if (isClass) {
-                    res = `\\class{name="${data.prototype?.constructor?.name}"}`;
-                } else if (isArrow) {
-                    res = `\\arrow_func{async=\\boolean{\"${isAsync}\"}}`;
-                } else {
-                    res = `\\func{async=\\boolean{\"${isAsync}\"},generator=\\boolean{\"${isGenerator}\"},name=\"${data.name && fnCode.match(/function([\s\S]*?)\(.*?\)/)?.[1]?.replace('*', '').trim() ? data.name : ''}\"}`;
-                }
-            } else if (isElement(data)) {
-                // \element{name="",id="",classname=""}
-                const id = data.id;
-                const classArr = [...data.classList];
-                const className = (classArr.length > 0 ? '.' : '') + classArr.join('.');
-                res = `\\element{name=\"${data.tagName.toLowerCase()}\",id=\"${id}\",classname=\"${className}\"}`;
-            } else if (type == 'error') {
-                // \error{name="",message=""}
-                res = `\\err{name=\"${data.name}\",message=\"${data.message}\"}`;
-            } else if ([
-                // Normal types
-                'number', 'boolean', 'null', 'undefined', 'symbol',
-                // Other types
-                'date', 'regexp'
-            ].includes(type)) {
-                // \<T>{""}
-                res = `\\${type}{\"${String(data)}\"}`;
-            } else {
-                // Show type only
-                // \unknown_obj{"T"}
-                res = `\\unknown_obj{\"${capitalizeFirstLetter(type)}\"}`;
-            }
-            return res;
-        }
-
-        return traversal(data);
-
         try {
-            return JSON.stringify(traversal(data));
+            return JSON.stringify(data);
         } catch (e) {
             return String(data);
         }
+
+        // const seen = new WeakSet();
+
+        // function traversal(data) {
+        //     const type = getType(data);
+        //     let res;
+
+        //     if (type == 'object') {
+        //         // \object{\object_pair{key="",val=""},...}
+        //         // \object{circular=\boolean{"true"}}
+        //         if (seen.has(data)) {
+        //             return '\\object{circular=\\boolean{\"true\"}}';
+        //         }
+        //         seen.add(data);
+        //         res = `\\object{${Reflect.ownKeys(data).map(k => {
+        //             return `\\object_pair{key=\"${String(k)}\",val=${traversal(data[k])}}`
+        //         }).join(",")}}`
+        //     } else if (type === 'array') {
+        //         // \array{"",...}
+        //         res = `\\array{${data.map(v => {
+        //             return traversal(v);
+        //         }).join(",")}}`;
+        //     } else if (type === 'map') {
+        //         // \map{\map_pair{key="",val=""},...}
+        //         res = `\\map{${data.keys().map((key, i) => {
+        //             return `\\map_pair{key=\"${key}\",val=${traversal(data.get(key))}}`;
+        //         }).join?.(",") || ""}}`;
+        //     } else if (type === 'set') {
+        //         // \set{"",...}
+        //         res = `\\set{${data.values().map((value, i) => {
+        //             return `${traversal(value)}`;
+        //         }).join?.(",") || ""}}`
+        //     } else if (type === 'file') {
+        //         // \file{lastModified="",lastModifiedDate="",...}
+        //         const props = ["lastModified", "lastModifiedDate", "name", "size", "type", "webkitRelativePath"];
+        //         res = `\\file{${props.map(prop => {
+        //             return `${prop}=${traversal(value)}`;
+        //         }).join(",")}}`
+        //     } else if (type === 'blob') {
+        //         // \blob{size="",type=""}
+        //         const props = ["size", "type"];
+        //         res = `\\blob{${props.map(prop => {
+        //             return `${prop}=${traversal(value)}`
+        //         }).join(",")}}}`
+        //     } else if (type === 'string') {
+        //         // "..."
+        //         res = `"${data.replace(/\\comma/, "\\\\comma").replace(/\,/gi, "\\comma")}"`;
+        //     } else if (type == 'function') {
+        //         // \class{name=""}
+        //         // \arrow_func{async=\boolean{""}}
+        //         // \func{async=\boolean{""},generator=\boolean{""},name=""}
+        //         const fnCode = functionToCode(data);
+        //         const cName = data.constructor?.toString().toLowerCase() || '';
+        //         const isArrow = !data.prototype && !/^(?:async\s+)?function/.test(fnCode);
+        //         const isAsync = cName.includes('async');
+        //         const isGenerator = cName.includes('generator');
+        //         const isClass = (fnCode || '').trim().startsWith('class');
+        //         res = '';
+        //         if (isClass) {
+        //             res = `\\class{name="${data.prototype?.constructor?.name}"}`;
+        //         } else if (isArrow) {
+        //             res = `\\arrow_func{async=\\boolean{\"${isAsync}\"}}`;
+        //         } else {
+        //             res = `\\func{async=\\boolean{\"${isAsync}\"},generator=\\boolean{\"${isGenerator}\"},name=\"${data.name && fnCode.match(/function([\s\S]*?)\(.*?\)/)?.[1]?.replace('*', '').trim() ? data.name : ''}\"}`;
+        //         }
+        //     } else if (isElement(data)) {
+        //         // \element{name="",id="",classname=""}
+        //         const id = data.id;
+        //         const classArr = [...data.classList];
+        //         const className = (classArr.length > 0 ? '.' : '') + classArr.join('.');
+        //         res = `\\element{name=\"${data.tagName.toLowerCase()}\",id=\"${id}\",classname=\"${className}\"}`;
+        //     } else if (type == 'error') {
+        //         // \error{name="",message=""}
+        //         res = `\\err{name=\"${data.name}\",message=\"${data.message}\"}`;
+        //     } else if ([
+        //         // Normal types
+        //         'number', 'boolean', 'null', 'undefined', 'symbol',
+        //         // Other types
+        //         'date', 'regexp'
+        //     ].includes(type)) {
+        //         // \<T>{""}
+        //         res = `\\${type}{\"${String(data)}\"}`;
+        //     } else {
+        //         // Show type only
+        //         // \unknown_obj{"T"}
+        //         res = `\\unknown_obj{\"${capitalizeFirstLetter(type)}\"}`;
+        //     }
+        //     return res;
+        // }
+
+        // return traversal(data);
+
+        // try {
+        //     return JSON.stringify(traversal(data));
+        // } catch (e) {
+        //     return String(data);
+        // }
     }
 
     function append(log) {
@@ -172,11 +177,11 @@ const Log = (function () {
         logs.push(entry);
 
         if (level === 'FATAL') {
-            if (typeof log.args[0] === 'string') {
-                crashHandler(new Error(log.args[0]));
-            } else {
-                crashHandler(log.args);
-            }
+            // crashHandler imports Logger for its own diagnostics. Loading it here
+            // would create a boot-time ESM cycle (log -> crashHandler -> log).
+            void import('./crashHandler.js').then(({ default: crashHandler }) => {
+                crashHandler(typeof log.args[0] === 'string' ? new Error(log.args[0]) : log.args);
+            }).catch(error => console.error('Failed to load crash handler:', error));
         }
 
         if (flags.disableConsoleOutput) return;

@@ -5,6 +5,8 @@ declare interface BrowserWindowConfig {
     closable?: boolean;
     snappable?: boolean;
     fullscreenable?: boolean;
+    /** Creates a modal popup when used with `type: 'popup'`. */
+    modal?: boolean;
     mica?: boolean;
     showOnTop?: boolean;
     theme?: 'light' | 'dark' | 'system';
@@ -16,6 +18,8 @@ declare interface BrowserWindowConfig {
     y?: number | 'center';
     icon?: string;
     title?: string;
+    type?: 'main-window' | 'sub-window' | 'popup';
+    parentWindow?: InternalBrowserWindow;
 }
 
 declare namespace TabviewObject {

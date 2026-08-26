@@ -1,15 +1,8 @@
 // Winbows Runtime Process Wrapper Implementation
 
 import { EventEmitter } from "../../../shared/utils";
-import stdio from "../../lib/stdio.js";
-import crashHandler from "../../core/crashHandler.js";
-import { IDBFS, fsUtils } from "../../../shared/fs.js";
-import Logger from "../../core/log.js";
-
-const fs = IDBFS('~KERNEL');
-const logger = new Logger({
-    module: 'Process'
-})
+import stdio from "../../lib/stdio";
+import { processes, type ProcessSignal, type ProcessState } from "./ProcessManager";
 
 function createNextTick() {
     const queue: Function[] = [];
@@ -51,47 +44,7 @@ export function generateEnv() {
     };
 }
 
-const processes = new ((() => {
-    const processes = new Array(8192).fill(null);
-    return class TaskList extends EventEmitter {
-        constructor() {
-            super();
-        }
-        add(pid: number, process: Process) {
-            if (processes[pid]) {
-                const err = new Error(`Process ${pid} already exists`);
-                logger.error(err);
-                return crashHandler(err);
-            }
-            processes[pid] = process;
-            this._emit('add', { pid, process });
-        }
-        remove(pid: number) {
-            if (processes[pid]) {
-                processes[pid] = null;
-                this._emit('remove', { pid });
-            }
-        }
-        update(pid: number, key: string, value: any) {
-            const process = processes[pid];
-            if (!process) return;
-            process[key] = value;
-            this._emit('update', { pid, key, value });
-        }
-        get(pid: number) {
-            return processes[pid];
-        }
-        list() {
-            return [...processes];
-        }
-        findVacant() {
-            return processes.findIndex(p => p == null);
-        }
-    }
-})())();
-
-type IProcessSignal = "SIGINT" | "SIGKILL" | "SIGTERM" | "SIGSTOP";
-type IProcessOptions = {
+export type ProcessOptions = {
     argv0?: string;
     cwd?: string;
     encoding?: string;
@@ -103,19 +56,13 @@ type IProcessOptions = {
     stdio?: boolean | string;
     timeout?: number;
     windowsHide?: boolean;
+    name?: string;
+    ppid?: number;
+    type?: 'cli' | 'gui';
+    stdin?: stdio.InputStream | stdio.tty.InputStream;
+    stdout?: stdio.OutputStream | stdio.tty.OutputStream;
+    stderr?: stdio.OutputStream | stdio.tty.OutputStream;
 }
-
-const signalManager = (() => {
-    const eventEmitter = new EventEmitter();
-    return {
-        onSignal: (callback: (signal: IProcessSignal) => void) => {
-            eventEmitter.on('signal', callback);
-        },
-        emit: (signal: IProcessSignal) => {
-            eventEmitter.emit('signal', signal);
-        }
-    }
-})();
 
 // disconnect, send, -> IPC
 // TODOs: debugPort, report, permission
@@ -126,6 +73,8 @@ const _uncaughtExceptionCaptureCallback = Symbol('uncaughtExceptionCaptureCallba
 const _startTime = Symbol('startTime');
 const _title = Symbol('title');
 const _env = Symbol('env');
+const _state = Symbol('state');
+const _ownedStreams = Symbol('ownedStreams');
 
 class Process extends EventEmitter {
     [key: symbol]: any;
@@ -136,10 +85,13 @@ class Process extends EventEmitter {
     private [_startTime]: number = Date.now();
     private [_title]: string = 'Winbows Node.js Runtime';
     private [_env]: Record<string, any>;
+    private [_state]: ProcessState = 'running';
+    private [_ownedStreams]: Array<{ destroy?: () => void }> = [];
 
     get alive() {
-        return this[_exitCode] === undefined;
+        return this[_exitCode] === undefined && ['running', 'stopped'].includes(this[_state]);
     }
+    get state(): ProcessState { return this[_state]; }
     arch: string = 'x64';
     argv: string[];
     argv0: string;
@@ -153,25 +105,20 @@ class Process extends EventEmitter {
         return this[_exitCode];
     }
     set exitCode(code: number | null | undefined) {
-        if (this[_exitCode] !== undefined) return;
-        if (typeof code !== 'number' && code !== null && code !== undefined) return;
-        if (code === undefined || code === null) {
-            this[_exitCode] = 0;
-        } else {
-            this[_exitCode] = code;
-        }
-        this._emit('exit', this[_exitCode]);
-        processes.remove(this.pid);
+        void this.exit(code);
     }
     readonly noDeprecation: boolean;
     readonly permission?: Object;
     readonly pid: number;
     readonly platform: string = 'win32';
-    readonly ppid: number | undefined;
+    readonly ppid: number;
+    readonly startedAt: number = this[_startTime];
+    readonly type: 'cli' | 'gui';
+    name: string;
     report?: Object;
-    readonly stderr: stdio.OutputStream | stdio.tty.OutputStream;
-    readonly stdin: stdio.InputStream | stdio.tty.InputStream;
-    readonly stdout: stdio.OutputStream | stdio.tty.OutputStream;
+    stderr: stdio.OutputStream | stdio.tty.OutputStream;
+    stdin: stdio.InputStream | stdio.tty.InputStream;
+    stdout: stdio.OutputStream | stdio.tty.OutputStream;
     throwDeprecation: boolean = false;
     get title(): string {
         return this[_title];
@@ -179,19 +126,23 @@ class Process extends EventEmitter {
     set title(val: string) {
         if (this[_title] !== val) {
             this[_title] = val;
+            processes.update(this, 'title', val);
             this._emit('change:title', { value: val });
         }
     }
     traceDeprecation: boolean = false;
     version: string = 'v1.0.0';
 
-    constructor(options?: IProcessOptions) {
+    constructor(options: ProcessOptions = {}) {
         super();
 
-        this[_env] = generateEnv();
+        this[_env] = { ...generateEnv(), ...options.env };
 
-        this.argv0 = '~wrt';
+        this.argv0 = options.argv0 ?? '~wrt';
         this.argv = [this.argv0];
+        this.name = options.name ?? this.argv0;
+        this.ppid = options.ppid ?? 0;
+        this.type = options.type ?? 'cli';
         this.env = new Proxy(this[_env], {
             set: (obj, prop, value) => {
                 if (typeof prop !== 'string') return false;
@@ -205,65 +156,38 @@ class Process extends EventEmitter {
         this.execArgv = [];
         this.execPath = '~wrt';
         this.noDeprecation = this.argv.includes('--no-deprecation');
-        this.pid = processes.findVacant();
-        if (this.pid == -1) {
-            logger.error(new Error('The maximum number of processes has been reached'));
-            throw new Error('The maximum number of processes has been reached');
-        }
+        this.pid = processes.allocatePid();
 
         if (options?.isTTY === true) {
-            this.stderr = new stdio.tty.OutputStream();
-            this.stdin = new stdio.tty.InputStream();
-            this.stdout = new stdio.tty.OutputStream();
+            this.stdin = options.stdin ?? new stdio.tty.InputStream();
+            this.stdout = options.stdout ?? new stdio.tty.OutputStream();
+            this.stderr = options.stderr ?? new stdio.tty.OutputStream();
         } else {
-            this.stderr = new stdio.OutputStream();
-            this.stdin = new stdio.InputStream();
-            this.stdout = new stdio.OutputStream();
+            this.stdin = options.stdin ?? new stdio.InputStream();
+            this.stdout = options.stdout ?? new stdio.OutputStream();
+            this.stderr = options.stderr ?? new stdio.OutputStream();
         }
+        if (!options.stdin) this[_ownedStreams].push(this.stdin);
+        if (!options.stdout) this[_ownedStreams].push(this.stdout);
+        if (!options.stderr) this[_ownedStreams].push(this.stderr);
 
         if (options?.cwd) {
-            this[_cwd] = options?.cwd;
-        }
-        if (!fs.exists(this[_cwd])) {
-            logger.warn(`The specified working directory ${this[_cwd]} could not be found.`);
-            this[_cwd] = 'C:/';
+            this[_cwd] = normalizeVfsPath(options.cwd);
         }
 
-        processes.add(this.pid, this);
-        signalManager.onSignal(this._handleSignal);
-    }
-
-    private _handleSignal(signal: IProcessSignal) {
-        if (signal === 'SIGKILL') {
-            return this.exitCode = 0;
-        }
-
-        switch (signal) {
-            case "SIGINT":
-            case "SIGTERM":
-                this.exitCode = 0;
-                break;
-            default:
-                break;
-        }
-
-        this._emit(signal);
+        processes.add(this);
     }
 
     abort(): void {
-        this[_exitCode] = 1;
-        processes.remove(this.pid);
+        void this.exit(1, 'SIGKILL');
     }
     availableMemory(): number {
         return 0;
     }
     chdir(directory: string): void | Error {
-        directory = fsUtils.toDirFormat(directory);
-        if (!fs.exists(directory)) {
-            throw new Error(`Directory not found : ${directory}`);
-        } else {
-            this[_cwd] = directory;
-        }
+        this[_cwd] = normalizeVfsPath(directory, this[_cwd]);
+        processes.update(this, 'cwd', this[_cwd]);
+        this._emit('change:cwd', { value: this[_cwd] });
     }
     constrainedMemory(): number {
         return 0;
@@ -315,9 +239,13 @@ class Process extends EventEmitter {
             this._emit('warning', warning);
         }, warning);
     }
-    async exit(code?: number | null | undefined): Promise<void> {
+    async exit(code?: number | null | undefined, signal: ProcessSignal | null = null): Promise<void> {
         if (this[_exitCode] !== undefined) return;
-        if (typeof code !== 'number' && code !== null && code !== undefined) return;
+        if (typeof code !== 'number' && code !== null && code !== undefined) {
+            throw new TypeError('Exit code must be a number or null');
+        }
+        this[_state] = 'exiting';
+        processes.update(this, 'state', this[_state]);
         if (code === undefined || code === null) {
             this[_exitCode] = 0;
         } else {
@@ -331,7 +259,7 @@ class Process extends EventEmitter {
                     promises.push(promise);
                 }
             }
-            eventEmitter._emit('beforeExit', evt);
+            this._emit('beforeExit', evt);
             const allPromises = Promise.all(promises.map(promise => promise.catch(e => {
                 console.error(e);
             })))
@@ -339,7 +267,9 @@ class Process extends EventEmitter {
 
             await Promise.race([allPromises.then(), timeoutPromise]);
         }
-        this._emit('exit', this[_exitCode]);
+        this[_ownedStreams].forEach(stream => stream.destroy?.());
+        this[_state] = signal === 'SIGKILL' ? 'killed' : 'exited';
+        this._emit('exit', this[_exitCode], signal);
         processes.remove(this.pid);
     }
     getActiveResourcesInfo(): string[] {
@@ -351,8 +281,32 @@ class Process extends EventEmitter {
     hasUncaughtExceptionCaptureCallback(): boolean {
         return this[_uncaughtExceptionCaptureCallback] !== null;
     }
+    signal(signal: ProcessSignal): boolean {
+        if (!this.alive) return false;
+        if (signal === 'SIGSTOP') {
+            this[_state] = 'stopped';
+            processes.update(this, 'state', this[_state]);
+            this._emit(signal);
+            return true;
+        }
+        if (signal === 'SIGCONT') {
+            if (this[_state] !== 'stopped') return false;
+            this[_state] = 'running';
+            processes.update(this, 'state', this[_state]);
+            this._emit(signal);
+            return true;
+        }
+        this._emit('signal', signal);
+        this._emit(signal);
+        void this.exit(signal === 'SIGKILL' ? 137 : 0, signal);
+        return true;
+    }
     kill(pid: number, signal?: string | number) {
-
+        const normalized = typeof signal === 'number'
+            ? ({ 2: 'SIGINT', 9: 'SIGKILL', 15: 'SIGTERM', 19: 'SIGSTOP', 18: 'SIGCONT' } as Record<number, ProcessSignal>)[signal]
+            : (signal?.toUpperCase() ?? 'SIGTERM') as ProcessSignal;
+        if (!['SIGINT', 'SIGKILL', 'SIGTERM', 'SIGSTOP', 'SIGCONT'].includes(normalized)) return false;
+        return processes.kill(pid, normalized);
     }
     memoryUsage(): Object {
         return { rss: 0, heapTotal: 0, heapUsed: 0, external: 0, arrayBuffers: 0 };
@@ -388,6 +342,33 @@ class Process extends EventEmitter {
     uptime(): number {
         return Date.now() - this[_startTime];
     }
+    toJSON() {
+        return {
+            pid: this.pid,
+            ppid: this.ppid,
+            name: this.name,
+            title: this.title,
+            type: this.type,
+            state: this.state,
+            startedAt: this.startedAt,
+            cwd: this.cwd(),
+            argv: [...this.argv]
+        };
+    }
+}
+
+function normalizeVfsPath(value: string, cwd = 'C:/') {
+    const path = value.replace(/^C:\//i, '/');
+    const normalizedCwd = cwd.replace(/^C:\//i, '/');
+    const source = path.startsWith('/') ? path : `${normalizedCwd}/${path}`;
+    const parts: string[] = [];
+    for (const part of source.split('/')) {
+        if (!part || part === '.') continue;
+        if (part === '..') parts.pop();
+        else parts.push(part);
+    }
+    return `C:/${parts.join('/')}`;
 }
 
 export { Process, processes };
+export type { ProcessSignal, ProcessState };

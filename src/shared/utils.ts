@@ -1,4 +1,4 @@
-export function getJsonFromURL(url: string): Record<string, any> {
+export function getJsonFromURL(url?: string): Record<string, any> {
     if (!url) url = location.search;
     var query = url.substr(1);
     var result: Record<string, any> = {};

@@ -1,0 +1,39 @@
+const { spawn, execFile } = await requireAsync('child_process');
+
+console.log(`[parent] pid=${process.pid}, cwd=${process.cwd()}`);
+
+const spawnResult = new Promise((resolve, reject) => {
+    const child = spawn('./child.wrt', ['from-spawn'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { DEMO_MESSAGE: 'passed through spawn()' }
+    });
+
+    child.on('spawn', () => {
+        console.log(`[spawn] child pid=${child.pid}`);
+        child.stdout.on('data', data => console.log(`[spawn stdout] ${data.trimEnd()}`));
+        child.stderr.on('data', data => console.log(`[spawn stderr] ${data.trimEnd()}`));
+    });
+    child.once('error', reject);
+    child.once('close', (code, signal) => {
+        console.log(`[spawn] close: code=${code}, signal=${signal}`);
+        resolve();
+    });
+});
+
+const execResult = new Promise((resolve, reject) => {
+    execFile('./child.wrt', ['from-execFile'], {
+        env: { DEMO_MESSAGE: 'captured by execFile()' }
+    }, (error, stdout, stderr) => {
+        console.log(`[execFile stdout] ${stdout.trimEnd()}`);
+        console.log(`[execFile stderr] ${stderr.trimEnd()}`);
+        if (error) {
+            console.log(`[execFile] expected non-zero exit: ${error.code}`);
+        }
+        resolve();
+    }).once('error', reject);
+});
+
+// WRT normally exits after this script evaluates. Keep the parent alive until
+// both asynchronous children have reported their final status.
+const finished = Promise.all([spawnResult, execResult]);
+process.on('beforeExit', event => event.waitUntil(finished));

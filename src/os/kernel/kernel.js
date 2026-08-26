@@ -23,7 +23,7 @@ async function main() {
     if (
         !!!params['no-stretch'] &&
         !!!params['no-devtool'] &&
-        (SystemInformation.mode == 'development' || params['dev'])
+        (SystemInformation.mode == 'development' || params['dev'] || params['devtool'])
     ) {
         const Devtool = (await import("../devtool/devtool.js")).default;
         const { devtool } = Devtool();

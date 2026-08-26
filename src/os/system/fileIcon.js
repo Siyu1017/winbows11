@@ -1,3 +1,5 @@
+import fsUtils from "../fs/path.ts"
+
 const fileIcons = {
     getIcon: (path = '') => {
         const ext = fsUtils.extname(path);

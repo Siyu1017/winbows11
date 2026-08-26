@@ -1,0 +1,8 @@
+const mode = process.argv[2] || 'unknown';
+
+process.stdout.write(`[child] mode=${mode}; pid=${process.pid}; ppid=${process.ppid}\n`);
+process.stdout.write(`[child] DEMO_MESSAGE=${process.env.DEMO_MESSAGE}\n`);
+process.stderr.write(`[child] stderr is also piped\n`);
+
+// Deliberately use a non-zero result so execFile's error path is visible.
+process.exit(mode === 'from-execFile' ? 3 : 0);

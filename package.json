@@ -1,7 +1,7 @@
 {
   "name": "winbows11",
-  "version": "1.0.0",
-  "description": "Just like Windows11, Winbows11 lets you experience Windows11 UI and animations on your web browser!",
+  "version": "1.1.0-beta.1",
+  "description": "Winbows11 is a Windows 11-inspired web desktop with apps, a virtual filesystem, terminal, process management, and a browser-based application runtime.",
   "main": "server.js",
   "directories": {
     "test": "tests"
@@ -10,9 +10,11 @@
   "scripts": {
     "start": "node server.js",
     "start:dev": "node dev-server.js",
-    "build:prod": "node buildID.js && cross-env NODE_ENV=production concurrently \"rollup -c\" \"webpack --mode production\" \"node build.cjs\"",
-    "build:dev": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c\" \"webpack --mode development\" \"node build.cjs\"",
-    "build:watch": "node buildID.js && cross-env NODE_ENV=development concurrently \"rollup -c -w\" \"webpack --mode development --watch\""
+    "build": "npm run build:prod",
+    "build:prod": "node scripts/build.js --mode production",
+    "build:dev": "node scripts/build.js --mode development",
+    "build:watch": "node scripts/build.js --mode development --watch",
+    "type-check": "tsc --noEmit"
   },
   "repository": {
     "type": "git",
@@ -57,10 +59,11 @@
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/node": "^24.3.0",
     "chalk": "^5.6.2",
-    "concurrently": "^9.2.1",
-    "cross-env": "^10.0.0",
     "css-loader": "^7.1.2",
+    "css-minimizer-webpack-plugin": "^8.0.0",
     "fork-ts-checker-webpack-plugin": "^9.1.0",
+    "html-webpack-plugin": "^5.6.8",
+    "mini-css-extract-plugin": "^2.10.2",
     "monaco-editor": "^0.52.2",
     "nodemon": "^3.1.10",
     "path": "^0.12.7",
@@ -73,6 +76,7 @@
     "ts-loader": "^9.5.4",
     "typescript": "^5.9.3",
     "webpack": "^5.100.1",
-    "webpack-cli": "^6.0.1"
+    "webpack-cli": "^6.0.1",
+    "webpack-remove-empty-scripts": "^1.1.1"
   }
 }

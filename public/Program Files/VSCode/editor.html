@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <link rel="stylesheet" href="https://unpkg.com/monaco-editor@0.51.0/min/vs/editor/editor.main.css">
+    <link rel="stylesheet" href="./editor.css">
+</head>
+
+<body>
+    <div id="loading" class="loading">
+        <svg class="loading-spinner" width="48" height="48" viewBox="0 0 16 16">
+            <circle cx="8px" cy="8px" r="7px"></circle>
+        </svg>
+        <div>Loading...</div>
+    </div>
+    <div id="container" style="width: 100%; height: 100%">
+        <div class="monaco">
+            <div class="monaco-main">
+                <div class="monaco-sidebar">
+                    <div class="monaco-sidebar-list">
+                        <div class="monaco-sidebar-item active" id="explorer-activity" data-vscode-activity="explorer">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="monaco-sidebar-item-icon">
+                                <path d="M20 7h-3a2 2 0 0 1-2-2V2" />
+                                <path d="M9 18a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h7l4 4v10a2 2 0 0 1-2 2Z" />
+                                <path d="M3 7.6v12.8A1.6 1.6 0 0 0 4.6 22h9.8" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="monaco-sidebar-content active" id="sidebar-content">
+                        <div class="monaco-sidebar-header">EXPLORER</div>
+                        <div class="monaco-sidebar-page" id="explorer-sidebar-page">
+                            <div style="padding: 0 1.25rem;">You have not yet opened a folder.</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="monaco-container">
+                    <div class="monaco-tabs" id="editor-tabs"></div>
+                    <div class="monaco-editors" id="editor-groups"></div>
+                </div>
+            </div>
+            <div class="monaco-footer">
+                <div class="monaco-footer-left" id="status-bar-left"></div>
+                <div class="monaco-footer-right" id="status-bar-right">
+                    <div class="monaco-footer-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="monaco-footer-item-icon">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                        </svg>
+                    </div>
+                    <div class="monaco-footer-item" id="language-mode">TXT</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+    <script src="./editor.js"> </script>
+</body>
+
+</html>

@@ -1,6 +1,7 @@
 import timer from "../../core/timer.js";
 import { viewport } from "../../core/viewport.js";
 import ModuleManager from "../../moduleManager.js";
+import WindowManager from "../../system/WApplication/windowManager.js";
 
 export function ControlPanel(taskbarControls) {
     const System = ModuleManager.get('System');
@@ -29,6 +30,15 @@ export function ControlPanel(taskbarControls) {
     viewport.screenElement.appendChild(controlSidebarContainer);
     controlPanelContainer.appendChild(controlPanel);
     controlSidebarContainer.appendChild(controlSidebar);
+
+    controlToggleDesktop.addEventListener('click', () => {
+        const windows = WindowManager.all();
+        windows.forEach(win => {
+            if (!win.isMinimized) {
+                win.minimize();
+            }
+        })
+    })
 
     // Overlays 
     const brightnessOverlay = document.createElement('div');
@@ -302,7 +312,7 @@ export function ControlPanel(taskbarControls) {
     calendarOverview.appendChild(calendarOverviewDate);
     calendarGroup.appendChild(calendarMain);
     calendarMain.innerHTML = 'Calendar will soon be available.';
-    calendarMain.style = style = "display: flex;align-items: center;justify-content: center;";
+    calendarMain.style = "display: flex;align-items: center;justify-content: center;";
 
     controlSidebarSummary.addEventListener('click', (e) => {
         controlSidebarContainer.classList.toggle('active');

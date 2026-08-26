@@ -1,4 +1,6 @@
-import { fsUtils, IDBFS } from "../../shared/fs.js";
+import fsUtils from "../fs/path.ts";
+import { getMountedSystemFS } from "../fs/systemFs.ts";
+import { getFileURL } from "../fs/fileUrl.ts";
 import { tasklist } from "../kernel/wrt/core.js";
 import ModuleManager from "../moduleManager.js";
 //import { tasklist } from "../WRT/kernel.js";
@@ -7,7 +9,7 @@ import ModuleManager from "../moduleManager.js";
 import "./tasks.css";
 
 //const { fs } = apis;
-const fs = IDBFS('~DEVTOOL');
+const fs = getMountedSystemFS();
 
 const tasks = document.createElement('div');
 const table = document.createElement('table');
@@ -63,7 +65,7 @@ function createRow(task) {
     if (task.icon) {
         iconImage.style.backgroundImage = `url(${task.icon})`
     } else {
-        fs.getFileURL((task.__filename ? System?.appRegistry.getInfoByPath(task.__filename).icon : '') || 'C:/Winbows/icons/files/program.ico').then(url => {
+        getFileURL(fs, (task.__filename ? System?.appRegistry.getInfoByPath(task.__filename).icon : '') || 'C:/Winbows/icons/files/program.ico').then(url => {
             iconImage.style.backgroundImage = `url(${url})`;
         })
     }
@@ -76,7 +78,7 @@ function createRow(task) {
 
     function updateIcon(icon) {
         if (icon.startsWith('C:/')) {
-            fs.getFileURL(icon || 'C:/Winbows/icons/files/program.ico').then(url => {
+            getFileURL(fs, icon || 'C:/Winbows/icons/files/program.ico').then(url => {
                 iconImage.style.backgroundImage = `url(${url})`;
             })
         } else {
