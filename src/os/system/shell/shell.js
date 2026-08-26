@@ -184,12 +184,16 @@ export class ShellInstance extends EventEmitter {
                     lastResult = pipeline.result;
                     lastSucceeded = pipeline.succeeded;
                 }
-                if (!lastSucceeded) throw lastResult instanceof Error ? lastResult : new Error('Command failed.');
+                // A command can return false as an expected status (for
+                // example, findstr returns false when it has no matches).
+                // Built-ins already write actionable diagnostics themselves,
+                // so only propagate an unhandled exception here.
+                if (!lastSucceeded && lastResult instanceof Error) throw lastResult;
                 resolve(lastResult);
             } catch (err) {
                 const message = err.reported ? null : err instanceof CommandParseError
                     ? `Invalid command syntax: ${err.message}\n`
-                    : `An error occurred while executing the command : ${command}\nMessage : ${err.message || err}\n`;
+                    : `${err.message || err}\n`;
                 if (message) this.stderr.write(message);
                 reject(err);
             }
@@ -203,6 +207,7 @@ export class ShellInstance extends EventEmitter {
         let input = '';
         let result;
         let succeeded = true;
+        let continuePipeline = true;
 
         for (let index = 0; index < commands.length; index++) {
             const isLast = index === commands.length - 1;
@@ -231,12 +236,23 @@ export class ShellInstance extends EventEmitter {
             try {
                 result = await this.executeStage(command.tokens, shell);
                 if (command.redirect) await this.writeRedirect(command.redirect, stdout.toString(), shell);
-                succeeded = result !== false;
+                const status = result?.__shellPipelineStatus;
+                succeeded = status ? status.succeeded : result !== false;
+                continuePipeline = succeeded || status?.continuePipeline === true;
+                if (!succeeded && commands.length > 1 && !status?.silentFailure) {
+                    this.stderr.write(`Pipeline stage ${index + 1} failed: ${command.tokens.join(' ')}\n`);
+                }
             } catch (error) {
                 result = error;
                 succeeded = false;
+                continuePipeline = false;
+                const detail = error instanceof Error ? error.message : String(error);
+                if (commands.length > 1) {
+                    this.stderr.write(`Pipeline stage ${index + 1} failed: ${command.tokens.join(' ')}\n${detail}\n`);
+                    if (error && typeof error === 'object') error.reported = true;
+                }
             }
-            if (!succeeded || isLast) break;
+            if (!continuePipeline || isLast) break;
             // A redirect takes precedence over the pipe; the next stage gets
             // an empty input stream, matching normal shell behaviour.
             input = command.redirect ? '' : stdout.toString();
@@ -272,10 +288,18 @@ export class ShellInstance extends EventEmitter {
         const argv = minimistJs(argsArr);
         const cmdName = argv._[0];
         const args = argv._.slice(1);
-        const handler = commandRegistry.get(String(cmdName).toLowerCase())?.handler;
+        const commandInfo = commandRegistry.get(String(cmdName).toLowerCase());
+        const handler = commandInfo?.handler;
         const WRT = ModuleManager.get('WRT');
 
         if (handler) {
+            if (args.includes('/?')) {
+                shell.stdout.write(`${commandInfo.description}\n\n${commandInfo.usage}\n`);
+                for (const [option, description] of Object.entries(commandInfo.options)) {
+                    shell.stdout.write(`  ${option}${description ? `  ${description}` : ''}\n`);
+                }
+                return true;
+            }
             const result = await handler({ args, flags: argv }, shell);
             if (shell.getEnv("SHOW_EXEC_TIME") == "1" && shell.active != false) {
                 shell.stdout.write(`Command executed in ${(performance.now() - start).toFixed(2)}ms\n`);
@@ -327,7 +351,7 @@ export class ShellInstance extends EventEmitter {
             }
             return { type: wrt.type === 'cli' ? 'cli' : 'gui', data: data ?? wrt };
         } catch (error) {
-            shell.stderr.write(`An error occurred while executing file : ${path}\nMessage : ${error.message}\n`);
+            shell.stderr.write(`${error.message}\n`);
             error.reported = true;
             throw error;
         }

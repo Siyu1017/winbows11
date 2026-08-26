@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## v1.1.0-beta.3 (2026-08-26)
+
+### Added
+
+- Added regression coverage for Windows-style VFS filename validation, including invalid characters, control characters, path normalization, and filesystem operation bypasses
+- Added volume-qualified paths to filesystem errors so public APIs report paths such as `C:/Users/file.txt`
+- Added built-in `/?` help output for registered shell commands
+- Added `dir` directory/file filtering and name-order options, `tree /f`, and `taskkill /im` process-name matching
+
+### Changed
+
+- Improved shell pipeline status handling so `findstr` returning no matches works correctly with `&&`, `||`, and subsequent pipeline stages without printing a spurious error
+- Updated `dir`, `tree`, `del`, and `taskkill` usage text to document only supported options
+
+### Fixed
+
+- Fixed VFS operations accepting Windows-invalid filename characters in path segments
+- Fixed shell errors being wrapped or printed twice instead of displaying the underlying filesystem error
+- Fixed `del` confirmation and failure status handling
+- Fixed `taskkill /pid` to terminate the selected process rather than only assigning its exit code
+
 ## v1.1.0-beta.2 (2026-08-26)
 
 ### Fixed

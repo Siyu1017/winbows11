@@ -1,6 +1,6 @@
 {
   "name": "winbows11",
-  "version": "1.1.0-beta.2",
+  "version": "1.1.0-beta.3",
   "description": "Winbows11 is a Windows 11-inspired web desktop with apps, a virtual filesystem, terminal, process management, and a browser-based application runtime.",
   "main": "server.js",
   "directories": {

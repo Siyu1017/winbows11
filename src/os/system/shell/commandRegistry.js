@@ -181,28 +181,23 @@ commandRegistry.register(['cd', 'chdir'], {
 // List directory
 commandRegistry.register('dir', {
     description: 'Displays a list of a directory\'s files and subdirectories.',
-    usage: 'dir [path] [/a] [/s] [/b]',
+    usage: 'dir [path] [/a[:d|-d]] [/o[:n|-n]] [/s] [/b]',
     options: {
-        '/a': '',
-        '/s': 'Lists every occurrence of the specified file name within the specified directory and all subdirectories.',
-        '/b': 'Displays a bare list of directories and files, with no additional information.'
+        '/a[:d|-d]': 'Lists all entries, only directories, or only files. Other Windows attributes are not modeled by the VFS.',
+        '/o[:n|-n]': 'Sorts by name; -n reverses the order.',
+        '/s': 'Lists entries in the selected directory and all subdirectories.',
+        '/b': 'Displays bare paths. With /s, each line is a full path.'
     },
     category: 'built-in',
     handler: async ({ args }, shell) => {
-        let displayAll = false;
-        let displaySubdir = false;
-        let displayMinimally = false;
-        let argString = args.join(' ');
-        const target = args.find(arg => !arg.startsWith('/')) || '.';
-
-        // Display all types
-        if (/\/[aA]/i.test(argString)) displayAll = true;
-
-        // Display subdirectory
-        if (/\/[sS]/i.test(argString)) displaySubdir = true;
-
-        // No header
-        if (/\/[bB]/i.test(argString)) displayMinimally = true;
+        const attributeArg = args.find(arg => /^\/a(?::)?-?d$/i.test(arg) || /^\/a$/i.test(arg));
+        const sortArg = args.find(arg => /^\/o(?::)?-?n$/i.test(arg));
+        const displaySubdir = args.some(arg => /^\/s$/i.test(arg));
+        const displayMinimally = args.some(arg => /^\/b$/i.test(arg));
+        const directoriesOnly = /^\/a(?::)?d$/i.test(attributeArg || '');
+        const filesOnly = /^\/a(?::)?-d$/i.test(attributeArg || '');
+        const reverseNameOrder = /^\/o(?::)?-n$/i.test(sortArg || '');
+        const target = args.find(arg => !/^\/(?:a(?::)?-?d?|o(?::)?-?n?|s|b)$/i.test(arg)) || '.';
 
         let directory;
         try {
@@ -219,16 +214,19 @@ commandRegistry.register('dir', {
         // whole disk has been traversed.
         const printDirectory = async (currentDirectory) => {
             const entries = await shell.fs.readdir(currentDirectory);
+            entries.sort((left, right) => reverseNameOrder ? right.localeCompare(left) : left.localeCompare(right));
             for (const name of entries) {
                 const path = fsUtils.resolve(currentDirectory, name);
                 // A stat is still required for recursive traversal; avoid it
                 // for a non-recursive bare listing.
-                const stat = displaySubdir || !displayMinimally
+                const stat = displaySubdir || !displayMinimally || directoriesOnly || filesOnly
                     ? await shell.fs.stat(path)
                     : null;
 
+                if ((directoriesOnly && !stat.isDirectory()) || (filesOnly && stat.isDirectory())) continue;
+
                 if (displayMinimally) {
-                    shell.stdout.write(name + '\n');
+                    shell.stdout.write((displaySubdir ? path : name) + '\n');
                 } else {
                     const date = stat.mtime;
                     let dateString = '';
@@ -290,7 +288,7 @@ commandRegistry.register(['md', 'mkdir'], {
             await shell.fs.mkdir(dir);
             return true;
         } catch (e) {
-            shell.stderr.write('Error: ' + e.name + ', Message: ' + e.message + '\n');
+            shell.stderr.write(e.message + '\n');
             return false;
         }
     }
@@ -354,7 +352,7 @@ commandRegistry.register(['rd', 'rmdir'], {
             shell.stdout.write('Directory removed successfully\n');
             return true;
         } catch (e) {
-            shell.stderr.write('Error: ' + e.name + ', Message: ' + e.message + '\n');
+            shell.stderr.write(e.message + '\n');
             return false;
         }
     }
@@ -362,19 +360,18 @@ commandRegistry.register(['rd', 'rmdir'], {
 
 // Remove file
 commandRegistry.register(['del', 'erase'], {
-    description: 'Deletes one or more files.',
-    usage: 'del|erase <path> [/p] [/s] [/q]',
+    description: 'Deletes a file.',
+    usage: 'del|erase <path> [/p] [/q]',
     options: {
-        '<path>': 'Specifies the file or the directory that you want to delete',
+        '<path>': 'Specifies the file to delete.',
         '/p': 'Prompts for confirmation before deleting the specified file.',
-        '/s': 'Deletes specified files from the current directory and all subdirectories. Displays the names of the files as they are being deleted. ( Unavailable )',
         '/q': 'Specifies quiet mode. You are not prompted for delete confirmation.'
     },
     category: 'built-in',
     handler: async ({ args }, shell) => {
         let path = args[0];
         if (!path) {
-            shell.stderr.write('Usage: del|erase <path> [/p] [/s] [/q]\n');
+            shell.stderr.write('Usage: del|erase <path> [/p] [/q]\n');
             return false;
         }
 
@@ -387,31 +384,21 @@ commandRegistry.register(['del', 'erase'], {
         }
 
         let argString = args.slice(1).join(' ');
-        let recursive = false;
-        let quietMode = false;
+        const prompt = /\/[pP]/i.test(argString) && !/\/[qQ]/i.test(argString);
 
         // Show prompt
-        if (/\/[pP]/i.test(argString)) quietMode = false;
-
-        // Subitems
-        if (/\/[sS]/i.test(argString)) recursive = true;
-
-        // Quiet mode
-        if (/\/[qQ]/i.test(argString)) quietMode = true;
-
-        // Show prompt
-        if (quietMode == false) {
+        if (prompt) {
             const confirm = await shell.input(`Are you sure (y/n)?`, 'normal');
             if (confirm.search(/[yY]/i) == -1) return true;
         }
 
         try {
-            await shell.fs.rm(resolvedPath, {
-                force: quietMode
-            });
+            if ((await shell.fs.stat(resolvedPath)).isDirectory()) throw new Error('Access is denied. Use rd or rmdir to delete a directory.');
+            await shell.fs.rm(resolvedPath);
             shell.stdout.write('Removed successfully\n');
         } catch (e) {
             shell.stderr.write(`Could not delete ${resolvedPath}: ${e.message}\n`);
+            return false;
         }
 
         return true;
@@ -535,16 +522,24 @@ commandRegistry.register('touch', {
 
 commandRegistry.register('tree', {
     description: 'Graphically displays the directory structure.',
-    usage: 'tree [path]',
+    usage: 'tree [path] [/f] [/a]',
+    options: {
+        '/f': 'Displays file names in addition to directories.',
+        '/a': 'Uses ASCII tree characters; this terminal already uses ASCII output.'
+    },
     category: 'file',
     handler: async ({ args }, shell) => {
         try {
-            const root = resolveShellDirectory(shell, args[0] || '.');
-            if (!await shell.fs.exists(root) || !(await shell.fs.stat(root)).isDirectory()) throw new Error(`Directory not found: ${args[0] || '.'}`);
+            const includeFiles = args.some(arg => /^\/f$/i.test(arg));
+            const target = args.find(arg => !/^\/[fa]$/i.test(arg)) || '.';
+            const root = resolveShellDirectory(shell, target);
+            if (!await shell.fs.exists(root) || !(await shell.fs.stat(root)).isDirectory()) throw new Error(`Directory not found: ${target}`);
             shell.stdout.write(root + '\n');
             const entries = await shell.fs.readdir(root, { recursive: true });
             for (const entry of entries.sort()) {
-                const relative = entry.slice(root.length).replace(/^\//, '');
+                const entryPath = fsUtils.resolve(root, entry);
+                if (!includeFiles && !(await shell.fs.stat(entryPath)).isDirectory()) continue;
+                const relative = entry.replace(/^\//, '');
                 const depth = relative.split('/').length - 1;
                 shell.stdout.write(`${'  '.repeat(depth)}${fsUtils.basename(entry)}\n`);
             }
@@ -618,33 +613,36 @@ commandRegistry.register('shutdown', {
 
 commandRegistry.register('taskkill', {
     description: 'Ends one or more tasks or processes. Processes can be ended by process ID or image name. You can use the tasklist command command to determine the process ID (PID) for the process to be ended.',
-    usage: 'taskkill [/pid <processID> | /im <imagename>]',
+    usage: 'taskkill {/pid <processID> | /im <imagename>} [/f]',
     options: {
         '/pid <processID>': 'Specifies the process ID of the process to be terminated.',
-        // '/im <imagename>': 'Specifies the image name of the process to be terminated. Use the wildcard character (*) to specify all image names. ( Unavailable )'
+        '/im <imagename>': 'Specifies an image name. The * wildcard is supported.',
+        '/f': 'Forces termination (the only supported termination mode).'
     },
     category: 'built-in',
     handler: ({ args }, shell) => {
-        const _args = args.slice(1);
-        const argString = args.join(' ');
-
-        if (/\/pid/i.test(argString)) {
-            for (const arg of _args) {
-                try {
-                    const p = processes.get(Number(arg));
-                    console.log(p)
-                    if (p) {
-                        p.exitCode = 0;
-                        shell.stdout.write(`Process with pid ${arg} has been terminated.\n`);
-                    }
-                } catch (e) {
-                    shell.stderr.write(e.message);
-                }
-            }
-            return true;
+        const selector = args.findIndex(arg => /^\/(?:pid|im)$/i.test(arg));
+        const value = selector >= 0 ? args[selector + 1] : undefined;
+        if (!value || selector < 0) {
+            shell.stderr.write('Usage: taskkill {/pid <processID> | /im <imagename>} [/f]\n');
+            return false;
         }
-
-        return false;
+        const candidates = /^\/pid$/i.test(args[selector])
+            ? [processes.get(Number(value))].filter(Boolean)
+            : processes.list().filter(process => {
+                const image = fsUtils.basename(process.name || process.argv0 || '').toLowerCase();
+                const pattern = value.toLowerCase().replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('*', '.*');
+                return new RegExp(`^${pattern}$`, 'i').test(image);
+            });
+        if (!candidates.length) {
+            shell.stderr.write(`ERROR: The process '${value}' was not found.\n`);
+            return false;
+        }
+        for (const process of candidates) {
+            processes.kill(process.pid, 'SIGKILL');
+            shell.stdout.write(`SUCCESS: Process with PID ${process.pid} has been terminated.\n`);
+        }
+        return true;
     }
 })
 
@@ -907,7 +905,16 @@ commandRegistry.register(['find', 'findstr'], {
                     count++;
                 }
             });
-            return count > 0;
+            // No matches is a normal findstr status (like Windows exit code
+            // 1), not a diagnostic. Keep the status for &&/|| while letting
+            // a later pipeline stage consume the empty output.
+            return {
+                __shellPipelineStatus: {
+                    succeeded: count > 0,
+                    continuePipeline: true,
+                    silentFailure: count === 0
+                }
+            };
         } catch (error) {
             shell.stderr.write(error.message + '\n');
             return false;

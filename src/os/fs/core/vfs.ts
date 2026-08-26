@@ -10,6 +10,19 @@ function isDevelopmentModeFromURL(): boolean {
     return !!(params['dev'] || params['develop'] || params['embed']) || (window as any).needsUpdate || (window as any).modes?.dev == true;
 }
 
+const INVALID_PATH_SEGMENT_CHARACTERS = /[<>:"|?*\u0000-\u001F]/;
+
+/**
+ * A VFS always receives a volume-local absolute path, so its segments never
+ * include a drive designator. Backslashes are normalized into separators
+ * before this point, matching the rest of the Windows-style path handling.
+ */
+function validatePathSegment(segment: string, path: string, operation: string) {
+    if (typeof segment !== 'string' || INVALID_PATH_SEGMENT_CHARACTERS.test(segment)) {
+        throwVFSError(ErrorCodes.INVALID_ARGUMENT, operation, path, `Invalid filename character in '${segment}'`);
+    }
+}
+
 function normalizePath(path: string): string[] {
     if (typeof path !== 'string' || !path.startsWith("/")) {
         throw new Error("Only absolute paths supported");
@@ -21,6 +34,7 @@ function normalizePath(path: string): string[] {
             normalized.pop();
             continue;
         }
+        validatePathSegment(part, path, 'path');
         normalized.push(part);
     }
     return normalized;
@@ -458,11 +472,6 @@ export class VFS {
         return inode;
     }
 
-    private validatePath(path: string, operation: string) {
-        const parts = normalizePath(path);
-        // TODO: validate path ( length, invalid chars, etc. )
-    }
-
     private writeData(path: string, data: Uint8Array) {
 
     }
@@ -690,6 +699,10 @@ export class VFS {
 
     async link(parentInodeId: number, name: string, targetInodeId: number) {
         this.assertWritable('link', name);
+        validatePathSegment(name, name, 'link');
+        if (!name || /[\\/]/.test(name)) {
+            throwVFSError(ErrorCodes.INVALID_ARGUMENT, 'link', name, 'A directory entry name must be one path segment');
+        }
         const parentDir = await this.loadDirTable(parentInodeId);
         const parentInode = await this.loadInode(parentInodeId);
         if (parentInode.type !== "dir")
@@ -969,6 +982,27 @@ export class FS {
         return resolved.path;
     }
 
+    /** Translate volume-local VFS failures back to the public path format. */
+    private rethrowWithVolumePath(error: unknown): never {
+        if (error instanceof Error && typeof (error as any).path === 'string') {
+            const internalPath = (error as any).path as string;
+            if (internalPath.startsWith('/')) {
+                const publicPath = formatVolumePath(this.volumeId, internalPath);
+                (error as any).path = publicPath;
+                error.message = error.message.replace(`'${internalPath}'`, `'${publicPath}'`);
+            }
+        }
+        throw error;
+    }
+
+    private async withVolumePath<T>(operation: () => Promise<T>): Promise<T> {
+        try {
+            return await operation();
+        } catch (error) {
+            return this.rethrowWithVolumePath(error);
+        }
+    }
+
     /** Set the process working directory without an I/O check. */
     setCwd(path: string) {
         this.cwd = this.resolveInternal(path);
@@ -980,9 +1014,9 @@ export class FS {
     async chdir(path: string) {
         const absolutePath = this.resolveInternal(path);
         // Verify the path exists and is a directory
-        const stats = await this.vfs.stats(absolutePath);
+        const stats = await this.withVolumePath(() => this.vfs.stats(absolutePath));
         if (stats.type !== "dir") {
-            throw new Error(`ENOTDIR: Not a directory '${path}'`);
+            throw new Error(`ENOTDIR: Not a directory '${formatVolumePath(this.volumeId, absolutePath)}'`);
         }
         this.cwd = absolutePath;
     }
@@ -999,11 +1033,12 @@ export class FS {
      */
     async write(path: string, data: Uint8Array) {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.write(absolutePath, data);
+        return this.withVolumePath(() => this.vfs.write(absolutePath, data));
     }
 
     async writeBlob(path: string, data: Blob | ArrayBuffer | Uint8Array | string) {
-        return this.vfs.writeBlob(this.resolveInternal(path), data);
+        const absolutePath = this.resolveInternal(path);
+        return this.withVolumePath(() => this.vfs.writeBlob(absolutePath, data));
     }
 
     /**
@@ -1011,19 +1046,22 @@ export class FS {
      */
     async read(path: string): Promise<Uint8Array> {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.read(absolutePath);
+        return this.withVolumePath(() => this.vfs.read(absolutePath));
     }
 
     async readBlob(path: string, type = ''): Promise<Blob> {
-        return this.vfs.readBlob(this.resolveInternal(path), type);
+        const absolutePath = this.resolveInternal(path);
+        return this.withVolumePath(() => this.vfs.readBlob(absolutePath, type));
     }
 
     async readText(path: string): Promise<string> {
-        return this.vfs.readText(this.resolveInternal(path));
+        const absolutePath = this.resolveInternal(path);
+        return this.withVolumePath(() => this.vfs.readText(absolutePath));
     }
 
     async getFileURL(path: string, type = ''): Promise<string> {
-        return this.vfs.getFileURL(this.resolveInternal(path), type);
+        const absolutePath = this.resolveInternal(path);
+        return this.withVolumePath(() => this.vfs.getFileURL(absolutePath, type));
     }
 
     resolvePath(path: string, cwd: string = this.getcwd()): string {
@@ -1036,7 +1074,7 @@ export class FS {
      */
     async delete(path: string) {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.delete(absolutePath);
+        return this.withVolumePath(() => this.vfs.delete(absolutePath));
     }
 
     /**
@@ -1044,11 +1082,12 @@ export class FS {
      */
     async mkdir(path: string, options?: { recursive?: boolean }) {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.mkdir(absolutePath, options);
+        return this.withVolumePath(() => this.vfs.mkdir(absolutePath, options));
     }
 
     async ensureDirectory(path: string) {
-        return this.vfs.ensureDirectory(this.resolveInternal(path));
+        const absolutePath = this.resolveInternal(path);
+        return this.withVolumePath(() => this.vfs.ensureDirectory(absolutePath));
     }
 
     /**
@@ -1056,7 +1095,7 @@ export class FS {
      */
     async rmdir(path: string, options?: { recursive?: boolean }) {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.rmdir(absolutePath, options);
+        return this.withVolumePath(() => this.vfs.rmdir(absolutePath, options));
     }
 
     /**
@@ -1064,7 +1103,7 @@ export class FS {
      */
     async readdir(path: string): Promise<string[]> {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.readdir(absolutePath);
+        return this.withVolumePath(() => this.vfs.readdir(absolutePath));
     }
 
     /**
@@ -1072,7 +1111,7 @@ export class FS {
      */
     async walk(path: string, callback: (path: string, inode: GenericInode) => void) {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.walk(absolutePath, (entryPath, inode) => callback(formatVolumePath(this.volumeId, entryPath), inode));
+        return this.withVolumePath(() => this.vfs.walk(absolutePath, (entryPath, inode) => callback(formatVolumePath(this.volumeId, entryPath), inode)));
     }
 
     /**
@@ -1080,7 +1119,7 @@ export class FS {
      */
     async exists(path: string): Promise<boolean> {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.exists(absolutePath);
+        return this.withVolumePath(() => this.vfs.exists(absolutePath));
     }
 
     /**
@@ -1088,7 +1127,7 @@ export class FS {
      */
     async stats(path: string): Promise<Partial<GenericInode>> {
         const absolutePath = this.resolveInternal(path);
-        return this.vfs.stats(absolutePath);
+        return this.withVolumePath(() => this.vfs.stats(absolutePath));
     }
 
     /**
