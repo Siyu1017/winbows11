@@ -306,6 +306,10 @@ export class VFS {
         if (!this.options.developmentReadThrough || typeof fetch === 'undefined') return null;
         if (path === '/') return null;
 
+        if (path.startsWith('/User/Desktop')) {
+            return null;
+        }
+
         try {
             const response = await fetch(`./${path.slice(1)}`, { cache: 'no-store' });
             if (!response.ok) return null;

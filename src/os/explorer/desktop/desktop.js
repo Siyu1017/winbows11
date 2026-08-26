@@ -919,6 +919,7 @@ async function init(wrt) {
         })
     })
 
+    const branch = location.hostname === 'winbows11.vercel.app' ? 'main' : 'beta';
     const defaultShortcuts = [{
         path: 'C:/User/Desktop/desktop.link',
         content: {
@@ -931,7 +932,7 @@ async function init(wrt) {
         content: {
             icon: 'C:/Winbows/icons/github.png',
             name: 'Github',
-            command: 'start "https://github.com/Siyu1017/winbows11/" --new-window'
+            command: `start "https://github.com/Siyu1017/winbows11/tree/${branch}" --new-window`
         }
     }, {
         path: 'C:/User/Desktop/code.link',

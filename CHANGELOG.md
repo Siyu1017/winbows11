@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## v1.1.0-beta.2 (2026-08-26)
+
+### Fixed
+
+- Fixed desktop shortcut loading when missing VFS resources returned an HTML fallback response instead of the expected JSON shortcut data
+
 ## v1.1.0-beta.1 (2026-08-26)
 
 ### Added
