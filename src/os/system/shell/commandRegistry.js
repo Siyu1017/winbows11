@@ -43,6 +43,42 @@ async function readTextFile(shell, input) {
     return shell.fs.readFile(path, 'utf-8');
 }
 
+function searchStatus(matches) {
+    return {
+        __shellPipelineStatus: {
+            succeeded: matches > 0,
+            continuePipeline: true,
+            silentFailure: matches === 0
+        }
+    };
+}
+
+function reportedFailure() {
+    return {
+        __shellPipelineStatus: {
+            succeeded: false,
+            continuePipeline: false,
+            silentFailure: true
+        }
+    };
+}
+
+function splitLines(content) {
+    return content.split(/\r?\n/).filter((line, index, lines) => line || index < lines.length - 1);
+}
+
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function wildcardToRegExp(value) {
+    return value.split('').map(character => {
+        if (character === '*') return '.*';
+        if (character === '?') return '.';
+        return escapeRegExp(character);
+    }).join('');
+}
+
 /**
  * @callback CommandHandler
  * @param {{ args: any[], flags: any }} param0
@@ -525,23 +561,69 @@ commandRegistry.register('tree', {
     usage: 'tree [path] [/f] [/a]',
     options: {
         '/f': 'Displays file names in addition to directories.',
-        '/a': 'Uses ASCII tree characters; this terminal already uses ASCII output.'
+        '/a': 'Uses ASCII tree characters instead of extended characters.'
     },
     category: 'file',
     handler: async ({ args }, shell) => {
         try {
             const includeFiles = args.some(arg => /^\/f$/i.test(arg));
+            const ascii = args.some(arg => /^\/a$/i.test(arg));
             const target = args.find(arg => !/^\/[fa]$/i.test(arg)) || '.';
             const root = resolveShellDirectory(shell, target);
             if (!await shell.fs.exists(root) || !(await shell.fs.stat(root)).isDirectory()) throw new Error(`Directory not found: ${target}`);
-            shell.stdout.write(root + '\n');
-            const entries = await shell.fs.readdir(root, { recursive: true });
-            for (const entry of entries.sort()) {
-                const entryPath = fsUtils.resolve(root, entry);
-                if (!includeFiles && !(await shell.fs.stat(entryPath)).isDirectory()) continue;
-                const relative = entry.replace(/^\//, '');
-                const depth = relative.split('/').length - 1;
-                shell.stdout.write(`${'  '.repeat(depth)}${fsUtils.basename(entry)}\n`);
+
+            const characters = ascii
+                ? { branch: '+-', last: '\\-', vertical: '|  ', space: '   ' }
+                : { branch: '├─', last: '└─', vertical: '│  ', space: '   ' };
+            const displayRoot = root === shell.root
+                ? `${shell.root.slice(0, -1)}.`
+                : root.replaceAll('/', '\\').replace(/\\$/, '');
+            let renderedEntries = 0;
+
+            shell.stdout.write('Folder PATH listing\n');
+            shell.stdout.write(`${displayRoot}\n`);
+
+            const listEntries = async directory => {
+                const names = await shell.fs.readdir(directory);
+                const entries = await Promise.all(names.map(async name => {
+                    const path = fsUtils.resolve(directory, name);
+                    return { name, path, stat: await shell.fs.stat(path) };
+                }));
+                return entries
+                    .filter(entry => includeFiles || entry.stat.isDirectory())
+                    .sort((left, right) => {
+                        if (left.stat.isDirectory() !== right.stat.isDirectory()) return left.stat.isDirectory() ? -1 : 1;
+                        return left.name.localeCompare(right.name, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+            };
+
+            const renderDirectory = async (directory, prefix = '') => {
+                const entries = await listEntries(directory);
+                for (let index = 0; index < entries.length; index++) {
+                    const entry = entries[index];
+                    const isLast = index === entries.length - 1;
+                    shell.stdout.write(`${prefix}${isLast ? characters.last : characters.branch}${entry.name}\n`);
+                    renderedEntries++;
+                    if (renderedEntries % 64 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+                    if (entry.stat.isDirectory()) {
+                        await renderDirectory(entry.path, prefix + (isLast ? characters.space : characters.vertical));
+                    }
+                }
+            };
+
+            const initialEntries = await listEntries(root);
+            if (initialEntries.length === 0) shell.stdout.write('No subfolders exist\n');
+            else {
+                for (let index = 0; index < initialEntries.length; index++) {
+                    const entry = initialEntries[index];
+                    const isLast = index === initialEntries.length - 1;
+                    shell.stdout.write(`${isLast ? characters.last : characters.branch}${entry.name}\n`);
+                    renderedEntries++;
+                    if (renderedEntries % 64 === 0) await new Promise(resolve => setTimeout(resolve, 0));
+                    if (entry.stat.isDirectory()) {
+                        await renderDirectory(entry.path, isLast ? characters.space : characters.vertical);
+                    }
+                }
             }
             return true;
         } catch (error) {
@@ -881,43 +963,130 @@ commandRegistry.register('sort', {
     }
 });
 
-commandRegistry.register(['find', 'findstr'], {
-    description: 'Searches for text in a file or pipeline input.',
-    usage: 'find|findstr [/i] [/n] <text> [file]',
+commandRegistry.register('find', {
+    description: 'Searches for a literal text string in a file or pipeline input.',
+    usage: 'find [/v] [/c] [/n] [/i] <string> [file...]',
+    options: {
+        '/v': 'Displays lines that do not contain the string.',
+        '/c': 'Displays only the number of matching lines.',
+        '/n': 'Displays line numbers with matching lines.',
+        '/i': 'Performs a case-insensitive search.'
+    },
     category: 'text',
     handler: async ({ args }, shell) => {
         const ignoreCase = args.some(arg => /^\/i$/i.test(arg));
         const showLineNumbers = args.some(arg => /^\/n$/i.test(arg));
-        const values = args.filter(arg => !/^\/[in]$/i.test(arg));
+        const invert = args.some(arg => /^\/v$/i.test(arg));
+        const countOnly = args.some(arg => /^\/c$/i.test(arg));
+        const values = args.filter(arg => !/^\/[vcni]$/i.test(arg));
         if (!values.length) {
-            shell.stderr.write('Usage: find|findstr [/i] [/n] <text> [file]\n');
-            return false;
+            shell.stderr.write('Usage: find [/v] [/c] [/n] [/i] <string> [file...]\n');
+            return reportedFailure();
         }
         try {
-            const [needle, file] = values;
-            const content = file ? await readTextFile(shell, file) : readStdin(shell);
+            const [needle, ...files] = values;
+            if (shell.stdin.readableEnded && files.length > 0) {
+                shell.stderr.write('FIND: Parameter format incorrect\n');
+                return reportedFailure();
+            }
             const matchNeedle = ignoreCase ? needle.toLocaleLowerCase() : needle;
             let count = 0;
-            content.split(/\r?\n/).forEach((line, index) => {
-                const subject = ignoreCase ? line.toLocaleLowerCase() : line;
-                if (subject.includes(matchNeedle)) {
-                    shell.stdout.write((showLineNumbers ? `${index + 1}:` : '') + line + '\n');
-                    count++;
-                }
-            });
-            // No matches is a normal findstr status (like Windows exit code
-            // 1), not a diagnostic. Keep the status for &&/|| while letting
-            // a later pipeline stage consume the empty output.
-            return {
-                __shellPipelineStatus: {
-                    succeeded: count > 0,
-                    continuePipeline: true,
-                    silentFailure: count === 0
-                }
-            };
+            const inputs = files.length
+                ? await Promise.all(files.map(async file => ({ file, content: await readTextFile(shell, file) })))
+                : [{ file: null, content: readStdin(shell) }];
+            for (const input of inputs) {
+                let inputCount = 0;
+                splitLines(input.content).forEach((line, index) => {
+                    const subject = ignoreCase ? line.toLocaleLowerCase() : line;
+                    const matched = subject.includes(matchNeedle);
+                    if (invert ? !matched : matched) {
+                        if (!countOnly) shell.stdout.write((showLineNumbers ? `${index + 1}:` : '') + line + '\n');
+                        inputCount++;
+                        count++;
+                    }
+                });
+                if (countOnly) shell.stdout.write(`---------- ${input.file || 'STDIN'}: ${inputCount}\n`);
+            }
+            return searchStatus(count);
         } catch (error) {
             shell.stderr.write(error.message + '\n');
-            return false;
+            return reportedFailure();
+        }
+    }
+});
+
+commandRegistry.register('findstr', {
+    description: 'Searches for text or wildcard patterns in a file or pipeline input.',
+    usage: 'findstr [/b] [/e] [/l | /r] [/i] [/x] [/v] [/n] [/m] [/o] <pattern> [file...]',
+    options: {
+        '<pattern>': 'Searches text by default; * matches any sequence and ? matches one character.',
+        '/b': 'Matches only at the beginning of a line.',
+        '/e': 'Matches only at the end of a line.',
+        '/l': 'Treats the pattern literally.',
+        '/r': 'Treats the pattern as a regular expression.',
+        '/i': 'Performs a case-insensitive search.',
+        '/x': 'Matches the entire line.',
+        '/v': 'Displays lines that do not match.',
+        '/n': 'Displays line numbers.',
+        '/m': 'Displays only file names containing a match.',
+        '/o': 'Displays the character offset of each match.',
+        '/c:<string>': 'Uses the specified text as one literal search string.'
+    },
+    category: 'text',
+    handler: async ({ args }, shell) => {
+        const optionPattern = /^\/(?:b|e|l|r|i|x|v|n|m|o)$/i;
+        const literalToken = args.find(arg => /^\/c:/i.test(arg));
+        const values = args.filter(arg => !optionPattern.test(arg) && arg !== literalToken);
+        const needle = literalToken ? literalToken.slice(3) : values.shift();
+        if (!needle) {
+            shell.stderr.write('Usage: findstr [/b] [/e] [/l | /r] [/i] [/x] [/v] [/n] [/m] [/o] <pattern> [file...]\n');
+            return reportedFailure();
+        }
+        const literal = !!literalToken || args.some(arg => /^\/l$/i.test(arg));
+        const regularExpression = !literal && args.some(arg => /^\/r$/i.test(arg));
+        const exact = args.some(arg => /^\/x$/i.test(arg));
+        const beginning = args.some(arg => /^\/b$/i.test(arg));
+        const ending = args.some(arg => /^\/e$/i.test(arg));
+        const invert = args.some(arg => /^\/v$/i.test(arg));
+        const showLineNumbers = args.some(arg => /^\/n$/i.test(arg));
+        const filenamesOnly = args.some(arg => /^\/m$/i.test(arg));
+        const showOffset = args.some(arg => /^\/o$/i.test(arg));
+        const flags = args.some(arg => /^\/i$/i.test(arg)) ? 'i' : '';
+        const hasWildcard = !literal && !regularExpression && /[*?]/.test(needle);
+        let expression = regularExpression
+            ? needle.replaceAll('\\<', '\\b').replaceAll('\\>', '\\b')
+            : hasWildcard ? wildcardToRegExp(needle) : escapeRegExp(needle);
+        if (exact || hasWildcard) expression = `^(?:${expression})$`;
+        else expression = `${beginning ? '^' : ''}(?:${expression})${ending ? '$' : ''}`;
+
+        try {
+            const regex = new RegExp(expression, flags);
+            const files = values;
+            const inputs = files.length
+                ? await Promise.all(files.map(async file => ({ file, content: await readTextFile(shell, file) })))
+                : [{ file: null, content: readStdin(shell) }];
+            let count = 0;
+            for (const input of inputs) {
+                let fileMatched = false;
+                splitLines(input.content).forEach((line, index) => {
+                    const match = regex.exec(line);
+                    const matched = match !== null;
+                    if (invert ? !matched : matched) {
+                        count++;
+                        fileMatched = true;
+                        if (!filenamesOnly) {
+                            const prefix = `${showLineNumbers ? `${index + 1}:` : ''}${showOffset ? `${match?.index ?? 0}:` : ''}`;
+                            shell.stdout.write(prefix + line + '\n');
+                        }
+                    }
+                });
+                if (filenamesOnly && fileMatched && input.file) shell.stdout.write(input.file + '\n');
+            }
+            return searchStatus(count);
+        } catch (error) {
+            if (error instanceof SyntaxError) shell.stderr.write(`FINDSTR: Invalid regular expression: ${error.message}\n`);
+            else shell.stderr.write(error.message + '\n');
+            return reportedFailure();
         }
     }
 });

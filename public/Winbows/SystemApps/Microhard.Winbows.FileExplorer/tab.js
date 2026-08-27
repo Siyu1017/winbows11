@@ -302,8 +302,7 @@ async function getImageURL(image) {
 }
 
 function getData(filePath) {
-    for (let i in pageDatas) {
-        var item = pageDatas[i];
+    for (const item of pageDatas) {
         if (item != null && item.path == filePath) {
             return {
                 title: item.title,
@@ -312,9 +311,12 @@ function getData(filePath) {
             }
         }
     }
+
+    const isRoot = /^[a-zA-Z]:(\/|\\)$/.test(filePath)
+
     return {
-        title: path.basename(filePath),
-        icon: `${iconRoot}/folders/folder.ico`,
+        title: isRoot ? filePath : path.basename(filePath),
+        icon: isRoot ? `${iconRoot}/devices/drives/Windows 11 Drive Unlocked.ico` : `${iconRoot}/folders/folder.ico`,
         active: pageDatas.filter(t => t != null).find(t => t.path == 'pages://this_pc').active
     }
 }
@@ -1146,7 +1148,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
             el.innerHTML = "This folder can not be found.";
             return el;
         }
-        const res = (await fs.readdir(pagePath)).filter(name => name !== '.winbows-legacy-migration-v1');
+        const res = await fs.readdir(pagePath);
         const pageStat = await fs.stat(pagePath);
         let dirs = [];
         let files = [];
@@ -1204,7 +1206,7 @@ async function setupTab(browserWindow, tab, page = 'pages://home') {
 
         for (let i in items) {
             const itemPath = items[i];
-            const stat = stats[itemPath]
+            const stat = stats[itemPath];
             if (stat.type === 'dir') {
                 await createFolderItem(itemViewer, {
                     name: path.basename(itemPath)

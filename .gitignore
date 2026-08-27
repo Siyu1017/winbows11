@@ -6,3 +6,4 @@ logs
 .vercel
 *.test.js
 *.test.html
+.env*

@@ -89,6 +89,24 @@ function countVisibleChars(input) {
     return visibleCount;
 }
 
+const deleteSequence = /^\x1B\[3(?:;\d+)?~$/;
+
+function isDeleteSequence(data) {
+    return deleteSequence.test(data);
+}
+
+function displayControlCharacters(value) {
+    return value.replace(/[\x00-\x1F\x7F]/g, character => {
+        const code = character.charCodeAt(0);
+        if (code === 0x7F) return '^?';
+        return '^' + String.fromCharCode(code + 64);
+    });
+}
+
+function displayedLength(value, end = value.length) {
+    return displayControlCharacters(value.slice(0, end)).length;
+}
+
 const term = new WinUI.Terminal({
     cols: 80,
     rows: 24,
@@ -234,11 +252,16 @@ function updateCursor(term, prompt, current, target) {
 
 function updateCommandInput(orgCursor, cursor, buffer) {
     const toWrite = buffer.slice(orgCursor);
-    const matched = buffer.match(/\S+/);
-    term.write(toWrite);
+    term.write(displayControlCharacters(toWrite));
 
-    updateCursor(term, '', buffer.length, cursor);
+    updateCursor(term, '', displayedLength(buffer), displayedLength(buffer, cursor));
     //term.write(`\x1b[${beginningText.length + cursor + 1}G`);
+}
+
+function redrawInput(previousBuffer, previousCursor) {
+    updateCursor(term, '', displayedLength(previousBuffer, previousCursor), 0);
+    term.write('\x1b[0J');
+    updateCommandInput(0, cursor, inputBuffer);
 }
 
 async function handleInput(data) {
@@ -251,24 +274,28 @@ async function handleInput(data) {
             return;
         case '\x1B[C':  // Right
             if (cursor < inputBuffer.length) {
+                const orgCursor = cursor;
                 cursor++;
-                if (cursor % term.cols == 0) {
-                    term.write('\x1b[B\r');
-                } else {
-                    term.write(data);
-                }
+                updateCursor(term, '', displayedLength(inputBuffer, orgCursor), displayedLength(inputBuffer, cursor));
             }
             return;
         case '\x1B[D':  // Left
             if (cursor > 0) {
+                const orgCursor = cursor;
                 cursor--;
-                if ((cursor + 1) % term.cols == 0) {
-                    term.write(`\x1b[A\r\x1b[${term.cols + 1}C`);
-                } else {
-                    term.write(data);
-                }
+                updateCursor(term, '', displayedLength(inputBuffer, orgCursor), displayedLength(inputBuffer, cursor));
             }
             return;
+    }
+
+    if (isDeleteSequence(data)) {
+        if (cursor < inputBuffer.length) {
+            const previousBuffer = inputBuffer;
+            const previousCursor = cursor;
+            inputBuffer = inputBuffer.slice(0, cursor) + inputBuffer.slice(cursor + 1);
+            redrawInput(previousBuffer, previousCursor);
+        }
+        return;
     }
 
     // Enter
@@ -280,29 +307,20 @@ async function handleInput(data) {
     } else if (data === '\u007F') {
         // Backspace
         if (inputBuffer.length > 0 && cursor > 0) {
-            const orgCursor = cursor;
+            const previousBuffer = inputBuffer;
+            const previousCursor = cursor;
             inputBuffer = inputBuffer.slice(0, cursor - 1 < 0 ? 0 : cursor - 1) + inputBuffer.slice(cursor);
             cursor--;
-
-            const cols = term.cols;
-            const len = orgCursor;
-            if (len % cols == 0 && ~~(len / cols) > 0) {
-                term.write(`\x1b[A\x1b[${cols}C`);
-            } else {
-                term.write('\x1b[D');
-            }
-            term.write('\x1b[0J');
-            updateCommandInput(cursor, cursor, inputBuffer);
+            redrawInput(previousBuffer, previousCursor);
             return;
         }
     } else {
         // Normal input
-        const orgCursor = cursor;
+        const previousBuffer = inputBuffer;
+        const previousCursor = cursor;
         inputBuffer = inputBuffer.slice(0, cursor) + data + inputBuffer.slice(cursor);
         cursor += data.length;
-
-        term.write('\x1b[0J');
-        updateCommandInput(orgCursor, cursor, inputBuffer);
+        redrawInput(previousBuffer, previousCursor);
         return;
     }
 }

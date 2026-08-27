@@ -579,10 +579,12 @@ async function initEditor() {
         } else if (process.args.folder) {
             openFolder(process.args.folder);
         } else if (await fs.exists('./vs-state.json')) {
-            const state = JSON.parse(await fs.readFile('./vs-state.json', 'utf-8'));
-            if (state.lastOpenedType === 'dir') {
-                openFolder(state.lastOpenedPath);
-            }
+            try {
+                const state = JSON.parse(await fs.readFile('./vs-state.json', 'utf-8'));
+                if (state.lastOpenedType === 'dir') {
+                    openFolder(state.lastOpenedPath);
+                }
+            } catch (e) { };
         }
 
         document.getElementById('loading').remove();

@@ -2,7 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## v1.1.0-beta.4 (2026-08-27)
+
+### Added
+
+- Added Vercel configuration for serving the static `public` build and returning the Winbows 404 page for unknown routes
+
+### Changed
+
+- Separated `find` and `findstr`: `find` now performs literal searches, while `findstr` supports wildcard matching by default and regular expressions through `/r`
+- Expanded `find` and `findstr` with Windows-style filtering, matching, line-number, count, file-name, and offset options
+- Updated `tree` to render a recursive Windows-style hierarchy with Unicode branches by default and ASCII branches through `/a`
+- Updated File Explorer to display drive roots with a drive icon and a drive-qualified title
+- Updated `.gitignore` rules to ignore `.env*` files
+
+### Fixed
+
+- Fixed `find` pipeline errors so invalid arguments report `FIND: Parameter format incorrect` without an additional pipeline-stage error
+- Fixed `find /n` and `findstr /n` to use `line:` line-number prefixes
+- Fixed `Delete` handling in CMD and CMD containers so it deletes the character after the cursor instead of inserting an invisible control sequence
+- Made control characters visible during editable CMD input while keeping cursor placement aligned with their visible representation
+- Fixed VSCode startup so malformed persisted workspace state does not prevent the editor from opening
 
 ## v1.1.0-beta.3 (2026-08-26)
 

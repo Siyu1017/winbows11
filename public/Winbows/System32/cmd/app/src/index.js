@@ -90,6 +90,24 @@ let promptBuffer = '';
 let cliBuffer = '';
 let promptStdin = null;
 
+const deleteSequence = /^\x1B\[3(?:;\d+)?~$/;
+
+function isDeleteSequence(data) {
+    return deleteSequence.test(data);
+}
+
+function displayControlCharacters(value) {
+    return value.replace(/[\x00-\x1F\x7F]/g, character => {
+        const code = character.charCodeAt(0);
+        if (code === 0x7F) return '^?';
+        return '^' + String.fromCharCode(code + 64);
+    });
+}
+
+function displayedLength(value, end = value.length) {
+    return displayControlCharacters(value.slice(0, end)).length;
+}
+
 function replaceInput() {
     const pwd = `${path.normalize(shell.root + shell.pwd)}>`;
     // term.write('\x1b[2K\r' + pwd + buffer);
@@ -134,7 +152,7 @@ term.onResize(({ cols, rows }) => {
     if (inputType != 'normal') return;
 
     const len = beginningText.length;
-    const originalRow = ~~((cursor + len) / lastCols);
+    const originalRow = ~~((displayedLength(normalBuffer, cursor) + len) / lastCols);
     if (originalRow > 0) {
         term.write(`\x1b[${originalRow}A`);
     }
@@ -152,18 +170,24 @@ function updateCommandInput(orgCursor, cursor, buffer) {
         const endIndex = matched.index + matched[0].length;
         if (endIndex > orgCursor) {
             applyHexColor(term, '#ffc96d');
-            term.write(toWrite.slice(0, endIndex - orgCursor));
+            term.write(displayControlCharacters(toWrite.slice(0, endIndex - orgCursor)));
             applyHexColor(term);
-            term.write(toWrite.slice(endIndex - orgCursor));
+            term.write(displayControlCharacters(toWrite.slice(endIndex - orgCursor)));
         } else {
-            term.write(toWrite);
+            term.write(displayControlCharacters(toWrite));
         }
     } else {
-        term.write(toWrite);
+        term.write(displayControlCharacters(toWrite));
     }
 
-    updateCursor(term, beginningText, buffer.length, cursor);
+    updateCursor(term, beginningText, displayedLength(buffer), displayedLength(buffer, cursor));
     //term.write(`\x1b[${beginningText.length + cursor + 1}G`);
+}
+
+function redrawNormalInput(previousBuffer, previousCursor) {
+    updateCursor(term, beginningText, displayedLength(previousBuffer, previousCursor), 0);
+    term.write('\x1b[0J');
+    updateCommandInput(0, cursor, normalBuffer);
 }
 
 function updateNormalContent() {
@@ -175,13 +199,13 @@ function updateNormalContent() {
     if (matched) {
         const endIndex = matched.index + matched[0].length;
         applyHexColor(term, '#ffc96d');
-        term.write(normalBuffer.slice(0, endIndex));
+        term.write(displayControlCharacters(normalBuffer.slice(0, endIndex)));
         applyHexColor(term);
-        term.write(normalBuffer.slice(endIndex));
+        term.write(displayControlCharacters(normalBuffer.slice(endIndex)));
     } else {
-        term.write(normalBuffer);
+        term.write(displayControlCharacters(normalBuffer));
     }
-    term.write(`\x1B[${beginningText.length + 1 + cursor}G`);
+    term.write(`\x1B[${beginningText.length + 1 + displayedLength(normalBuffer, cursor)}G`);
 }
 
 async function handleNormalInput(data) {
@@ -191,13 +215,14 @@ async function handleNormalInput(data) {
         case '\x1B[A':  // Up
             if (inputHistoryIndex > 0) {
                 const orgCursor = cursor;
+                const previousBuffer = normalBuffer;
 
                 inputHistoryIndex--;
                 normalBuffer = inputHistory[inputHistoryIndex];
                 cursor = normalBuffer.length;
 
                 beginningText = `${path.normalize(shell.root + shell.pwd)}>`;
-                updateCursor(term, beginningText, orgCursor, 0);
+                updateCursor(term, beginningText, displayedLength(previousBuffer, orgCursor), 0);
                 term.write('\x1b[0J');
                 updateCommandInput(0, cursor, normalBuffer);
             }
@@ -205,37 +230,42 @@ async function handleNormalInput(data) {
         case '\x1B[B':  // Down
             if (inputHistoryIndex < inputHistory.length) {
                 const orgCursor = cursor;
+                const previousBuffer = normalBuffer;
 
                 inputHistoryIndex++;
                 normalBuffer = inputHistory[inputHistoryIndex] || '';
                 cursor = normalBuffer.length;
 
                 beginningText = `${path.normalize(shell.root + shell.pwd)}>`;
-                updateCursor(term, beginningText, orgCursor, 0);
+                updateCursor(term, beginningText, displayedLength(previousBuffer, orgCursor), 0);
                 term.write('\x1b[0J');
                 updateCommandInput(0, cursor, normalBuffer);
             }
             return;
         case '\x1B[C':  // Right
             if (cursor < normalBuffer.length) {
+                const orgCursor = cursor;
                 cursor++;
-                if (cursor % term.cols == 0) {
-                    term.write('\x1b[B\r');
-                } else {
-                    term.write(data);
-                }
+                updateCursor(term, beginningText, displayedLength(normalBuffer, orgCursor), displayedLength(normalBuffer, cursor));
             }
             return;
         case '\x1B[D':  // Left
             if (cursor > 0) {
+                const orgCursor = cursor;
                 cursor--;
-                if ((cursor + 1) % term.cols == 0) {
-                    term.write(`\x1b[A\r\x1b[${term.cols + 1}C`);
-                } else {
-                    term.write(data);
-                }
+                updateCursor(term, beginningText, displayedLength(normalBuffer, orgCursor), displayedLength(normalBuffer, cursor));
             }
             return;
+    }
+
+    if (isDeleteSequence(data)) {
+        if (cursor < normalBuffer.length) {
+            const previousBuffer = normalBuffer;
+            const previousCursor = cursor;
+            normalBuffer = normalBuffer.slice(0, cursor) + normalBuffer.slice(cursor + 1);
+            redrawNormalInput(previousBuffer, previousCursor);
+        }
+        return;
     }
 
     // Enter
@@ -300,29 +330,20 @@ async function handleNormalInput(data) {
     } else if (data === '\u007F') {
         // Backspace
         if (normalBuffer.length > 0 && cursor > 0) {
-            const orgCursor = cursor;
+            const previousBuffer = normalBuffer;
+            const previousCursor = cursor;
             normalBuffer = normalBuffer.slice(0, cursor - 1 < 0 ? 0 : cursor - 1) + normalBuffer.slice(cursor);
             cursor--;
-
-            const cols = term.cols;
-            const len = orgCursor + beginningText.length;
-            if (len % cols == 0 && ~~(len / cols) > 0) {
-                term.write(`\x1b[A\x1b[${cols}C`);
-            } else {
-                term.write('\x1b[D');
-            }
-            term.write('\x1b[0J');
-            updateCommandInput(cursor, cursor, normalBuffer);
+            redrawNormalInput(previousBuffer, previousCursor);
             return;
         }
     } else {
         // Normal input
-        const orgCursor = cursor;
+        const previousBuffer = normalBuffer;
+        const previousCursor = cursor;
         normalBuffer = normalBuffer.slice(0, cursor) + data + normalBuffer.slice(cursor);
         cursor += data.length;
-
-        term.write('\x1b[0J');
-        updateCommandInput(orgCursor, cursor, normalBuffer);
+        redrawNormalInput(previousBuffer, previousCursor);
         return;
     }
 }
@@ -330,6 +351,7 @@ async function handleNormalInput(data) {
 function handlePromptInput(data) {
     if (inputType != 'prompt') return;
     if (/^\x1B\[.*[A-D]$/.test(data)) return;
+    if (isDeleteSequence(data)) return;
 
     // Stdin
     if (data === '\r') {
@@ -351,7 +373,7 @@ function handlePromptInput(data) {
     } else {
         // Normal input
         promptBuffer += data;
-        term.write(data);
+        term.write(displayControlCharacters(data));
     }
 }
 
@@ -394,6 +416,7 @@ observer.observe(container);
 term.onData(async (data) => {
     if (inputType === 'cli') {
         if (cli.stdin.isRaw) return cli.stdin.write(data);
+        if (isDeleteSequence(data)) return;
         if (data == '\r') {
             cliBuffer += '\n';
             cli.stdin.write(cliBuffer);
